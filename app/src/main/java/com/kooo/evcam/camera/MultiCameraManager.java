@@ -50,8 +50,7 @@ public class MultiCameraManager {
     private boolean useRelayWrite = false;      // 是否使用中转写入（录制到内部存储，异步传输到U盘）
     private File finalSaveDir = null;           // 最终存储目录（用于中转写入模式）
     private volatile int lastNotifiedSegmentIndex = -1;  // 已通知的分段索引，避免重复通知
-    private long overrideSegmentDurationMs = 0;  // 临时覆盖分段时长（0=使用配置值，>0=使用此值）
-    
+
     // 统一分段时间戳管理（解决多路摄像头分段切换时时间戳差1秒的问题）
     private String cachedSegmentTimestamp = null;  // 缓存的分段时间戳
     private long timestampGeneratedTime = 0;  // 时间戳生成时间（毫秒）
@@ -75,7 +74,6 @@ public class MultiCameraManager {
     
     // 按摄像头维度跟踪配置状态（解决超时强制启动问题）
     private final Map<String, Boolean> cameraSessionReady = new LinkedHashMap<>();
-    private final Map<String, Boolean> cameraRecordingActive = new LinkedHashMap<>();
     private RecordingStatusCallback recordingStatusCallback;
 
     /**
@@ -565,24 +563,6 @@ public class MultiCameraManager {
         writeStallCallback = null;
         cameraLostCallback = null;
         AppLog.i(TAG, "主界面已离开，回调换成空实现，录制管线继续 recording=" + isRecording);
-    }
-
-    /**
-     * 设置临时分段时长覆盖值
-     * 用于远程录制时禁用分段（设置为录制时长+余量）
-     * @param durationMs 分段时长（毫秒），0表示使用配置值
-     */
-    public void setSegmentDurationOverride(long durationMs) {
-        this.overrideSegmentDurationMs = durationMs;
-        AppLog.d(TAG, "Segment duration override set to: " + (durationMs > 0 ? (durationMs / 1000) + " seconds" : "disabled"));
-    }
-
-    /**
-     * 清除分段时长覆盖，恢复使用配置值
-     */
-    public void clearSegmentDurationOverride() {
-        this.overrideSegmentDurationMs = 0;
-        AppLog.d(TAG, "Segment duration override cleared, using config value");
     }
 
     public void setCodecFallbackCallback(CodecFallbackCallback callback) {
@@ -1313,9 +1293,7 @@ public class MultiCameraManager {
             StreamSpec spec = RecordSpecs.forCameraKey(context, key);
             // MediaRecorder 只接受一个具体数字，没有「不限制」这个说法
             int targetFrameRate = RecordSpecs.nominal(spec.fps, hardwareMaxFps());
-            long segmentDurationMs = overrideSegmentDurationMs > 0
-                    ? overrideSegmentDurationMs
-                    : RecordSpecs.segmentMs(spec.segmentMinutes);
+            long segmentDurationMs = RecordSpecs.segmentMs(spec.segmentMinutes);
             int bitrate = AppConfig.actualBitrate(spec.bitrate,
                     previewSize.getWidth(),
                     previewSize.getHeight(),
@@ -1362,7 +1340,6 @@ public class MultiCameraManager {
             expectedSessionCount = keys.size();
             // 初始化每个摄像头的配置状态跟踪
             cameraSessionReady.clear();
-            cameraRecordingActive.clear();
         }
 
         for (String key : keys) {
@@ -1458,10 +1435,8 @@ public class MultiCameraManager {
             VideoRecorder recorder = recorders.get(key);
             if (recorder != null) {
                 if (recorder.startRecording()) {
-                    cameraRecordingActive.put(key, true);
                     activeCameras.add(key);
                 } else {
-                    cameraRecordingActive.put(key, false);
                     failedCameras.add(key);
                     AppLog.e(TAG, "Failed to start recording for " + key);
                 }
@@ -1559,9 +1534,7 @@ public class MultiCameraManager {
         // 两个值：标称值给编码器，上限给渲染节流（可以是「不限制」）
         int targetFrameRate = RecordSpecs.nominal(spec.fps, hardwareMaxFps());
         int frameRateCap = RecordSpecs.cap(spec.fps, hardwareMaxFps());
-        long segmentDurationMs = overrideSegmentDurationMs > 0
-                ? overrideSegmentDurationMs
-                : RecordSpecs.segmentMs(spec.segmentMinutes);
+        long segmentDurationMs = RecordSpecs.segmentMs(spec.segmentMinutes);
         AppLog.d(TAG, "Camera " + key + " 录制配置: " + spec + "，节流上限 "
                 + (frameRateCap == 0 ? "不限制" : frameRateCap + " fps")
                 + "，分段 " + (segmentDurationMs / 1000) + " 秒");
@@ -1828,7 +1801,6 @@ public class MultiCameraManager {
             sessionConfiguredCount = 0;
             expectedSessionCount = keys.size();
             cameraSessionReady.clear();
-            cameraRecordingActive.clear();
         }
 
         for (String key : keys) {
@@ -1868,7 +1840,6 @@ public class MultiCameraManager {
                 sessionConfiguredCount = 0;
                 expectedSessionCount = 0;
                 cameraSessionReady.clear();
-                cameraRecordingActive.clear();
             }
             if (sessionTimeoutRunnable != null) {
                 mainHandler.removeCallbacks(sessionTimeoutRunnable);
@@ -1990,7 +1961,6 @@ public class MultiCameraManager {
             sessionConfiguredCount = 0;
             expectedSessionCount = 0;
             cameraSessionReady.clear();
-            cameraRecordingActive.clear();
         }
         if (sessionTimeoutRunnable != null) {
             mainHandler.removeCallbacks(sessionTimeoutRunnable);
@@ -2066,7 +2036,6 @@ public class MultiCameraManager {
             sessionConfiguredCount = 0;
             expectedSessionCount = cameraKeys.size();
             cameraSessionReady.clear();
-            cameraRecordingActive.clear();
         }
 
         for (String key : cameraKeys) {
@@ -2444,30 +2413,6 @@ public class MultiCameraManager {
                 AppLog.e(TAG, "Relay transfer failed: " + sourceFile.getName() + " - " + error);
             }
         });
-    }
-    
-    /**
-     * 将临时目录中的所有视频文件传输到最终目录
-     * @param targetDir 目标目录
-     */
-    private void transferAllTempFiles(File targetDir) {
-        if (targetDir == null) {
-            AppLog.w(TAG, "Target directory is null, skipping transfer");
-            return;
-        }
-        
-        File tempDir = new File(context.getCacheDir(), FileTransferManager.TEMP_VIDEO_DIR);
-        if (!tempDir.exists()) {
-            AppLog.d(TAG, "Temp directory does not exist");
-            return;
-        }
-        
-        File[] files = tempDir.listFiles((dir, name) -> name.endsWith(".mp4"));
-        
-        // 确保 FileTransferManager 已启动
-        FileTransferManager.getInstance(context).start();
-        
-        transferSpecificTempFiles(targetDir, files);
     }
     
     /**
