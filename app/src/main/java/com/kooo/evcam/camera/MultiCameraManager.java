@@ -602,22 +602,6 @@ public class MultiCameraManager {
     }
 
     /**
-     * 设置单一输出模式（用于不支持多路输出的车机平台，如 L6/L7）
-     * 在此模式下，录制时只使用 MediaRecorder Surface，不使用 TextureView Surface
-     * 这会导致录制期间预览冻结，但能确保录制正常工作
-     * 
-     * @param enabled true 表示启用单一输出模式
-     * @deprecated 请使用 setCodecRecordingMode(true) 代替，它使用 OpenGL 渲染方案
-     */
-    @Deprecated
-    public void setSingleOutputMode(boolean enabled) {
-        AppLog.d(TAG, "Setting single output mode: " + (enabled ? "ENABLED" : "DISABLED"));
-        for (SingleCamera camera : cameras.values()) {
-            camera.setSingleOutputMode(enabled);
-        }
-    }
-
-    /**
      * 设置软编码录制模式（用于 L6/L7 等不支持 MediaRecorder 直接录制的车机平台）
      * 在此模式下，使用 OpenGL 渲染 + MediaCodec 编码 + MediaMuxer 写入文件
      * 
@@ -2722,27 +2706,6 @@ public class MultiCameraManager {
             }
         }
         return count;
-    }
-
-    /**
-     * 生命周期：暂停所有摄像头（App退到后台时调用）
-     * 注意：如果正在录制，不应该调用此方法
-     */
-    public void pauseAllCamerasByLifecycle() {
-        AppLog.d(TAG, "Pausing all cameras by lifecycle");
-        for (SingleCamera camera : cameras.values()) {
-            camera.pauseByLifecycle();
-        }
-    }
-
-    /**
-     * 生命周期：恢复所有摄像头（App返回前台时调用）
-     */
-    public void resumeAllCamerasByLifecycle() {
-        AppLog.d(TAG, "Resuming all cameras by lifecycle");
-        for (SingleCamera camera : cameras.values()) {
-            camera.resumeByLifecycle();
-        }
     }
 
     /**

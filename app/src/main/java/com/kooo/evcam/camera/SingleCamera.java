@@ -109,8 +109,7 @@ public class SingleCamera {
 
         void onFailed(String reason);
     }
-    private boolean singleOutputMode = false;  // 单一输出模式（用于不支持多路输出的车机平台）
-    
+
     // 鱼眼矫正
     
     // 亮度/降噪调节相关
@@ -174,10 +173,8 @@ public class SingleCamera {
     /** 被别的程序拿走了（{@link CameraTaken}）：只慢慢试；它放开或我们回到前台时 MultiCameraManager 会来接。 */
     private volatile boolean takenByOthers;
     private Runnable reconnectRunnable;  // 重连任务
-    private boolean isPausedByLifecycle = false;  // 是否因生命周期暂停（用于区分主动关闭和系统剥夺）
     private boolean isReconnecting = false;  // 是否正在重连中（防止多个重连任务同时运行）
     private volatile boolean isOpening = false;  // 是否正在打开中（防止并行触发时重复调用 openCamera）
-    private volatile boolean deferSessionCreation = false;  // 延迟 Session 创建（与 Surface 并行打开相机时使用）
     private final Object reconnectLock = new Object();  // 重连锁；拿着它时不调相机服务，见 closeCamera
 
     /**
@@ -530,45 +527,12 @@ public class SingleCamera {
     }
 
     /**
-     * 设置单一输出模式（用于不支持多路输出的车机平台，如 L6/L7）
-     * 在此模式下，录制时只使用 MediaRecorder Surface，不使用 TextureView Surface
-     * 这会导致录制期间预览冻结，但能确保录制正常工作
-     */
-    public void setSingleOutputMode(boolean enabled) {
-        this.singleOutputMode = enabled;
-        AppLog.d(TAG, "Camera " + cameraId + " single output mode: " + (enabled ? "ENABLED" : "DISABLED"));
-    }
-
-    /**
-     * 检查是否启用了单一输出模式
-     */
-    public boolean isSingleOutputMode() {
-        return singleOutputMode;
-    }
-
-    // 当前录制模式（用于调试模式区分）
-    private boolean isCodecRecording = false;
-
-    /**
-     * 设置录制Surface
-     */
-    public void setRecordSurface(Surface surface) {
-        this.recordSurface = surface;
-        if (surface != null) {
-            AppLog.d(TAG, "Record surface set for camera " + cameraId + ": " + surface + ", isValid=" + surface.isValid());
-        } else {
-            AppLog.w(TAG, "Record surface set to NULL for camera " + cameraId);
-        }
-    }
-
-    /**
      * 设置录制Surface（带模式标识）
      * @param surface 录制Surface
      * @param isCodec true 表示 Codec 模式，false 表示 MediaRecorder 模式
      */
     public void setRecordSurface(Surface surface, boolean isCodec) {
         this.recordSurface = surface;
-        this.isCodecRecording = isCodec;
         if (surface != null) {
             AppLog.d(TAG, "Record surface set for camera " + cameraId + ": " + surface + 
                     ", isValid=" + surface.isValid() + ", mode=" + (isCodec ? "Codec" : "MediaRecorder"));
@@ -794,13 +758,6 @@ public class SingleCamera {
                 stopHealthMonitor();
                 return;
             }
-            if (isPausedByLifecycle) {
-                Runnable next = healthCheckRunnable;
-                if (next != null) {
-                    handler.postDelayed(next, HEALTH_CHECK_INTERVAL_MS);
-                }
-                return;
-            }
             synchronized (sessionLock) {
                 if (isConfiguring || isSessionClosing) {
                     Runnable next = healthCheckRunnable;
@@ -863,7 +820,6 @@ public class SingleCamera {
                 + " closing=" + isSessionClosing
                 + " pendingRebuild=" + isPendingReconfiguration
                 + " reconnecting=" + isReconnecting
-                + " pausedByLifecycle=" + isPausedByLifecycle
                 + " outputs[main-preview=" + surfaceState(previewSurface)
                 + " mirror=" + surfaceState(mainFloatingSurface)
                 + " record=" + surfaceState(recordSurface)
@@ -926,19 +882,15 @@ public class SingleCamera {
     }
 
     /**
-     * 此刻该不该有帧：是主实例、没有被生命周期主动暂停、而且至少有一路输出在等画面。
+     * 此刻该不该有帧：是主实例、而且至少有一路输出在等画面。
      *
      * <p>注意这里<b>不看</b>相机开没开、会话建没建 —— 兜底看门狗要救的恰恰是
      * 那些状态标志卡住的情形，拿卡住的标志当前提就等于不救。</p>
      */
     public boolean wantsFrames() {
-        return isPrimaryInstance && !isPausedByLifecycle
+        return isPrimaryInstance
                 && (previewSurface != null || mainFloatingSurface != null
                 || recordSurface != null);
-    }
-
-    public boolean isPausedByLifecycle() {
-        return isPausedByLifecycle;
     }
 
     /** 这一趟成功打开过没有。见 {@link #everOpened}。 */
@@ -1183,17 +1135,6 @@ public class SingleCamera {
     }
 
     /**
-     * 打开相机，但延迟 Session 创建。
-     * 用于与 Surface 创建并行：camera 打开后不立即创建 Session，
-     * 等待 setMainFloatingSurface 后再创建，避免没有 floating Surface 的空 Session 需要重建。
-     */
-    public void openCameraDeferred() {
-        if (cameraDevice != null) return; // 已打开，无需延迟
-        deferSessionCreation = true;
-        openCamera();
-    }
-
-    /**
      * 调度重连任务
      */
     private void scheduleReconnect() {
@@ -1308,18 +1249,7 @@ public class SingleCamera {
                     callback.onCameraOpened(cameraId);
                 }
             }
-            if (deferSessionCreation) {
-                deferSessionCreation = false;
-                if (mainFloatingSurface != null && mainFloatingSurface.isValid()) {
-                    // Surface 已先于相机打开就绪，立即创建 Session
-                    createCameraPreviewSession();
-                } else {
-                    // 相机先于 Surface 打开，等 Surface 到达后由调用方触发 Session 创建
-                    AppLog.d(TAG, "Camera " + cameraId + " opened (deferred), waiting for surface");
-                }
-            } else {
-                createCameraPreviewSession();
-            }
+            createCameraPreviewSession();
         }
 
         @Override
@@ -1581,69 +1511,61 @@ public class SingleCamera {
             java.util.List<Surface> surfaces = new java.util.ArrayList<>();
             java.util.List<OutputConfiguration> outputConfigs = new java.util.ArrayList<>();
 
-            // 单一输出模式处理（用于 L6/L7 等不支持多路输出的车机平台）
-            if (singleOutputMode && recordSurface != null && recordSurface.isValid()) {
-                AppLog.d(TAG, "Camera " + cameraId + " SINGLE OUTPUT MODE: Using ONLY record surface");
+            // 正常模式：使用 OutputConfiguration 实现 Surface Sharing (API 28+)
+            // 将所有预览性质的 Surface (主预览、主悬浮、副悬浮) 组合成一个硬件流
+            {
+                AppLog.d(TAG, "Camera " + cameraId + " Using Surface Sharing for preview streams");
+
+                // 统一设置所有共享 Surface 的 buffer 尺寸，确保与相机输出一致
+                // 避免悬浮窗 TextureView 使用物理布局尺寸导致 OutputConfiguration 尺寸不匹配
+                if (previewSize != null) {
+                    if (mainFloatingSurfaceTexture != null) {
+                        mainFloatingSurfaceTexture.setDefaultBufferSize(getPreviewBufferSize().getWidth(), getPreviewBufferSize().getHeight());
+                    }
+                }
+
+                if (surface != null && surface.isValid()) {
+                    OutputConfiguration previewSharedConfig = new OutputConfiguration(surface);
+                    previewSharedConfig.enableSurfaceSharing();
+                    surfaces.add(surface);
+                    previewRequestBuilder.addTarget(surface);
+
+                    if (previewSurface != null && previewSurface.isValid() && previewSurface != surface &&
+                        previewSurface != mainFloatingSurface) {
+                        previewSharedConfig.addSurface(previewSurface);
+                        surfaces.add(previewSurface);
+                        previewRequestBuilder.addTarget(previewSurface);
+                        AppLog.d(TAG, "Added preview surface to SHARED preview stream");
+                    }
+
+                    if (mainFloatingSurface != null && mainFloatingSurface.isValid() && mainFloatingSurface != surface) {
+                        previewSharedConfig.addSurface(mainFloatingSurface);
+                        surfaces.add(mainFloatingSurface);
+                        previewRequestBuilder.addTarget(mainFloatingSurface);
+                        AppLog.d(TAG, "Added main floating surface to SHARED preview stream");
+                    }
+
+
+                    outputConfigs.add(previewSharedConfig);
+                }
+            }
+
+            // 录制 Surface 作为一个独立的硬件流
+            if (recordSurface != null && recordSurface.isValid()) {
+                outputConfigs.add(new OutputConfiguration(recordSurface));
                 surfaces.add(recordSurface);
                 previewRequestBuilder.addTarget(recordSurface);
-                outputConfigs.add(new OutputConfiguration(recordSurface));
-            } else {
-                // 正常模式：使用 OutputConfiguration 实现 Surface Sharing (API 28+)
-                // 将所有预览性质的 Surface (主预览、主悬浮、副悬浮) 组合成一个硬件流
-                {
-                    AppLog.d(TAG, "Camera " + cameraId + " Using Surface Sharing for preview streams");
+                AppLog.d(TAG, "Added record surface as SEPARATE stream");
+            }
 
-                    // 统一设置所有共享 Surface 的 buffer 尺寸，确保与相机输出一致
-                    // 避免悬浮窗 TextureView 使用物理布局尺寸导致 OutputConfiguration 尺寸不匹配
-                    if (previewSize != null) {
-                        if (mainFloatingSurfaceTexture != null) {
-                            mainFloatingSurfaceTexture.setDefaultBufferSize(getPreviewBufferSize().getWidth(), getPreviewBufferSize().getHeight());
-                        }
-                    }
-
-                    if (surface != null && surface.isValid()) {
-                        OutputConfiguration previewSharedConfig = new OutputConfiguration(surface);
-                        previewSharedConfig.enableSurfaceSharing();
-                        surfaces.add(surface);
-                        previewRequestBuilder.addTarget(surface);
-
-                        if (previewSurface != null && previewSurface.isValid() && previewSurface != surface &&
-                            previewSurface != mainFloatingSurface) {
-                            previewSharedConfig.addSurface(previewSurface);
-                            surfaces.add(previewSurface);
-                            previewRequestBuilder.addTarget(previewSurface);
-                            AppLog.d(TAG, "Added preview surface to SHARED preview stream");
-                        }
-
-                        if (mainFloatingSurface != null && mainFloatingSurface.isValid() && mainFloatingSurface != surface) {
-                            previewSharedConfig.addSurface(mainFloatingSurface);
-                            surfaces.add(mainFloatingSurface);
-                            previewRequestBuilder.addTarget(mainFloatingSurface);
-                            AppLog.d(TAG, "Added main floating surface to SHARED preview stream");
-                        }
-
-
-                        outputConfigs.add(previewSharedConfig);
-                    }
-                }
-
-                // 录制 Surface 作为一个独立的硬件流
-                if (recordSurface != null && recordSurface.isValid()) {
-                    outputConfigs.add(new OutputConfiguration(recordSurface));
-                    surfaces.add(recordSurface);
-                    previewRequestBuilder.addTarget(recordSurface);
-                    AppLog.d(TAG, "Added record surface as SEPARATE stream");
-                }
-
-                // 拍照通道：只加进会话，<b>不加进预览请求</b> ——
-                // 每一帧都往 JPEG 编一遍是没有意义的开销，按下快门时才单发一次。
-                if (jpegReader != null) {
-                    Surface jpegSurface = jpegReader.getSurface();
-                    if (jpegSurface != null && jpegSurface.isValid()) {
-                        outputConfigs.add(new OutputConfiguration(jpegSurface));
-                        surfaces.add(jpegSurface);
-                        AppLog.d(TAG, "Camera " + cameraId + " 拍照通道已挂入会话: " + jpegSize);
-                    }
+            // 拍照通道：只加进会话，<b>不加进预览请求</b> ——
+            // 每一帧都往 JPEG 编一遍是没有意义的开销，按下快门时才单发一次。
+            if (jpegReader != null) {
+                Surface jpegSurface = jpegReader.getSurface();
+                if (jpegSurface != null && jpegSurface.isValid()) {
+                    outputConfigs.add(new OutputConfiguration(jpegSurface));
+                    surfaces.add(jpegSurface);
+                    AppLog.d(TAG, "Camera " + cameraId + " 拍照通道已挂入会话: " + jpegSize);
                 }
             }
 
@@ -1957,21 +1879,6 @@ public class SingleCamera {
             StallWatch.bufferLost(cameraId, describeTarget(target));
         }
     };
-
-    /**
-     * 立即停止当前会话的 repeating request，防止帧继续推到即将销毁的 Surface。
-     * 用于悬浮窗 dismiss 前调用，避免 queueBuffer: BufferQueue has been abandoned 刷屏。
-     */
-    public void stopRepeatingNow() {
-        if (captureSession != null) {
-            try {
-                captureSession.stopRepeating();
-                AppLog.d(TAG, "Camera " + cameraId + " stopRepeating (surface about to be removed)");
-            } catch (Exception e) {
-                // 忽略
-            }
-        }
-    }
 
     public void recreateSession() {
         recreateSession(false);
@@ -2506,7 +2413,6 @@ public class SingleCamera {
             isReconnecting = false;
             openInFlight = isOpening && cameraDevice == null;
             isOpening = false;
-            deferSessionCreation = false;
             stopHealthMonitor();
 
             // 取消待处理的重连、会话重建（防止关了之后还去 createCaptureSession）
@@ -2656,32 +2562,6 @@ public class SingleCamera {
 
 
     /**
-     * 手动触发重连（重置重连计数）
-     */
-    public void reconnect() {
-        // 如果不是主实例，不执行重连操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping reconnect");
-            return;
-        }
-        synchronized (reconnectLock) {
-            AppLog.d(TAG, "Camera " + cameraId + " manual reconnect requested (PRIMARY instance)");
-            
-            // 取消所有待执行的重连任务
-            if (reconnectRunnable != null && backgroundHandler != null) {
-                backgroundHandler.removeCallbacks(reconnectRunnable);
-                reconnectRunnable = null;
-            }
-            
-            reconnectAttempts = 0;
-            shouldReconnect = true;
-            isReconnecting = false;
-        }
-        closeCamera();
-        openCamera();
-    }
-
-    /**
      * 检查摄像头是否已连接
      */
     public boolean isConnected() {
@@ -2695,65 +2575,6 @@ public class SingleCamera {
 
     public void clearTaken() {
         takenByOthers = false;
-    }
-
-    /**
-     * 生命周期：暂停摄像头（App退到后台时调用）
-     * 暂停时不会触发自动重连，因为是主动暂停
-     */
-    public void pauseByLifecycle() {
-        // 如果不是主实例，不执行暂停操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping pauseByLifecycle");
-            return;
-        }
-        
-        synchronized (reconnectLock) {
-            AppLog.d(TAG, "Camera " + cameraId + " paused by lifecycle (PRIMARY instance)");
-            isPausedByLifecycle = true;
-            shouldReconnect = false;  // 禁用自动重连，因为是主动暂停
-            isReconnecting = false;  // 清除重连状态
-            
-            // 取消所有待执行的重连任务
-            if (reconnectRunnable != null && backgroundHandler != null) {
-                backgroundHandler.removeCallbacks(reconnectRunnable);
-                reconnectRunnable = null;
-            }
-        }
-        closeCamera();
-    }
-
-    /**
-     * 生命周期：恢复摄像头（App返回前台时调用）
-     * 如果摄像头之前是暂停状态，会自动重新打开
-     */
-    public void resumeByLifecycle() {
-        // 如果不是主实例，不执行恢复操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping resumeByLifecycle");
-            return;
-        }
-        
-        boolean shouldOpen = false;
-        synchronized (reconnectLock) {
-            AppLog.d(TAG, "Camera " + cameraId + " resume by lifecycle (PRIMARY instance)");
-            if (isPausedByLifecycle) {
-                isPausedByLifecycle = false;
-                reconnectAttempts = 0;  // 重置重连计数
-                shouldReconnect = true;  // 启用自动重连
-                isReconnecting = false;  // 清除重连状态
-                shouldOpen = true;
-                
-                // 取消所有待执行的重连任务
-                if (reconnectRunnable != null && backgroundHandler != null) {
-                    backgroundHandler.removeCallbacks(reconnectRunnable);
-                    reconnectRunnable = null;
-                }
-            }
-        }
-        if (shouldOpen) {
-            openCamera();
-        }
     }
 
     /**
@@ -3325,14 +3146,7 @@ public class SingleCamera {
         }
         return false;
     }
-    
-    /**
-     * 获取当前请求构建器（用于外部调试）
-     */
-    public CaptureRequest.Builder getCurrentRequestBuilder() {
-        return currentRequestBuilder;
-    }
-    
+
     /**
      * 从 CaptureResult 读取相机实际使用的参数
      */
