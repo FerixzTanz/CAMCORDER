@@ -365,6 +365,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setCustomSdCardPath(null);
             appConfig.setStorageLocation(AppConfig.STORAGE_INTERNAL);
         }
+        // 盘的探测结果有 5 秒缓存：不清的话，回到主界面时状态条还写着换之前那个盘的余量
+        StorageHelper.clearCache();
         pref.setValue(value);
         pref.setSummary(pref.getEntry());
         toast(getString(R.string.msg_storage_changed, pref.getEntry()));
@@ -936,10 +938,6 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_gpu_fisheye_video", appConfig.isGpuFisheyeVideo(),
                 appConfig::setGpuFisheyeVideo);
 
-        // 原厂功能拿走相机时让不让路。默认关：先照常拿相机，把争用过程记进黑匣子（CameraContention）
-        bindSwitch("pref_camera_yield", appConfig.isCameraYieldEnabled(),
-                appConfig::setCameraYieldEnabled);
-
         onClick("pref_repair_mp4", pref -> {
             if (getActivity() == null) {
                 return;
@@ -948,6 +946,16 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             boolean recording = getActivity() instanceof MainActivity
                     && ((MainActivity) getActivity()).isCurrentlyRecording();
             com.kooo.evcam.repair.Mp4RepairFlow.start(getActivity(), recording);
+        });
+
+        // 归档：把录像、照片、日志从录像盘搬到另一个盘（项目所有者用 Type-C 固态盘统一管理）
+        onClick("pref_archive", pref -> {
+            if (getActivity() == null) {
+                return;
+            }
+            boolean recording = getActivity() instanceof MainActivity
+                    && ((MainActivity) getActivity()).isCurrentlyRecording();
+            com.kooo.evcam.repair.ArchiveFlow.start(getActivity(), recording);
         });
 
     }

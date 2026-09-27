@@ -197,8 +197,8 @@ public class MultiCameraManager {
      * 这一层只看有没有帧，不看任何状态标志。</p>
      */
     private void checkLiveness() {
-        if (cameras.isEmpty() || CameraYield.shouldYield()) {
-            // 原厂功能拿着相机时不算卡：让路（平台笔记 §3.1），放开了再接
+        if (cameras.isEmpty() || CameraTaken.othersHold()) {
+            // 别的程序拿着相机时不算卡：重开只会失败，它放开时 retryTaken 会接
             return;
         }
         long now = android.os.SystemClock.uptimeMillis();
@@ -383,6 +383,52 @@ public class MultiCameraManager {
         void onWriteStalled(long stalledMs);
     }
 
+    /** 录着的一路被相机服务断开了（别的程序拿走了相机）。 */
+    public interface CameraLostCallback {
+        void onCameraLost(String cameraId);
+    }
+
+    private CameraLostCallback cameraLostCallback;
+
+    public void setCameraLostCallback(CameraLostCallback callback) {
+        this.cameraLostCallback = callback;
+    }
+
+    /**
+     * 录着的一路被相机服务断开了：立刻停这一段，不等 15 秒看门狗。
+     *
+     * <p>2026-09-27 实测：车机原生功能拿走相机后我们几毫秒内被断开，之后每次重开都失败，
+     * 直到它放开（一次 45 秒）。以前要等看门狗发现「18 秒没新数据」才停段，白等这一段。
+     * 停了之后和写不进文件一样，由主界面等环视恢复再自动接回（{@link CameraTaken}）。</p>
+     */
+    private void onRecordingCameraLost(String cameraId) {
+        if (!isRecording || writeStallReported) {
+            return;
+        }
+        String key = null;
+        for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
+            if (entry.getValue().getCameraId().equals(cameraId)) {
+                key = entry.getKey();
+                break;
+            }
+        }
+        if (key == null || !(recorders.containsKey(key) || codecRecorders.containsKey(key))) {
+            return;
+        }
+        writeStallReported = true;
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("录像的相机 " + cameraId + "（" + key
+                + "）被相机服务断开：立刻停这一段，等接回；别的程序占着 " + CameraTaken.describe());
+        mainHandler.post(() -> {
+            if (cameraLostCallback != null) {
+                cameraLostCallback.onCameraLost(cameraId);
+                return;
+            }
+            stopRecording();
+            com.kooo.evcam.CameraForegroundService.stop(context);
+            com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(context, false);
+        });
+    }
+
     /** 存储检查看哪个目录：录像实际写进的那个（换过盘就是新盘）；中转写入时看最终目录。 */
     private File guardedVideoDir() {
         File actual = StorageHelper.lastRecordingDir();
@@ -517,6 +563,7 @@ public class MultiCameraManager {
         timestampUpdateCallback = newTimestamp -> { };
         storageFullCallback = null;
         writeStallCallback = null;
+        cameraLostCallback = null;
         AppLog.i(TAG, "主界面已离开，回调换成空实现，录制管线继续 recording=" + isRecording);
     }
 
@@ -804,6 +851,10 @@ public class MultiCameraManager {
                 AppLog.e(TAG, "Callback: Camera " + cameraId + " error: " + errorCode + " - " + errorMsg);
                 if (statusCallback != null) {
                     statusCallback.onCameraStatusUpdate(cameraId, STATUS_ERROR_PREFIX + errorCode);
+                }
+                if (errorCode == -4) {
+                    // 相机服务把这一路断开了（onDisconnected）：录着的话立刻停段
+                    onRecordingCameraLost(cameraId);
                 }
 
                 // 如果在等待会话配置期间发生错误，减少期望计数（线程安全处理）
@@ -2700,7 +2751,7 @@ public class MultiCameraManager {
      * @return 需要重新打开的摄像头数量
      */
     public int checkAndRepairCameras() {
-        if (repairSuppressed || CameraYield.shouldYield()) {
+        if (repairSuppressed || CameraTaken.othersHold()) {
             return 0;
         }
         int disconnectedCount = 0;
@@ -2722,21 +2773,23 @@ public class MultiCameraManager {
     }
 
     /**
-     * 原厂功能放开相机了：把让路时断掉的、该开着的接回来（{@link CameraYield} 在主线程调）。
+     * 别的程序放开了相机、或者访问优先级变了：把被拿走的、该开着的立刻接回来
+     * （{@link CameraTaken} 在主线程调）。
      */
-    public void resumeAfterYield(String releasedCameraId) {
+    public void retryTaken(String why) {
         StringBuilder which = new StringBuilder();
         for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
             SingleCamera camera = entry.getValue();
-            if (camera.isYieldedForOthers() || (camera.wantsFrames() && !camera.isConnected())) {
-                camera.clearYield();
+            if (camera.isTakenByOthers() || (camera.wantsFrames() && !camera.isConnected())) {
+                camera.clearTaken();
                 camera.forceReopen();
                 which.append(which.length() > 0 ? ", " : "")
                         .append(entry.getKey()).append("(").append(camera.getCameraId()).append(")");
             }
         }
-        com.kooo.evcam.blackbox.BlackBox.noteImportant("别的程序放开了相机 " + releasedCameraId + "，接回: "
-                + (which.length() == 0 ? "没有要接的" : which));
+        if (which.length() > 0) {
+            com.kooo.evcam.blackbox.BlackBox.noteImportant(why + "，接回: " + which);
+        }
     }
 
     /**

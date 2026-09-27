@@ -206,6 +206,7 @@
     <string name="rec_reason_no_data">开始录像后一直没收到画面</string>
     <string name="rec_reason_unknown">录制器自己停了</string>
     <string name="rec_reason_write_stalled">录像写不进文件</string>
+    <string name="rec_reason_camera_lost">相机被别的程序拿走了</string>
     <string name="msg_recording_auto_started">已自动开始录制</string>
     <string name="msg_resume_failed">相机未就绪，恢复录制失败</string>
     <string name="msg_auto_record_failed">相机未就绪，自动录制失败</string>
@@ -423,6 +424,7 @@
     <string name="status_storage_free">U 盘 %1$s 可用</string>
     <string name="status_storage_none">未检测到 U 盘</string>
     <string name="status_recording_fallback">录像已改写到 %1$s（%2$s 不可用）</string>
+    <string name="status_camera_taken">环视被车机占用，放开后自动继续录像</string>
     <string name="status_internal_storage">内置存储</string>
     <string name="nav_group_switches">开关</string>
 
@@ -648,7 +650,7 @@
     <string name="dev_gpu_fisheye_video_summary">视频回看里环视那一格的鱼眼校正改用 GPU 逐像素计算。只换算法，开不开还看鱼眼校正按钮。下次打开视频回看时生效</string>
     <string name="dev_repair_mp4_title">修复未封口的视频</string>
     <string name="dev_repair_mp4_summary">断电时正在录的那一段没有索引，播放器打不开。按同一路相机完好片段的参数补一个索引回去，文件名不变</string>
-    <string name="dev_camera_yield_title">相机让路（试验）</string>
-    <string name="dev_camera_yield_summary">原厂功能拿走相机时不重连，等它放开再接。默认关：先照常拿相机，把争用过程记进黑匣子</string>
+    <string name="dev_archive_title">归档到固态盘</string>
+    <string name="dev_archive_summary">把录像、照片、日志从录像盘搬到另一个盘，统一管理。录制中不能归档</string>
     <string name="dev_note">「视频流配置」里的「自定义」也只在这里可选。在「关于」里点「安全须知」可以关掉开发者选项，关掉后本区隐藏。</string>
 </resources>

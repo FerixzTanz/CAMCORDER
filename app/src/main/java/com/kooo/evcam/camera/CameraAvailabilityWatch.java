@@ -55,12 +55,12 @@ public final class CameraAvailabilityWatch {
         if (cm == null) {
             return;
         }
-        CameraYield.init(context);
         callback = new CameraManager.AvailabilityCallback() {
             @Override
             public void onCameraAccessPrioritiesChanged() {
-                // 前后台切换时相机服务重排优先级（API 29+）：记一行，看它和争用对不对得上
+                // 前后台切换时相机服务重排优先级（API 29+）：记一行；别的程序占着相机的话趁机试一次
                 CameraContention.prioritiesChanged();
+                CameraTaken.prioritiesChanged();
             }
 
 
@@ -91,13 +91,13 @@ public final class CameraAvailabilityWatch {
         boolean ours = weHoldOrOpen(cameraId);
         SINCE.put(cameraId, SystemClock.elapsedRealtime());
         OURS.put(cameraId, ours);
-        // 别的程序拿走了相机：争用日志记一行；让不让路看 CameraYield（开发者选项，默认不让）
+        // 别的程序拿走了相机：争用日志记一行；重开的节奏和接回由 CameraTaken 管
         if (available) {
             CameraContention.othersReleased(cameraId);
-            CameraYield.othersReleased(cameraId);
+            CameraTaken.othersReleased(cameraId);
         } else if (!ours) {
             CameraContention.othersTook(cameraId);
-            CameraYield.othersTook(cameraId);
+            CameraTaken.othersTook(cameraId);
         }
         if (available) {
             BlackBox.noteImportant("相机服务: " + cameraId + " 空闲" + (before == null ? "（初始状态）" : ""));

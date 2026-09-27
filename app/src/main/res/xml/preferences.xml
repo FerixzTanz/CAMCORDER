@@ -373,15 +373,15 @@
             android:title="@string/dev_gpu_fisheye_video_title"
             android:summary="@string/dev_gpu_fisheye_video_summary" />
 
-        <SwitchPreferenceCompat
-            android:key="pref_camera_yield"
-            android:title="@string/dev_camera_yield_title"
-            android:summary="@string/dev_camera_yield_summary" />
-
         <Preference
             android:key="pref_repair_mp4"
             android:title="@string/dev_repair_mp4_title"
             android:summary="@string/dev_repair_mp4_summary" />
+
+        <Preference
+            android:key="pref_archive"
+            android:title="@string/dev_archive_title"
+            android:summary="@string/dev_archive_summary" />
 
         <Preference
             android:key="pref_developer_note"

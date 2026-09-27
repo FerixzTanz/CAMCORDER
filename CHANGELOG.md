@@ -7,6 +7,23 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.57.0-beta] - 2026-09-27
+
+- **Recording keeps going around the car's own camera use.** On this head unit only one of
+  the cabin and surround cameras can be open at a time, and the camera service decides by
+  process priority, so yielding never helped: the yield option (1.54.0–1.56.0) is gone.
+  Now, when the camera service disconnects a recording camera, the segment stops at once
+  instead of after the 15-second write watchdog; while another app holds a camera we retry
+  only every 30 s; the moment it lets go (or our priority changes, e.g. the main screen comes
+  back) we reconnect and recording resumes by itself. The status bar says so meanwhile.
+  These interruptions no longer count against the auto-resume budget.
+- Time watermark is on by default.
+- Status bar: after switching the recording drive in Settings → Storage, the free-space cell
+  kept showing the previous drive until the next recording started.
+- Developer options: **Archive to another drive** moves recordings, photos and diagnostics
+  reports from the recording drive to another mounted drive (app logs are copied), verifying
+  sizes and keeping file times. Not while recording.
+
 ## [1.56.0-alpha] - 2026-09-27
 
 - **Our own camera reopen no longer counts as "another app".** A reconnect or forced reopen

@@ -60,7 +60,6 @@ public class AppConfig {
     private static final String KEY_REARVIEW_FISHEYE = "rearview_fisheye";        // 鱼眼校正开关
     private static final String KEY_PHOTO_FISHEYE = "photo_fisheye";              // 图片回看的鱼眼校正开关
     private static final String KEY_RAW_FRAME_DUMP = "raw_frame_dump";            // 拍照时另存原始整帧（工程模式）
-    private static final String KEY_CAMERA_YIELD = "camera_yield";                // 原厂功能拿走相机时让路（开发者选项，默认关）
     private static final String KEY_GPU_FISHEYE_PREVIEW = "gpu_fisheye_preview";  // 预览鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_GPU_FISHEYE_VIDEO = "gpu_fisheye_video";      // 视频回看鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_PHOTO_FISHEYE_FOV = "photo_fisheye_fov";      // 图片回看的校正视野
@@ -763,20 +762,6 @@ public class AppConfig {
     }
 
     /**
-     * 原厂功能拿走相机时让不让路（{@code CameraYield}）。
-     *
-     * <p>默认关（项目所有者 2026-09-27）：车机原生后座画面逻辑上不该和环视冲突，先照常拿相机、
-     * 把争用过程记进黑匣子（{@code CameraContention}）。开着时：别的程序占着相机就不重连，等它放开。</p>
-     */
-    public boolean isCameraYieldEnabled() {
-        return prefs.getBoolean(KEY_CAMERA_YIELD, false);
-    }
-
-    public void setCameraYieldEnabled(boolean on) {
-        prefs.edit().putBoolean(KEY_CAMERA_YIELD, on).apply();
-    }
-
-    /**
      * 主界面环视预览的鱼眼校正走 GPU 逐像素（{@code PreviewDewarp}），而不是分格近似。
      *
      * <p>开发者选项：相机画面要先进应用自己的 GL 再显示，还没在车上验证过。锁在开发者模式后面，
@@ -1423,8 +1408,8 @@ public class AppConfig {
     }
 
     public boolean isTimestampWatermarkEnabled() {
-        // 默认关闭时间角标
-        return prefs.getBoolean(KEY_TIMESTAMP_WATERMARK_ENABLED, false);
+        // 默认开启（项目所有者 2026-09-27 定；以前默认关）
+        return prefs.getBoolean(KEY_TIMESTAMP_WATERMARK_ENABLED, true);
     }
 
     // ==================== 视频编码器配置相关方法 ====================

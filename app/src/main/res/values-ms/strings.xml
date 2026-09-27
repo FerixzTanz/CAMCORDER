@@ -197,6 +197,7 @@
     <string name="rec_reason_no_data">tiada gambar diterima selepas rakaman bermula</string>
     <string name="rec_reason_unknown">perakam berhenti sendiri</string>
     <string name="rec_reason_write_stalled">tiada data ditulis ke fail</string>
+    <string name="rec_reason_camera_lost">kamera diambil oleh apl lain</string>
     <string name="msg_recording_auto_started">Rakaman bermula secara automatik</string>
     <string name="msg_resume_failed">Kamera belum sedia — rakaman tidak dapat disambung semula</string>
     <string name="msg_auto_record_failed">Kamera belum sedia — rakaman automatik tidak bermula</string>
@@ -415,6 +416,7 @@
     <string name="status_storage_free">USB %1$s kosong</string>
     <string name="status_storage_none">Tiada pemacu USB</string>
     <string name="status_recording_fallback">Merakam ke %1$s (%2$s tidak tersedia)</string>
+    <string name="status_camera_taken">Kamera sekeliling digunakan oleh kereta; rakaman disambung apabila dilepaskan</string>
     <string name="status_internal_storage">storan dalaman</string>
     <string name="nav_group_switches">Suis</string>
 
@@ -638,7 +640,7 @@
     <string name="dev_gpu_fisheye_video_summary">Paparan sekeliling dalam main semula video dibetulkan piksel demi piksel dengan GPU. Ini memilih kaedah sahaja; butang Luruskan masih menghidupkan dan mematikan pembetulan. Berkuat kuasa apabila main semula video dibuka lagi</string>
     <string name="dev_repair_mp4_title">Baiki video tanpa indeks</string>
     <string name="dev_repair_mp4_summary">Klip yang terputus kerana bekalan kuasa hilang tiada indeks, jadi tiada apa boleh membukanya. Indeks dibina semula daripada klip sihat kamera yang sama, nama fail kekal</string>
-    <string name="dev_camera_yield_title">Beri laluan kamera (uji kaji)</string>
-    <string name="dev_camera_yield_summary">Jangan sambung semula semasa apl lain memegang kamera; sambung semula apabila ia melepaskannya. Tutup secara lalai: kekalkan kamera dan catat persaingan</string>
+    <string name="dev_archive_title">Arkib ke pemacu lain</string>
+    <string name="dev_archive_summary">Pindahkan rakaman, foto dan log dari pemacu rakaman ke pemacu lain. Bukan semasa merakam</string>
     <string name="dev_note">“Tersuai” dalam Profil strim hanya tersedia di sini. Ketik “Notis keselamatan” dalam Perihal untuk mematikan pilihan pembangun; bahagian ini kemudian tersembunyi.</string>
 </resources>

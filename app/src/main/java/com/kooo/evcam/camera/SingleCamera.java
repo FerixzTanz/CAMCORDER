@@ -171,8 +171,8 @@ public class SingleCamera {
     private int reconnectAttempts = 0;  // 重连尝试次数
     private static final long RECONNECT_DELAY_MS = 2000;  // 重连延迟（毫秒）
     private long reconnectDelayFloorMs = 0;
-    /** 因为别的程序拿着相机而没重连（CameraYield）；它放开后 MultiCameraManager 会来接。 */
-    private volatile boolean yieldedForOthers;
+    /** 被别的程序拿走了（{@link CameraTaken}）：只慢慢试；它放开或我们回到前台时 MultiCameraManager 会来接。 */
+    private volatile boolean takenByOthers;
     private Runnable reconnectRunnable;  // 重连任务
     private boolean isPausedByLifecycle = false;  // 是否因生命周期暂停（用于区分主动关闭和系统剥夺）
     private boolean isReconnecting = false;  // 是否正在重连中（防止多个重连任务同时运行）
@@ -1216,22 +1216,22 @@ public class SingleCamera {
                 return;
             }
 
-            // 原厂功能拿着相机（平台笔记 §3.1）：不重连、不去抢，等它放开再接
-            if (CameraYield.shouldYield()) {
-                if (!yieldedForOthers) {
-                    yieldedForOthers = true;
-                    com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 让路：别的程序在用相机 "
-                            + CameraYield.describe() + "，不重连，等它放开再接");
-                }
-                isReconnecting = false;
-                return;
+            // 别的程序拿着相机（CameraTaken）：每次重开都会失败，只每 30 秒试一次；
+            // 它放开或我们回到前台时 MultiCameraManager.retryTaken 会立刻来接
+            boolean held = CameraTaken.othersHold();
+            if (held && !takenByOthers) {
+                takenByOthers = true;
+                com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 被拿走：别的程序在用相机 "
+                        + CameraTaken.describe() + "，每 " + (CameraTaken.RETRY_WHILE_HELD_MS / 1000)
+                        + " 秒试一次，它放开或我们回到前台就立刻接");
             }
 
             reconnectAttempts++;
             isReconnecting = true;
             // 只计数不逐条记：一路相机被反复重连时，这个数会在汇总里冒出来
             com.kooo.evcam.blackbox.BlackBox.count("相机 " + cameraId + " 自动重连");
-            long delayMs = Math.max(getReconnectDelayMs(reconnectAttempts), reconnectDelayFloorMs);
+            long delayMs = CameraTaken.reconnectDelayMs(held,
+                    Math.max(getReconnectDelayMs(reconnectAttempts), reconnectDelayFloorMs));
             AppLog.d(TAG, "Camera " + cameraId + " scheduling reconnect attempt " + reconnectAttempts + " in " + delayMs + "ms");
 
             // 取消之前的重连任务
@@ -1302,6 +1302,7 @@ public class SingleCamera {
                 reconnectAttempts = 0;  // 重置重连计数
                 isReconnecting = false;  // 重连成功，清除重连标志
                 reconnectDelayFloorMs = 0;
+                takenByOthers = false;
                 AppLog.d(TAG, "Camera " + cameraId + " opened");
                 if (callback != null) {
                     callback.onCameraOpened(cameraId);
@@ -2663,12 +2664,6 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping reconnect");
             return;
         }
-        if (CameraYield.shouldYield()) {
-            yieldedForOthers = true;
-            AppLog.i(TAG, "Camera " + cameraId + " reconnect skipped: yielding to " + CameraYield.describe());
-            return;
-        }
-        
         synchronized (reconnectLock) {
             AppLog.d(TAG, "Camera " + cameraId + " manual reconnect requested (PRIMARY instance)");
             
@@ -2693,13 +2688,13 @@ public class SingleCamera {
         return cameraDevice != null;
     }
 
-    /** 是不是因为让路才没接回来（见 CameraYield）。 */
-    public boolean isYieldedForOthers() {
-        return yieldedForOthers;
+    /** 是不是被别的程序拿走了、正在慢慢试（见 {@link CameraTaken}）。 */
+    public boolean isTakenByOthers() {
+        return takenByOthers;
     }
 
-    public void clearYield() {
-        yieldedForOthers = false;
+    public void clearTaken() {
+        takenByOthers = false;
     }
 
     /**
@@ -2774,12 +2769,6 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping forceReopen");
             return;
         }
-        if (CameraYield.shouldYield()) {
-            yieldedForOthers = true;
-            AppLog.i(TAG, "Camera " + cameraId + " force reopen skipped: yielding to " + CameraYield.describe());
-            return;
-        }
-
         final CameraCaptureSession oldSession;
         final CameraDevice oldDevice;
         final Handler handler;

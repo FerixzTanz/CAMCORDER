@@ -302,6 +302,11 @@ public class MainActivity extends AppCompatActivity {
             new com.kooo.evcam.recording.RecordingStops.ResumeBudget();
     /** 等环视恢复的那个检查；null 表示没在等。 */
     private Runnable surroundResumeCheck;
+    /** 这次接回要不要计入自动恢复额度：相机被别的程序拿走的那种不计（见 onRecordingInterrupted）。 */
+    private boolean resumeCounts = true;
+    /** 状态条最右那一格的正文（合成流识别结果）；环视被拿走时那一格临时改写成提示。 */
+    private String compositeInfoText = "";
+    private boolean cameraTakenHint;
     private final android.os.Handler surroundResumeHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
     /** 多久看一次环视回来了没有。 */
@@ -1412,6 +1417,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 可能刚在设置里换了边
         applyActionRailSide();
+        // 可能刚在设置里换了录像盘：状态条的余量按新盘重算（探测缓存已在设置里清掉）
+        updateStatusLine();
         recordingLayout.setVisibility(View.VISIBLE);
         fragmentContainer.setVisibility(View.GONE);
     }
@@ -1958,6 +1965,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             nextStopReason = com.kooo.evcam.recording.RecordingStops.Reason.WRITE_STALLED;
+            stopRecording();
+        }));
+
+        // 录着的那一路相机被别的程序拿走了（车机原生功能）：立刻停这一段，不等看门狗；
+        // 状态条说明原因，它放开、相机接回之后自动继续（CameraTaken）
+        cameraManager.setCameraLostCallback(cameraId -> runOnUiThread(() -> {
+            if (!isRecording) {
+                return;
+            }
+            nextStopReason = com.kooo.evcam.recording.RecordingStops.Reason.CAMERA_LOST;
             stopRecording();
         }));
 
@@ -2699,22 +2716,28 @@ public class MainActivity extends AppCompatActivity {
      * 开始等环视恢复 —— 不等主界面显示，环视一出画面就接回去。</p>
      */
     private void onRecordingInterrupted(com.kooo.evcam.recording.RecordingStops.Reason reason) {
+        boolean lost = reason == com.kooo.evcam.recording.RecordingStops.Reason.CAMERA_LOST;
         String why = getString(reason == com.kooo.evcam.recording.RecordingStops.Reason.NO_DATA
                 ? R.string.rec_reason_no_data
                 : reason == com.kooo.evcam.recording.RecordingStops.Reason.WRITE_STALLED
-                ? R.string.rec_reason_write_stalled : R.string.rec_reason_unknown);
+                ? R.string.rec_reason_write_stalled
+                : lost ? R.string.rec_reason_camera_lost : R.string.rec_reason_unknown);
         interruptedAtMs = android.os.SystemClock.elapsedRealtime();
         com.kooo.evcam.recording.RecordingIntent intent =
                 com.kooo.evcam.recording.RecordingIntent.current();
         // 总原则（规格 §0）：用户开着录像，App 就该一直录着 —— 不管是手动开的还是自动录制开的。
         // shouldRestore(true) 只剩三条：这一趟录起来过、不是人停的、没连着失败太多次
         boolean wanted = intent.shouldRestore(true);
-        if (wanted && resumeBudget.allows()) {
+        // 相机被拿走不算我们的失败：额度防的是「接回去又立刻停」的循环，这一种要等它放开才接，
+        // 不会循环。不豁免的话，一分钟内开三次车机的座舱画面，录像就再也不自动接了
+        resumeCounts = !lost;
+        if (wanted && (lost || resumeBudget.allows())) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("录像被打断（" + reason
                     + "），等环视恢复后自动接回（已试 " + resumeBudget.attempts() + " 次）");
             Toast.makeText(this, getString(R.string.msg_recording_interrupted_resuming, why),
                     Toast.LENGTH_LONG).show();
             armSurroundResume();
+            showCameraTakenHint(lost);
         } else if (wanted) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("录像被打断（" + reason
                     + "），自动恢复已连续失败 " + resumeBudget.attempts() + " 次，不再尝试");
@@ -2758,8 +2781,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (surroundHealthy()) {
                     surroundResumeCheck = null;
+                    showCameraTakenHint(false);
                     long gone = (android.os.SystemClock.elapsedRealtime() - interruptedAtMs) / 1000;
-                    resumeBudget.noteAttempt();
+                    if (resumeCounts) {
+                        resumeBudget.noteAttempt();
+                    }
                     intent.noteRestoreAttempt();
                     com.kooo.evcam.blackbox.BlackBox.noteImportant("环视正常了，自动接回录像（断了 "
                             + gone + " 秒，第 " + resumeBudget.attempts() + " 次）");
@@ -2776,6 +2802,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void disarmSurroundResume() {
+        showCameraTakenHint(false);
         if (surroundResumeCheck != null) {
             surroundResumeHandler.removeCallbacks(surroundResumeCheck);
             surroundResumeCheck = null;
@@ -4598,14 +4625,30 @@ public class MainActivity extends AppCompatActivity {
 
     /** 把合成流的识别结果显示在画面底部，方便用户和排查问题时确认。 */
     private void updateCompositeInfoOverlay(String text) {
-        if (tvCompositeInfo == null || text == null) {
+        if (text == null) {
             return;
         }
-        String oneLine = text.trim().replace('\n', ' ');
-        runOnUiThread(() -> {
-            tvCompositeInfo.setText(oneLine);
-            tvCompositeInfo.setVisibility(oneLine.isEmpty() ? View.INVISIBLE : View.VISIBLE);
-        });
+        compositeInfoText = text.trim().replace('\n', ' ');
+        runOnUiThread(this::renderCompositeInfoCell);
+    }
+
+    /** 状态条最右那一格：环视被车机占用时写这件事，否则是合成流的识别结果。 */
+    private void renderCompositeInfoCell() {
+        if (tvCompositeInfo == null) {
+            return;
+        }
+        String line = cameraTakenHint ? getString(R.string.status_camera_taken) : compositeInfoText;
+        tvCompositeInfo.setText(line);
+        tvCompositeInfo.setVisibility(line.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+    }
+
+    /** 环视被别的程序拿走、正在等它放开：状态条上说一声，接回后撤掉。 */
+    private void showCameraTakenHint(boolean on) {
+        if (cameraTakenHint == on) {
+            return;
+        }
+        cameraTakenHint = on;
+        renderCompositeInfoCell();
     }
 
 

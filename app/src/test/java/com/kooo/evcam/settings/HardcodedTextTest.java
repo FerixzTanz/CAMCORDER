@@ -71,7 +71,8 @@ public class HardcodedTextTest {
         // ---- 纯开发者工具：入口都在开发者选项里 ----
         String developer = "开发者工具，只在开发者选项里出现";
         for (String f : new String[]{
-                "settings/PermissionsPreferenceFragment.java", "repair/Mp4RepairFlow.java"}) {
+                "settings/PermissionsPreferenceFragment.java", "repair/Mp4RepairFlow.java",
+                "repair/ArchiveFlow.java"}) {
             JAVA_ALLOWED.put(f, developer);
         }
         JAVA_ALLOWED.put("StorageCleanupManager.java", "清理通知只在录到内部存储时才发，而内部存储只有开发者能选");

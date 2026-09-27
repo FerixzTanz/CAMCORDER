@@ -197,6 +197,7 @@
     <string name="rec_reason_no_data">no picture arrived after recording started</string>
     <string name="rec_reason_unknown">the recorder stopped on its own</string>
     <string name="rec_reason_write_stalled">nothing was being written to the file</string>
+    <string name="rec_reason_camera_lost">the camera was taken by another app</string>
     <string name="msg_recording_auto_started">Recording started automatically</string>
     <string name="msg_resume_failed">Camera not ready — could not resume recording</string>
     <string name="msg_auto_record_failed">Camera not ready — automatic recording did not start</string>
@@ -414,6 +415,7 @@
     <string name="status_storage_free">USB %1$s free</string>
     <string name="status_storage_none">No USB drive</string>
     <string name="status_recording_fallback">Recording to %1$s (%2$s unavailable)</string>
+    <string name="status_camera_taken">Surround camera in use by the car; recording resumes when released</string>
     <string name="status_internal_storage">internal storage</string>
     <string name="nav_group_switches">Switches</string>
 
@@ -639,7 +641,7 @@
     <string name="dev_gpu_fisheye_video_summary">The surround view in video playback is corrected pixel by pixel on the GPU. This picks the method only; the Straighten button still turns correction on and off. Takes effect the next time video playback opens</string>
     <string name="dev_repair_mp4_title">Repair unfinalised videos</string>
     <string name="dev_repair_mp4_summary">A clip cut short by a power loss has no index, so nothing will open it. Rebuilds one using a healthy clip from the same camera, keeping the file name</string>
-    <string name="dev_camera_yield_title">Yield cameras (experimental)</string>
-    <string name="dev_camera_yield_summary">Do not reconnect while another app holds a camera; reconnect when it lets go. Off by default: keep the cameras and log the contention</string>
+    <string name="dev_archive_title">Archive to another drive</string>
+    <string name="dev_archive_summary">Move recordings, photos and logs from the recording drive to another drive. Not while recording</string>
     <string name="dev_note">“Custom” in Stream profile is only available here. Tap “Safety notice” in About to turn developer options off; this section then hides.</string>
 </resources>

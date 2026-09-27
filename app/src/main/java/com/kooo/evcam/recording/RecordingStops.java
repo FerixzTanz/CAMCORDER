@@ -29,6 +29,11 @@ public final class RecordingStops {
          * 2026-09-26 哨兵模式那一次就是这样，界面显示「录制中」两个小时，一个文件都没写。
          */
         WRITE_STALLED,
+        /**
+         * 录着的那一路相机被相机服务断开了：别的程序（车机原生功能）拿走了相机（2026-09-27 实测，
+         * 相机 1 和 2 同时只能开一路）。它放开、我们接回相机之后录像自动继续。
+         */
+        CAMERA_LOST,
         /** 录制器自己停了，没人告诉我们为什么。 */
         UNKNOWN,
     }
@@ -44,11 +49,13 @@ public final class RecordingStops {
      *   <li>熄屏 10 秒 —— 不在这一次的范围里，维持原来亮屏时接回的做法；</li>
      *   <li>存储满了 —— 环视好不好跟它无关，接回去也录不下；</li>
      *   <li>写不进文件 —— 重开一次录制就是换一个新的编码器、新的文件，常常就好了；</li>
+     *   <li>相机被拿走 —— 它放开、我们接回之后就接着录；</li>
      *   <li>其余 —— 都是相机那一侧的问题，环视回来了就接。</li>
      * </ul>
      */
     public static boolean resumesOnSurround(Reason reason) {
-        return reason == Reason.NO_DATA || reason == Reason.UNKNOWN || reason == Reason.WRITE_STALLED;
+        return reason == Reason.NO_DATA || reason == Reason.UNKNOWN || reason == Reason.WRITE_STALLED
+                || reason == Reason.CAMERA_LOST;
     }
 
     /**
