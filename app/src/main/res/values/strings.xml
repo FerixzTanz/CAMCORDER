@@ -557,9 +557,6 @@
     <string name="notif_channel_recording_desc">保持录制服务在后台运行</string>
     <string name="notif_background_title">在后台运行</string>
     <string name="notif_tap_to_return">点这里回到应用</string>
-    <string name="notif_channel_keepalive">保活服务</string>
-    <string name="notif_channel_keepalive_desc">维持应用后台运行</string>
-    <string name="notif_keepalive_text">保活服务运行中</string>
 
     <!-- 存储卷 -->
     <string name="storage_volume_desc">%1$s（剩余 %2$s / 共 %3$s）</string>

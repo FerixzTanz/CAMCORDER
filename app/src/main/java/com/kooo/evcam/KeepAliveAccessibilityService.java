@@ -1,15 +1,8 @@
 package com.kooo.evcam;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.os.Build;
 import android.view.accessibility.AccessibilityEvent;
-
-import androidx.core.app.NotificationCompat;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,8 +19,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class KeepAliveAccessibilityService extends AccessibilityService {
     private static final String TAG = "KeepAliveAccessibility";
-    private static final String CHANNEL_ID = "keep_alive_channel";
-    private static final int NOTIFICATION_ID = 9527;
     private static final long HEARTBEAT_INTERVAL_MS = 60000; // 60秒心跳
     
     private static KeepAliveAccessibilityService instance;
@@ -51,10 +42,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         }
 
         AppLog.d(TAG, "无障碍服务已启动（增强保活模式）");
-        
-        // 注意：辅助服务本身就是系统级服务，不需要前台通知也有最高优先级
-        // 前台通知由 CameraForegroundService 提供，避免重复通知
-        // startForegroundNotification();  // 已移除，减少重复通知
         
         // 启动心跳定时器
         startHeartbeat();
@@ -89,60 +76,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             AppLog.d(TAG, "TIME_TICK 广播已注销");
         } catch (Exception e) {
             AppLog.e(TAG, "注销 TIME_TICK 广播失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 创建前台通知
-     * 辅助服务配合前台通知可以获得最高的进程优先级
-     */
-    private void startForegroundNotification() {
-        try {
-            // 创建通知渠道（Android 8.0+）
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationChannel channel = new NotificationChannel(
-                        CHANNEL_ID,
-                        getString(R.string.notif_channel_keepalive),
-                        NotificationManager.IMPORTANCE_LOW  // 低重要性，不打扰用户
-                );
-                channel.setDescription(getString(R.string.notif_channel_keepalive_desc));
-                channel.enableLights(false);
-                channel.enableVibration(false);
-                channel.setSound(null, null);
-                channel.setShowBadge(false);
-                
-                NotificationManager manager = getSystemService(NotificationManager.class);
-                if (manager != null) {
-                    manager.createNotificationChannel(channel);
-                }
-            }
-            
-            // 创建点击通知时打开应用的 Intent
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent pendingIntent = PendingIntent.getActivity(
-                    this, 0, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-            
-            // 构建通知
-            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.ic_menu_camera)
-                    .setContentTitle(getString(R.string.app_name))
-                    .setContentText(getString(R.string.notif_keepalive_text))
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setOngoing(true)
-                    .setShowWhen(false)
-                    .setContentIntent(pendingIntent)
-                    .build();
-            
-            // 启动前台服务（辅助服务也支持 startForeground）
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForeground(NOTIFICATION_ID, notification);
-                AppLog.d(TAG, "前台通知已启动");
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "启动前台通知失败: " + e.getMessage(), e);
         }
     }
 
@@ -263,22 +196,5 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
      */
     public static boolean isRunning() {
         return isServiceRunning && instance != null;
-    }
-
-    /**
-     * 获取服务实例
-     */
-    public static KeepAliveAccessibilityService getInstance() {
-        return instance;
-    }
-    
-    /**
-     * 获取服务运行时长（分钟）
-     */
-    public static long getRunningMinutes() {
-        if (instance != null) {
-            return (System.currentTimeMillis() - instance.startTime) / 60000;
-        }
-        return 0;
     }
 }

@@ -51,20 +51,4 @@ public class KeepAliveManager {
         AppLog.d(TAG, "停止定时保活任务");
         WorkManager.getInstance(context).cancelUniqueWork(KEEP_ALIVE_WORK_NAME);
     }
-
-    /**
-     * 检查保活任务是否正在运行
-     */
-    public static boolean isKeepAliveWorkRunning(Context context) {
-        try {
-            return WorkManager.getInstance(context)
-                    .getWorkInfosForUniqueWork(KEEP_ALIVE_WORK_NAME)
-                    .get()
-                    .stream()
-                    .anyMatch(workInfo -> !workInfo.getState().isFinished());
-        } catch (Exception e) {
-            AppLog.e(TAG, "检查保活任务状态失败", e);
-            return false;
-        }
-    }
 }

@@ -548,9 +548,6 @@
     <string name="notif_channel_recording_desc">Keeps recording running in the background</string>
     <string name="notif_background_title">Running in the background</string>
     <string name="notif_tap_to_return">Tap to return to the app</string>
-    <string name="notif_channel_keepalive">Keep-alive service</string>
-    <string name="notif_channel_keepalive_desc">Keeps the app running in the background</string>
-    <string name="notif_keepalive_text">Keep-alive running</string>
 
     <!-- Storage volumes -->
     <string name="storage_volume_desc">%1$s (%2$s free of %3$s)</string>

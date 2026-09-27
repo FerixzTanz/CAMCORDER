@@ -547,9 +547,6 @@
     <string name="notif_channel_recording_desc">Mengekalkan rakaman berjalan di latar belakang</string>
     <string name="notif_background_title">Berjalan di latar belakang</string>
     <string name="notif_tap_to_return">Ketik untuk kembali ke apl</string>
-    <string name="notif_channel_keepalive">Perkhidmatan kekal hidup</string>
-    <string name="notif_channel_keepalive_desc">Mengekalkan apl berjalan di latar belakang</string>
-    <string name="notif_keepalive_text">Kekal hidup sedang berjalan</string>
 
     <!-- Volum storan -->
     <string name="storage_volume_desc">%1$s (%2$s kosong daripada %3$s)</string>
