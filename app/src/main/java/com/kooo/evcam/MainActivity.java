@@ -262,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
      * 到点就按「没收到画面」停掉（{@code RecordingStops.Reason.NO_DATA}）；
      * 停了之后接不接、还剩几次额度，由 {@link RecordingCoordinator} 判。</p>
      */
-private final android.os.Handler preparingHandler =
+    private final android.os.Handler preparingHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
 
     /** 状态条最右那一格的正文（合成流识别结果）；环视被拿走时那一格临时改写成提示。 */

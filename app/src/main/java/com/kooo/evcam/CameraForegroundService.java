@@ -37,9 +37,7 @@ public class CameraForegroundService extends Service {
     // 服务重启延迟时间
     private static final long RESTART_DELAY_MS = 1000;
 
-    private static final long CAMERA_REPAIR_INTERVAL_MS = 10000;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private Runnable cameraRepairRunnable;
 
     private static volatile boolean isForegroundReady = false;
     private static final java.util.List<Runnable> pendingReadyCallbacks = new java.util.ArrayList<>();
@@ -85,8 +83,6 @@ public class CameraForegroundService extends Service {
 
         // 前台服务起来了 = 我们的代码有机会运行了：按开机自启动的规矩恢复核心程序（规格 §1）
         com.kooo.evcam.recovery.Recovery.restore(this, "service-create");
-
-        startCameraRepairLoop();
     }
     
     /**
@@ -129,7 +125,6 @@ public class CameraForegroundService extends Service {
                 
         // 每次被启动都按开机自启动的规矩看一眼该恢复什么（例行的那种五分钟做一次）
         com.kooo.evcam.recovery.Recovery.restore(this, com.kooo.evcam.recovery.Recovery.WHY_ROUTINE);
-        startCameraRepairLoop();
 
         // 从Intent获取通知内容，如果没有则使用默认内容
         String title = intent != null ? intent.getStringExtra("title") : null;
@@ -231,7 +226,6 @@ public class CameraForegroundService extends Service {
         blackBoxHandler.removeCallbacks(blackBoxTick);
         AppLog.d(TAG, "Service destroyed - 尝试重启...");
         isForegroundReady = false;
-        stopCameraRepairLoop();
 
         // 服务被杀时，发送延迟重启广播 —— 用户主动退出时不发：这正是以前「退不掉」的一条路
         if (!UserExit.isExited(this)) {
@@ -241,34 +235,6 @@ public class CameraForegroundService extends Service {
         super.onDestroy();
     }
 
-    private void startCameraRepairLoop() {
-        stopCameraRepairLoop();
-        cameraRepairRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    com.kooo.evcam.camera.MultiCameraManager cameraManager = com.kooo.evcam.camera.CameraManagerHolder.getInstance().getCameraManager();
-                    if (cameraManager != null) {
-                        int repaired = cameraManager.checkAndRepairCameras();
-                        if (repaired > 0) {
-                            AppLog.w(TAG, "Camera repair triggered for " + repaired + " cameras");
-                        }
-                    }
-                } catch (Exception e) {
-                    AppLog.e(TAG, "Camera repair loop error: " + e.getMessage(), e);
-                }
-                mainHandler.postDelayed(this, CAMERA_REPAIR_INTERVAL_MS);
-            }
-        };
-        mainHandler.postDelayed(cameraRepairRunnable, CAMERA_REPAIR_INTERVAL_MS);
-    }
-
-    private void stopCameraRepairLoop() {
-        if (cameraRepairRunnable != null) {
-            mainHandler.removeCallbacks(cameraRepairRunnable);
-            cameraRepairRunnable = null;
-        }
-    }
     
     /**
      * 当用户从最近任务中滑动清除应用时调用

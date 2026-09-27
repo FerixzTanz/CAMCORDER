@@ -45,7 +45,6 @@ public class MultiCameraManager {
     private int maxOpenCameras = DEFAULT_MAX_OPEN_CAMERAS;
 
     private boolean isRecording = false;
-    private volatile boolean repairSuppressed = false;  // 主动关闭摄像头时抑制 repair loop
     private boolean useCodecRecording = false;  // 是否使用软编码录制（用于 L6/L7）
     private boolean useRelayWrite = false;      // 是否使用中转写入（录制到内部存储，异步传输到U盘）
     private File finalSaveDir = null;           // 最终存储目录（用于中转写入模式）
@@ -210,14 +209,22 @@ public class MultiCameraManager {
                 livenessStates.put(entry.getKey(), state);
             }
             long age = camera.progressAgeMs();
-            // 压根没打开过的不归这里管：那是开相机那条路自己的事，它有自己的退避重连。
-            // 看门狗再去强制重开，只会和它一起捶一个已经卡住的相机服务
-            boolean watch = camera.wantsFrames() && camera.hasEverOpened();
+            // 有人要画面就盯着 —— 包括「打开发出去了、一直没回音」的那种（以前靠前台服务每 10 秒
+            // 一次的修复循环兜着，那个循环会把退避和放弃全部作废，1.62.0 删了）
+            boolean watch = camera.wantsFrames();
             CameraLiveness.Action action = CameraLiveness.step(state, watch, age, now);
             if (action == CameraLiveness.Action.RESET) {
-                AppLog.w(TAG, "相机 " + entry.getKey() + "(" + camera.getCameraId() + ") 已经 "
-                        + age + "ms 没有画面，重开（第 " + state.attempts() + " 次）");
-                camera.forceReopen();
+                if (state.attempts() == 1 && camera.isConnected()) {
+                    // 第一次先只重建会话（便宜、快）；再不行才重开相机。
+                    // 这两级以前是 SingleCamera 自己那套 2.5 秒墙钟检测在做，现在只有这一处判
+                    AppLog.w(TAG, "相机 " + entry.getKey() + "(" + camera.getCameraId() + ") 已经 "
+                            + age + "ms 没有画面，先重建会话");
+                    camera.recreateSession();
+                } else {
+                    AppLog.w(TAG, "相机 " + entry.getKey() + "(" + camera.getCameraId() + ") 已经 "
+                            + age + "ms 没有画面，重开（第 " + state.attempts() + " 次）");
+                    camera.forceReopen();
+                }
             } else if (action == CameraLiveness.Action.GIVE_UP) {
                 AppLog.e(TAG, "相机 " + entry.getKey() + "(" + camera.getCameraId() + ") 连着重开 "
                         + CameraLiveness.MAX_ATTEMPTS + " 次都没救回来，先停手 "
@@ -1004,7 +1011,6 @@ public class MultiCameraManager {
      */
     public void openAllCameras() {
         AppLog.d(TAG, "Opening all cameras...");
-        repairSuppressed = false;
 
         activeCameraKeys.clear();
         int opened = 0;
@@ -1039,11 +1045,10 @@ public class MultiCameraManager {
      * @param why 为什么关（英文短语）。给了的话，每一路关完时往黑匣子记一行，带用时
      */
     public void closeAllCameras(String why) {
-        repairSuppressed = true;
         for (SingleCamera camera : cameras.values()) {
             camera.closeCamera(why);
         }
-        AppLog.d(TAG, "All cameras asked to close (repair suppressed)");
+        AppLog.d(TAG, "All cameras asked to close");
     }
 
     /**
@@ -1298,10 +1303,10 @@ public class MultiCameraManager {
      * @param fromTimeout 是否是从超时触发的
      */
     private void executeRecordingStart(List<String> keys, boolean fromTimeout) {
-        executeRecordingStart(keys, fromTimeout, 0, false);
+        executeRecordingStart(keys, fromTimeout, 0);
     }
 
-    private void executeRecordingStart(List<String> keys, boolean fromTimeout, int stableAttempt, boolean forcedReopen) {
+    private void executeRecordingStart(List<String> keys, boolean fromTimeout, int stableAttempt) {
         if (!fromTimeout) {
             long now = System.currentTimeMillis();
             List<String> unstable = getUnstableCameras(keys, now);
@@ -1309,16 +1314,11 @@ public class MultiCameraManager {
                 if (stableAttempt < MAX_STABLE_WAIT_ATTEMPTS) {
                     AppLog.w(TAG, "Waiting for stable frames before recording, attempt " + (stableAttempt + 1) +
                             "/" + MAX_STABLE_WAIT_ATTEMPTS + ", unstable=" + unstable);
-                    mainHandler.postDelayed(() -> executeRecordingStart(keys, false, stableAttempt + 1, forcedReopen), STABLE_WAIT_INTERVAL_MS);
+                    mainHandler.postDelayed(() -> executeRecordingStart(keys, false, stableAttempt + 1), STABLE_WAIT_INTERVAL_MS);
                     return;
                 }
-                if (!forcedReopen) {
-                    AppLog.w(TAG, "Frames still unstable after wait, forcing reopen all cameras once: " + unstable);
-                    forceReopenAllCameras();
-                    mainHandler.postDelayed(() -> executeRecordingStart(keys, false, 0, true), 500);
-                    return;
-                }
-                AppLog.w(TAG, "Frames still unstable after force reopen, starting recording with stable subset: " + unstable);
+                // 等了两秒还不稳就按已就绪的那几路开：相机好不好由相机层自己的看门狗管，录制这条路不重开相机
+                AppLog.w(TAG, "Frames still unstable after wait, starting recording with stable subset: " + unstable);
                 fromTimeout = true;
             }
         }
@@ -1732,7 +1732,7 @@ public class MultiCameraManager {
         }
 
         final List<String> recordingKeys = new ArrayList<>(keys);
-        pendingRecordingStart = () -> executeCodecRecordingStart(recordingKeys, 0, false);
+        pendingRecordingStart = () -> executeCodecRecordingStart(recordingKeys, 0);
 
         // 设置超时机制
         sessionTimeoutRunnable = () -> {
@@ -1752,7 +1752,7 @@ public class MultiCameraManager {
         return true;
     }
 
-    private void executeCodecRecordingStart(List<String> keys, int stableAttempt, boolean forcedReopen) {
+    private void executeCodecRecordingStart(List<String> keys, int stableAttempt) {
         AppLog.d(TAG, "Attempting to start codec recording...");
         if (isRecording) {
             AppLog.w(TAG, "Codec recording already active, skipping duplicate start");
@@ -1775,51 +1775,11 @@ public class MultiCameraManager {
             if (stableAttempt < MAX_STABLE_WAIT_ATTEMPTS) {
                 AppLog.w(TAG, "Waiting for stable frames before codec recording, attempt " + (stableAttempt + 1) +
                         "/" + MAX_STABLE_WAIT_ATTEMPTS + ", unstable=" + unstable);
-                mainHandler.postDelayed(() -> executeCodecRecordingStart(keys, stableAttempt + 1, forcedReopen), STABLE_WAIT_INTERVAL_MS);
+                mainHandler.postDelayed(() -> executeCodecRecordingStart(keys, stableAttempt + 1), STABLE_WAIT_INTERVAL_MS);
                 return;
             }
-            if (!forcedReopen) {
-                AppLog.w(TAG, "Codec frames still unstable after wait, forcing reopen all cameras once: " + unstable);
-                forceReopenAllCameras();
-                // 延迟等待摄像头重新打开和会话配置完成
-                mainHandler.postDelayed(() -> {
-                    // 检查哪些摄像头实际可用且会话已配置
-                    List<String> availableKeys = new ArrayList<>();
-                    for (String key : keys) {
-                        SingleCamera camera = cameras.get(key);
-                        Boolean ready = cameraSessionReady.get(key);
-                        if (camera != null && camera.isCameraOpened() && ready != null && ready) {
-                            availableKeys.add(key);
-                        }
-                    }
-                    AppLog.d(TAG, "After force reopen, available cameras with ready session: " + availableKeys);
-                    if (!availableKeys.isEmpty()) {
-                        executeCodecRecordingStart(availableKeys, 0, true);
-                    } else {
-                        // 没有摄像头会话就绪，尝试只为实际打开的摄像头重新准备录制
-                        AppLog.w(TAG, "No camera sessions ready after force reopen, re-preparing for available cameras only");
-                        // 找出实际打开的摄像头
-                        List<String> openedCameras = new ArrayList<>();
-                        for (String key : keys) {
-                            SingleCamera camera = cameras.get(key);
-                            if (camera != null && camera.isCameraOpened()) {
-                                openedCameras.add(key);
-                            }
-                        }
-                        AppLog.d(TAG, "Opened cameras: " + openedCameras);
-                        if (!openedCameras.isEmpty()) {
-                            // 重新准备只为这些摄像头
-                            reprepareCodecRecordingForCameras(openedCameras);
-                        } else {
-                            AppLog.e(TAG, "No cameras opened after force reopen");
-                            isRecording = false;
-                        }
-                    }
-                }, 2000);  // 增加等待时间到2秒，确保会话配置完成
-                return;
-            }
-            AppLog.w(TAG, "Codec frames still unstable after force reopen, will try to start anyway: " + unstable);
-            // 强制重新打开后仍然不稳定，直接尝试启动录制（不再跳过）
+            // 等了两秒还不稳就照样开：相机好不好由相机层自己的看门狗管，录制这条路不重开相机
+            AppLog.w(TAG, "Codec frames still unstable after wait, will try to start anyway: " + unstable);
             unstable.clear();
         }
 
@@ -1830,16 +1790,9 @@ public class MultiCameraManager {
 
         for (String key : keys) {
             Boolean ready = cameraSessionReady.get(key);
-            AppLog.d(TAG, "Checking camera " + key + ": ready=" + ready + ", codecRecorder=" + codecRecorders.get(key) + ", forcedReopen=" + forcedReopen);
-            // 强制重新打开后，跳过 session ready 检查，直接尝试启动录制
-            if (!forcedReopen && (ready == null || !ready)) {
+            AppLog.d(TAG, "Checking camera " + key + ": ready=" + ready + ", codecRecorder=" + codecRecorders.get(key));
+            if (ready == null || !ready) {
                 AppLog.w(TAG, "Camera " + key + " session not ready, skipping");
-                continue;
-            }
-            // 帧稳定性检查：如果已经尝试了最大次数并强制重新打开过，就不再检查帧稳定性
-            // 这样可以确保在后台启动录制时，即使帧暂时不稳定也能开始录制
-            if (!unstable.isEmpty() && !forcedReopen && !isFrameStable(key, System.currentTimeMillis())) {
-                AppLog.w(TAG, "Camera " + key + " frame not stable, skipping (forcedReopen=" + forcedReopen + ")");
                 continue;
             }
             CodecVideoRecorder codecRecorder = codecRecorders.get(key);
@@ -1887,101 +1840,6 @@ public class MultiCameraManager {
             mainHandler.removeCallbacks(sessionTimeoutRunnable);
             sessionTimeoutRunnable = null;
         }
-    }
-
-    /**
-     * 重新准备 Codec 录制（只为指定的摄像头）
-     * 用于强制重新打开后，只为实际可用的摄像头准备录制
-     */
-    private void reprepareCodecRecordingForCameras(List<String> cameraKeys) {
-        AppLog.d(TAG, "Re-preparing codec recording for cameras: " + cameraKeys);
-
-        // 清理之前的录制器（只保留指定摄像头的）
-        for (Map.Entry<String, CodecVideoRecorder> entry : new ArrayList<>(codecRecorders.entrySet())) {
-            if (!cameraKeys.contains(entry.getKey())) {
-                entry.getValue().release();
-                codecRecorders.remove(entry.getKey());
-            }
-        }
-
-        // 获取录制目录
-        File saveDir = StorageHelper.getRecordingDir(context);
-        if (!saveDir.exists()) {
-            saveDir.mkdirs();
-        }
-
-        // 生成新的时间戳
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-
-        // 为每个指定的摄像头准备录制
-        boolean prepareSuccess = true;
-        for (String key : cameraKeys) {
-            SingleCamera camera = cameras.get(key);
-            if (camera == null) {
-                continue;
-            }
-
-            AppConfig appConfig = new AppConfig(context);
-            StreamSpec spec = RecordSpecs.forCameraKey(context, key);
-            CodecVideoRecorder codecRecorder = newCodecRecorder(key, camera, spec, appConfig);
-
-            // 准备录制
-            String path = new File(saveDir, timestamp + "_"
-                    + CameraSlots.suffixFor(key) + ".mp4").getAbsolutePath();
-            android.graphics.SurfaceTexture surfaceTexture = codecRecorder.prepareRecording(path);
-            if (surfaceTexture == null) {
-                AppLog.e(TAG, "Failed to prepare codec recording for " + key);
-                prepareSuccess = false;
-                break;
-            }
-
-            // 将 SurfaceTexture 设置给 Camera
-            android.view.Surface recordSurface = new android.view.Surface(surfaceTexture);
-            camera.setRecordSurface(recordSurface, true);
-
-            codecRecorders.put(key, codecRecorder);
-        }
-
-        if (!prepareSuccess) {
-            AppLog.e(TAG, "Failed to re-prepare codec recording");
-            for (CodecVideoRecorder recorder : codecRecorders.values()) {
-                recorder.release();
-            }
-            codecRecorders.clear();
-            isRecording = false;
-            return;
-        }
-
-        // 重新创建摄像头会话
-        synchronized (sessionLock) {
-            sessionConfiguredCount = 0;
-            expectedSessionCount = cameraKeys.size();
-            cameraSessionReady.clear();
-        }
-
-        for (String key : cameraKeys) {
-            SingleCamera camera = cameras.get(key);
-            if (camera != null) {
-                camera.recreateSession();
-            }
-        }
-
-        // 设置待处理的录制启动任务
-        final List<String> recordingKeys = new ArrayList<>(cameraKeys);
-        pendingRecordingStart = () -> executeCodecRecordingStart(recordingKeys, 0, true);
-
-        // 设置超时机制
-        sessionTimeoutRunnable = () -> {
-            AppLog.w(TAG, "Re-prepare session configuration timeout");
-            synchronized (sessionLock) {
-                final Runnable recordingTask = pendingRecordingStart;
-                if (recordingTask != null) {
-                    pendingRecordingStart = null;
-                    mainHandler.post(recordingTask);
-                }
-            }
-        };
-        mainHandler.postDelayed(sessionTimeoutRunnable, 3000);
     }
 
     /**
@@ -2585,33 +2443,6 @@ public class MultiCameraManager {
     }
 
     /**
-     * 检查并修复摄像头连接（返回前台时调用）
-     * 如果发现摄像头断开，自动重新打开
-     * @return 需要重新打开的摄像头数量
-     */
-    public int checkAndRepairCameras() {
-        if (repairSuppressed || CameraTaken.othersHold()) {
-            return 0;
-        }
-        int disconnectedCount = 0;
-        
-        for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
-            SingleCamera camera = entry.getValue();
-            if (!camera.isConnected()) {
-                disconnectedCount++;
-                AppLog.d(TAG, "Camera " + entry.getKey() + " reconnecting...");
-                camera.forceReopen();
-            }
-        }
-        
-        if (disconnectedCount > 0) {
-            AppLog.d(TAG, disconnectedCount + " camera(s) reconnecting");
-        }
-        
-        return disconnectedCount;
-    }
-
-    /**
      * 别的程序放开了相机、或者访问优先级变了：把被拿走的、该开着的立刻接回来
      * （{@link CameraTaken} 在主线程调）。
      *
@@ -2631,17 +2462,6 @@ public class MultiCameraManager {
         if (which.length() > 0) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant((releasedCameraId == null ? "访问优先级变了"
                     : "别的程序放开了相机 " + releasedCameraId) + "，接回: " + which);
-        }
-    }
-
-    /**
-     * 强制重新打开所有摄像头（用于从后台返回前台时）
-     */
-    public void forceReopenAllCameras() {
-        AppLog.d(TAG, "Force reopening all cameras...");
-        repairSuppressed = false;
-        for (SingleCamera camera : cameras.values()) {
-            camera.forceReopen();
         }
     }
 

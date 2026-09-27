@@ -7,6 +7,22 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.62.0-alpha] - 2026-09-28
+
+- **One judge of whether a camera is alive.** The frame-age watchdog (8 s without progress,
+  clock that excludes deep sleep, three attempts then a minute's rest, three rounds then
+  stop) is now the only detector: on the first attempt it rebuilds the capture session, after
+  that it reopens the camera, and it also covers an open request that never got an answer.
+  Removed: the foreground service's 10-second "repair loop" (it reopened every closed camera
+  unconditionally, reset the back-off each time and opened cameras nobody was using), each
+  camera's own 2.5-second wall-clock stall check (after deep sleep it saw hours of "stall"),
+  and the recording start's "force reopen all cameras" escalation (recording waits up to two
+  seconds for stable frames, then starts with the cameras that are ready). A forced reopen
+  already under way is no longer started a second time, and a closed camera drops its
+  per-run flags (taken by another app, raised reconnect floor). Fifth step of the
+  consolidation plan, part one; closing policy and session-rebuild coalescing come next.
+- Indentation left behind by the 1.61.0 edits is repaired (whitespace only).
+
 ## [1.61.0-alpha] - 2026-09-28
 
 - **One judge of whether recording is healthy: the recorder.** If nothing has been written to

@@ -169,7 +169,7 @@ public class CodecVideoRecorder {
     private String saveDirectory;
     private String cameraPosition;
     private VideoRecorder.SegmentTimestampProvider timestampProvider;  // 分段时间戳提供者（用于多路同步）
-private long recordedFrameCount = 0;
+    private long recordedFrameCount = 0;
     private List<String> recordedFilePaths = new ArrayList<>();  // 本次录制的所有文件路径
     
     /** 这次录制写出过第一笔数据没有：分段计时、外面的「录制中」都从那一刻起。 */
@@ -203,7 +203,7 @@ private long recordedFrameCount = 0;
      *
      * <p>写不进文件的裁判拿它判断「界面说在录、实际写不进文件」。相机有帧、编码线程在转，
      * 都不等于写进去了 —— 2026-09-26 哨兵模式那一次，这两样都好好的，文件却两个小时没长。</p>
-*/
+     */
     private volatile long lastWriteUptimeMs;
     private volatile boolean everWrote;
     /** 最近一次出错在哪一步、系统怎么说的。写不进文件时黑匣子带上它。 */
@@ -318,7 +318,7 @@ private long recordedFrameCount = 0;
         }
         markWritten();
         bytesThisSecond += size;
-framesThisSecond++;
+        framesThisSecond++;
         long now = android.os.SystemClock.elapsedRealtime();
         if (bitrateWindowStartMs == 0) {
             bitrateWindowStartMs = now;
@@ -1028,7 +1028,7 @@ framesThisSecond++;
         return isRecording.get();
     }
 
-/** 黑匣子里用的一行现状：录制器自己以为在不在录、编码器好不好、写到哪个文件、最近一次错在哪。 */
+    /** 黑匣子里用的一行现状：录制器自己以为在不在录、编码器好不好、写到哪个文件、最近一次错在哪。 */
     public String describeWriteState() {
         return "recording=" + isRecording.get() + " encoderHealthy=" + encoderHealthy
                 + " muxerStarted=" + muxerStarted + " recoveryAttempts=" + recoveryAttempts
@@ -1545,7 +1545,7 @@ framesThisSecond++;
             AppLog.w(TAG, "Camera " + cameraId + " Segment switch failed, quick retry in "
                 + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
             scheduleRecoveryRetry();
-}
+        }
     }
     
     /**
@@ -1610,7 +1610,7 @@ framesThisSecond++;
         } catch (Exception e) {
             AppLog.e(TAG, "Camera " + cameraId + " Recovery attempt failed", e);
             // 5 秒一次：第一次和之后每一分钟记一行，别的只算次数
-if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
+            if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
                 noteTrouble("recovery#" + recoveryAttempts, e);
             }
             isRecording.set(false);
@@ -1620,7 +1620,7 @@ if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
             AppLog.w(TAG, "Camera " + cameraId + " Recovery failed, quick retry in "
                 + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
             scheduleRecoveryRetry();
-}
+        }
     }
     
     /**
@@ -2097,7 +2097,7 @@ if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
                 segmentBasePtsUs = pending.get(0).ptsUs;
                 lastWrittenPtsUs = writeSamples(muxer, videoTrackIndex, pending);
                 markWritten();
-}
+            }
         }
         return rescuedMs;
     }
@@ -2260,7 +2260,7 @@ if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
             AppLog.w(TAG, "Camera " + cameraId + " Will retry encoder rebuild in "
                 + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
             scheduleRecoveryRetry();
-}
+        }
     }
 
     /**
