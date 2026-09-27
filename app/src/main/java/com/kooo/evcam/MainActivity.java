@@ -148,9 +148,6 @@ public class MainActivity extends AppCompatActivity {
     private int textureReadyCount = 0;  // 记录准备好的TextureView数量
     private boolean isRecording = false;  // 录制状态标志
     private boolean isInBackground = false;  // 是否在后台
-  // 是否有待处理的远程命令
-    private boolean isRemoteWakeUp = false;  // 是否是远程命令唤醒的（用于完成后自动退回后台）
-    private boolean hasBeenResumedOnce = false;  // Activity 是否已经完全恢复过一次（用于区分新创建和已存在）
     
     // 防双击保护
     private long lastRecordButtonClickTime = 0;  // 上次点击录制按钮的时间
@@ -178,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
     
     // 息屏录制相关
     private android.content.BroadcastReceiver screenStateReceiver;  // 屏幕状态广播接收器
-    private android.content.BroadcastReceiver backgroundCommandReceiver;  // 后台切换广播接收器
     private android.content.BroadcastReceiver toggleRecordingReceiver;  // 录制切换广播接收器（来自悬浮窗）
     private android.content.BroadcastReceiver storageReceiver;  // U 盘插拔：录制键可不可录、状态条余量
     private android.os.Handler screenStateHandler;  // 息屏/亮屏延迟处理
@@ -264,13 +260,6 @@ public class MainActivity extends AppCompatActivity {
     private View fragmentContainer;  // Fragment容器
 
 
-    // 远程录制相关
-    private android.os.Handler autoStopHandler;  // 自动停止录制的 Handler
-    private Runnable autoStopRunnable;  // 自动停止录制的 Runnable
-    private String remoteRecordingTimestamp;  // 远程录制统一时间戳（用于文件命名和查找）
-    private boolean isRemoteRecording = false;  // 是否正在进行远程录制
-    private boolean wasManualRecordingBeforeRemote = false;  // 远程录制前是否有手动录制在进行
-    private int pendingRemoteDurationSeconds = 0;  // 待启动的远程录制时长（等待首次写入后启动定时器）
     private boolean isPreparingRecording = false;  // 是否正在准备录制（等待首次写入）
 
     /**
@@ -313,9 +302,6 @@ public class MainActivity extends AppCompatActivity {
     private static final long SURROUND_RESUME_POLL_MS = 2000;
     /** 最近这么久里出过画面，才算环视正常。 */
     private static final long SURROUND_FRESH_MS = 2000;
-
-
-  // 待处理的飞书 Chat ID
 
     
     // 存储清理管理器
@@ -376,12 +362,6 @@ public class MainActivity extends AppCompatActivity {
         // 检查是否首次启动
         checkFirstLaunch();
 
-        // 初始化自动停止 Handler
-        autoStopHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-        
-        // 初始化远程录制时间戳
-        remoteRecordingTimestamp = null;
-        
 // 权限检查，但不立即初始化摄像头
         // 等待TextureView准备好后再初始化
         if (!checkPermissions()) {
@@ -389,7 +369,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        // 启动定时保活任务（车机必需，始终开启）
+        // 定时保活任务：只在「保活」开关打开时登记，关着就取消（见 KeepAliveManager）
         KeepAliveManager.startKeepAliveWork(this);
         AppLog.d(TAG, "定时保活任务已启动");
         
@@ -532,43 +512,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    /**
-     * 执行启动持续录制（等同点击录制按钮）
-     */
-    private void executeStartPersistentRecording() {
-        if (isRecording) {
-            AppLog.d(TAG, "Already recording, skip");
-            return;
-        }
-        
-        startRecording();
-        AppLog.d(TAG, "Persistent recording started");
-        
-        // 启动录制后不退到后台，保持前台
-        isRemoteWakeUp = false;
-    }
-    
-    /**
-     * 执行停止录制并退到后台
-     */
-    private void executeStopRecordingAndBackground() {
-        if (!isRecording) {
-            AppLog.d(TAG, "Not recording, just move to background");
-            moveTaskToBack(true);
-            return;
-        }
-        
-        nextStopReason = com.kooo.evcam.recording.RecordingStops.Reason.USER;   // 远程让停的，也算人停的
-        stopRecording();
-        AppLog.d(TAG, "Recording stopped");
-        
-        // 延迟退到后台
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            moveTaskToBack(true);
-            AppLog.d(TAG, "Moved to background");
-        }, 1000);
-    }
 
     private void adjustFontScale(float scale) {
         android.content.res.Configuration configuration = getResources().getConfiguration();
@@ -1057,18 +1000,6 @@ public class MainActivity extends AppCompatActivity {
     }
     
     /**
-     * 刷新录制状态显示设置（从设置界面返回时调用）
-     */
-    public void refreshRecordingStatsSettings() {
-        isRecordingStatsEnabled = appConfig.isRecordingStatsEnabled();
-        
-        // 如果正在录制，根据新设置显示或隐藏（通过 alpha 控制，保持可点击）
-        if (isRecording && tvRecordingStats != null) {
-            tvRecordingStats.setAlpha(isRecordingStatsEnabled ? 1.0f : 0.0f);
-        }
-    }
-
-    /**
      * 本段进度，画在录制键外圈上。
      *
      * <p>按时长算，不按文件大小 —— 分段本来就是按时长切的。</p>
@@ -1134,17 +1065,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             refreshRecordAvailability();
         }
-    }
-
-    /**
-     * 获取当前各摄像头的分辨率信息（供分辨率设置界面使用）
-     * @return 格式化的分辨率信息字符串
-     */
-    public String getCurrentCameraResolutionsInfo() {
-        if (cameraManager != null) {
-            return cameraManager.getCameraResolutionsInfo();
-        }
-        return null;
     }
 
 
@@ -1529,7 +1449,7 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
         // 在等环视恢复、准备接回录像的，也算「正要开始录」：不算的话，后视镜熄屏那一步会把相机放掉，
         // 哨兵模式（车机醒着、黑屏）下录像一断就再也接不回来
-        if (isRecording || isRemoteRecording || isAutoRecordingPending || surroundResumeCheck != null) {
+        if (isRecording || isAutoRecordingPending || surroundResumeCheck != null) {
             needs.claim(com.kooo.evcam.camera.CameraNeeds.Holder.RECORDING);
         } else {
             needs.release(com.kooo.evcam.camera.CameraNeeds.Holder.RECORDING);
@@ -1993,15 +1913,6 @@ public class MainActivity extends AppCompatActivity {
             });
         });
 
-        // 设置录制时间戳更新回调
-        // 当 Watchdog 触发重建录制时，时间戳会改变，需要更新以便正确查找视频文件
-        cameraManager.setTimestampUpdateCallback(newTimestamp -> {
-            if (isRemoteRecording && remoteRecordingTimestamp != null) {
-                AppLog.d(TAG, "远程录制时间戳更新: " + remoteRecordingTimestamp + " -> " + newTimestamp);
-                remoteRecordingTimestamp = newTimestamp;
-            }
-});
-
         // 设置录制状态回调（监听录制成功或失败）
         cameraManager.setRecordingStatusCallback((activeCameras, failedCameras) -> {
             AppLog.d(TAG, "录制状态回调: 成功=" + activeCameras.size() + ", 失败=" + failedCameras.size());
@@ -2020,7 +1931,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // 设置首次数据写入回调
-        // 用于在摄像头真正开始输出数据后启动计时器（分段计时、钉钉录制计时等）
+        // 用于在摄像头真正开始输出数据后启动计时器（分段计时等）
         cameraManager.setFirstDataWrittenCallback(() -> {
             AppLog.d(TAG, "收到首次数据写入回调，录制已真正开始");
             runOnUiThread(() -> {
@@ -2035,7 +1946,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // 启动录制计时器（从首次写入开始计时，而不是从录制请求开始）
                 // 这样右上角显示的时间是"有效录制时长"
-                if (isRecording && !isRemoteRecording) {
+                if (isRecording) {
                     // 检查是否是主题切换后恢复的录制
                     if (shouldResumeRecordingAfterRecreate && savedRecordingStartTime > 0) {
                         // 使用保存的时间恢复计时器（计时不重置）
@@ -2049,13 +1960,6 @@ public class MainActivity extends AppCompatActivity {
                         startRecordingTimer();
                         AppLog.d(TAG, "手动录制计时器已启动（首次写入后）");
                     }
-                }
-
-// 兼容旧逻辑：如果是远程录制，现在才启动定时器
-                if (isRemoteRecording && pendingRemoteDurationSeconds > 0) {
-                    AppLog.d(TAG, "远程录制首次写入成功，启动 " + pendingRemoteDurationSeconds + " 秒定时器");
-                    autoStopHandler.postDelayed(autoStopRunnable, pendingRemoteDurationSeconds * 1000L);
-                    pendingRemoteDurationSeconds = 0;  // 重置
                 }
             });
         });
@@ -2576,7 +2480,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 检查是否需要在主题切换后恢复录制
-     * 在摄像头初始化完成后调用，如果之前正在录制（非钉钉指令），则自动恢复录制
+     * 在摄像头初始化完成后调用，如果之前正在录制，则自动恢复录制
      */
     private void checkResumeRecordingAfterRecreate() {
         if (!shouldResumeRecordingAfterRecreate) {
@@ -2886,8 +2790,6 @@ public class MainActivity extends AppCompatActivity {
         
         AppLog.d(TAG, "息屏状态广播接收器已注册");
         
-        // 初始化后台切换广播接收器
-        initBackgroundCommandReceiver();
         initStorageReceiver();
         
         // 初始化录制切换广播接收器（来自悬浮窗）
@@ -2924,31 +2826,6 @@ public class MainActivity extends AppCompatActivity {
         AppLog.d(TAG, "录制切换广播接收器已注册");
     }
     
-    /**
-     * 初始化后台切换广播接收器
-     * 用于接收远程"后台"指令，避免使用 startActivity 导致闪屏
-     */
-    private void initBackgroundCommandReceiver() {
-        backgroundCommandReceiver = new android.content.BroadcastReceiver() {
-            @Override
-            public void onReceive(android.content.Context context, android.content.Intent intent) {
-                String action = intent.getAction();
-                if (WakeUpHelper.ACTION_MOVE_TO_BACKGROUND.equals(action)) {
-                    AppLog.d(TAG, "收到后台切换广播");
-                    // 直接退到后台，无需启动 Activity
-                    moveTaskToBack(true);
-                    AppLog.d(TAG, "应用已切换到后台（通过广播）");
-                }
-            }
-        };
-        
-        android.content.IntentFilter filter = new android.content.IntentFilter();
-        filter.addAction(WakeUpHelper.ACTION_MOVE_TO_BACKGROUND);
-        registerReceiver(backgroundCommandReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
-        
-        AppLog.d(TAG, "后台切换广播接收器已注册");
-    }
-
     /** U 盘插拔：录制键的「可不可录」和状态条的余量跟着变。 */
     private void initStorageReceiver() {
         storageReceiver = new android.content.BroadcastReceiver() {
@@ -3327,7 +3204,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 录到内置存储之前先提醒一次。
      *
-     * <p>只挡<b>手动开始</b>：自动录制（开机、回前台、远程唤醒）不弹，
+     * <p>只挡<b>手动开始</b>：自动录制（开机、回前台）不弹，
      * 那些场景没人在看屏幕，一个等着点确定的弹窗只会让记录仪根本不录 ——
      * 那比写内置存储糟得多。自动路径改用一条 Toast 提示。</p>
      */
@@ -3727,7 +3604,7 @@ public class MainActivity extends AppCompatActivity {
      * 把自己标成在录（不等第一笔数据），所以正常的准备中不会被误判。</p>
      */
     private void reconcileRecordingState() {
-        if (!isRecording || isRemoteRecording || cameraManager == null) {
+        if (!isRecording || cameraManager == null) {
             return;
         }
         if (cameraManager.isRecording()) {
@@ -3750,7 +3627,7 @@ public class MainActivity extends AppCompatActivity {
      * <p>以前没录上时这里什么都不做，按钮就停在「准备中」的颜色上。</p>
      */
     private void hidePreparingIndicator() {
-        setRecordState(isRecording || isRemoteRecording
+        setRecordState(isRecording
                 ? com.kooo.evcam.ui.RecordButtonUi.State.RECORDING
                 : com.kooo.evcam.ui.RecordButtonUi.State.IDLE);
     }
@@ -3762,37 +3639,6 @@ public class MainActivity extends AppCompatActivity {
             AppLog.d(TAG, "Picture taken");
         }
     }
-
-    /**
-     * 如果是远程唤醒的，完成后自动退回后台
-     * 延迟2秒后执行，让用户看到上传成功的提示
-     */
-    private void returnToBackgroundIfRemoteWakeUp() {
-        if (!isRemoteWakeUp) {
-            AppLog.d(TAG, "Not a remote wake-up, staying in foreground");
-            return;
-        }
-
-        AppLog.d(TAG, "Remote command completed, will return to background in 2 seconds");
-
-        // 延迟2秒后退回后台，让用户看到 Toast 提示
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            // 重置标记
-            isRemoteWakeUp = false;
-
-            // 释放唤醒锁，让屏幕可以自然熄灭
-            WakeUpHelper.releaseWakeLock();
-
-            // 将应用退到后台
-            AppLog.d(TAG, "Moving task to back...");
-            moveTaskToBack(true);
-
-            AppLog.d(TAG, "Returned to background successfully");
-        }, 2000);
-    }
-
-
-    // ==================== 飞书服务管理 ====================
 
 
     /**
@@ -3809,26 +3655,13 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(this, isRecording);
     }
     
-    /**
-     * 重启存储清理任务（配置更改后调用）
-     */
-    public void restartStorageCleanupTask() {
-        if (storageCleanupManager != null) {
-            storageCleanupManager.stop();
-        }
-        storageCleanupManager = new StorageCleanupManager(this);
-        storageCleanupManager.start();
-        AppLog.d(TAG, "存储清理任务已重启");
-    }
-
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         
         // 保存录制状态（用于主题切换后恢复）
-        // 注意：只保存非远程录制的状态，远程录制（钉钉指令）不自动恢复
-        if (isRecording && !isRemoteRecording) {
+        if (isRecording) {
             outState.putBoolean("wasRecording", true);
             outState.putLong("recordingStartTime", recordingStartTime);
             outState.putInt("segmentCount", currentSegmentCount);
@@ -3906,12 +3739,7 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.camera.StallWatch.setForeground(true);
         AppLog.i(TAG, "onResume " + instanceTag() + " surround: " + describeComposite());
         
-        // 标记 Activity 已经完全恢复过一次（用于区分新创建和已存在的 Activity）
-        // 这个标记在 onCreate 后第一次 onResume 时设为 true
-        boolean wasFirstResume = !hasBeenResumedOnce;
-        hasBeenResumedOnce = true;
-        
-        AppLog.d(TAG, "onResume called, wasInBackground=" + wasInBackground + ", isRecording=" + isRecording + ", firstResume=" + wasFirstResume);
+        AppLog.d(TAG, "onResume called, wasInBackground=" + wasInBackground + ", isRecording=" + isRecording);
         
         // 人已经在界面上了，屏幕一定亮着。熄屏标记还挂着就说明亮屏广播没来，补跑一次
         reconcileScreenState("onResume");
@@ -4015,18 +3843,9 @@ public class MainActivity extends AppCompatActivity {
 
         preparingHandler.removeCallbacksAndMessages(null);
 
-        // 取消自动停止录制的任务
-        if (autoStopHandler != null && autoStopRunnable != null) {
-            autoStopHandler.removeCallbacks(autoStopRunnable);
-        }
-        
         // 停止自动录制定时检查
         stopAutoRecordingCheck();
         disarmSurroundResume();
-        
-        // 重置远程录制状态
-        isRemoteRecording = false;
-        wasManualRecordingBeforeRemote = false;
         
         // 清理息屏录制相关资源
         if (screenStateReceiver != null) {
@@ -4036,16 +3855,6 @@ public class MainActivity extends AppCompatActivity {
                 AppLog.w(TAG, "注销息屏广播接收器时出错: " + e.getMessage());
             }
             screenStateReceiver = null;
-        }
-        
-        // 清理后台切换广播接收器
-        if (backgroundCommandReceiver != null) {
-            try {
-                unregisterReceiver(backgroundCommandReceiver);
-            } catch (Exception e) {
-                AppLog.w(TAG, "注销后台切换广播接收器时出错: " + e.getMessage());
-            }
-            backgroundCommandReceiver = null;
         }
         
         if (storageReceiver != null) {
@@ -4339,23 +4148,6 @@ public class MainActivity extends AppCompatActivity {
         imageAdjustFloatingWindow.show();
         
         AppLog.d(TAG, "Image adjust floating window shown");
-    }
-    
-    /**
-     * 关闭亮度/降噪调节悬浮窗
-     */
-    public void dismissImageAdjustFloatingWindow() {
-        if (imageAdjustFloatingWindow != null && imageAdjustFloatingWindow.isShowing()) {
-            imageAdjustFloatingWindow.dismiss();
-            imageAdjustFloatingWindow = null;
-        }
-    }
-    
-    /**
-     * 检查亮度/降噪调节悬浮窗是否正在显示
-     */
-    public boolean isImageAdjustFloatingWindowShowing() {
-        return imageAdjustFloatingWindow != null && imageAdjustFloatingWindow.isShowing();
     }
     
     private static final int REQUEST_OVERLAY_PERMISSION = 1001;
