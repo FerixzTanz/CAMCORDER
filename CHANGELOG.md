@@ -5,6 +5,16 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.58.0-alpha] - 2026-09-27
+
+- **Cleanup, no behaviour change.** Leftovers of removed features are gone: remote
+  recording / DingTalk / Feishu state and launchers, the lifecycle pause API, unused camera
+  entry points, write-only counters in the recorder, unused storage lookups, dead config
+  keys, orphan layout ids and the plain-button branch (about 1,300 lines). First step of
+  the consolidation plan; the next steps move file I/O off the main thread and merge the
+  duplicated recording and camera watchdogs.
 - Check for updates: tapping "Download and install" first shows a picture of the head unit's
   installer, in the style of the super mirror guide. Once the new version is installed, tap
   Back at the top left, not Open in the middle: that installer has a bug, Open leaves you
