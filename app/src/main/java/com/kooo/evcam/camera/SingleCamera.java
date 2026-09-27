@@ -2862,7 +2862,7 @@ public class SingleCamera {
                 }
                 return;
             }
-            cameraManager.openCamera(cameraId, stateCallback, handler);
+            openCameraMarked(handler);
             AppLog.d(TAG, "Camera " + cameraId + " force reopen initiated");
         } catch (CameraAccessException e) {
             AppLog.e(TAG, "Failed to force reopen camera " + cameraId, e);
@@ -2886,6 +2886,24 @@ public class SingleCamera {
         }
     }
 
+    /**
+     * 重连 / 强制重开那一下的 openCamera：进相机服务之前先标上「正在打开」。
+     *
+     * <p>相机服务随后报这一路「被占用」时，{@link CameraAvailabilityWatch} 靠 {@link #holdsOrIsOpening()}
+     * 认我们；重开时 {@code cameraDevice} 还是 null，不标的话每次重开都被记成「不是我们」——
+     * 2026-09-27 的日志里就是这样，争用日志和让路判断都被自己的重开带偏。抛异常就把标记收回，
+     * 成功与否由 {@code onOpened} / {@code onError} 清。</p>
+     */
+    private void openCameraMarked(Handler handler) throws CameraAccessException {
+        isOpening = true;
+        try {
+            cameraManager.openCamera(cameraId, stateCallback, handler);
+        } catch (CameraAccessException | RuntimeException e) {
+            isOpening = false;
+            throw e;
+        }
+    }
+
     /** 自动重连的那一下打开：先在锁里看还该不该开，打开在锁外。 */
     private void reopenOnCameraThread(Handler handler) {
         synchronized (reconnectLock) {
@@ -2895,7 +2913,7 @@ public class SingleCamera {
             }
         }
         try {
-            cameraManager.openCamera(cameraId, stateCallback, handler);
+            openCameraMarked(handler);
         } catch (CameraAccessException e) {
             AppLog.e(TAG, "Failed to reconnect camera " + cameraId + ": " + e.getMessage());
             synchronized (reconnectLock) {

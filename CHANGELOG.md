@@ -7,6 +7,14 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.56.0-alpha] - 2026-09-27
+
+- **Our own camera reopen no longer counts as "another app".** A reconnect or forced reopen
+  did not mark the camera as opening, so the camera service's "in use" report for it was
+  classified as someone else's. In 1.54.0 that could trigger yielding against ourselves; in
+  1.55.0 it added a false "another app took camera 2" contention line after every reopen.
+  Use this version's logs instead of 1.55.0's.
+
 ## [1.55.0-alpha] - 2026-09-27
 
 - **Camera yielding (1.54.0) is now a developer option, off by default.** Recording keeps its
