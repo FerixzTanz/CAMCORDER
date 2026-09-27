@@ -27,8 +27,8 @@ import com.kooo.evcam.R;
  * 没法再提醒 —— 所以只能在下载之前说。</p>
  *
  * <p>样子照超级后视镜指南（{@code ui/RearViewGuide}）：压暗的底、居中一张 16:9 的图。
- * 图按语言分三套：{@code drawable-nodpi}（中文）、{@code drawable-en-nodpi} 和
- * {@code drawable-ms-nodpi}（都是英文）。源文件在 {@code design/update-guide}（不入库）。</p>
+ * 图按语言分两套：{@code drawable-zh-nodpi}（中文）和 {@code drawable-nodpi}（英文）——
+ * 只有中文界面看中文图，其他语言一律看英文图。源文件在 {@code design/update-guide}（不入库）。</p>
  *
  * <p>每次下载都弹，不记「看过」：升级隔得久，上一次看过的早忘了，而点错一次的代价是下次装不上。</p>
  */

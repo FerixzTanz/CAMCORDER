@@ -9,7 +9,10 @@ Notable changes only, newest first. Each version's section becomes the body of i
   installer, in the style of the super mirror guide. Once the new version is installed, tap
   Back at the top left, not Open in the middle: that installer has a bug, Open leaves you
   unable to get back and the next install or update then fails. "Got it, download" starts
-  the download; Back cancels. Shown every time, in Chinese or English (Malay uses English).
+  the download; Back cancels. Shown every time.
+- The picture guides (super mirror guide, install reminder) are in Chinese only when the
+  interface is Chinese and in English for every other language. The super mirror guide
+  showed Chinese pictures in Malay.
 - Main screen: with fisheye correction on, each surround cell fills its space instead of
   fitting inside it. With only the surround view shown the cells are wider than the picture,
   which left black bars at the sides; now a little of the top and bottom (sky and ground) is

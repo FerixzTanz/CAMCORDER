@@ -51,7 +51,8 @@ import com.kooo.evcam.R;
  * <p>点图片外面任何地方、按返回键、或者翻到最后一张点「知道了」。不设关闭的 ×：
  * 图外整片都是关闭区，一个小 × 只会让人去找它。</p>
  *
- * <p>图片按语言分两套：{@code drawable-nodpi}（中文）和 {@code drawable-en-nodpi}（英文），
+ * <p>图片按语言分两套：{@code drawable-zh-nodpi}（中文）和 {@code drawable-nodpi}（英文）。
+ * 默认那一份是英文：只有中文界面看中文图，其他语言一律看英文图，加语言不用补图。
  * 源文件是 {@code design/mirror-guide} 里的五张画板（不入库）。</p>
  */
 public final class RearViewGuide {
