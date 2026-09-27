@@ -1298,6 +1298,7 @@ public class SingleCamera {
                 cameraDevice = camera;
                 everOpened = true;
                 lastErrorName = null;
+                CameraContention.ourCameraOpened(cameraId, reconnectAttempts);
                 reconnectAttempts = 0;  // 重置重连计数
                 isReconnecting = false;  // 重连成功，清除重连标志
                 reconnectDelayFloorMs = 0;
@@ -1330,6 +1331,7 @@ public class SingleCamera {
             // 这是相机服务把我们踢掉：被别的程序（多半是原厂功能）拿走，或者设备自己没了。
             // 基座把它记成自定义的 -4，标签写的「资源耗尽」是错的
             com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 被相机服务断开（onDisconnected）");
+            CameraContention.ourCameraDisconnected(cameraId);
             // 锁外关：它进相机服务，可能卡住（见 closeDeviceTimed）
             closeDeviceTimed(camera, "onDisconnected");
             synchronized (reconnectLock) {
@@ -1405,6 +1407,7 @@ public class SingleCamera {
 
                 AppLog.e(TAG, "Camera " + cameraId + " error: " + errorMsg);
                 lastErrorName = errorMsg;
+                CameraContention.ourOpenFailed(cameraId, errorMsg);
                 if (callback != null) {
                     callback.onCameraError(cameraId, error);
                 }

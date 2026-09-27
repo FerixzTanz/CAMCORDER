@@ -639,5 +639,7 @@
     <string name="dev_gpu_fisheye_video_summary">The surround view in video playback is corrected pixel by pixel on the GPU. This picks the method only; the Straighten button still turns correction on and off. Takes effect the next time video playback opens</string>
     <string name="dev_repair_mp4_title">Repair unfinalised videos</string>
     <string name="dev_repair_mp4_summary">A clip cut short by a power loss has no index, so nothing will open it. Rebuilds one using a healthy clip from the same camera, keeping the file name</string>
+    <string name="dev_camera_yield_title">Yield cameras (experimental)</string>
+    <string name="dev_camera_yield_summary">Do not reconnect while another app holds a camera; reconnect when it lets go. Off by default: keep the cameras and log the contention</string>
     <string name="dev_note">“Custom” in Stream profile is only available here. Tap “Safety notice” in About to turn developer options off; this section then hides.</string>
 </resources>

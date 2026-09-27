@@ -165,6 +165,10 @@ public final class DiagnosticsCollector {
 
                     Integer level = cc.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
                     sb.append("硬件级别: ").append(describeLevel(level)).append('\n');
+                    // 座舱镜头和环视会不会冲突：环视要是个「逻辑相机」、物理上包含座舱那一路，就冲突
+                    sb.append("物理相机: ").append(cc.getPhysicalCameraIds()).append('\n');
+                    int[] caps = cc.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                    sb.append("能力: ").append(caps == null ? "?" : java.util.Arrays.toString(caps)).append('\n');
 
                     StreamConfigurationMap map =
                             cc.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);

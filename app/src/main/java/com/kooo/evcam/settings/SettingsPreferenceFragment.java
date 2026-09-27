@@ -936,6 +936,10 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_gpu_fisheye_video", appConfig.isGpuFisheyeVideo(),
                 appConfig::setGpuFisheyeVideo);
 
+        // 原厂功能拿走相机时让不让路。默认关：先照常拿相机，把争用过程记进黑匣子（CameraContention）
+        bindSwitch("pref_camera_yield", appConfig.isCameraYieldEnabled(),
+                appConfig::setCameraYieldEnabled);
+
         onClick("pref_repair_mp4", pref -> {
             if (getActivity() == null) {
                 return;

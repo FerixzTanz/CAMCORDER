@@ -181,6 +181,11 @@ public final class StallWatch {
         AppLog.d(TAG, "mirror watch " + (on ? "on" : "off"));
     }
 
+    /** 主界面此刻在不在前台（争用日志用）。 */
+    public static boolean isForeground() {
+        return foreground;
+    }
+
     public static void setForeground(boolean value) {
         if (foreground != value) {
             foreground = value;

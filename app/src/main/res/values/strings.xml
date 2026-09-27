@@ -648,5 +648,7 @@
     <string name="dev_gpu_fisheye_video_summary">视频回看里环视那一格的鱼眼校正改用 GPU 逐像素计算。只换算法，开不开还看鱼眼校正按钮。下次打开视频回看时生效</string>
     <string name="dev_repair_mp4_title">修复未封口的视频</string>
     <string name="dev_repair_mp4_summary">断电时正在录的那一段没有索引，播放器打不开。按同一路相机完好片段的参数补一个索引回去，文件名不变</string>
+    <string name="dev_camera_yield_title">相机让路（试验）</string>
+    <string name="dev_camera_yield_summary">原厂功能拿走相机时不重连，等它放开再接。默认关：先照常拿相机，把争用过程记进黑匣子</string>
     <string name="dev_note">「视频流配置」里的「自定义」也只在这里可选。在「关于」里点「安全须知」可以关掉开发者选项，关掉后本区隐藏。</string>
 </resources>

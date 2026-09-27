@@ -1,6 +1,9 @@
 package com.kooo.evcam.camera;
 
+import android.content.Context;
 import android.os.SystemClock;
+
+import com.kooo.evcam.AppConfig;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +32,7 @@ public final class CameraYield {
     static final long MAX_YIELD_MS = 10 * 60_000L;
 
     private static final Set<String> HELD_BY_OTHERS = ConcurrentHashMap.newKeySet();
+    private static volatile Context app;
     /** 别的程序从什么时候起占着相机（开机起算，含深睡）；0 = 没有。 */
     private static volatile long othersSinceMs;
 
@@ -40,8 +44,19 @@ public final class CameraYield {
         return othersSince != 0 && nowMs - othersSince < MAX_YIELD_MS;
     }
 
-    /** 此刻该不该让路。 */
+    static void init(Context context) {
+        app = context.getApplicationContext();
+    }
+
+    /**
+     * 此刻该不该让路。开发者选项「相机让路」关着（默认）就永远不让 ——
+     * 项目所有者 2026-09-27：先照常拿相机，争用过程由 {@link CameraContention} 记下来。
+     */
     public static boolean shouldYield() {
+        Context context = app;
+        if (context == null || !new AppConfig(context).isCameraYieldEnabled()) {
+            return false;
+        }
         return shouldYield(othersSinceMs, SystemClock.elapsedRealtime());
     }
 
