@@ -5,7 +5,9 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- The profile name at the bottom left of the main screen follows the interface language:
+  "Zeekr 7X (surround)" and "Surround + 2 cabin" in English and Malay, the Chinese names in
+  Chinese. It used to show the Chinese name stored with the profile whatever the language.
 
 ## [1.52.0-alpha] - 2026-09-27
 

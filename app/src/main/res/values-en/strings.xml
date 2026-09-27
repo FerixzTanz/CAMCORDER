@@ -404,6 +404,8 @@
     <string name="msg_rail_side_hint">Buttons go on the driver\'s side. Change this in Settings → Interface</string>
     <string name="record_unavailable">Insert a USB drive to record</string>
     <string name="record_unavailable_detail">No USB drive</string>
+    <string name="status_profile_composite">Zeekr 7X (surround)</string>
+    <string name="status_profile_composite_multi">Surround + 2 cabin</string>
     <string name="status_fps">≤%1$s fps</string>
     <string name="status_bitrate_very_low">Very low bitrate</string>
     <string name="status_bitrate_low">Low bitrate</string>

@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat;
 
 import com.kooo.evcam.R;
 import com.kooo.evcam.StorageHelper;
+import com.kooo.evcam.profile.Profile;
 import com.kooo.evcam.profile.RecordSpecs;
 import com.kooo.evcam.profile.StreamSpec;
 
@@ -75,10 +76,22 @@ public final class StatusLine {
         return dash > 0 ? volume.substring(0, dash) : volume;
     }
 
-    /** 现在生效的那份配置叫什么；读不出来就空着，不编一个名字。 */
+    /**
+     * 现在生效的那份配置叫什么；读不出来就空着，不编一个名字。
+     *
+     * <p>预设的按 id 取本地化的名字：存进配置里的名字是迁移时写的中文，照抄它的话
+     * 英文、马来文界面下这里也是一行中文。</p>
+     */
     private static String profileName(Context context) {
         try {
-            String name = new com.kooo.evcam.profile.ProfileStore(context).current().name;
+            Profile profile = new com.kooo.evcam.profile.ProfileStore(context).current();
+            if (Profile.PRESET_COMPOSITE.equals(profile.id)) {
+                return context.getString(R.string.status_profile_composite);
+            }
+            if (Profile.PRESET_COMPOSITE_MULTI.equals(profile.id)) {
+                return context.getString(R.string.status_profile_composite_multi);
+            }
+            String name = profile.name;
             return name == null ? "" : name.trim();
         } catch (Exception e) {
             return "";

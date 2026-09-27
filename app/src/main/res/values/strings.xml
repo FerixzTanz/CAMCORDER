@@ -413,6 +413,8 @@
     <string name="msg_rail_side_hint">操作按钮放在离驾驶位近的一侧。以后可以在 设置 → 界面 里改</string>
     <string name="record_unavailable">插入 U 盘后可录制</string>
     <string name="record_unavailable_detail">未检测到 U 盘</string>
+    <string name="status_profile_composite">极氪7X（环视合成流）</string>
+    <string name="status_profile_composite_multi">环视 + 两路座舱</string>
     <string name="status_fps">≤%1$s fps</string>
     <string name="status_bitrate_very_low">极低码率</string>
     <string name="status_bitrate_low">低码率</string>

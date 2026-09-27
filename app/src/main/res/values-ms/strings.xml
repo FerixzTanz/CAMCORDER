@@ -404,6 +404,9 @@
     <string name="msg_rail_side_hint">Butang diletak di sebelah pemandu. Tukar di Tetapan → Antara muka</string>
     <string name="record_unavailable">Masukkan pemacu USB</string>
     <string name="record_unavailable_detail">Tiada pemacu USB</string>
+    <!-- 配置名只做中英两种：马来文界面也用英文名 -->
+    <string name="status_profile_composite">Zeekr 7X (surround)</string>
+    <string name="status_profile_composite_multi">Surround + 2 cabin</string>
     <string name="status_fps">≤%1$s fps</string>
     <string name="status_bitrate_very_low">Kadar bit sangat rendah</string>
     <string name="status_bitrate_low">Kadar bit rendah</string>
