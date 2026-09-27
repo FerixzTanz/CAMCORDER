@@ -136,6 +136,8 @@
     <string name="dlg_internal_msg">行车记录会持续不断地写入数据 —— 只要在录，就一直在写。\n\n闪存的写入寿命有限，长期把车机内置存储作为记录仪的写入位置会实打实地消耗它的寿命，而车机存储通常不可更换。\n\n建议改用 U 盘：损坏后可随时更换，也便于直接取下拷贝。</string>
     <string name="dlg_internal_ok">仍然使用内置存储</string>
     <string name="action_cancel">取消</string>
+    <!-- 确定键用自己的字，不用系统的 android.R.string.ok：那一份由车机系统提供，英文版的 OK 在按钮里偏右，自己的「取消」一直是正的 -->
+    <string name="action_ok">确定</string>
     <string name="action_got_it">知道了</string>
     <string name="info_checking_storage">正在检测存储…</string>
     <string name="opt_internal_storage">内置存储</string>

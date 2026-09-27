@@ -124,7 +124,7 @@ public class AboutActivity extends AppCompatActivity {
                 .setTitle(R.string.dev_unlock_title)
                 .setMessage(R.string.dev_unlock_msg)
                 .setView(input)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                .setPositiveButton(R.string.action_ok, (dialog, which) -> {
                     if (com.kooo.evcam.settings.DeveloperMode.unlock(this, input.getText().toString())) {
                         Toast.makeText(this, R.string.dev_unlocked,
                                 Toast.LENGTH_LONG).show();

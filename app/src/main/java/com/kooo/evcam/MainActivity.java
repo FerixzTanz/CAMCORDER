@@ -1319,7 +1319,7 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.dlg_language_title)
                 .setSingleChoiceItems(labels, picked[0], (d, which) -> picked[0] = which)
-                .setPositiveButton(android.R.string.ok, (d, w) -> applyLanguageChoice(
+                .setPositiveButton(R.string.action_ok, (d, w) -> applyLanguageChoice(
                         spec.valueAt(picked[0])))
                 .setOnCancelListener(d -> applyLanguageChoice(spec.valueAt(picked[0])))
                 // 注意：AlertDialog 一旦设了选项列表就不再显示 message，
@@ -1356,7 +1356,7 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.dlg_rail_side_title)
                 .setSingleChoiceItems(labels, picked[0], (d, which) -> picked[0] = which)
-                .setPositiveButton(android.R.string.ok,
+                .setPositiveButton(R.string.action_ok,
                         (d, w) -> applyRailSideChoice(sides[picked[0]]))
                 .setOnCancelListener(d -> applyRailSideChoice(sides[picked[0]]))
                 .setCancelable(true));

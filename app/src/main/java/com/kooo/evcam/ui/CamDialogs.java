@@ -190,11 +190,11 @@ public final class CamDialogs {
                 context.getResources().getDimension(R.dimen.text_row));
         button.setTypeface(Typeface.create(button.getTypeface(),
                 primary ? Typeface.BOLD : Typeface.NORMAL));
-        // 文字要真的居中。Material 的对话框按钮样式是 singleLine：那会打开「横向滚动」，
-        // 文字排在一条极宽的版面上、再靠滚动偏移量对到中间 —— 偏移量算得不对时文字就歪，
-        // 而且样式还把按钮宽度封顶在 320dp，长一点的英文、马来文标签会被截成「…」。
-        // 中文标签短，两样都碰不上；英文版的确认键文字一直不在正中间，怀疑就是这两条。
-        // 这里改成普通的一行文字：在按钮真实的宽度里排版、居中，不封顶。
+        // Material 的对话框按钮样式是 singleLine（横向滚动、靠滚动偏移量居中），还把按钮宽度
+        // 封顶在 320dp，长一点的英文、马来文标签会被截成「…」。这里改成普通的一行文字：
+        // 在按钮真实的宽度里排版、居中，不封顶。
+        // （英文版「OK」偏右不是这个原因：那个字来自车机系统的 android.R.string.ok，
+        // 1.50.0 起改用自己的 action_ok。）
         button.setSingleLine(false);
         button.setMaxLines(1);
         button.setHorizontallyScrolling(false);

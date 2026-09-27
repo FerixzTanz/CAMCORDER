@@ -118,6 +118,7 @@
     <string name="dlg_internal_msg">Kamera pemandu menulis tanpa henti. Memori dalaman akan haus dan biasanya tidak boleh diganti.\n\nPemacu USB disyorkan: ia boleh diganti, dan boleh dicabut untuk menyalin fail.</string>
     <string name="dlg_internal_ok">Guna storan dalaman juga</string>
     <string name="action_cancel">Batal</string>
+    <string name="action_ok">OK</string>
     <string name="action_got_it">Faham</string>
     <string name="info_checking_storage">Menyemak storan…</string>
     <string name="opt_internal_storage">Storan dalaman</string>

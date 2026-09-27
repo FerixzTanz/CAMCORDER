@@ -118,6 +118,7 @@
     <string name="dlg_internal_msg">A dashcam writes continuously. Internal flash wears out and usually cannot be replaced.\n\nA USB drive is recommended: it can be replaced, and removed to copy files.</string>
     <string name="dlg_internal_ok">Use internal storage anyway</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
     <string name="action_got_it">Got it</string>
     <string name="info_checking_storage">Checking storage…</string>
     <string name="opt_internal_storage">Internal storage</string>

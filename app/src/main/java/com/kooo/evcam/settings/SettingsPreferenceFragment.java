@@ -959,7 +959,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 requireContext(), R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(title)
                 .setSingleChoiceItems(entries, picked[0], (d, which) -> picked[0] = which)
-                .setPositiveButton(android.R.string.ok, (d, w) -> {
+                .setPositiveButton(R.string.action_ok, (d, w) -> {
                     if (picked[0] < 0 || picked[0] >= values.length) {
                         return;
                     }

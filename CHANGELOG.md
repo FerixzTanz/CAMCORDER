@@ -7,6 +7,14 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.50.0-alpha] - 2026-09-27
+
+- **The OK button's label is centred in English and Malay.** Dialogs took "OK" from the head
+  unit's system strings (android.R.string.ok), and the English one sat off to the right in the
+  button; Cancel, the app's own string, was always centred. OK now comes from the app's own
+  strings in all three languages. (The 1.49.0 change to button layout addressed long labels,
+  not this.)
+
 ## [1.49.0-alpha] - 2026-09-27
 
 - Dialog buttons lay their label out in the button's real width, centred. Material's dialog
