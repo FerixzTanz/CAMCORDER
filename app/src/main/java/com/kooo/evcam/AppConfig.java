@@ -250,7 +250,7 @@ public class AppConfig {
      */
     public String getScreenOffWakeMode() {
         return prefs.getString(KEY_SCREEN_OFF_WAKE_MINUTES,
-                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.defaultValue());
+                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.defaultValue);
     }
 
     public void setScreenOffWakeMode(String value) {
