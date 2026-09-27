@@ -123,11 +123,6 @@ public class CameraManagerHolder {
         initializedCarModel = null;
     }
 
-    /** 这份实例是按哪个车型建的；未初始化时为 null。 */
-    public synchronized String getInitializedCarModel() {
-        return initializedCarModel;
-    }
-
     private int getCameraCount(AppConfig appConfig) {
         String carModel = appConfig.getCarModel();
         if (AppConfig.CAR_MODEL_ZEEKR_7X_MULTI.equals(carModel)) {

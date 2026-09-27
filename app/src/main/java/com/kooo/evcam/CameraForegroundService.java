@@ -3,7 +3,6 @@ package com.kooo.evcam;
 
 import com.kooo.evcam.AppLog;
 import com.kooo.evcam.camera.MultiCameraManager;
-// import android.app.AlarmManager;  // 已移除，使用 TIME_TICK 替代
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -15,7 +14,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-// import android.os.SystemClock;  // 已移除 AlarmManager
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -407,30 +405,6 @@ public class CameraForegroundService extends Service {
             context.startService(intent);
             AppLog.d(TAG, "Starting service: " + title);
         }
-    }
-    
-    /**
-     * 检查应用是否在前台
-     */
-    private static boolean isAppInForeground(Context context) {
-        try {
-            android.app.ActivityManager am = (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            if (am != null) {
-                java.util.List<android.app.ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
-                if (processes != null) {
-                    for (android.app.ActivityManager.RunningAppProcessInfo process : processes) {
-                        if (process.processName.equals(context.getPackageName())) {
-                            // 优先检查 IMPORTANCE_FOREGROUND 或 IMPORTANCE_VISIBLE
-                            return process.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-                                    || process.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "检查应用前台状态失败: " + e.getMessage(), e);
-        }
-        return false;
     }
 
     /**
