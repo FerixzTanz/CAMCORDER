@@ -21,7 +21,7 @@
     <string name="set_profile_editor_title">Edit stream profile</string>
     <string name="set_profile_editor_summary">Recording quality, per-camera tuning and placement</string>
     <string name="set_photo_jpeg_title">Photos through the image channel</string>
-    <string name="set_photo_jpeg_summary">Uses the camera\'s JPEG output, so the photo resolution applies. Off: photos are taken from the preview. Restart the app after changing</string>
+    <string name="set_photo_jpeg_summary">Uses the camera\'s JPEG output at its largest size. Off: photos are taken from the preview at its resolution. Restart the app after changing</string>
     <string name="set_watermark_title">Timestamp overlay</string>
     <string name="set_watermark_on">Adds the time to saved videos and photos</string>
     <string name="set_watermark_off">No stamp on saved files</string>
@@ -38,7 +38,7 @@
     <string name="set_storage_usage_title">Current write location</string>
     <string name="set_rearview_summary">Shows one surround camera in a floating window. The rear view is mirrored, like a real mirror</string>
     <string name="set_rearview_button_mode_title">Button mode</string>
-    <string name="set_rearview_button_mode_summary">Four buttons in place of swiping the middle third to change view, arranged the way the car is: front on top, rear below, left and right to the sides. They appear when you touch the window and go after five seconds. The window cannot be made smaller than the buttons</string>
+    <string name="set_rearview_button_mode_summary">Four direction buttons instead of swiping the middle: they appear when you touch the window and go after five seconds</string>
     <string name="set_rearview_front_rear_title">Front and rear only</string>
     <string name="set_rearview_front_rear_summary">Swiping switches between rear and front only</string>
     <string name="set_rearview_fisheye_title">Fisheye correction</string>
@@ -80,7 +80,7 @@
     <string name="set_auto_start_title">Start on boot</string>
     <string name="set_auto_start_summary">Launches automatically after the system starts</string>
     <string name="set_auto_record_title">Record on launch</string>
-    <string name="set_auto_record_summary">Starts recording when the app opens or returns to the foreground</string>
+    <string name="set_auto_record_summary">Starts recording when the app opens, and picks an interrupted recording back up once the surround view returns. Never restarts one you stopped</string>
     <string name="set_screen_off_title">Screen-off recording (developer)</string>
     <string name="set_screen_off_summary">Keeps recording after the screen turns off</string>
     <string name="set_screen_off_keep_title">Keep recording when the screen goes off</string>
@@ -98,7 +98,7 @@
     <string name="set_camera_mapping_title">Camera mapping</string>
     <string name="set_camera_mapping_summary">Assign cameras manually (troubleshooting)</string>
     <string name="set_diagnostics_title">Diagnostics</string>
-    <string name="set_diagnostics_summary">Camera, display, vehicle signal and storage details, for export</string>
+    <string name="set_diagnostics_summary">Camera, display and storage details plus recent logs, for export</string>
     <string name="set_language_title">Language</string>
     <string name="lang_auto">Follow system</string>
     <string name="lang_zh">中文</string>
@@ -123,7 +123,7 @@
     <string name="opt_internal_storage">Internal storage</string>
     <string name="opt_internal_storage_locked">Internal storage (developer options only)</string>
     <string name="dlg_internal_locked_title">Internal storage requires developer options</string>
-    <string name="dlg_internal_locked_msg">Continuous recording wears out internal flash, which usually cannot be replaced, so recordings go to external storage only.\n\nTo choose it anyway, turn on developer options in About this app first.</string>
+    <string name="dlg_internal_locked_msg">Continuous recording wears out internal flash, which usually cannot be replaced, so recordings go to the USB drive only.\n\nTo choose it anyway, turn on developer options first, under About → Safety notice.</string>
     <string name="msg_storage_changed">Storage location set to “%1$s”</string>
     <string name="msg_enter_number">Enter a number</string>
     <string name="info_unlimited">No limit</string>
@@ -207,8 +207,8 @@
     <string name="msg_need_overlay_adjust">The overlay permission is required to open the adjustment window</string>
     <string name="msg_camera_not_ready_adjust">Camera not ready — cannot open the adjustment window</string>
     <string name="msg_overlay_denied">Overlay permission not granted</string>
-    <string name="dlg_no_external_title">No external storage found</string>
-    <string name="dlg_no_external_msg">Recordings go to external storage only, to spare the internal flash.\n\nInsert a USB drive and try again. If it is not detected, try another port or choose the storage location again in Settings.</string>
+    <string name="dlg_no_external_title">No USB drive found</string>
+    <string name="dlg_no_external_msg">Recordings go to the USB drive only, to spare the internal flash.\n\nInsert a USB drive and try again. If it is not detected, try another port or choose the storage location again in Settings.</string>
     <string name="dlg_will_use_internal_title">Recording to internal storage</string>
     <string name="dlg_internal_reason_chosen">Internal storage is the location currently selected.</string>
     <string name="dlg_internal_reason_fallback">A USB drive is selected but none is detected, so recordings will go to internal storage.</string>
@@ -238,8 +238,8 @@
     <string name="date_yesterday">Yesterday</string>
     <string name="date_before_yesterday">2 days ago</string>
     <string name="msg_selected_n">%1$d selected</string>
-    <string name="dlg_delete_photos_title">Delete?</string>
-    <string name="dlg_delete_photos_msg">Delete the %1$d selected photo group(s)? This includes every camera\'s photos.</string>
+    <string name="dlg_delete_photos_title">Delete these photos?</string>
+    <string name="dlg_delete_photos_msg">Every camera\'s photos in the %1$d selected group(s) will be deleted. This cannot be undone.</string>
     <string name="action_delete">Delete</string>
     <string name="msg_photos_deleted">%1$d photo(s) deleted</string>
     <string name="msg_select_photos_first">Select the photos to share first</string>
@@ -293,12 +293,12 @@
     <string name="upd_no_installer">This head unit cannot open the installer: %1$s</string>
     <string name="upd_no_settings_page">This head unit cannot open that settings page</string>
     <string name="msg_keep_one_camera_refuse">Select at least one camera to record</string>
-    <string name="msg_refuse_no_external">No USB drive detected. Recordings go to external storage only.</string>
+    <string name="msg_refuse_no_external">No USB drive detected. Recordings go to a USB drive only.</string>
 
     <!-- About screen -->
     <string name="about_tagline">A surround-view dashcam for Zeekr head units: it records the 360° composite stream, with playback and a super mirror.</string>
-    <string name="about_storage_title">About external storage</string>
-    <string name="about_storage_body">Recordings go to external storage only, never to the head unit\'s internal flash, which cannot be replaced once worn out.\n\n• The USB drive supplied with the car is enough for basic recording.\n\n• For higher bitrates or longer retention, add a drive to the left Type-C port. It is detected automatically and can be removed at any time.\n\n• Tested: a 128 GB USB drive, and an NVMe SSD (much faster, runs slightly warmer).\n\n• Optane M10 drives are good value but small: about the last 20 hours.</string>
+    <string name="about_storage_title">About USB drives</string>
+    <string name="about_storage_body">Recordings go to the USB drive only, never to the head unit\'s internal flash, which cannot be replaced once worn out.\n\n• The USB drive supplied with the car is enough for basic recording.\n\n• For higher bitrates or longer retention, add a drive to the left Type-C port. It is detected automatically and can be removed at any time.\n\n• Tested: a 128 GB USB drive, and an NVMe SSD (much faster, runs slightly warmer).\n\n• Optane M10 drives are good value but small: about the last 20 hours.</string>
     <string name="about_project_title">Project</string>
     <string name="about_coffee_title">Buy the author a coffee</string>
     <string name="about_coffee_body">PayNow to 9271 6786. Optional; every feature works without it.</string>
@@ -306,7 +306,7 @@
     <string name="about_thanks_title">Thanks</string>
     <string name="about_thanks_body">This project grew out of an owners\' club group chat. These people gave it its start:\n\n• Jon (Zeekr 7X Singapore owners\' club) — explained how to install apps on the head unit. Nothing else would have happened without that.\n\n• SW (same club) — shared the AVM Recorder project, which showed it could be done.\n\n• Patrick (same club) — provided the key information to get started.\n\n• Gabriel (same club) — tested the app and sent feedback.\n\n• The Zeekr 7X Singapore owners\' club — a capable admin team and friendly members. A place where people share freely is rare.\n\n• Myself — for enthusiasm and curiosity.\n\n• Everyone using this app — I hope it makes driving a little easier.\n\n• ZEEKR and Geely — for bringing us together, and for a great car and team.</string>
     <string name="about_privacy_title">Privacy and network use</string>
-    <string name="about_privacy_body">Recordings and photos stay on your USB drive. The app does not send them anywhere.\n\n⚠ Recordings on the drive are not encrypted. Anyone with the drive can read them.\n\nThe app goes online only when you start one of these:\n\n• Check for updates: asks GitHub for the latest version. No device data is sent.\n\n• Send to phone: serves one file on your local network until you close it.\n\n• Upload logs (developer options): uploads only when you tap it.</string>
+    <string name="about_privacy_body">Recordings and photos stay on your USB drive. The app does not send them anywhere.\n\n⚠ Recordings on the drive are not encrypted. Anyone with the drive can read them.\n\nThe app goes online only when you start one of these:\n\n• Check for updates: asks GitHub for the latest version. No device data is sent.\n\n• Send to phone: serves one file on your local network until you close it.</string>
     <string name="about_project_body">Source code, issues and releases. When reporting a problem, attach a report from Diagnostics.</string>
     <string name="about_credits_evcam">Released under the GNU GPL v3.0 and based on EVCam by suyunkai, which provides the camera, recording and floating window foundations. As the GPL requires, the source code is public.</string>
     <string name="about_safety_title">Safety notice</string>
@@ -389,7 +389,7 @@
     <string name="set_section_interface">Interface</string>
     <string name="set_reduce_motion_title">Less motion while recording</string>
     <string name="set_reduce_motion_summary">No screen transitions while recording, leaving the GPU to the encoder</string>
-    <string name="set_fisheye_projection_title">Fisheye correction</string>
+    <string name="set_fisheye_projection_title">Fisheye projection</string>
     <string name="set_fisheye_projection_summary">%1$s · applies to the live preview, photos and videos</string>
     <string name="opt_projection_rectilinear">Straight lines</string>
     <string name="opt_projection_cylindrical">Wide (curved horizon)</string>
@@ -548,9 +548,9 @@
 
     <!-- Storage volumes -->
     <string name="storage_volume_desc">%1$s (%2$s free of %3$s)</string>
-    <string name="storage_external_named">External storage (%1$s)</string>
-    <string name="storage_external_n">External storage %1$d</string>
-    <string name="storage_external_n_named">External storage %1$d (%2$s)</string>
+    <string name="storage_external_named">USB drive (%1$s)</string>
+    <string name="storage_external_n">USB drive %1$d</string>
+    <string name="storage_external_n_named">USB drive %1$d (%2$s)</string>
 
     <!-- Photo playback -->
     <string name="photo_count_badge">%1$d photo(s)</string>
@@ -577,7 +577,7 @@
     <string name="debug_version">Version: %1$s</string>
 
     <!-- Diagnostics -->
-    <string name="diag_subtitle">Cameras, display, vehicle signals, storage and logs. Save or copy the report to send it.</string>
+    <string name="diag_subtitle">Cameras, display, storage and logs. Save or copy the report to send it.</string>
     <string name="diag_btn_save">Save</string>
     <string name="diag_btn_copy">Copy</string>
     <string name="diag_btn_refresh">Collect again</string>
@@ -638,6 +638,4 @@
     <string name="dev_repair_mp4_title">Repair unfinalised videos</string>
     <string name="dev_repair_mp4_summary">A clip cut short by a power loss has no index, so nothing will open it. Rebuilds one using a healthy clip from the same camera, keeping the file name</string>
     <string name="dev_note">“Custom” in Stream profile is only available here. Tap “Safety notice” in About to turn developer options off; this section then hides.</string>
-
-    <!-- Log upload · device name (developer) -->
 </resources>

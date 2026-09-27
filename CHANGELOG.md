@@ -5,7 +5,17 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- Dialog buttons lay their label out in the button's real width, centred. Material's dialog
+  button style is single-line (centred by a scroll offset) and capped at 320dp, which left
+  long English and Malay labels off-centre or cut to "…".
+- Wording brought in line with what the app does: the privacy note no longer lists "Upload
+  logs" (removed in 1.44); diagnostics no longer claims vehicle signals; the photo-channel
+  note, "Record on launch", "Reset floating button" and the developer-options hint say what
+  actually happens; the continuous playback title was "Continuous recording" in Chinese.
+- One word per thing: "camera" (not 摄像头/相机 mixed), "USB drive" everywhere users read
+  prose (not "external storage"), recording as the act and 录像 as the footage, "Settings"
+  in the drawer, delete dialogs phrased as questions, plain-language fisheye projection
+  names in Chinese, two long setting notes shortened.
 
 ## [1.48.0-alpha] - 2026-09-27
 

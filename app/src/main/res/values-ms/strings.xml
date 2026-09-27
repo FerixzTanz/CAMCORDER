@@ -21,7 +21,7 @@
     <string name="set_profile_editor_title">Edit profil strim</string>
     <string name="set_profile_editor_summary">Kualiti rakaman, pelarasan setiap kamera dan susunan</string>
     <string name="set_photo_jpeg_title">Foto melalui saluran imej</string>
-    <string name="set_photo_jpeg_summary">Menggunakan output JPEG kamera, jadi resolusi foto terpakai. Tutup: foto diambil daripada pratonton. Mulakan semula apl selepas menukar</string>
+    <string name="set_photo_jpeg_summary">Menggunakan output JPEG kamera pada saiz terbesarnya. Tutup: foto diambil daripada pratonton pada resolusinya. Mulakan semula apl selepas menukar</string>
     <string name="set_watermark_title">Tera masa</string>
     <string name="set_watermark_on">Menambah masa pada video dan foto yang disimpan</string>
     <string name="set_watermark_off">Tiada tera pada fail yang disimpan</string>
@@ -38,7 +38,7 @@
     <string name="set_storage_usage_title">Lokasi tulis semasa</string>
     <string name="set_rearview_summary">Menunjukkan satu kamera keliling dalam tetingkap terapung. Pandangan belakang dicerminkan, seperti cermin sebenar</string>
     <string name="set_rearview_button_mode_title">Mod butang</string>
-    <string name="set_rearview_button_mode_summary">Empat butang menggantikan leretan di bahagian tengah untuk menukar pandangan, disusun mengikut arah sebenar: depan di atas, belakang di bawah, kiri dan kanan di tepi. Ia muncul apabila anda menyentuh tetingkap dan hilang selepas lima saat. Tetingkap tidak boleh dikecilkan melebihi butang itu</string>
+    <string name="set_rearview_button_mode_summary">Empat butang arah menggantikan leretan di tengah: muncul apabila anda menyentuh tetingkap dan hilang selepas lima saat</string>
     <string name="set_rearview_front_rear_title">Depan dan belakang sahaja</string>
     <string name="set_rearview_front_rear_summary">Leret hanya bertukar antara belakang dan depan</string>
     <string name="set_rearview_fisheye_title">Pembetulan mata ikan</string>
@@ -80,7 +80,7 @@
     <string name="set_auto_start_title">Mula semasa but</string>
     <string name="set_auto_start_summary">Dilancarkan secara automatik selepas sistem bermula</string>
     <string name="set_auto_record_title">Rakam semasa dibuka</string>
-    <string name="set_auto_record_summary">Mula merakam apabila apl dibuka atau kembali ke depan</string>
+    <string name="set_auto_record_summary">Mula merakam apabila apl dibuka, dan menyambung semula rakaman yang terganggu apabila paparan sekeliling kembali. Tidak memulakan semula rakaman yang anda hentikan</string>
     <string name="set_screen_off_title">Rakaman skrin padam (pembangun)</string>
     <string name="set_screen_off_summary">Terus merakam selepas skrin dimatikan</string>
     <string name="set_screen_off_keep_title">Terus merakam apabila skrin padam</string>
@@ -98,7 +98,7 @@
     <string name="set_camera_mapping_title">Pemetaan kamera</string>
     <string name="set_camera_mapping_summary">Tetapkan kamera secara manual (penyelesaian masalah)</string>
     <string name="set_diagnostics_title">Maklumat diagnostik</string>
-    <string name="set_diagnostics_summary">Butiran kamera, paparan, isyarat kenderaan dan storan, untuk dieksport</string>
+    <string name="set_diagnostics_summary">Butiran kamera, paparan dan storan serta log terkini, untuk dieksport</string>
     <string name="set_language_title">Bahasa</string>
     <string name="lang_auto">Ikut sistem</string>
     <string name="lang_zh">中文</string>
@@ -123,7 +123,7 @@
     <string name="opt_internal_storage">Storan dalaman</string>
     <string name="opt_internal_storage_locked">Storan dalaman (pilihan pembangun sahaja)</string>
     <string name="dlg_internal_locked_title">Storan dalaman memerlukan pilihan pembangun</string>
-    <string name="dlg_internal_locked_msg">Rakaman berterusan menghauskan memori dalaman, yang biasanya tidak boleh diganti, jadi rakaman disimpan ke storan luaran sahaja.\n\nUntuk memilihnya juga, buka pilihan pembangun dalam Perihal apl ini dahulu.</string>
+    <string name="dlg_internal_locked_msg">Rakaman berterusan menghauskan memori dalaman, yang biasanya tidak boleh diganti, jadi rakaman disimpan ke pemacu USB sahaja.\n\nUntuk memilihnya juga, buka pilihan pembangun dahulu, di Perihal → Notis keselamatan.</string>
     <string name="msg_storage_changed">Lokasi storan ditetapkan kepada “%1$s”</string>
     <string name="msg_enter_number">Masukkan nombor</string>
     <string name="info_unlimited">Tiada had</string>
@@ -207,8 +207,8 @@
     <string name="msg_need_overlay_adjust">Kebenaran paparan di atas apl lain diperlukan untuk membuka tetingkap pelarasan</string>
     <string name="msg_camera_not_ready_adjust">Kamera belum sedia — tetingkap pelarasan tidak dapat dibuka</string>
     <string name="msg_overlay_denied">Kebenaran paparan di atas apl lain tidak diberikan</string>
-    <string name="dlg_no_external_title">Tiada storan luaran ditemui</string>
-    <string name="dlg_no_external_msg">Rakaman disimpan ke storan luaran sahaja, untuk menjimatkan memori dalaman.\n\nMasukkan pemacu USB dan cuba lagi. Jika ia tidak dikesan, cuba port lain atau pilih semula lokasi storan dalam Tetapan.</string>
+    <string name="dlg_no_external_title">Tiada pemacu USB ditemui</string>
+    <string name="dlg_no_external_msg">Rakaman disimpan ke pemacu USB sahaja, untuk menjimatkan memori dalaman.\n\nMasukkan pemacu USB dan cuba lagi. Jika ia tidak dikesan, cuba port lain atau pilih semula lokasi storan dalam Tetapan.</string>
     <string name="dlg_will_use_internal_title">Merakam ke storan dalaman</string>
     <string name="dlg_internal_reason_chosen">Storan dalaman ialah lokasi yang dipilih sekarang.</string>
     <string name="dlg_internal_reason_fallback">Pemacu USB dipilih tetapi tiada yang dikesan, jadi rakaman akan disimpan ke storan dalaman.</string>
@@ -238,8 +238,8 @@
     <string name="date_yesterday">Semalam</string>
     <string name="date_before_yesterday">2 hari lalu</string>
     <string name="msg_selected_n">%1$d dipilih</string>
-    <string name="dlg_delete_photos_title">Padam?</string>
-    <string name="dlg_delete_photos_msg">Padam %1$d kumpulan foto yang dipilih? Ini termasuk foto daripada setiap kamera.</string>
+    <string name="dlg_delete_photos_title">Padam foto ini?</string>
+    <string name="dlg_delete_photos_msg">Foto daripada setiap kamera dalam %1$d kumpulan yang dipilih akan dipadam. Ini tidak boleh dibatalkan.</string>
     <string name="action_delete">Padam</string>
     <string name="msg_photos_deleted">%1$d foto dipadam</string>
     <string name="msg_select_photos_first">Pilih foto untuk dikongsi dahulu</string>
@@ -293,12 +293,12 @@
     <string name="upd_no_installer">Unit kepala ini tidak dapat membuka pemasang: %1$s</string>
     <string name="upd_no_settings_page">Unit kepala ini tidak dapat membuka halaman tetapan itu</string>
     <string name="msg_keep_one_camera_refuse">Pilih sekurang-kurangnya satu kamera untuk dirakam</string>
-    <string name="msg_refuse_no_external">Tiada pemacu USB dikesan. Rakaman disimpan ke storan luaran sahaja.</string>
+    <string name="msg_refuse_no_external">Tiada pemacu USB dikesan. Rakaman disimpan ke pemacu USB sahaja.</string>
 
     <!-- Skrin perihal -->
     <string name="about_tagline">Kamera pemandu pandangan keliling untuk unit kepala Zeekr: ia merakam strim komposit 360°, dengan main balik dan cermin super.</string>
-    <string name="about_storage_title">Tentang storan luaran</string>
-    <string name="about_storage_body">Rakaman disimpan ke storan luaran sahaja, tidak pernah ke memori dalaman unit kepala, yang tidak boleh diganti setelah haus.\n\n• Pemacu USB yang disertakan dengan kereta sudah memadai untuk rakaman asas.\n\n• Untuk kadar bit lebih tinggi atau simpanan lebih lama, pasang pemacu pada port Type-C sebelah kiri. Ia dikesan secara automatik dan boleh dicabut bila-bila masa.\n\n• Telah diuji: pemacu USB 128 GB, dan SSD NVMe (jauh lebih pantas, sedikit lebih panas).\n\n• Pemacu Optane M10 berbaloi tetapi kecil: kira-kira 20 jam terakhir sahaja.</string>
+    <string name="about_storage_title">Tentang pemacu USB</string>
+    <string name="about_storage_body">Rakaman disimpan ke pemacu USB sahaja, tidak pernah ke memori dalaman unit kepala, yang tidak boleh diganti setelah haus.\n\n• Pemacu USB yang disertakan dengan kereta sudah memadai untuk rakaman asas.\n\n• Untuk kadar bit lebih tinggi atau simpanan lebih lama, pasang pemacu pada port Type-C sebelah kiri. Ia dikesan secara automatik dan boleh dicabut bila-bila masa.\n\n• Telah diuji: pemacu USB 128 GB, dan SSD NVMe (jauh lebih pantas, sedikit lebih panas).\n\n• Pemacu Optane M10 berbaloi tetapi kecil: kira-kira 20 jam terakhir sahaja.</string>
     <string name="about_project_title">Projek</string>
     <string name="about_coffee_title">Belanja penulis secawan kopi</string>
     <string name="about_coffee_body">PayNow ke 9271 6786. Ia pilihan; semua ciri berfungsi tanpanya.</string>
@@ -306,7 +306,7 @@
     <string name="about_thanks_title">Penghargaan</string>
     <string name="about_thanks_body">Projek ini lahir daripada sembang kumpulan kelab pemilik. Mereka inilah yang memulakannya:\n\n• Jon (kelab pemilik Zeekr 7X Singapura) — menerangkan cara memasang apl pada unit kepala. Tanpa itu, tiada apa-apa yang akan berlaku.\n\n• SW (kelab yang sama) — berkongsi projek AVM Recorder, yang menunjukkan ia boleh dilakukan.\n\n• Patrick (kelab yang sama) — memberikan maklumat penting untuk bermula.\n\n• Gabriel (kelab yang sama) — membantu menguji apl dan memberi maklum balas.\n\n• Kelab pemilik Zeekr 7X Singapura — pasukan pentadbir yang cekap dan ahli yang mesra. Tempat orang berkongsi secara terbuka memang jarang.\n\n• Diri saya sendiri — kerana semangat dan rasa ingin tahu.\n\n• Semua yang menggunakan apl ini — semoga ia memudahkan pemanduan anda sedikit.\n\n• ZEEKR dan Geely — kerana mempertemukan kami, dan kerana kereta serta pasukan yang hebat.</string>
     <string name="about_privacy_title">Privasi dan penggunaan rangkaian</string>
-    <string name="about_privacy_body">Rakaman dan foto kekal pada pemacu USB anda. Apl ini tidak menghantarnya ke mana-mana.\n\n⚠ Rakaman pada pemacu tidak disulitkan. Sesiapa yang memegang pemacu boleh membacanya.\n\nApl hanya menyambung ke internet apabila anda memulakan salah satu daripada ini:\n\n• Semak kemas kini: bertanya kepada GitHub tentang versi terbaharu. Tiada data peranti dihantar.\n\n• Hantar ke telefon: menyajikan satu fail pada rangkaian tempatan anda sehingga anda menutupnya.\n\n• Muat naik log (pilihan pembangun): dimuat naik hanya apabila anda mengetiknya.</string>
+    <string name="about_privacy_body">Rakaman dan foto kekal pada pemacu USB anda. Apl ini tidak menghantarnya ke mana-mana.\n\n⚠ Rakaman pada pemacu tidak disulitkan. Sesiapa yang memegang pemacu boleh membacanya.\n\nApl hanya menyambung ke internet apabila anda memulakan salah satu daripada ini:\n\n• Semak kemas kini: bertanya kepada GitHub tentang versi terbaharu. Tiada data peranti dihantar.\n\n• Hantar ke telefon: menyajikan satu fail pada rangkaian tempatan anda sehingga anda menutupnya.</string>
     <string name="about_project_body">Kod sumber, isu dan keluaran. Semasa melaporkan masalah, lampirkan laporan daripada Maklumat diagnostik.</string>
     <string name="about_credits_evcam">Dikeluarkan di bawah GNU GPL v3.0 dan berasaskan EVCam oleh suyunkai, yang menyediakan asas kamera, rakaman dan tetingkap terapung. Seperti yang dikehendaki GPL, kod sumbernya terbuka.</string>
     <string name="about_safety_title">Notis keselamatan</string>
@@ -389,7 +389,7 @@
     <string name="set_section_interface">Antara muka</string>
     <string name="set_reduce_motion_title">Kurangkan animasi semasa merakam</string>
     <string name="set_reduce_motion_summary">Tiada peralihan skrin semasa merakam, GPU dibiarkan untuk pengekod</string>
-    <string name="set_fisheye_projection_title">Pembetulan mata ikan</string>
+    <string name="set_fisheye_projection_title">Unjuran mata ikan</string>
     <string name="set_fisheye_projection_summary">%1$s · untuk pratonton langsung, foto dan video</string>
     <string name="opt_projection_rectilinear">Garisan lurus</string>
     <string name="opt_projection_cylindrical">Luas (ufuk melengkung)</string>
@@ -546,9 +546,9 @@
 
     <!-- Volum storan -->
     <string name="storage_volume_desc">%1$s (%2$s kosong daripada %3$s)</string>
-    <string name="storage_external_named">Storan luaran (%1$s)</string>
-    <string name="storage_external_n">Storan luaran %1$d</string>
-    <string name="storage_external_n_named">Storan luaran %1$d (%2$s)</string>
+    <string name="storage_external_named">Pemacu USB (%1$s)</string>
+    <string name="storage_external_n">Pemacu USB %1$d</string>
+    <string name="storage_external_n_named">Pemacu USB %1$d (%2$s)</string>
 
     <!-- Main balik foto -->
     <string name="photo_count_badge">%1$d foto</string>
@@ -575,7 +575,7 @@
     <string name="debug_version">Versi: %1$s</string>
 
     <!-- Maklumat diagnostik -->
-    <string name="diag_subtitle">Kamera, paparan, isyarat kenderaan, storan dan log. Simpan atau salin laporan untuk menghantarnya.</string>
+    <string name="diag_subtitle">Kamera, paparan, storan dan log. Simpan atau salin laporan untuk menghantarnya.</string>
     <string name="diag_btn_save">Simpan</string>
     <string name="diag_btn_copy">Salin</string>
     <string name="diag_btn_refresh">Kumpul semula</string>
@@ -636,6 +636,4 @@
     <string name="dev_repair_mp4_title">Baiki video tanpa indeks</string>
     <string name="dev_repair_mp4_summary">Klip yang terputus kerana bekalan kuasa hilang tiada indeks, jadi tiada apa boleh membukanya. Indeks dibina semula daripada klip sihat kamera yang sama, nama fail kekal</string>
     <string name="dev_note">“Tersuai” dalam Profil strim hanya tersedia di sini. Ketik “Notis keselamatan” dalam Perihal untuk mematikan pilihan pembangun; bahagian ini kemudian tersembunyi.</string>
-
-    <!-- Muat naik log · nama peranti (pembangun) -->
 </resources>
