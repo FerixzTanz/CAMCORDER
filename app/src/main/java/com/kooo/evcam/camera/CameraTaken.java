@@ -59,21 +59,22 @@ public final class CameraTaken {
     /** 相机服务报：这一路空出来了。别的程序一路都不占了，就把被拿走时断掉的接回来。 */
     static void othersReleased(String cameraId) {
         if (HELD_BY_OTHERS.remove(cameraId) && HELD_BY_OTHERS.isEmpty()) {
-            retryNow("别的程序放开了相机 " + cameraId);
+            retryNow(cameraId);
         }
     }
 
     /** 相机服务说访问优先级变了（前后台切换那种）：别的程序还占着的话，趁机试一次。 */
     static void prioritiesChanged() {
         if (othersHold()) {
-            retryNow("访问优先级变了");
+            retryNow(null);
         }
     }
 
-    private static void retryNow(String why) {
+    /** @param releasedCameraId 放开的那一路；优先级变了那种传 null */
+    private static void retryNow(String releasedCameraId) {
         MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
         if (manager != null) {
-            manager.retryTaken(why);
+            manager.retryTaken(releasedCameraId);
         }
     }
 }

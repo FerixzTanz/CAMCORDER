@@ -2775,8 +2775,10 @@ public class MultiCameraManager {
     /**
      * 别的程序放开了相机、或者访问优先级变了：把被拿走的、该开着的立刻接回来
      * （{@link CameraTaken} 在主线程调）。
+     *
+     * @param releasedCameraId 放开的那一路；优先级变了那种是 null
      */
-    public void retryTaken(String why) {
+    public void retryTaken(String releasedCameraId) {
         StringBuilder which = new StringBuilder();
         for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
             SingleCamera camera = entry.getValue();
@@ -2788,7 +2790,8 @@ public class MultiCameraManager {
             }
         }
         if (which.length() > 0) {
-            com.kooo.evcam.blackbox.BlackBox.noteImportant(why + "，接回: " + which);
+            com.kooo.evcam.blackbox.BlackBox.noteImportant((releasedCameraId == null ? "访问优先级变了"
+                    : "别的程序放开了相机 " + releasedCameraId) + "，接回: " + which);
         }
     }
 
