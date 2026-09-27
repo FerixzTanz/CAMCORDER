@@ -5,6 +5,10 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.48.0-alpha] - 2026-09-27
+
 - **Developer options: per-pixel fisheye correction on the GPU**, one switch for the live
   preview and one for video playback. With them on, the surround view is straightened pixel
   by pixel, as in photo playback, instead of in patches that bend straight lines slightly.
