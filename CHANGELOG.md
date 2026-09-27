@@ -5,6 +5,10 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.52.0-alpha] - 2026-09-27
+
 - The fisheye correction button reads "Straighten" in English and "Luruskan" in Malay, on the
   main screen, in photo playback and in video playback. "Fisheye" / "Mata ikan" read like a
   switch that turns a fisheye effect on; when lit it does the opposite and the picture is
