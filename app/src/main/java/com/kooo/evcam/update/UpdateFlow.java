@@ -99,7 +99,9 @@ public final class UpdateFlow {
         com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(activity, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.upd_found_title)
                 .setMessage(message)
-                .setPositiveButton(R.string.upd_download, (d, w) -> download(activity, release))
+                // 先看一眼安装提醒，再下载：车机安装界面装完后只能点「返回」，见 UpdateInstallGuide
+                .setPositiveButton(R.string.upd_download, (d, w) -> UpdateInstallGuide.show(
+                        activity, () -> download(activity, release)))
                 .setNegativeButton(R.string.upd_later, null));
     }
 

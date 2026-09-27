@@ -277,6 +277,8 @@
     <string name="upd_found_msg_notes">%1$s%2$s\n\nVersi semasa %3$s\n\nApa yang baharu (dari halaman keluaran GitHub):\n\n%4$s\n\nPemasang akan dibuka apabila muat turun selesai.</string>
     <string name="upd_download">Muat turun dan pasang</string>
     <string name="upd_later">Nanti</string>
+    <string name="upd_guide_start">Faham, muat turun</string>
+    <string name="upd_guide_image">Sebelum memasang: selepas muat turun, pemasang unit kepala dibuka. Selepas dipasang, ketik Kembali di kiri atas, bukan Buka di tengah</string>
     <string name="upd_downloading">Memuat turun…</string>
     <string name="upd_downloading_pct">Memuat turun… %1$d%% (%2$s / %3$s MB)</string>
     <string name="upd_download_title">Memuat turun %1$s</string>

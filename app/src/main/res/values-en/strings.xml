@@ -277,6 +277,8 @@
     <string name="upd_found_msg_notes">%1$s%2$s\n\nCurrent version %3$s\n\nWhat\'s new (from the GitHub release page):\n\n%4$s\n\nThe installer opens when the download finishes.</string>
     <string name="upd_download">Download and install</string>
     <string name="upd_later">Later</string>
+    <string name="upd_guide_start">Got it, download</string>
+    <string name="upd_guide_image">Before you install: when the download finishes the head unit\'s installer opens. Once installed, tap Back at the top left, not Open in the middle</string>
     <string name="upd_downloading">Downloading…</string>
     <string name="upd_downloading_pct">Downloading… %1$d%% (%2$s / %3$s MB)</string>
     <string name="upd_download_title">Downloading %1$s</string>

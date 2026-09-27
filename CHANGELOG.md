@@ -5,6 +5,11 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+- Check for updates: tapping "Download and install" first shows a picture of the head unit's
+  installer, in the style of the super mirror guide. Once the new version is installed, tap
+  Back at the top left, not Open in the middle: that installer has a bug, Open leaves you
+  unable to get back and the next install or update then fails. "Got it, download" starts
+  the download; Back cancels. Shown every time, in Chinese or English (Malay uses English).
 - Main screen: with fisheye correction on, each surround cell fills its space instead of
   fitting inside it. With only the surround view shown the cells are wider than the picture,
   which left black bars at the sides; now a little of the top and bottom (sky and ground) is

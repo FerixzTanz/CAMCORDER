@@ -286,6 +286,8 @@
     <string name="upd_found_msg_notes">%1$s%2$s\n\n当前版本 %3$s\n\n更新内容（来自 GitHub 发布页）：\n\n%4$s\n\n下载完成后会直接进入系统的安装界面。</string>
     <string name="upd_download">下载并安装</string>
     <string name="upd_later">稍后</string>
+    <string name="upd_guide_start">知道了，开始下载</string>
+    <string name="upd_guide_image">安装提醒：下载完成后会跳到车机的安装界面。装好后点左上角「返回」，不要点中间的「打开」</string>
     <string name="upd_downloading">正在下载…</string>
     <string name="upd_downloading_pct">正在下载… %1$d%%（%2$s / %3$s MB）</string>
     <string name="upd_download_title">下载 %1$s</string>
