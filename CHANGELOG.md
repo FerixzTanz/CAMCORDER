@@ -5,6 +5,10 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.51.0-alpha] - 2026-09-27
+
 - **Settings → System now answers two questions only**: whether the app brings itself back
   when it is gone ("Start on boot"), and whether recording survives the screen going off
   ("Keep recording when the screen goes off"). "Record on launch" moved to Recording: it is
