@@ -143,7 +143,8 @@ public final class BlackBox {
             return;
         }
         boolean informative = starter.startsWith("Receiver:") || starter.startsWith("BootReceiver:")
-                || starter.equals("WorkManager") || starter.startsWith("Activity:");
+                || starter.equals("WorkManager") || starter.equals("Accessibility")
+                || starter.startsWith("Activity:");
         if (!informative) {
             return;
         }

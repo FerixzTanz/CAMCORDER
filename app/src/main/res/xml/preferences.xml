@@ -334,11 +334,10 @@
             android:title="@string/set_screen_off_title"
             android:summary="@string/set_screen_off_summary" />
 
-        <ListPreference
-            android:key="pref_screen_off_wake_minutes"
+        <EditTextPreference
+            android:key="pref_screen_off_wake_hours"
             android:dependency="pref_screen_off_recording"
-            android:title="@string/set_screen_off_wake_title"
-            android:summary="%s" />
+            android:title="@string/set_screen_off_wake_title" />
 
         <Preference
             android:key="pref_image_adjust"

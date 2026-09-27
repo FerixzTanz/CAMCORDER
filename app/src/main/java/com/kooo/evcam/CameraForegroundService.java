@@ -149,9 +149,10 @@ public class CameraForegroundService extends Service {
      * 熄屏时在录像才拿、录像停了就放、到了用户设的时长就放。
      */
 
-    /** 保活开着就注册 TIME_TICK 广播（每分钟触发，前台服务不在就拉起来）。 */
+    /** 保活开着就注册 TIME_TICK 广播（每分钟触发，前台服务不在就拉起来）；无障碍服务在跑的话它自己有心跳。 */
     private void registerTimeTickIfNeeded() {
-        if (new AppConfig(this).isKeepAliveEnabled() && !KeepAliveReceiver.isTimeTickRegistered()) {
+        if (new AppConfig(this).isKeepAliveEnabled() && !KeepAliveAccessibilityService.isRunning()
+                && !KeepAliveReceiver.isTimeTickRegistered()) {
             KeepAliveReceiver.registerTimeTick(this);
         }
     }

@@ -9,6 +9,12 @@ Notable changes only, newest first. Each version's section becomes the body of i
   main screen, in photo playback and in video playback. "Fisheye" / "Mata ikan" read like a
   switch that turns a fisheye effect on; when lit it does the opposite and the picture is
   corrected. The Chinese label, 鱼眼校正, is unchanged.
+- Screen-off recording: the "keep the car awake" limit is typed in as hours (decimals allowed,
+  24 or 30 are fine) instead of picked from a list; default 1 hour.
+- The accessibility keep-alive service is back (1.51.0 had removed it): whether the head unit
+  lets it run has never been tested, so it stays as one of the keep-alive means, does nothing
+  while "Keep alive" is off, and writes to the black box when the system creates, connects or
+  destroys it.
 
 ## [1.51.0-alpha] - 2026-09-27
 

@@ -83,12 +83,8 @@
     <string name="set_auto_record_summary">Starts recording when the app opens, and picks an interrupted recording back up once the surround view returns. Never restarts one you stopped</string>
     <string name="set_screen_off_title">Screen-off recording</string>
     <string name="set_screen_off_summary">If recording when the screen goes off, keep going and keep the car awake, for up to the time set below</string>
-    <string name="set_screen_off_wake_title">Keep the car awake for up to</string>
-    <string name="opt_wake_30m">30 minutes</string>
-    <string name="opt_wake_1h">1 hour</string>
-    <string name="opt_wake_2h">2 hours</string>
-    <string name="opt_wake_4h">4 hours</string>
-    <string name="opt_wake_8h">8 hours</string>
+    <string name="set_screen_off_wake_title">Keep the car awake for up to (hours)</string>
+    <string name="unit_hours">%1$s h</string>
     <string name="set_screen_off_keep_title">Keep recording when the screen goes off</string>
     <string name="set_screen_off_keep_summary">If recording when the screen goes off, keep going. It never wakes the car: recording pauses while the car sleeps and carries on when it wakes</string>
     <string name="set_keep_alive_title">Keep alive</string>
@@ -159,6 +155,7 @@
 
     <!-- Main interface -->
     <string name="about_title">About &amp; credits</string>
+    <string name="accessibility_service_description">Keeps the app alive in the background.\n\nIt does not read or control the screen and collects no data.</string>
     <string name="zeekr_composite_not_found">No surround composite stream found. This head unit may not be supported</string>
     <string name="zeekr_lane_front">Front</string>
     <string name="zeekr_lane_back">Rear</string>

@@ -291,8 +291,11 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         }
     }
 
-    /** TIME_TICK 处理（每分钟调用）：前台服务不在就拉起来。 */
+    /** TIME_TICK 处理（每分钟调用）：前台服务不在就拉起来。无障碍服务在跑的话它自己有心跳，这里不重复。 */
     private void onTimeTick(Context context) {
+        if (KeepAliveAccessibilityService.isRunning()) {
+            return;
+        }
         ensureServicesRunning(context, "定时检查");
     }
     

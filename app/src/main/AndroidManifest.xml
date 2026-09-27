@@ -154,6 +154,19 @@
             android:theme="@style/Theme.Cam"
             android:exported="false" />
 
+        <!-- 无障碍服务：保活手段之一。系统肯不肯让它跑还没在车上试过，它自己会把结果记进黑匣子 -->
+        <service
+            android:name=".KeepAliveAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
         <!-- 开机自启动广播接收器 -->
         <receiver
             android:name=".BootReceiver"

@@ -5,6 +5,7 @@
     -->
     <string name="app_name">极氪即刻</string>
     <string name="app_name_full">极氪即刻（车机版）</string>
+    <string name="accessibility_service_description">保活服务：只用来提高应用在后台的存活率。\n\n本服务不会读取或操作任何界面内容，不收集任何信息。</string>
 
     <!-- 极氪合成流模式 -->
     <string name="zeekr_lane_front">前</string>
@@ -100,12 +101,8 @@
     <string name="set_auto_record_summary">应用启动后自动开始录制；录着被打断的，环视一恢复就接着录；人停的不再自动开</string>
     <string name="set_screen_off_title">熄屏录制</string>
     <string name="set_screen_off_summary">熄屏时在录像，就接着录，并且不让车机睡，最长按下面设的时长</string>
-    <string name="set_screen_off_wake_title">熄屏后不让车机睡，最多</string>
-    <string name="opt_wake_30m">30 分钟</string>
-    <string name="opt_wake_1h">1 小时</string>
-    <string name="opt_wake_2h">2 小时</string>
-    <string name="opt_wake_4h">4 小时</string>
-    <string name="opt_wake_8h">8 小时</string>
+    <string name="set_screen_off_wake_title">熄屏后不让车机睡，最多（小时）</string>
+    <string name="unit_hours">%1$s 小时</string>
     <string name="set_screen_off_keep_title">熄屏持续录制</string>
     <string name="set_screen_off_keep_summary">熄屏前在录像，熄屏后接着录。不会唤醒车机：车机睡了就停在那一刻，醒来接着录</string>
     <string name="set_keep_alive_title">保活</string>

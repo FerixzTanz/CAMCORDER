@@ -22,7 +22,7 @@ public class AppConfig {
     private static final String KEY_LANGUAGE_CHOSEN = "language_chosen";  // 首次启动的语言选择是否已完成
     private static final String KEY_RAIL_SIDE_CHOSEN = "rail_side_chosen";  // 「方向盘在哪边」是否问过
     private static final String KEY_REDUCE_MOTION_RECORDING = "reduce_motion_recording";  // 录制时减少动效
-    private static final String KEY_SCREEN_OFF_WAKE_MINUTES = "screen_off_wake_minutes";  // 熄屏录制：最多不让车机睡多久
+    private static final String KEY_SCREEN_OFF_WAKE_MINUTES = "screen_off_wake_min";  // 熄屏录制：最多不让车机睡多久（分钟）
     private static final String KEY_AUTO_START_ON_BOOT = "auto_start_on_boot";  // 开机自启动
     private static final String KEY_AUTO_START_RECORDING = "auto_start_recording";  // 启动自动录制
     private static final String KEY_SCREEN_OFF_RECORDING = "screen_off_recording";  // 息屏录制（锁车录制）
@@ -242,29 +242,22 @@ public class AppConfig {
      * <p>拆开之后「开机自启动」只管开机自启动。这一项单独放在开发者选项里，
      * 等真需要时再说。数据见 {@code docs/zeekr-platform-notes.md} §3.6。</p>
      */
+    /** 熄屏录制默认最多不让车机睡 1 小时（项目所有者 2026-09-27 定）。 */
+    public static final int DEFAULT_SCREEN_OFF_WAKE_MINUTES = 60;
+
     /**
-     * 熄屏录制最多不让车机睡多久（分钟），存的是 {@code SettingsRegistry.SCREEN_OFF_WAKE} 里的取值。
+     * 熄屏录制最多不让车机睡多久（分钟）。用户在设置里按小时填，可带小数（24、30 都行）。
      *
      * <p>从熄屏那一刻起算：App 拿不到「下车」这个事件，熄屏是最接近的近似（平台笔记 §3.6）。
      * 到点放开唤醒锁，车机该睡就睡（规格 §3.1）。</p>
      */
-    public String getScreenOffWakeMode() {
-        return prefs.getString(KEY_SCREEN_OFF_WAKE_MINUTES,
-                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.defaultValue);
-    }
-
-    public void setScreenOffWakeMode(String value) {
-        prefs.edit().putString(KEY_SCREEN_OFF_WAKE_MINUTES,
-                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.sanitize(value)).apply();
-    }
-
     public int getScreenOffWakeMinutes() {
-        try {
-            return Integer.parseInt(com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE
-                    .sanitize(getScreenOffWakeMode()));
-        } catch (NumberFormatException e) {
-            return 60;
-        }
+        int minutes = prefs.getInt(KEY_SCREEN_OFF_WAKE_MINUTES, DEFAULT_SCREEN_OFF_WAKE_MINUTES);
+        return minutes > 0 ? minutes : DEFAULT_SCREEN_OFF_WAKE_MINUTES;
+    }
+
+    public void setScreenOffWakeMinutes(int minutes) {
+        prefs.edit().putInt(KEY_SCREEN_OFF_WAKE_MINUTES, Math.max(1, minutes)).apply();
     }
 
     public boolean isAutoStartOnBoot() {

@@ -399,6 +399,45 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     }
 
     /**
+     * 熄屏录制最多不让车机睡多久：用户自己填小时数，可带小数（24、30 都行），存成分钟。
+     * 填错、填 0 或负数都不收，提示「请输入数字」。
+     */
+    private void bindScreenOffWakeHours() {
+        EditTextPreference pref = findPreference("pref_screen_off_wake_hours");
+        if (pref == null) {
+            return;
+        }
+        pref.setPersistent(false);
+        pref.setText(hoursText(appConfig.getScreenOffWakeMinutes()));
+        pref.setSummary(getString(R.string.unit_hours, hoursText(appConfig.getScreenOffWakeMinutes())));
+        pref.setOnPreferenceChangeListener((preference, newValue) -> {
+            int minutes;
+            try {
+                double hours = Double.parseDouble(String.valueOf(newValue).trim());
+                minutes = (int) Math.round(hours * 60);
+            } catch (NumberFormatException e) {
+                minutes = 0;
+            }
+            if (minutes <= 0) {
+                toast(getString(R.string.msg_enter_number));
+                return false;
+            }
+            appConfig.setScreenOffWakeMinutes(minutes);
+            pref.setText(hoursText(minutes));
+            pref.setSummary(getString(R.string.unit_hours, hoursText(minutes)));
+            return false;
+        });
+    }
+
+    /** 分钟数写成小时：整点写「2」，不整写「1.5」。 */
+    private static String hoursText(int minutes) {
+        if (minutes % 60 == 0) {
+            return String.valueOf(minutes / 60);
+        }
+        return String.format(java.util.Locale.US, "%.1f", minutes / 60.0);
+    }
+
+    /**
      * 车牌号输入框。
      *
      * <p>输入的东西一律先过 {@link LicensePlate#sanitize}：小写转大写，
@@ -826,8 +865,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         // 熄屏录制 = 熄屏持续录制 + 唤醒锁（规格 §3.1）。整块只在开发者选项里出现，不用再单独锁
         bindSwitch("pref_screen_off_recording", appConfig.isScreenOffRecordingEnabled(),
                 value -> appConfig.setScreenOffRecordingEnabled(value));
-        bindEnum("pref_screen_off_wake_minutes", SettingsRegistry.SCREEN_OFF_WAKE,
-                appConfig.getScreenOffWakeMode(), value -> appConfig.setScreenOffWakeMode(value));
+        bindScreenOffWakeHours();
         bindSwitch("pref_force_h264", appConfig.isForceH264Encoding(),
                 value -> appConfig.setForceH264Encoding(value));
 
@@ -1007,6 +1045,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         }
         if ("pref_video_limit".equals(key) || "pref_photo_limit".equals(key)) {
             input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
+        if ("pref_screen_off_wake_hours".equals(key)) {
+            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         }
     }
 

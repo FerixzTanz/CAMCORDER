@@ -48,17 +48,6 @@ public final class SettingsRegistry {
             entry("zeekr_7x_multi", "极氪7X（环视 + 前后座舱）", R.string.opt_model_zeekr_multi));
 
     /**
-     * 熄屏录制最多不让车机睡多久（规格 §3.1）。从熄屏那一刻起算；默认 1 小时。
-     */
-    public static final SettingSpec SCREEN_OFF_WAKE = SettingSpec.of(
-            "screen_off_wake_minutes", "熄屏后不让车机睡", "60",
-            entry("30", "30 分钟", R.string.opt_wake_30m),
-            entry("60", "1 小时", R.string.opt_wake_1h),
-            entry("120", "2 小时", R.string.opt_wake_2h),
-            entry("240", "4 小时", R.string.opt_wake_4h),
-            entry("480", "8 小时", R.string.opt_wake_8h));
-
-    /**
      * 界面语言。
      *
      * <p>默认<b>跟随系统</b> —— 车机本来是什么语言，这个应用就该是什么语言。

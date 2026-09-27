@@ -83,12 +83,8 @@
     <string name="set_auto_record_summary">Mula merakam apabila apl dibuka, dan menyambung semula rakaman yang terganggu apabila paparan sekeliling kembali. Tidak memulakan semula rakaman yang anda hentikan</string>
     <string name="set_screen_off_title">Rakaman skrin padam</string>
     <string name="set_screen_off_summary">Jika sedang merakam semasa skrin padam, teruskan dan kekalkan kereta berjaga, sehingga masa yang ditetapkan di bawah</string>
-    <string name="set_screen_off_wake_title">Kekalkan kereta berjaga sehingga</string>
-    <string name="opt_wake_30m">30 minit</string>
-    <string name="opt_wake_1h">1 jam</string>
-    <string name="opt_wake_2h">2 jam</string>
-    <string name="opt_wake_4h">4 jam</string>
-    <string name="opt_wake_8h">8 jam</string>
+    <string name="set_screen_off_wake_title">Kekalkan kereta berjaga sehingga (jam)</string>
+    <string name="unit_hours">%1$s jam</string>
     <string name="set_screen_off_keep_title">Terus merakam apabila skrin padam</string>
     <string name="set_screen_off_keep_summary">Jika sedang merakam semasa skrin padam, teruskan. Tidak mengejutkan kereta: rakaman berhenti sementara kereta tidur dan bersambung apabila ia bangun</string>
     <string name="set_keep_alive_title">Kekal hidup</string>
@@ -159,6 +155,7 @@
 
     <!-- Antara muka utama -->
     <string name="about_title">Perihal &amp; penghargaan</string>
+    <string name="accessibility_service_description">Mengekalkan apl hidup di latar belakang.\n\nIa tidak membaca atau mengawal skrin dan tidak mengumpul data.</string>
     <string name="zeekr_composite_not_found">Tiada strim komposit keliling ditemui. Unit kepala ini mungkin tidak disokong</string>
     <string name="zeekr_lane_front">Depan</string>
     <string name="zeekr_lane_back">Belakang</string>

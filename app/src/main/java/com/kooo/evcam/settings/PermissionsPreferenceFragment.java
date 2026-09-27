@@ -89,6 +89,8 @@ public class PermissionsPreferenceFragment extends PreferenceFragmentCompat {
         }
         add(advanced, context, "悬浮窗权限", "超级后视镜、悬浮窗、录制按钮都要用",
                 WakeUpHelper.hasOverlayPermission(context), this::requestOverlay);
+        add(advanced, context, "无障碍服务", "保活手段之一；系统肯不肯让它跑，看黑匣子",
+                isAccessibilityEnabled(context), this::openAccessibilitySettings);
         add(advanced, context, "使用情况访问", "判断应用是否在前台",
                 hasUsageStats(context), this::openUsageStatsSettings);
         add(advanced, context, "忽略电池优化", "避免系统在后台掐掉录制",
@@ -140,6 +142,16 @@ public class PermissionsPreferenceFragment extends PreferenceFragmentCompat {
         return hasPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
+    private boolean isAccessibilityEnabled(Context context) {
+        try {
+            String enabled = Settings.Secure.getString(context.getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            return enabled != null && enabled.contains(context.getPackageName());
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private boolean hasUsageStats(Context context) {
         try {
             AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
@@ -181,6 +193,10 @@ public class PermissionsPreferenceFragment extends PreferenceFragmentCompat {
         if (getContext() != null) {
             WakeUpHelper.requestOverlayPermission(getContext());
         }
+    }
+
+    private void openAccessibilitySettings() {
+        launch(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
     }
 
     private void openUsageStatsSettings() {
