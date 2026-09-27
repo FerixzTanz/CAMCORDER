@@ -78,12 +78,30 @@ public final class LaneLayout {
      */
     public String fit = FIT;
 
+    /**
+     * 鱼眼校正开着时怎么办，取值同 {@link #fit}。校正关着时不看它。
+     *
+     * <h3>为什么和 {@link #fit} 分开</h3>
+     *
+     * <p>校正前的画面是一个圆，四角本来就是黑的，「适应」看得到整幅最合适；
+     * 校正后是一幅正常的画面，上下两边是天和地，裁掉一点换中间更大更值 ——
+     * 只开环视的主界面里，每格比画面宽，「适应」会在左右留两条黑。</p>
+     *
+     * <p>默认「填充」。还没有地方改它：留给以后配置编辑里的摆位，按格单独调。</p>
+     */
+    public String fitCorrected = FILL;
+
     public static final String FIT = "fit";
     public static final String FILL = "fill";
 
     /** 认不出来的值一律当「适应」—— 配置是可以被手改的。 */
     public static String normaliseFit(String value) {
         return FILL.equals(value) ? FILL : FIT;
+    }
+
+    /** {@link #fitCorrected} 的那一份：默认是「填充」，所以认不出来的也当「填充」。 */
+    public static String normaliseFitCorrected(String value) {
+        return FIT.equals(value) ? FIT : FILL;
     }
 
     public static LaneLayout cell(int laneIndex, float x, float y, float width, float height) {
@@ -114,6 +132,7 @@ public final class LaneLayout {
         out.put("translateX", fraction(translateX));
         out.put("translateY", fraction(translateY));
         out.put("fit", fit);
+        out.put("fitCorrected", fitCorrected);
         return out;
     }
 
@@ -138,6 +157,7 @@ public final class LaneLayout {
         layout.translateX = decimal(values, "translateX", 0f);
         layout.translateY = decimal(values, "translateY", 0f);
         layout.fit = normaliseFit(values.get("fit"));
+        layout.fitCorrected = normaliseFitCorrected(values.get("fitCorrected"));
         return layout;
     }
 

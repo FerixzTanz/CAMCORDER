@@ -108,6 +108,8 @@ public class FourLaneContainer extends ViewGroup {
         public int laneIndex;
         /** 这一格自己的缩放方式；null 表示跟容器走。 */
         public ScaleMode fit;
+        /** 鱼眼校正开着时这一格的缩放方式；null 表示跟容器走（默认填充）。 */
+        public ScaleMode fitCorrected;
         /** 在容器里的位置与大小，容器宽高的比例。 */
         public float x;
         public float y;
@@ -144,6 +146,11 @@ public class FourLaneContainer extends ViewGroup {
     private CompositeStreamGeometry.Plan plan;
 
     private ScaleMode scaleMode = ScaleMode.FIT;
+    /**
+     * 鱼眼校正开着时的容器级默认值。校正后上下是天和地，裁掉一点换中间更大；
+     * 只开环视时每格比画面宽，「适应」会在左右留两条黑。见 {@code LaneLayout.fitCorrected}。
+     */
+    private final ScaleMode correctedScaleMode = ScaleMode.FILL;
     private DisplayMode displayMode = DisplayMode.GRID;
     private int focusedLane;
     /** laneOrder[格子位置] = 合成流中的画面序号。 */
@@ -812,10 +819,11 @@ public class FourLaneContainer extends ViewGroup {
         // 转了 90°/270° 的话，占地的长宽也跟着对调。
         float laneAspect = quarterTurn && laneAspectPx > 0f ? 1f / laneAspectPx : laneAspectPx;
         float cellAspect = cellWidth / cellHeight;
-        // 这一格自己说了算，没说才跟容器走
-        // 放大时由调用方指定（一律填充）；否则这一格自己说了算，没说才跟容器走
+        // 放大时由调用方指定（一律填充）；否则这一格自己说了算，没说才跟容器走。
+        // 鱼眼校正开着时看另一份：校正前后适合的缩放方式不一样
+        ScaleMode own = cell == null ? null : fisheye ? cell.fitCorrected : cell.fit;
         ScaleMode mode = forced != null ? forced
-                : cell != null && cell.fit != null ? cell.fit : scaleMode;
+                : own != null ? own : fisheye ? correctedScaleMode : scaleMode;
         if (mode == ScaleMode.FIT && laneAspect > 0f && cellAspect > 0f) {
             if (laneAspect < cellAspect) {
                 destWidth = cellHeight * laneAspect;

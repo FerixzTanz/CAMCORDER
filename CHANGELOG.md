@@ -5,7 +5,13 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- Main screen: with fisheye correction on, each surround cell fills its space instead of
+  fitting inside it. With only the surround view shown the cells are wider than the picture,
+  which left black bars at the sides; now a little of the top and bottom (sky and ground) is
+  cropped and the middle is larger. In the surround + two cabin layout the cells are about
+  as wide as the picture, so little changes there. Each cell stores this setting on its own
+  (`fitCorrected`, default fill), ready for per-cell adjustment in the profile editor's
+  layout; nothing edits it yet. With correction off nothing changes.
 
 ## [1.57.0-beta] - 2026-09-27
 

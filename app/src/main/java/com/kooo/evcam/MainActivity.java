@@ -1778,6 +1778,7 @@ public class MainActivity extends AppCompatActivity {
             cell.translateX = lane.translateX;
             cell.translateY = lane.translateY;
             cell.fit = scaleModeOf(lane.fit);
+            cell.fitCorrected = scaleModeOf(lane.fitCorrected);
             cells[i] = cell;
         }
         compositeContainer.setCells(cells);
