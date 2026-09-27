@@ -190,6 +190,17 @@ public final class CamDialogs {
                 context.getResources().getDimension(R.dimen.text_row));
         button.setTypeface(Typeface.create(button.getTypeface(),
                 primary ? Typeface.BOLD : Typeface.NORMAL));
+        // 文字要真的居中。Material 的对话框按钮样式是 singleLine：那会打开「横向滚动」，
+        // 文字排在一条极宽的版面上、再靠滚动偏移量对到中间 —— 偏移量算得不对时文字就歪，
+        // 而且样式还把按钮宽度封顶在 320dp，长一点的英文、马来文标签会被截成「…」。
+        // 中文标签短，两样都碰不上；英文版的确认键文字一直不在正中间，怀疑就是这两条。
+        // 这里改成普通的一行文字：在按钮真实的宽度里排版、居中，不封顶。
+        button.setSingleLine(false);
+        button.setMaxLines(1);
+        button.setHorizontallyScrolling(false);
+        button.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        button.setGravity(android.view.Gravity.CENTER);
+        button.setMaxWidth(Integer.MAX_VALUE);
 
         if (button instanceof MaterialButton) {
             // AppCompat / Material 的对话框：按钮本身就是 MaterialButton，改它的着色
