@@ -7,6 +7,25 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.60.0-alpha] - 2026-09-27
+
+- **One way to start recording.** Every path that wants recording (the record button, the
+  floating button in the foreground or the background, auto-start on launch, resume after
+  an interruption, screen-on) asks one coordinator, which waits for the surround camera to
+  show frames and then starts: one wait, one retry budget. The main screen no longer runs
+  its own start timers (the seven "wait two seconds" chains, the 30-second check, the
+  restore after a theme change and the 10-second screen-on resume are gone) and no longer
+  keeps its own copy of the decision; it paints what the pipeline is doing. The floating
+  button's background start used to bypass the storage checks, the write watchdog and the
+  USB-only rule; it now goes through the same entry. Third step of the consolidation plan.
+- Screen off with "keep recording when the screen is off" switched off: recording stops
+  10 seconds after the screen goes dark whether it was started by hand or automatically (it
+  used to stop only automatic recordings). On screen-on it resumes only when "auto-record on
+  launch" is on.
+- The pipeline's stop reasons (drive full, nothing written, camera taken by another app, no
+  first data) are handled the same way whether or not the main screen is showing; the toast
+  and the status-bar hint follow the reason.
+
 ## [1.59.0-alpha] - 2026-09-27
 
 - **No file I/O on the main thread for storage or the black box.** The black box writes on

@@ -84,21 +84,6 @@ public class RecordingIntentTest {
         assertTrue(intent.shouldRestore(true));
     }
 
-    /** 接不回去就别一直试 —— 拔了 U 盘的话，每 30 秒只是再弹一次提示。 */
-    @Test
-    public void stopsRetryingAfterThreeFailures() {
-        intent.noteRecordingStarted();
-        for (int i = 0; i < RecordingIntent.MAX_RESTORE_ATTEMPTS; i++) {
-            assertTrue("第 " + (i + 1) + " 次该试", intent.shouldRestore(true));
-            intent.noteRestoreAttempt();
-        }
-        assertFalse(intent.shouldRestore(true));
-
-        // 真接回去了就重新开始算
-        intent.noteRecordingStarted();
-        assertTrue(intent.shouldRestore(true));
-    }
-
     @Test
     public void resetStartsAFreshLaunch() {
         intent.noteAutoStarted();

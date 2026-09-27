@@ -102,8 +102,7 @@ public class MultiCameraManager {
     /**
      * 录不下去了（U 盘满）。
      *
-     * <p>界面在的时候交给界面去停 —— 它要同步按钮、计时器、提示。界面不在的时候
-     * 相机层自己停，见 {@link #checkStorage}。</p>
+     * <p>由 RecordingCoordinator 去停：它同步按钮、前台服务、提示，主界面在不在都一样。</p>
      */
     public interface StorageFullCallback {
         /** @param capless true：没设上限（不删录像）；false：设了上限但删光旧录像也腾不出空间 */
@@ -353,8 +352,7 @@ public class MultiCameraManager {
     /**
      * 录像写不进文件了。
      *
-     * <p>界面在的时候交给界面：它按「录像被打断」处理，按钮、悬浮按钮回到未录，等能录了再接。
-     * 界面不在的时候相机层自己停，至少别再显示在录。</p>
+     * <p>交给 RecordingCoordinator：它按「录像被打断」处理，按钮、悬浮按钮回到未录，等能录了再接。</p>
      */
     /**
      * 这次录像实际写到哪个盘，进黑匣子。
@@ -421,11 +419,9 @@ public class MultiCameraManager {
         mainHandler.post(() -> {
             if (cameraLostCallback != null) {
                 cameraLostCallback.onCameraLost(cameraId);
-                return;
+            } else {
+                stopRecording();
             }
-            stopRecording();
-            com.kooo.evcam.CameraForegroundService.stop(context);
-            com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(context, false);
         });
     }
 
@@ -477,13 +473,12 @@ public class MultiCameraManager {
     }
 
     private void onWriteStalled(long stalledMs) {
+        // 停不停、接不接由 RecordingCoordinator 判（它一直挂着这个回调，主界面在不在都一样）
         if (writeStallCallback != null) {
             writeStallCallback.onWriteStalled(stalledMs);
-            return;
+        } else {
+            stopRecording();
         }
-        stopRecording();
-        com.kooo.evcam.CameraForegroundService.stop(context);
-        com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(context, false);
     }
 
     private CorruptedFilesCallback corruptedFilesCallback;
@@ -550,21 +545,17 @@ public class MultiCameraManager {
      * 正好落在两步之间，相机线程就空指针崩溃 —— 而且是在录制中。换成空实现就没有这个窗口，
      * 也不再握着那个已经销毁的界面。</p>
      *
-     * <p>唯一置空的是「U 盘满」：没人接时相机层自己停录（见 {@link #checkStorage}），
-     * 而且它只在主线程上读，不存在上面那种竞争。</p>
+     * <p>盘满、写不进、相机被拿走、一路都没起来这四个<b>不在这里动</b>：它们是
+     * RecordingCoordinator 接的，它不随主界面走 —— 换掉的话主界面一重建，录像就没人停、没人接了。</p>
      */
     public void detachUiCallbacks() {
         statusCallback = (cameraId, status) -> { };
         previewSizeCallback = (cameraKey, cameraId, previewSize) -> { };
         corruptedFilesCallback = deletedFiles -> { };
-        recordingStatusCallback = (activeCameras, failedCameras) -> { };
         segmentSwitchCallback = newSegmentIndex -> { };
         codecFallbackCallback = () -> { };
         firstDataWrittenCallback = () -> { };
         timestampUpdateCallback = newTimestamp -> { };
-        storageFullCallback = null;
-        writeStallCallback = null;
-        cameraLostCallback = null;
         AppLog.i(TAG, "主界面已离开，回调换成空实现，录制管线继续 recording=" + isRecording);
     }
 
@@ -1096,41 +1087,13 @@ public class MultiCameraManager {
     }
 
     /**
-     * 开始录制所有摄像头（自动生成时间戳）
-     */
-    public boolean startRecording() {
-        // 生成统一的时间戳
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        return startRecording(timestamp);
-    }
-
-    /**
-     * 开始录制所有摄像头（使用指定的时间戳）
-     * @param timestamp 统一的时间戳，用于所有摄像头的文件命名
-     */
-    public boolean startRecording(String timestamp) {
-        if (isRecording) {
-            AppLog.w(TAG, "Already recording");
-            return false;
-        }
-
-        // 清除缓存的分段时间戳，开始新的录制周期
-        clearCachedSegmentTimestamp();
-
-        // 根据模式选择录制方式
-        if (useCodecRecording) {
-            return startCodecRecording(timestamp, null);
-        } else {
-            return startMediaRecorderRecording(timestamp, null);
-        }
-    }
-
-    /**
      * 开始录制指定的摄像头（使用指定的时间戳和摄像头列表）
      * @param timestamp 统一的时间戳，用于所有摄像头的文件命名
      * @param enabledCameras 要录制的摄像头位置集合（如 ["front", "back"]），为 null 时录制所有摄像头
      */
     public boolean startRecording(String timestamp, Set<String> enabledCameras) {
+        // 唯一的开录入口是 RecordingCoordinator：以前还有不带参数的两个重载给悬浮按钮走，
+        // 那条路没有写入看门狗、没有存储检查、也不拒录内置存储（2026-09-27 审查），删了
         if (isRecording) {
             AppLog.w(TAG, "Already recording");
             return false;
@@ -1178,17 +1141,9 @@ public class MultiCameraManager {
                             + decision.capless);
                     if (storageFullCallback != null) {
                         storageFullCallback.onStorageFull(decision.capless);
-                        return;
+                    } else {
+                        stopRecording();
                     }
-                    // 界面不在：自己停，自己提示
-                    stopRecording();
-                    com.kooo.evcam.CameraForegroundService.stop(context);
-                    com.kooo.evcam.service.RecordingFloatingService
-                            .sendRecordingStateChanged(context, false);
-                    android.widget.Toast.makeText(context.getApplicationContext(),
-                            decision.capless ? com.kooo.evcam.R.string.msg_storage_full_stopped
-                                    : com.kooo.evcam.R.string.msg_storage_cannot_free,
-                            android.widget.Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -2634,6 +2589,18 @@ public class MultiCameraManager {
     /**
      * 检查是否有已连接的相机
      */
+    /** 环视此刻出画面到多久以内算「正常」。 */
+    private static final long SURROUND_FRESH_MS = 2_000L;
+
+    /**
+     * 环视此刻是不是在正常出画面 —— 「能获得视频流」以环视为准（规格 §2.2）。
+     * 开录、接回都只看它（RecordingCoordinator）。
+     */
+    public boolean surroundHealthy() {
+        SingleCamera surround = getCamera(CameraSlots.KEY_SURROUND);
+        return surround != null && surround.isCameraOpened() && surround.hasFramesWithin(SURROUND_FRESH_MS);
+    }
+
     public boolean hasConnectedCameras() {
         for (SingleCamera camera : cameras.values()) {
             if (camera.isConnected()) {

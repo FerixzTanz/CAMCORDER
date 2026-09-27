@@ -33,8 +33,6 @@ public final class RecordingIntent {
      * <p>录不起来往往是拔了 U 盘、相机被占这类不会自己好的原因，
      * 每 30 秒重试一次只是每 30 秒弹一次提示。</p>
      */
-    public static final int MAX_RESTORE_ATTEMPTS = 3;
-
     private static final RecordingIntent CURRENT = new RecordingIntent();
 
     /** 整个进程共用的那一份。 */
@@ -45,7 +43,6 @@ public final class RecordingIntent {
     private boolean autoStarted;
     private boolean stoppedByUser;
     private boolean everStarted;
-    private int restoreAttempts;
 
     /**
      * 落盘（规格 1.2）：进程被杀又拉回来时，「这一趟」的选择要还在 ——
@@ -98,25 +95,14 @@ public final class RecordingIntent {
      *
      * <p>三个前提缺一不可：开着这个功能、<b>这一趟真的录起来过</b>、而且不是用户自己停的。
      * 中间那条是「从没录起来过就别自己开」——回放看完切回来、刚启动还没插 U 盘，
-     * 都属于「没录起来过」。</p>
+     * 都属于「没录起来过」。连着接不回去的次数不在这里算，那是 RecordingCoordinator 的额度。</p>
      */
     public boolean shouldRestore(boolean enabled) {
-        return enabled && everStarted && !stoppedByUser
-                && restoreAttempts < MAX_RESTORE_ATTEMPTS;
+        return enabled && everStarted && !stoppedByUser;
     }
 
-    public void noteRestoreAttempt() {
-        restoreAttempts++;
-    }
-
-    public int restoreAttempts() {
-        return restoreAttempts;
-    }
-
-    /** 真的录起来了。之前接不回去的次数一笔勾销。 */
     public void noteRecordingStarted() {
         everStarted = true;
-        restoreAttempts = 0;
         persist();
     }
 
@@ -124,7 +110,6 @@ public final class RecordingIntent {
     public void noteUserStarted() {
         stoppedByUser = false;
         autoStarted = true;
-        restoreAttempts = 0;
         persist();
     }
 
@@ -143,13 +128,12 @@ public final class RecordingIntent {
         autoStarted = false;
         stoppedByUser = false;
         everStarted = false;
-        restoreAttempts = 0;
         persist();
     }
 
     /** 诊断报告里的一行。 */
     public String describe() {
         return "autoStarted=" + autoStarted + " stoppedByUser=" + stoppedByUser
-                + " everStarted=" + everStarted + " restoreAttempts=" + restoreAttempts;
+                + " everStarted=" + everStarted;
     }
 }
