@@ -5,6 +5,10 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.49.0-alpha] - 2026-09-27
+
 - Dialog buttons lay their label out in the button's real width, centred. Material's dialog
   button style is single-line (centred by a scroll offset) and capped at 320dp, which left
   long English and Malay labels off-centre or cut to "…".
