@@ -5,7 +5,9 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- Main screen, surround view only: the top-left cell is labelled "Front" again. It showed
+  "Surround", the name of the camera the composite stream comes from, while the other three
+  cells read Rear, Left and Right.
 
 ## [1.53.0-alpha] - 2026-09-27
 

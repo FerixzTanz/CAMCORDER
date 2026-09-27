@@ -838,7 +838,12 @@ public class MainActivity extends AppCompatActivity {
         TextView labelBack = findViewById(R.id.label_back);
         TextView labelLeft = findViewById(R.id.label_left);
         
-        // 设置自定义名称，如果名称为空则隐藏标签
+        // 设置自定义名称，如果名称为空则隐藏标签。
+        // 单路布局里这几个是四宫格的方向角标（前后左右，布局里写好了），不是相机槽位的名字：
+        // 按槽位取名的话 front 是合成流，左上那一格就成了「环视」
+        if (findViewById(R.id.cabin_column) == null) {
+            return;
+        }
         if (labelFront != null) {
             updateCameraLabel(labelFront, appConfig.getCameraName(this, "front"));
         }
