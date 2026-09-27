@@ -306,82 +306,6 @@ public class StorageHelper {
     }
 
     /**
-     * 获取U盘路径
-     * @param context 上下文
-     * @return U盘根目录，如果没有则返回 null
-     */
-    public static File getExternalSdCardPath(Context context) {
-        if (context == null) {
-            return null;
-        }
-        
-        try {
-            // 获取所有外部存储设备
-            File[] externalDirs = context.getExternalFilesDirs(null);
-            
-            if (externalDirs == null || externalDirs.length < 2) {
-                AppLog.d(TAG, "未检测到U盘（仅有内部存储）");
-                return null;
-            }
-            
-            // 第一个是内部存储，第二个及以后是U盘
-            for (int i = 1; i < externalDirs.length; i++) {
-                File dir = externalDirs[i];
-                if (dir != null && dir.exists()) {
-                    // 尝试获取U盘根目录（去掉 /Android/data/包名/files 部分）
-                    String path = dir.getAbsolutePath();
-                    int index = path.indexOf("/Android/data/");
-                    if (index > 0) {
-                        File sdRoot = new File(path.substring(0, index));
-                        if (sdRoot.exists() && sdRoot.canRead()) {
-                            AppLog.d(TAG, "检测到U盘: " + sdRoot.getAbsolutePath());
-                            return sdRoot;
-                        }
-                    }
-                    
-                    // 如果无法获取根目录，返回应用专属目录的上级目录
-                    AppLog.d(TAG, "检测到U盘（应用目录）: " + dir.getAbsolutePath());
-                    return dir;
-                }
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "检测U盘失败", e);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * 获取U盘的应用专属目录
-     * @param context 上下文
-     * @return U盘上的应用专属目录，如果没有则返回 null
-     */
-    public static File getExternalSdCardAppDir(Context context) {
-        if (context == null) {
-            return null;
-        }
-        
-        try {
-            File[] externalDirs = context.getExternalFilesDirs(null);
-            
-            if (externalDirs != null && externalDirs.length >= 2) {
-                File dir = externalDirs[1];
-                if (dir != null) {
-                    // 确保目录存在
-                    if (!dir.exists()) {
-                        dir.mkdirs();
-                    }
-                    return dir;
-                }
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "获取U盘应用目录失败", e);
-        }
-        
-        return null;
-    }
-    
-    /**
      * 获取视频存储目录
      * @param context 上下文
      * @param useExternalSd 是否使用U盘
@@ -458,27 +382,6 @@ public class StorageHelper {
     public static File getFinalVideoDir(Context context) {
         AppConfig config = new AppConfig(context);
         return getVideoDir(context, config.isUsingExternalSdCard());
-    }
-    
-    /**
-     * 检查临时目录是否有足够空间
-     * @param context 上下文
-     * @param requiredBytes 需要的字节数
-     * @return true 如果有足够空间
-     */
-    public static boolean hasSufficientTempSpace(Context context, long requiredBytes) {
-        File cacheDir = context.getCacheDir();
-        long available = getAvailableSpace(cacheDir);
-        return available > requiredBytes;
-    }
-    
-    /**
-     * 获取临时目录的可用空间
-     * @param context 上下文
-     * @return 可用空间（字节）
-     */
-    public static long getTempAvailableSpace(Context context) {
-        return getAvailableSpace(context.getCacheDir());
     }
     
     /**
@@ -781,25 +684,6 @@ public class StorageHelper {
             return stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
         } catch (Exception e) {
             AppLog.e(TAG, "获取存储空间信息失败", e);
-            return -1;
-        }
-    }
-    
-    /**
-     * 获取总存储空间
-     * @param path 存储路径
-     * @return 总空间（字节），如果获取失败返回 -1
-     */
-    public static long getTotalSpace(File path) {
-        if (path == null || !path.exists()) {
-            return -1;
-        }
-        
-        try {
-            StatFs stat = new StatFs(path.getAbsolutePath());
-            return stat.getBlockCountLong() * stat.getBlockSizeLong();
-        } catch (Exception e) {
-            AppLog.e(TAG, "获取总存储空间失败", e);
             return -1;
         }
     }
