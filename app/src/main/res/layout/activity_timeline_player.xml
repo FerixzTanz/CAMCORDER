@@ -17,7 +17,6 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:id="@+id/timeline_toolbar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/title_bar_height"
         android:gravity="center_vertical"
