@@ -169,36 +169,41 @@ public class CodecVideoRecorder {
     private String saveDirectory;
     private String cameraPosition;
     private VideoRecorder.SegmentTimestampProvider timestampProvider;  // 分段时间戳提供者（用于多路同步）
-    private long lastFileSize = 0;
-    private static final long FILE_SIZE_CHECK_INTERVAL_MS = 5000;
-    private static final long FIRST_CHECK_DELAY_MS = 500;  // 首次检查延迟（更快检测首次写入）
-    private Runnable fileSizeCheckRunnable;
-    private long recordedFrameCount = 0;
+private long recordedFrameCount = 0;
     private List<String> recordedFilePaths = new ArrayList<>();  // 本次录制的所有文件路径
     
-    // 首次写入检测（与 VideoRecorder 保持一致）
-    private static final long FIRST_WRITE_TIMEOUT_MS = 10000;  // 首次写入超时（10秒）
-    private boolean hasFirstWrite = false;  // 是否已有首次写入
-    private Runnable firstWriteTimeoutRunnable;  // 首次写入超时检查任务
-    
-    // 快速恢复机制
-    private static final long RECOVERY_RETRY_INTERVAL_MS = 5000;  // 恢复重试间隔：5秒
-    private static final int MAX_RECOVERY_ATTEMPTS = 60;  // 最大重试次数（5秒 × 60 = 5分钟内重试）
-    private int recoveryAttempts = 0;  // 当前重试次数
+    /** 这次录制写出过第一笔数据没有：分段计时、外面的「录制中」都从那一刻起。 */
+    private volatile boolean hasFirstWrite = false;
+
+    // 快速恢复：修不好就 5 秒后再试，一直到写不进文件的裁判（下面）报一次、停
+    private static final long RECOVERY_RETRY_INTERVAL_MS = 5000;
+    private int recoveryAttempts = 0;  // 当前重试次数（只进日志）
     private Runnable recoveryRunnable;  // 恢复重试任务
 
     // 编码器健康检查
     private static final long ENCODER_HEALTH_CHECK_INTERVAL_MS = 3000;  // 健康检查间隔：3秒
-    private static final int MAX_FRAMES_WITHOUT_OUTPUT = 30;  // 无输出的最大帧数阈值
-    private int framesWithoutEncoderOutput = 0;  // 无编码器输出的连续帧数
+    private static final int MUXER_START_GRACE_FRAMES = 30;  // 处理了这么多帧 muxer 还没起来，就当编码器坏了
     private volatile boolean encoderHealthy = true;  // 编码器是否健康
+
+    /**
+     * 写不进文件的裁判 —— 唯一的一个（项目所有者 2026-09-27：录像健不健康只由录制器判）。
+     *
+     * <p>从开录（或最后一次写进文件）起 {@link #WRITE_STALL_MS} 没有新数据写进文件，就报一次
+     * {@link RecordCallback#onWriteStalled}，由 RecordingCoordinator 按打断处理。这 15 秒里自己的修复
+     * （换盘、重建编码器、快速恢复）照常跑，救回来了就不报。以前相机层还有一个 15 秒看门狗、
+     * 主界面还有一个 10 秒「无首帧」看门狗、这里还有一个 10 秒「首次写入超时」，四个裁判互相抢。</p>
+     */
+    private static final long WRITE_STALL_MS = 15_000L;
+    private static final long WRITE_CHECK_MS = 5_000L;
+    private long startedUptimeMs;
+    private Runnable writeStallCheck;
 
     /**
      * 最后一次真的往文件里写进数据的时刻（开机时长，深睡不算）。
      *
-     * <p>录制管线的看门狗拿它判断「界面说在录、实际写不进文件」。相机有帧、编码线程在转，
+     * <p>写不进文件的裁判拿它判断「界面说在录、实际写不进文件」。相机有帧、编码线程在转，
      * 都不等于写进去了 —— 2026-09-26 哨兵模式那一次，这两样都好好的，文件却两个小时没长。</p>
-     */
+*/
     private volatile long lastWriteUptimeMs;
     private volatile boolean everWrote;
     /** 最近一次出错在哪一步、系统怎么说的。写不进文件时黑匣子带上它。 */
@@ -311,10 +316,9 @@ public class CodecVideoRecorder {
         if (size <= 0) {
             return;
         }
-        lastWriteUptimeMs = android.os.SystemClock.uptimeMillis();
-        everWrote = true;
+        markWritten();
         bytesThisSecond += size;
-        framesThisSecond++;
+framesThisSecond++;
         long now = android.os.SystemClock.elapsedRealtime();
         if (bitrateWindowStartMs == 0) {
             bitrateWindowStartMs = now;
@@ -542,7 +546,6 @@ public class CodecVideoRecorder {
 
         // 重置健康检查状态
         this.encoderHealthy = true;
-        this.framesWithoutEncoderOutput = 0;
 
         // 重置换盘状态
         ring.clear();
@@ -762,10 +765,10 @@ public class CodecVideoRecorder {
         lastWrittenPtsUs = -1L;
         segmentBasePtsUs = -1L;
         
-        // 重置首次写入状态
+        // 重置首次写入状态；写不进文件的裁判从此刻起算
         hasFirstWrite = false;
-        lastFileSize = 0;
-        
+        startedUptimeMs = android.os.SystemClock.uptimeMillis();
+
         isRecording.set(true);
         // 从现在起盯着这一路；录制 Surface 要等会话重建后才出帧，宽限期够它建好
         encoderBeat.arm(StallWatch.now(), StallRules.ARM_GRACE_MS);
@@ -778,13 +781,10 @@ public class CodecVideoRecorder {
         // 这样可以确保：
         // 1. 摄像头启动慢或需要修复时，用户只会感觉"启动慢"而不是录制空视频
         // 2. 钉钉指定时长录制时，实际录制时长是有效的
-        // scheduleNextSegment() 将在 scheduleFileSizeCheck() 检测到首次写入时调用
+        // scheduleNextSegment() 在第一笔数据写进文件时调用（markWritten）
 
-        // 启动首次写入超时检查
-        scheduleFirstWriteTimeout();
-
-        // 启动文件大小检查
-        scheduleFileSizeCheck();
+        // 写不进文件的裁判（唯一的一个）：15 秒没写出新数据就报一次
+        scheduleWriteStallCheck();
 
         // 启动编码器健康检查
         scheduleEncoderHealthCheck();
@@ -820,13 +820,8 @@ public class CodecVideoRecorder {
             segmentHandler.removeCallbacks(segmentRunnable);
             segmentRunnable = null;
         }
-        if (fileSizeCheckRunnable != null) {
-            segmentHandler.removeCallbacks(fileSizeCheckRunnable);
-            fileSizeCheckRunnable = null;
-        }
-        // 取消首次写入超时检查
-        cancelFirstWriteTimeout();
-        
+        cancelWriteStallCheck();
+
         // 取消恢复重试任务
         if (recoveryRunnable != null) {
             segmentHandler.removeCallbacks(recoveryRunnable);
@@ -1033,12 +1028,7 @@ public class CodecVideoRecorder {
         return isRecording.get();
     }
 
-    /** 距最后一次写进文件过了多久（开机时长，深睡不算）；这次录制还没写出过数据时返回 -1。 */
-    public long msSinceLastWrite(long nowUptimeMs) {
-        return everWrote ? nowUptimeMs - lastWriteUptimeMs : -1L;
-    }
-
-    /** 黑匣子里用的一行现状：录制器自己以为在不在录、编码器好不好、写到哪个文件、最近一次错在哪。 */
+/** 黑匣子里用的一行现状：录制器自己以为在不在录、编码器好不好、写到哪个文件、最近一次错在哪。 */
     public String describeWriteState() {
         return "recording=" + isRecording.get() + " encoderHealthy=" + encoderHealthy
                 + " muxerStarted=" + muxerStarted + " recoveryAttempts=" + recoveryAttempts
@@ -1296,7 +1286,6 @@ public class CodecVideoRecorder {
 
         // 优化：使用零超时非阻塞模式，快速检查是否有输出
         final int TIMEOUT_USEC = endOfStream ? 10000 : 0;  // 结束状态等待，正常状态非阻塞
-        boolean gotOutput = false;
         int processedFrames = 0;  // 本次 drain 已处理帧数
 
         try {
@@ -1330,7 +1319,6 @@ public class CodecVideoRecorder {
                         startMuxerTrack(encoder.getOutputFormat());
                         AppLog.d(TAG, "Camera " + cameraId + " Muxer started, track=" + videoTrackIndex);
                     }
-                    gotOutput = true;
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = encoder.getOutputBuffer(outputBufferIndex);
 
@@ -1347,7 +1335,6 @@ public class CodecVideoRecorder {
                         } else {
                             writeSample(encodedData, bufferInfo);
 
-                            gotOutput = true;
                             processedFrames++;  // 增加已处理帧计数
                         }
                     }
@@ -1374,13 +1361,6 @@ public class CodecVideoRecorder {
                 noteTrouble("drain", e);
             }
             encoderHealthy = false;
-        }
-
-        // 更新无输出帧计数器
-        if (gotOutput) {
-            framesWithoutEncoderOutput = 0;
-        } else {
-            framesWithoutEncoderOutput++;
         }
     }
 
@@ -1560,21 +1540,12 @@ public class CodecVideoRecorder {
             // 成功：调度正常的1分钟定时器
             segmentHandler.post(() -> scheduleNextSegment());
         } else {
-            // 失败：启动快速恢复机制
+            // 失败：5 秒后再试；一直修不好的话，写不进文件的裁判会在 15 秒时报一次、停
             recoveryAttempts++;
-            if (recoveryAttempts <= MAX_RECOVERY_ATTEMPTS) {
-                // 快速重试（5秒后）
-                AppLog.w(TAG, "Camera " + cameraId + " Segment switch failed, quick retry in " 
-                    + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + "/" + MAX_RECOVERY_ATTEMPTS + ")");
-                scheduleRecoveryRetry();
-            } else {
-                // 超过最大重试次数，回到正常分段间隔
-                AppLog.w(TAG, "Camera " + cameraId + " Max recovery attempts reached, will retry in " 
-                    + (segmentDurationMs / 1000) + " seconds");
-                recoveryAttempts = 0;  // 重置计数器
-                segmentHandler.post(() -> scheduleNextSegment());
-            }
-        }
+            AppLog.w(TAG, "Camera " + cameraId + " Segment switch failed, quick retry in "
+                + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
+            scheduleRecoveryRetry();
+}
     }
     
     /**
@@ -1601,7 +1572,7 @@ public class CodecVideoRecorder {
      * 尝试恢复录制
      */
     private void attemptRecovery() {
-        AppLog.d(TAG, "Camera " + cameraId + " Attempting recovery (attempt " + recoveryAttempts + "/" + MAX_RECOVERY_ATTEMPTS + ")");
+        AppLog.d(TAG, "Camera " + cameraId + " Attempting recovery (attempt " + recoveryAttempts + ")");
         
         boolean recoverySuccess = false;
         
@@ -1638,27 +1609,18 @@ public class CodecVideoRecorder {
             
         } catch (Exception e) {
             AppLog.e(TAG, "Camera " + cameraId + " Recovery attempt failed", e);
-            // 5 秒一次、最多 60 次：第一次和之后每一分钟记一行，别的只算次数
-            if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
+            // 5 秒一次：第一次和之后每一分钟记一行，别的只算次数
+if (recoveryAttempts <= 1 || recoveryAttempts % 12 == 0) {
                 noteTrouble("recovery#" + recoveryAttempts, e);
             }
             isRecording.set(false);
             
-            // 继续快速重试或回到正常间隔
+            // 5 秒后再试；一直修不好的话，写不进文件的裁判会在 15 秒时报一次、停
             recoveryAttempts++;
-            if (recoveryAttempts <= MAX_RECOVERY_ATTEMPTS) {
-                AppLog.w(TAG, "Camera " + cameraId + " Recovery failed, quick retry in " 
-                    + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + "/" + MAX_RECOVERY_ATTEMPTS + ")");
-                scheduleRecoveryRetry();
-            } else {
-                AppLog.w(TAG, "Camera " + cameraId + " Max recovery attempts reached, will retry in "
-                    + (segmentDurationMs / 1000) + " seconds");
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("录像快速恢复试满 " + MAX_RECOVERY_ATTEMPTS
-                        + " 次都没成（相机 " + cameraId + "），停止快速重试");
-                recoveryAttempts = 0;
-                segmentHandler.post(() -> scheduleNextSegment());
-            }
-        }
+            AppLog.w(TAG, "Camera " + cameraId + " Recovery failed, quick retry in "
+                + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
+            scheduleRecoveryRetry();
+}
     }
     
     /**
@@ -2134,9 +2096,8 @@ public class CodecVideoRecorder {
             if (!pending.isEmpty()) {
                 segmentBasePtsUs = pending.get(0).ptsUs;
                 lastWrittenPtsUs = writeSamples(muxer, videoTrackIndex, pending);
-                lastWriteUptimeMs = android.os.SystemClock.uptimeMillis();
-                everWrote = true;
-            }
+                markWritten();
+}
         }
         return rescuedMs;
     }
@@ -2193,13 +2154,10 @@ public class CodecVideoRecorder {
             if (!encoderHealthy) {
                 needsRecovery = true;
                 reason = "encoder marked unhealthy";
-            } else if (!muxerStarted && recordedFrameCount > MAX_FRAMES_WITHOUT_OUTPUT) {
+            } else if (!muxerStarted && recordedFrameCount > MUXER_START_GRACE_FRAMES) {
                 // Muxer 从未启动，但已经处理了很多帧
                 needsRecovery = true;
                 reason = "muxer never started after " + recordedFrameCount + " frames";
-            } else if (framesWithoutEncoderOutput > MAX_FRAMES_WITHOUT_OUTPUT) {
-                needsRecovery = true;
-                reason = "no encoder output for " + framesWithoutEncoderOutput + " frames";
             }
 
             if (needsRecovery) {
@@ -2278,7 +2236,6 @@ public class CodecVideoRecorder {
             // 7. 重置状态
             lastWrittenPtsUs = -1L;
             segmentBasePtsUs = -1L;
-            framesWithoutEncoderOutput = 0;
             encoderHealthy = true;
 
             // 8. 恢复录制
@@ -2298,108 +2255,82 @@ public class CodecVideoRecorder {
             AppLog.e(TAG, "Camera " + cameraId + " Failed to rebuild encoder", e);
             noteTrouble("rebuild", e);
 
-            // 重建失败，启动恢复重试机制
+            // 重建失败：5 秒后再试；一直修不好的话，写不进文件的裁判会在 15 秒时报一次、停
             recoveryAttempts++;
-            if (recoveryAttempts <= MAX_RECOVERY_ATTEMPTS) {
-                AppLog.w(TAG, "Camera " + cameraId + " Will retry encoder rebuild in " 
-                    + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + "/" + MAX_RECOVERY_ATTEMPTS + ")");
-                scheduleRecoveryRetry();
-            } else {
-                AppLog.e(TAG, "Camera " + cameraId + " Max recovery attempts reached, giving up");
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("录像编码器重建失败，放弃（相机 " + cameraId + "）");
-                if (callback != null) {
-                    final String errorMsg = e.getMessage();
-                    segmentHandler.post(() -> callback.onRecordError(cameraId, "Encoder rebuild failed: " + errorMsg));
+            AppLog.w(TAG, "Camera " + cameraId + " Will retry encoder rebuild in "
+                + (RECOVERY_RETRY_INTERVAL_MS / 1000) + "s (attempt " + recoveryAttempts + ")");
+            scheduleRecoveryRetry();
+}
+    }
+
+    /**
+     * 有数据写进文件了。
+     *
+     * <p>第一次写进去的那一刻，录像才算真的开始：分段计时从这里起，外面的「录制中」也从这里起
+     * （以前靠每 500 ms 看一次文件大小来发现）。编码线程上调；分段计时和回调派到分段线程上。</p>
+     */
+    private void markWritten() {
+        lastWriteUptimeMs = android.os.SystemClock.uptimeMillis();
+        everWrote = true;
+        if (hasFirstWrite) {
+            return;
+        }
+        hasFirstWrite = true;
+        AppLog.d(TAG, "Camera " + cameraId + " first data written");
+        Handler segment = segmentHandler;
+        if (segment != null) {
+            segment.post(() -> {
+                if (!isRecording.get() || isReleased) {
+                    return;
                 }
-            }
+                // 【核心】首次写入后才启动分段定时器：分段时长是「有效录制时长」，不是「尝试录制时长」
+                scheduleNextSegment();
+                if (callback != null) {
+                    callback.onFirstDataWritten(cameraId);
+                }
+            });
         }
     }
 
     /**
-     * 调度文件大小检查
+     * 写不进文件的裁判：每 {@link #WRITE_CHECK_MS} 看一眼，从开录或最后一次写进文件起
+     * {@link #WRITE_STALL_MS} 没新数据就报一次、不再看。快速恢复期间 {@code isRecording} 会暂时为 false，
+     * 所以这里不看它，只看有没有被 {@link #cancelWriteStallCheck} 撤掉（真正停录、释放）。
      */
-    private void scheduleFileSizeCheck() {
-        if (fileSizeCheckRunnable != null) {
-            segmentHandler.removeCallbacks(fileSizeCheckRunnable);
-        }
-
-        fileSizeCheckRunnable = () -> {
-            if (isRecording.get() && currentFilePath != null) {
-                File file = new File(currentFilePath);
-                long currentSize = file.exists() ? file.length() : 0;
-                long sizeIncrease = currentSize - lastFileSize;
-
-                // 检查是否有写入
-                boolean hasWrite = (sizeIncrease > 0) || (currentSize > MIN_VALID_FILE_SIZE);
-                
-                if (hasWrite) {
-                    // 首次写入检测
-                    if (!hasFirstWrite) {
-                        hasFirstWrite = true;
-                        AppLog.d(TAG, "Camera " + cameraId + " first write detected! Size: " + currentSize + " bytes");
-                        // 取消首次写入超时检查
-                        cancelFirstWriteTimeout();
-                        
-                        // 【核心改动】首次写入后才启动分段定时器
-                        // 这确保了分段时长是"有效录制时长"而非"尝试录制时长"
-                        scheduleNextSegment();
-                        AppLog.d(TAG, "Camera " + cameraId + " segment timer started after first write");
-                        
-                        // 通知外部：首次写入成功，录制已真正开始
-                        // 外部可以据此开始钉钉录制计时等
-                        if (callback != null) {
-                            callback.onFirstDataWritten(cameraId);
-                        }
+    private void scheduleWriteStallCheck() {
+        cancelWriteStallCheck();
+        writeStallCheck = new Runnable() {
+            @Override
+            public void run() {
+                if (isReleased || writeStallCheck != this) {
+                    return;
+                }
+                long now = android.os.SystemClock.uptimeMillis();
+                long since = everWrote ? now - lastWriteUptimeMs : now - startedUptimeMs;
+                if (since >= WRITE_STALL_MS) {
+                    writeStallCheck = null;
+                    com.kooo.evcam.blackbox.BlackBox.noteImportant("录像写不进文件：相机 " + cameraId + " 已 "
+                            + (since / 1000) + " 秒没有新数据（" + describeWriteState()
+                            + "）；此刻挂着的盘：" + com.kooo.evcam.storage.StorageState.current().mounts);
+                    if (callback != null) {
+                        callback.onWriteStalled(cameraId, since, everWrote);
                     }
-                    AppLog.d(TAG, "Camera " + cameraId + " file size: " + currentSize + " bytes (" + (currentSize / 1024) + " KB), frames: " + recordedFrameCount);
-                } else if (sizeIncrease == 0 && lastFileSize > 0) {
-                    AppLog.w(TAG, "Camera " + cameraId + " WARNING: File size not growing! Current: " + currentSize + " bytes");
+                    return;
                 }
-
-                lastFileSize = currentSize;
-                
-                // 继续下一次检查（首次写入前用快速间隔，之后用正常间隔）
-                long nextDelay = hasFirstWrite ? FILE_SIZE_CHECK_INTERVAL_MS : FIRST_CHECK_DELAY_MS;
-                segmentHandler.postDelayed(fileSizeCheckRunnable, nextDelay);
-            }
-        };
-
-        // 首次检查使用更短的延迟，快速检测首次写入
-        long initialDelay = hasFirstWrite ? FILE_SIZE_CHECK_INTERVAL_MS : FIRST_CHECK_DELAY_MS;
-        segmentHandler.postDelayed(fileSizeCheckRunnable, initialDelay);
-    }
-
-    /**
-     * 调度首次写入超时检查
-     */
-    private void scheduleFirstWriteTimeout() {
-        // 取消之前的超时检查
-        cancelFirstWriteTimeout();
-
-        firstWriteTimeoutRunnable = () -> {
-            if (isRecording.get() && !hasFirstWrite) {
-                AppLog.e(TAG, "Camera " + cameraId + " FIRST WRITE TIMEOUT: No data written in " + (FIRST_WRITE_TIMEOUT_MS / 1000) + " seconds");
-                // 触发编码器重建（通过健康检查机制处理）
-                encoderHealthy = false;
-                // 也可以通过回调通知外部
-                if (callback != null) {
-                    segmentHandler.post(() -> callback.onRecordingRebuildRequested(cameraId, "first_write_timeout"));
+                Handler segment = segmentHandler;
+                if (segment != null) {
+                    segment.postDelayed(this, WRITE_CHECK_MS);
                 }
             }
         };
-
-        segmentHandler.postDelayed(firstWriteTimeoutRunnable, FIRST_WRITE_TIMEOUT_MS);
-        AppLog.d(TAG, "Camera " + cameraId + " first write timeout scheduled: " + (FIRST_WRITE_TIMEOUT_MS / 1000) + " seconds");
+        segmentHandler.postDelayed(writeStallCheck, WRITE_CHECK_MS);
     }
 
-    /**
-     * 取消首次写入超时检查
-     */
-    private void cancelFirstWriteTimeout() {
-        if (firstWriteTimeoutRunnable != null) {
-            segmentHandler.removeCallbacks(firstWriteTimeoutRunnable);
-            firstWriteTimeoutRunnable = null;
+    private void cancelWriteStallCheck() {
+        if (writeStallCheck != null && segmentHandler != null) {
+            segmentHandler.removeCallbacks(writeStallCheck);
         }
+        writeStallCheck = null;
     }
 
     /**

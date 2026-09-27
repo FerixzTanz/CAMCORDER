@@ -297,57 +297,12 @@ public class MultiCameraManager {
         }
     };
     /**
-     * 界面说在录、实际多久没写进文件就算断了。
-     *
-     * <p>2026-09-26 哨兵模式那一次：编码器在 19:05 前后坏了，重建失败之后录制器自己不录了，
-     * 可相机照样出帧、编码线程照样在转，界面和悬浮按钮显示「录制中」整整两个小时。
-     * 相机层的看门狗只看有没有帧，文件在不在长没人看 —— 这里看。</p>
-     *
-     * <p>用开机时长（深睡不算）：车机睡着时本来就什么都不写，醒来不能算成写不进。
-     * 分段切换要重建编码器，一两秒就好；15 秒足够把它和真的断了分开。
-     * 只看软编码录制器：MediaRecorder 那条路拿不到写入的字节数。</p>
+     * 写不进文件：裁判在录制器里（{@link CodecVideoRecorder} 的 15 秒规则），这里只把它转给协调器。
+     * 和相机被拿走共用一个「已经报过」的标记：一次录像只报一次打断。
      */
-    private static final long WRITE_STALL_MS = 15_000L;
-    private static final long WRITE_WATCH_MS = 5_000L;
     private WriteStallCallback writeStallCallback;
-    private boolean writeStallReported;
+    private boolean interruptReported;
 
-    private final Runnable writeWatch = new Runnable() {
-        @Override
-        public void run() {
-            if (!isRecording) {
-                return;
-            }
-            if (useCodecRecording && !writeStallReported) {
-                long now = android.os.SystemClock.uptimeMillis();
-                String worstKey = null;
-                long worst = -1L;
-                try {
-                    for (Map.Entry<String, CodecVideoRecorder> entry : codecRecorders.entrySet()) {
-                        long ms = entry.getValue().msSinceLastWrite(now);
-                        if (ms > worst) {
-                            worst = ms;
-                            worstKey = entry.getKey();
-                        }
-                    }
-                } catch (RuntimeException e) {
-                    // 停录的后台线程正在清这张表：这一轮不算，下一轮再看
-                    worst = -1L;
-                }
-                if (worst >= WRITE_STALL_MS) {
-                    writeStallReported = true;
-                    CodecVideoRecorder stuck = codecRecorders.get(worstKey);
-                    com.kooo.evcam.blackbox.BlackBox.noteImportant("录像写不进文件：" + worstKey + " 已 "
-                            + (worst / 1000) + " 秒没有新数据（"
-                            + (stuck == null ? "" : stuck.describeWriteState())
-                            + "）；此刻挂着的盘：" + com.kooo.evcam.storage.StorageState.current().mounts);
-                    onWriteStalled(worst);
-                    return;
-                }
-            }
-            mainHandler.postDelayed(this, WRITE_WATCH_MS);
-        }
-    };
 
     /**
      * 录像写不进文件了。
@@ -378,7 +333,8 @@ public class MultiCameraManager {
     }
 
     public interface WriteStallCallback {
-        void onWriteStalled(long stalledMs);
+        /** @param everWrote false：这次录像一个字节都没写出过（「没收到画面」） */
+        void onWriteStalled(long stalledMs, boolean everWrote);
     }
 
     /** 录着的一路被相机服务断开了（别的程序拿走了相机）。 */
@@ -400,7 +356,7 @@ public class MultiCameraManager {
      * 停了之后和写不进文件一样，由主界面等环视恢复再自动接回（{@link CameraTaken}）。</p>
      */
     private void onRecordingCameraLost(String cameraId) {
-        if (!isRecording || writeStallReported) {
+        if (!isRecording || interruptReported) {
             return;
         }
         String key = null;
@@ -413,7 +369,7 @@ public class MultiCameraManager {
         if (key == null || !(recorders.containsKey(key) || codecRecorders.containsKey(key))) {
             return;
         }
-        writeStallReported = true;
+        interruptReported = true;
         com.kooo.evcam.blackbox.BlackBox.noteImportant("录像的相机 " + cameraId + "（" + key
                 + "）被相机服务断开：立刻停这一段，等接回；别的程序占着 " + CameraTaken.describe());
         mainHandler.post(() -> {
@@ -472,10 +428,14 @@ public class MultiCameraManager {
         this.writeStallCallback = callback;
     }
 
-    private void onWriteStalled(long stalledMs) {
-        // 停不停、接不接由 RecordingCoordinator 判（它一直挂着这个回调，主界面在不在都一样）
+    /** 录制器报写不进文件了（主线程）。停不停、接不接由 RecordingCoordinator 判。 */
+    private void onWriteStalled(long stalledMs, boolean everWrote) {
+        if (!isRecording || interruptReported) {
+            return;
+        }
+        interruptReported = true;
         if (writeStallCallback != null) {
-            writeStallCallback.onWriteStalled(stalledMs);
+            writeStallCallback.onWriteStalled(stalledMs, everWrote);
         } else {
             stopRecording();
         }
@@ -1110,9 +1070,7 @@ public class MultiCameraManager {
             lastStorageCheckMs = 0;
             mainHandler.removeCallbacks(storageTick);
             mainHandler.postDelayed(storageTick, STORAGE_TICK_MS);
-            writeStallReported = false;
-            mainHandler.removeCallbacks(writeWatch);
-            mainHandler.postDelayed(writeWatch, WRITE_WATCH_MS);
+            interruptReported = false;
             noteRecordingDir();
             // 屏幕已经黑着才开始的录像（熄屏期间接回的那种），熄屏录制同样要拿锁
             com.kooo.evcam.recording.ScreenOffRecording.onRecordingStarted(context);
@@ -1710,6 +1668,11 @@ public class MultiCameraManager {
                 }
 
                 @Override
+                public void onWriteStalled(String cameraId, long stalledMs, boolean everWrote) {
+                    mainHandler.post(() -> MultiCameraManager.this.onWriteStalled(stalledMs, everWrote));
+                }
+
+                @Override
                 public void onFirstDataWritten(String cameraId) {
                     AppLog.d(TAG, "Codec first data written for camera " + cameraId);
                     // 只在第一个摄像头首次写入时通知外部（每次录制只通知一次）
@@ -2039,7 +2002,6 @@ public class MultiCameraManager {
         final boolean wasRecording = isRecording;
         isRecording = false;
         mainHandler.removeCallbacks(storageTick);
-        mainHandler.removeCallbacks(writeWatch);
         StorageHelper.noteRecordingFallback(null, null);
         // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
         com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
@@ -2432,7 +2394,6 @@ public class MultiCameraManager {
      * 添加完善的清理逻辑和异常保护
      */
     public void release() {
-        mainHandler.removeCallbacks(writeWatch);
         AppLog.d(TAG, "Releasing MultiCameraManager resources");
         livenessRunning = false;
         

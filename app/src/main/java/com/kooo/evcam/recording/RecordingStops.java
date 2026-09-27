@@ -22,7 +22,7 @@ public final class RecordingStops {
         STORAGE_FULL,
         /** U 盘满了而且清不出空间（没设上限、或者全是锁定的）。 */
         STORAGE_CANNOT_FREE,
-        /** 开始录之后一直没收到画面，看门狗把它停了。 */
+        /** 开始录之后 15 秒一个字节都没写进文件（录制器判的，和 WRITE_STALLED 是同一个裁判）。 */
         NO_DATA,
         /**
          * 录着录着写不进文件了：编码器坏了没修好，或者 U 盘写不进。相机可能一切正常 ——

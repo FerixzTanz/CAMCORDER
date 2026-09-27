@@ -7,6 +7,19 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.61.0-alpha] - 2026-09-28
+
+- **One judge of whether recording is healthy: the recorder.** If nothing has been written to
+  the file for 15 seconds, counted from the start or from the last write, the recorder reports
+  it once and the coordinator stops the recording and resumes it through the usual path
+  (nothing ever written counts as "no picture", a stall after writing as "cannot write"). In
+  those 15 seconds the recorder's own repairs run as before: switching drives, rebuilding the
+  encoder, quick retries every 5 s (the old cap of 60 retries is gone; the 15-second judge ends
+  them). Removed: the camera layer's separate 15-second watchdog, the main screen's 10-second
+  "no first data" watchdog and its own retry, and the recorder's 10-second "first write
+  timeout"; the first write is now noticed as it happens instead of by polling the file size
+  every half second. Fourth step of the consolidation plan.
+
 ## [1.60.0-alpha] - 2026-09-27
 
 - **One way to start recording.** Every path that wants recording (the record button, the

@@ -262,10 +262,8 @@ public class MainActivity extends AppCompatActivity {
      * 到点就按「没收到画面」停掉（{@code RecordingStops.Reason.NO_DATA}）；
      * 停了之后接不接、还剩几次额度，由 {@link RecordingCoordinator} 判。</p>
      */
-    private static final long PREPARING_TIMEOUT_MS = 10_000L;
-    private final android.os.Handler preparingHandler =
+private final android.os.Handler preparingHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
-    private final Runnable preparingWatchdog = this::onPreparingTimedOut;
 
     /** 状态条最右那一格的正文（合成流识别结果）；环视被拿走时那一格临时改写成提示。 */
     private String compositeInfoText = "";
@@ -1785,7 +1783,6 @@ public class MainActivity extends AppCompatActivity {
             AppLog.d(TAG, "收到首次数据写入回调，录制已真正开始");
             runOnUiThread(() -> {
                 // 结束"准备中"状态
-                preparingHandler.removeCallbacks(preparingWatchdog);
                 if (isPreparingRecording) {
                     isPreparingRecording = false;
                     hidePreparingIndicator();
@@ -2734,7 +2731,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onRecordingStopped(RecordingStops.Reason reason, long lastedMs, boolean willResume) {
             lastRefusalShown = null;
-            preparingHandler.removeCallbacks(preparingWatchdog);
             isRecording = false;
             isPreparingRecording = false;
             setRecordState(com.kooo.evcam.ui.RecordButtonUi.State.IDLE);
@@ -2924,41 +2920,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /** 准备中：点已收成方块、一明一暗，外圈在转 —— 录制器还没起来。 */
+    /**
+     * 准备中：点已收成方块、一明一暗，外圈在转 —— 录制器还没写出第一笔数据。
+     * 迟迟不来怎么办由录制器判（15 秒没写出就报「没收到画面」），这里不再另设看门狗。
+     */
     private void showPreparingIndicator() {
         setRecordState(com.kooo.evcam.ui.RecordButtonUi.State.PREPARING);
-        preparingHandler.removeCallbacks(preparingWatchdog);
-        preparingHandler.postDelayed(preparingWatchdog, PREPARING_TIMEOUT_MS);
-        AppLog.d(TAG, "进入准备中状态，" + PREPARING_TIMEOUT_MS + "ms 内等第一笔数据");
-    }
-
-    /**
-     * 准备中超时：第一笔数据迟迟不来。
-     *
-     * <p>把这一次当作没录上：按「没收到画面」停掉录制器（它会清掉那个一个字节都没写进去的分段文件）。
-     * 要不要再开一次、还剩几次额度，协调器判；它的 onRecordingStopped(NO_DATA, willResume) 负责提示。
-     * 录制器本来就没起来时协调器的停止回调不来，所以这里自己把状态摆正。</p>
-     */
-    private void onPreparingTimedOut() {
-        if (!isPreparingRecording) {
-            return;
-        }
-        boolean managerRecording = cameraManager != null && cameraManager.isRecording();
-        boolean connected = cameraManager != null && cameraManager.hasConnectedCameras();
-        AppLog.w(TAG, "准备中超时：" + PREPARING_TIMEOUT_MS + "ms 没收到第一笔数据 " + instanceTag()
-                + " managerRecording=" + managerRecording
-                + " camerasConnected=" + connected
-                + " inBackground=" + isInBackground);
-
-        try {
-            recordingCoordinator.stop(RecordingStops.Reason.NO_DATA);
-        } catch (Exception e) {
-            AppLog.w(TAG, "准备中超时后停止录制器失败: " + e);
-        }
-        isRecording = false;
-        isPreparingRecording = false;
-        stopRecordingTimer();
-        setRecordState(com.kooo.evcam.ui.RecordButtonUi.State.IDLE);
     }
 
     /**
@@ -3004,7 +2971,6 @@ public class MainActivity extends AppCompatActivity {
         }
         AppLog.w(TAG, "回到前台：界面以为在录，录制器其实没在录 " + instanceTag()
                 + " preparing=" + isPreparingRecording);
-        preparingHandler.removeCallbacks(preparingWatchdog);
         isRecording = false;
         isPreparingRecording = false;
         stopRecordingTimer();

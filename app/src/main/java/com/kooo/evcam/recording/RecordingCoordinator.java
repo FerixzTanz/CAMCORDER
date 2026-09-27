@@ -126,7 +126,9 @@ public final class RecordingCoordinator {
         }
         manager.setStorageFullCallback(capless -> main.post(() -> stop(capless
                 ? RecordingStops.Reason.STORAGE_FULL : RecordingStops.Reason.STORAGE_CANNOT_FREE)));
-        manager.setWriteStallCallback(stalledMs -> main.post(() -> stop(RecordingStops.Reason.WRITE_STALLED)));
+        // 录制器判的：写出过数据又断了是「写不进」，一个字节都没写出过是「没收到画面」
+        manager.setWriteStallCallback((stalledMs, everWrote) -> main.post(() -> stop(everWrote
+                ? RecordingStops.Reason.WRITE_STALLED : RecordingStops.Reason.NO_DATA)));
         manager.setCameraLostCallback(cameraId -> main.post(() -> stop(RecordingStops.Reason.CAMERA_LOST)));
         manager.setRecordingStatusCallback((active, failed) -> main.post(() -> {
             if (active.isEmpty()) {

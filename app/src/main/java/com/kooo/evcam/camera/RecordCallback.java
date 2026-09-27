@@ -47,14 +47,23 @@ public interface RecordCallback {
     void onCorruptedFilesDeleted(String cameraId, List<String> deletedFiles);
 
     /**
-     * 请求重建录制（Watchdog 触发）
-     * 当检测到录制异常（连续无写入或首次写入超时）时调用
-     * 外部应该停止当前录制并重新开始，可选切换到 Codec 模式
-     * 
+     * 请求重建录制（MediaRecorder 那条路的看门狗触发；软编码录制器不用它）
+     *
      * @param cameraId 相机ID
-     * @param reason 重建原因（"no_write" 或 "first_write_timeout"）
+     * @param reason 重建原因（"no_write"）
      */
     void onRecordingRebuildRequested(String cameraId, String reason);
+
+    /**
+     * 写不进文件：从开录（或最后一次写进文件）起 {@code stalledMs} 毫秒没有新数据写进文件，
+     * 录制器自己的修复（换盘、重建编码器、快速恢复）都没救回来。
+     * 这是「录像健不健康」唯一的裁判（项目所有者 2026-09-27）：收到就按打断处理，
+     * 接不接由 RecordingCoordinator 判。
+     *
+     * @param everWrote false：这次录制一个字节都没写出过（对应「没收到画面」）
+     */
+    default void onWriteStalled(String cameraId, long stalledMs, boolean everWrote) {
+    }
 
     /**
      * 录像换了盘：原来的盘写不进了，已经改写到别的盘接着录
