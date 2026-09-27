@@ -74,7 +74,6 @@ public class VideoRecorder {
 
     // 分段录制相关
     private long segmentDurationMs = 60000;  // 分段时长，默认1分钟，可通过 setSegmentDuration 配置
-    private static final long SEGMENT_DURATION_COMPENSATION_MS = 0;  // 分段时长补偿（H3修复后定时器更精确，不再需要补偿）
     private static final long FILE_SIZE_CHECK_INTERVAL_MS = 3000;  // 每3秒检查一次文件大小（加快检测）
     private static final long FIRST_CHECK_DELAY_MS = 500;  // 首次检查延迟（更快检测首次写入）
     private static final long MIN_VALID_FILE_SIZE = 1 * 1024;   // 最小有效文件大小 1KB（降低阈值，短录制也能保存）
@@ -576,9 +575,8 @@ public class VideoRecorder {
             }
         };
 
-        // 延迟执行（使用配置的分段时长 + 补偿时间）
-        // 补偿编码器初始化延迟和停止时的帧丢失
-        long actualDelayMs = segmentDurationMs + SEGMENT_DURATION_COMPENSATION_MS;
+        // 延迟执行（使用配置的分段时长）
+        long actualDelayMs = segmentDurationMs;
         segmentHandler.postDelayed(segmentRunnable, actualDelayMs);
         AppLog.d(TAG, "Camera " + cameraId + " scheduled next segment in " + (segmentDurationMs / 1000) + " seconds (actual delay: " + actualDelayMs + "ms)");
     }

@@ -120,13 +120,7 @@ public class CodecVideoRecorder {
     
     // 时间戳基准（用于计算相对时间戳，供输入端使用）
     private long firstFrameTimestampNs = -1;
-    
-    // 分段开始时间（用于计算 PTS，基于系统时间而非帧数）
-    // 这样可以准确反映实际录制时长，不受帧率波动影响
-    private long segmentStartTimeNs = 0;
-    
-    // 编码器输出帧计数（仅用于日志和统计，不再用于 PTS 计算）
-    private long encodedOutputFrameCount = 0;
+
     /** 上一次写入 muxer 的 PTS，用于保证严格单调递增；-1 表示还没写过帧。 */
     private long lastWrittenPtsUs = -1L;
     /** 角标是否附带录制规格。 */
@@ -164,7 +158,6 @@ public class CodecVideoRecorder {
 
     // 分段录制相关
     private long segmentDurationMs = 60000;  // 分段时长，默认1分钟，可通过 setSegmentDuration 配置
-    private static final long SEGMENT_DURATION_COMPENSATION_MS = 0;  // 分段时长补偿（H3修复后定时器更精确，不再需要补偿）
     private static final long MIN_VALID_FILE_SIZE = 1 * 1024;   // 最小有效文件大小 1KB（降低阈值，短录制也能保存）
     
     // 使用独立的后台线程处理分段和文件 I/O 操作，避免阻塞主线程导致 ANR
@@ -197,7 +190,6 @@ public class CodecVideoRecorder {
     // 编码器健康检查
     private static final long ENCODER_HEALTH_CHECK_INTERVAL_MS = 3000;  // 健康检查间隔：3秒
     private static final int MAX_FRAMES_WITHOUT_OUTPUT = 30;  // 无输出的最大帧数阈值
-    private long lastEncoderOutputTime = 0;  // 最后一次编码器输出时间
     private int framesWithoutEncoderOutput = 0;  // 无编码器输出的连续帧数
     private volatile boolean encoderHealthy = true;  // 编码器是否健康
 
@@ -339,7 +331,7 @@ public class CodecVideoRecorder {
         //
         // 之前是在写 muxer 的地方按「每 300 帧算一次」——而写 muxer 有两条路径，
         // 那段判断只在其中一条里。帧数从另一条路走过去时计数照加、判断照跳，
-        // 于是 encodedOutputFrameCount % 300 == 0 那一刻可能永远撞不上，
+        // 于是「第 300 帧」那一刻可能永远撞不上，
         // 实测帧率就一次都没算出来过 —— 角标始终停在「~标称值」。
         //
         // noteEncodedBytes 是两条路径都会调的那个点，挂在这里才数得全。
@@ -387,13 +379,6 @@ public class CodecVideoRecorder {
         eglEncoder.setWatermarkInfoLine(line);
     }
 
-    /**
-     * 检查是否启用了时间水印
-     */
-    public boolean isWatermarkEnabled() {
-        return watermarkEnabled;
-    }
-
     public void setCallback(RecordCallback callback) {
         this.callback = callback;
     }
@@ -414,13 +399,6 @@ public class CodecVideoRecorder {
     public void setSegmentDuration(long durationMs) {
         this.segmentDurationMs = durationMs;
         AppLog.d(TAG, "Camera " + cameraId + " segment duration set to " + (durationMs / 1000) + " seconds");
-    }
-
-    /**
-     * 获取分段时长（毫秒）
-     */
-    public long getSegmentDuration() {
-        return segmentDurationMs;
     }
 
     /**
@@ -532,19 +510,11 @@ public class CodecVideoRecorder {
     }
 
     /**
-     * 获取当前配置的帧率
-     */
-    public int getFrameRate() {
-        return frameRate;
-    }
-
-
-    /**
      * 准备录制
-     * 
+     *
      * 警告：此方法包含阻塞操作（CountDownLatch.await），不建议在主线程调用
-     * 如果必须在主线程调用，可能导致 ANR。建议在后台线程调用或使用 prepareRecordingAsync()
-     * 
+     * 如果必须在主线程调用，可能导致 ANR。建议在后台线程调用
+     *
      * @param filePath 输出文件路径
      * @return 用于 Camera 输出的 SurfaceTexture
      */
@@ -552,7 +522,7 @@ public class CodecVideoRecorder {
         // 检查是否在主线程调用（可能导致 ANR）
         if (Looper.myLooper() == Looper.getMainLooper()) {
             AppLog.w(TAG, "Camera " + cameraId + " WARNING: prepareRecording() called on MAIN THREAD! " +
-                    "This may cause ANR due to blocking operations. Consider using prepareRecordingAsync().");
+                    "This may cause ANR due to blocking operations.");
         }
         
         if (isRecording.get()) {
@@ -567,14 +537,12 @@ public class CodecVideoRecorder {
         this.segmentIndex = 0;
         this.recordedFrameCount = 0;
         this.firstFrameTimestampNs = -1;  // 重置时间戳基准
-        this.encodedOutputFrameCount = 0;  // 重置编码输出帧计数
         this.lastWrittenPtsUs = -1L;
         this.segmentBasePtsUs = -1L;
 
         // 重置健康检查状态
         this.encoderHealthy = true;
         this.framesWithoutEncoderOutput = 0;
-        this.lastEncoderOutputTime = System.currentTimeMillis();
 
         // 重置换盘状态
         ring.clear();
@@ -774,52 +742,6 @@ public class CodecVideoRecorder {
             return null;
         }
     }
-    
-    /**
-     * 准备录制回调接口
-     */
-    public interface PrepareCallback {
-        /**
-         * 准备完成回调
-         * @param success 是否成功
-         * @param surfaceTexture 成功时返回的 SurfaceTexture，失败时为 null
-         * @param errorMessage 失败时的错误信息，成功时为 null
-         */
-        void onPrepareComplete(boolean success, SurfaceTexture surfaceTexture, String errorMessage);
-    }
-    
-    /**
-     * 异步准备录制（推荐使用）
-     * 
-     * 此方法在后台线程执行准备操作，完成后在主线程回调
-     * 避免在主线程执行阻塞操作导致 ANR
-     * 
-     * @param filePath 输出文件路径
-     * @param callback 准备完成回调
-     */
-    public void prepareRecordingAsync(String filePath, PrepareCallback callback) {
-        new Thread(() -> {
-            try {
-                SurfaceTexture result = prepareRecording(filePath);
-                if (callback != null) {
-                    // 在主线程回调
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (result != null) {
-                            callback.onPrepareComplete(true, result, null);
-                        } else {
-                            callback.onPrepareComplete(false, null, "Preparation failed");
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                AppLog.e(TAG, "Camera " + cameraId + " prepareRecordingAsync failed", e);
-                if (callback != null) {
-                    new Handler(Looper.getMainLooper()).post(() -> 
-                        callback.onPrepareComplete(false, null, e.getMessage()));
-                }
-            }
-        }, "CodecRecorderPrepare-" + cameraId).start();
-    }
 
     /**
      * 开始录制
@@ -837,9 +759,6 @@ public class CodecVideoRecorder {
 
         AppLog.d(TAG, "Camera " + cameraId + " Starting codec recording");
 
-        // 记录分段开始时间（用于 PTS 计算）
-        segmentStartTimeNs = System.nanoTime();
-        encodedOutputFrameCount = 0;
         lastWrittenPtsUs = -1L;
         segmentBasePtsUs = -1L;
         
@@ -1105,13 +1024,6 @@ public class CodecVideoRecorder {
         cachedRecordSurface = new Surface(inputSurfaceTexture);
         AppLog.d(TAG, "Camera " + cameraId + " created new record surface");
         return cachedRecordSurface;
-    }
-
-    /**
-     * 获取当前文件路径
-     */
-    public String getCurrentFilePath() {
-        return currentFilePath;
     }
 
     /**
@@ -1435,8 +1347,6 @@ public class CodecVideoRecorder {
                         } else {
                             writeSample(encodedData, bufferInfo);
 
-                            encodedOutputFrameCount++;
-                            lastEncoderOutputTime = System.currentTimeMillis();
                             gotOutput = true;
                             processedFrames++;  // 增加已处理帧计数
                         }
@@ -1517,8 +1427,6 @@ public class CodecVideoRecorder {
                         if (muxerStarted) {
                             writeSample(encodedData, bufferInfo);
 
-                            encodedOutputFrameCount++;
-                            lastEncoderOutputTime = System.currentTimeMillis();
                             gotOutput = true;
                         }
                     }
@@ -1571,9 +1479,8 @@ public class CodecVideoRecorder {
             }
         };
 
-        // 延迟执行（使用配置的分段时长 + 补偿时间）
-        // 补偿编码器初始化延迟和停止时的帧丢失
-        long actualDelayMs = segmentDurationMs + SEGMENT_DURATION_COMPENSATION_MS;
+        // 延迟执行（使用配置的分段时长）
+        long actualDelayMs = segmentDurationMs;
         segmentHandler.postDelayed(segmentRunnable, actualDelayMs);
         AppLog.d(TAG, "Camera " + cameraId + " Scheduled next segment in " + (segmentDurationMs / 1000) + " seconds (actual delay: " + actualDelayMs + "ms)");
     }
@@ -1610,9 +1517,6 @@ public class CodecVideoRecorder {
             // 3. 准备下一段
             segmentIndex++;
 
-            // 重置分段开始时间和帧计数
-            segmentStartTimeNs = System.nanoTime();
-            encodedOutputFrameCount = 0;
             lastWrittenPtsUs = -1L;
             segmentBasePtsUs = -1L;
             // 不重置 firstFrameTimestampNs，保持 EGL 时间戳单调递增
@@ -1715,9 +1619,6 @@ public class CodecVideoRecorder {
                 openNextFile();
             }
             
-            // 重置分段开始时间和帧计数
-            segmentStartTimeNs = System.nanoTime();
-            encodedOutputFrameCount = 0;
             lastWrittenPtsUs = -1L;
             segmentBasePtsUs = -1L;
             
@@ -1936,7 +1837,6 @@ public class CodecVideoRecorder {
         }
         muxerStarted = true;
         encoderHealthy = true;  // 收到格式变化说明编码器正常
-        lastEncoderOutputTime = System.currentTimeMillis();
     }
 
     /**
@@ -2224,8 +2124,6 @@ public class CodecVideoRecorder {
         createMuxer(path);
         currentFilePath = path;
         recordedFilePaths.add(path);
-        segmentStartTimeNs = System.nanoTime();
-        encodedOutputFrameCount = 0;
         lastWrittenPtsUs = -1L;
         segmentBasePtsUs = -1L;
         if (sameEncoder) {
@@ -2236,7 +2134,6 @@ public class CodecVideoRecorder {
             if (!pending.isEmpty()) {
                 segmentBasePtsUs = pending.get(0).ptsUs;
                 lastWrittenPtsUs = writeSamples(muxer, videoTrackIndex, pending);
-                encodedOutputFrameCount = pending.size();
                 lastWriteUptimeMs = android.os.SystemClock.uptimeMillis();
                 everWrote = true;
             }
@@ -2379,13 +2276,10 @@ public class CodecVideoRecorder {
             String newFilePath = currentFilePath;
 
             // 7. 重置状态
-            segmentStartTimeNs = System.nanoTime();
-            encodedOutputFrameCount = 0;
             lastWrittenPtsUs = -1L;
             segmentBasePtsUs = -1L;
             framesWithoutEncoderOutput = 0;
             encoderHealthy = true;
-            lastEncoderOutputTime = System.currentTimeMillis();
 
             // 8. 恢复录制
             isRecording.set(true);
