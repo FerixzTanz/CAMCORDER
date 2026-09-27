@@ -41,8 +41,6 @@ import java.util.Locale;
  * 缩放不触发重新布局，圆角半径只重画这一块。底色切换是颜色插值。都是平台自带的
  * {@link ValueAnimator}，跟随系统的「动画时长缩放」设置，关了动画就直接跳到终态。
  * 这些都是状态本身，不算装饰，录制时也照常动（见 {@link MotionPolicy}）。</p>
- *
- * <p>自定义车型那几份布局里录制键还是一个普通按钮（没有点和环），这时退化成只改颜色。</p>
  */
 public final class RecordButtonUi {
 
@@ -155,10 +153,6 @@ public final class RecordButtonUi {
                 : next == State.UNAVAILABLE ? R.string.record_unavailable
                 : R.string.record_stop;
         root.setContentDescription(context.getString(description));
-        if (card == null) {
-            renderPlainButton(next);
-            return;
-        }
         if (dotShape != null) {
             dotShape.setColor(color(next == State.UNAVAILABLE ? R.color.text_tertiary : R.color.recording));
         }
@@ -206,29 +200,6 @@ public final class RecordButtonUi {
                 showIdleDetail();
                 break;
         }
-    }
-
-    /**
-     * 自定义车型那几份布局里的普通按钮：字不动（那几份用的是一个图标字符，
-     * 换成「开始录制」四个字在 88dp 的方块里放不下），只改颜色。
-     */
-    private void renderPlainButton(State next) {
-        if (!(root instanceof TextView)) {
-            return;
-        }
-        int res;
-        switch (next) {
-            case IDLE:
-                res = R.color.recording;
-                break;
-            case RECORDING:
-                res = R.color.energy;
-                break;
-            default:
-                res = R.color.text_tertiary;
-                break;
-        }
-        ((TextView) root).setTextColor(color(res));
     }
 
     private void showIdleDetail() {
