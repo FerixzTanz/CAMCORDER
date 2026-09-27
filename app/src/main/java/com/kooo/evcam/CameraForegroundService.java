@@ -85,63 +85,10 @@ public class CameraForegroundService extends Service {
         // 要靠它说出「是谁占着」—— 注册时系统会把当前状态报一遍
         com.kooo.evcam.camera.CameraAvailabilityWatch.start(this);
 
-        // 启动悬浮窗与补盲服务（不依赖 MainActivity，Activity 被杀也能继续运行）
-        startRemoteServicesIfNeeded();
+        // 前台服务起来了 = 我们的代码有机会运行了：按开机自启动的规矩恢复核心程序（规格 §1）
+        com.kooo.evcam.recovery.Recovery.restore(this, "service-create");
 
         startCameraRepairLoop();
-    }
-    
-    /**
-     * 启动后台服务（如果配置了自动启动）
-     * 在 Service 中启动，不依赖 MainActivity
-     */
-    private void startRemoteServicesIfNeeded() {
-        try {
-            AppConfig appConfig = new AppConfig(this);
-            // 只有开启了开机自启动才启动后台服务和悬浮窗
-            if (appConfig.isAutoStartOnBoot()) {
-                // 悬浮按钮由 OverlayCoordinator 按同一条规则拉起，这里不再自己判断一遍
-                // 如果启用了自动录制，启动 MainActivity
-                // 这确保杀后台重启后也能自动录制（与开机启动行为一致）
-                if (appConfig.isAutoStartRecording()) {
-                    startMainActivityForAutoRecording();
-                }
-            } else {
-                AppLog.d(TAG, "开机自启动未开启，跳过远程服务启动");
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "启动远程服务失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * 启动 MainActivity 进行自动录制
-     * 用于：
-     * 1. 杀后台后服务重启时恢复自动录制
-     * 2. 与开机启动行为保持一致
-     */
-    private void startMainActivityForAutoRecording() {
-        try {
-            // 检查 MainActivity 是否已经在运行
-            // 通过检查静态引用判断（避免重复启动）
-            if (MainActivity.getInstance() != null) {
-                AppLog.d(TAG, "MainActivity 已在运行，跳过启动");
-                return;
-            }
-            
-            AppLog.d(TAG, "自动录制已启用，启动 MainActivity（后台模式）...");
-            
-            Intent mainIntent = new Intent(this, MainActivity.class);
-            mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            mainIntent.putExtra("auto_start_from_boot", true);  // 复用开机自启动的逻辑
-            mainIntent.putExtra("silent_mode", true);
-            mainIntent.putExtra("from_service_restart", true);  // 标记来自服务重启
-            startActivity(mainIntent);
-            
-            AppLog.d(TAG, "MainActivity 已启动（用于自动录制）");
-        } catch (Exception e) {
-            AppLog.e(TAG, "启动 MainActivity 失败: " + e.getMessage(), e);
-        }
     }
     
     /**
@@ -182,9 +129,8 @@ public class CameraForegroundService extends Service {
         // 每次启动时检查并注册 TIME_TICK
         registerTimeTickIfNeeded();
                 
-        // 确保远程服务和悬浮窗已启动（处理 START_STICKY 自动重启的情况）
-        // onCreate 可能不会被调用（服务自动恢复时），所以这里也要检查
-        ensureRemoteServicesStarted();
+        // 每次被启动都按开机自启动的规矩看一眼该恢复什么（例行的那种五分钟做一次）
+        com.kooo.evcam.recovery.Recovery.restore(this, com.kooo.evcam.recovery.Recovery.WHY_ROUTINE);
         startCameraRepairLoop();
 
         // 从Intent获取通知内容，如果没有则使用默认内容
@@ -249,6 +195,8 @@ public class CameraForegroundService extends Service {
                 lastBeatScreenOn = screenOn;
                 lastBeatAtMs = now;
             }
+            // 熄屏录制拿着的锁，屏幕其实亮了就该放（亮屏广播漏了也不至于一直拿着）
+            com.kooo.evcam.recording.ScreenOffRecording.checkScreenOn(CameraForegroundService.this);
             com.kooo.evcam.blackbox.BlackBox.flushCountsIfDue();
             blackBoxHandler.postDelayed(this, BLACK_BOX_TICK_MS);
         }
@@ -276,27 +224,6 @@ public class CameraForegroundService extends Service {
             return pm == null || pm.isInteractive();
         } catch (Throwable t) {
             return true;
-        }
-    }
-
-    /**
-     * 确保远程服务和悬浮窗已启动
-     * 用于处理 START_STICKY 自动重启的情况（此时 onCreate 不会被调用）
-     */
-    private void ensureRemoteServicesStarted() {
-        try {
-            AppConfig appConfig = new AppConfig(this);
-            if (!appConfig.isAutoStartOnBoot()) {
-                return;  // 未开启开机自启动，跳过
-            }
-            
-// 检查并启动 MainActivity（如果启用了自动录制且 Activity 未运行）
-            if (appConfig.isAutoStartRecording() && MainActivity.getInstance() == null) {
-                startMainActivityForAutoRecording();
-            }
-
-} catch (Exception e) {
-            AppLog.e(TAG, "确保服务启动失败: " + e.getMessage(), e);
         }
     }
 

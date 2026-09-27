@@ -48,6 +48,36 @@ public final class RecordingIntent {
     private int restoreAttempts;
 
     /**
+     * 落盘（规格 1.2）：进程被杀又拉回来时，「这一趟」的选择要还在 ——
+     * 手动停过的不能因为进程换了就忘。车机真正开机、用户手动打开时清掉，
+     * 那是 Application 和主界面的事。测试里不接。
+     */
+    public interface Store {
+        boolean get(String key, boolean fallback);
+
+        void put(String key, boolean value);
+    }
+
+    private Store store;
+
+    public void attach(Store store) {
+        this.store = store;
+        if (store != null) {
+            autoStarted = store.get("autoStarted", false);
+            stoppedByUser = store.get("stoppedByUser", false);
+            everStarted = store.get("everStarted", false);
+        }
+    }
+
+    private void persist() {
+        if (store != null) {
+            store.put("autoStarted", autoStarted);
+            store.put("stoppedByUser", stoppedByUser);
+            store.put("everStarted", everStarted);
+        }
+    }
+
+    /**
      * 启动时该不该自动开一次。
      *
      * <p>这一趟已经自动开过、或者用户自己停过，都不再开 —— 后者最要紧：
@@ -60,6 +90,7 @@ public final class RecordingIntent {
     /** 已经自动开过一次了（不管最后录没录起来，这一趟都不再自动开第二次）。 */
     public void noteAutoStarted() {
         autoStarted = true;
+        persist();
     }
 
     /**
@@ -86,6 +117,7 @@ public final class RecordingIntent {
     public void noteRecordingStarted() {
         everStarted = true;
         restoreAttempts = 0;
+        persist();
     }
 
     /** 用户自己按了开始 —— 「停过」的记录作废，自动开的额度也算用掉了。 */
@@ -93,11 +125,13 @@ public final class RecordingIntent {
         stoppedByUser = false;
         autoStarted = true;
         restoreAttempts = 0;
+        persist();
     }
 
     /** 用户自己按了停止。在这一趟里，没有任何一条路可以再自动开起来。 */
     public void noteUserStopped() {
         stoppedByUser = true;
+        persist();
     }
 
     public boolean stoppedByUser() {
@@ -110,6 +144,7 @@ public final class RecordingIntent {
         stoppedByUser = false;
         everStarted = false;
         restoreAttempts = 0;
+        persist();
     }
 
     /** 诊断报告里的一行。 */

@@ -8,6 +8,16 @@ Notable changes only, newest first. Each version's section becomes the body of i
 - The profile name at the bottom left of the main screen follows the interface language:
   "Zeekr 7X (surround)" and "Surround + 2 cabin" in English and Malay, the Chinese names in
   Chinese. It used to show the Chinese name stored with the profile whatever the language.
+- **"Start on boot" has one entry point that restores the app's core** — floating button, super
+  mirror and, with "Record on launch", recording — whenever the foreground service comes up, the
+  keep-alive job runs (within a second of waking), the screen turns on or the app is updated.
+  It does nothing while "Start on boot" is off or after you quit. A silently launched main screen
+  now flashes and goes to the background instead of staying in front.
+- A manual stop of the recording now survives the process being killed and brought back; it is
+  cleared by a real reboot or by opening the app yourself.
+- Screen-off recording's wake lock now lives at process level: it listens for the screen itself,
+  also covers a recording that starts while the screen is already off (remaining time counted
+  from the moment it went off), and is checked every minute against the real screen state.
 
 ## [1.52.0-alpha] - 2026-09-27
 

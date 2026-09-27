@@ -107,4 +107,31 @@ public class RecordingIntentTest {
         assertTrue(intent.shouldAutoStart(true));
         assertFalse(intent.stoppedByUser());
     }
+
+    /** 规格 1.2：进程被杀又拉回来，「这一趟」的选择还在 —— 新实例从同一份存储里读回来。 */
+    @Test
+    public void choicesSurviveANewInstanceThroughTheStore() {
+        java.util.Map<String, Boolean> saved = new java.util.HashMap<>();
+        RecordingIntent.Store store = new RecordingIntent.Store() {
+            @Override
+            public boolean get(String key, boolean fallback) {
+                return saved.containsKey(key) ? saved.get(key) : fallback;
+            }
+
+            @Override
+            public void put(String key, boolean value) {
+                saved.put(key, value);
+            }
+        };
+        RecordingIntent first = new RecordingIntent();
+        first.attach(store);
+        first.noteRecordingStarted();
+        first.noteUserStopped();
+
+        RecordingIntent second = new RecordingIntent();
+        second.attach(store);
+        assertTrue(second.stoppedByUser());
+        assertFalse(second.shouldRestore(true));
+        assertFalse(second.shouldAutoStart(true));
+    }
 }

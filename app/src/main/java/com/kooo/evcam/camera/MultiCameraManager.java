@@ -1132,6 +1132,8 @@ public class MultiCameraManager {
             mainHandler.removeCallbacks(writeWatch);
             mainHandler.postDelayed(writeWatch, WRITE_WATCH_MS);
             noteRecordingDir();
+            // 屏幕已经黑着才开始的录像（熄屏期间接回的那种），熄屏录制同样要拿锁
+            com.kooo.evcam.recording.ScreenOffRecording.onRecordingStarted(context);
         }
         return started;
     }
@@ -2076,6 +2078,8 @@ public class MultiCameraManager {
         mainHandler.removeCallbacks(storageTick);
         mainHandler.removeCallbacks(writeWatch);
         StorageHelper.noteRecordingFallback(null, null);
+        // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
+        com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
 
         // 在后台线程执行停止操作，避免阻塞主线程
         new Thread(() -> {

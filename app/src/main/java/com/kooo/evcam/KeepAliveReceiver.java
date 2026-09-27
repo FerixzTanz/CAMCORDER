@@ -74,6 +74,7 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         if (Intent.ACTION_SCREEN_ON.equals(action)) {
             // 亮屏把因熄屏退下去的主界面接回来，是「回到用户设定的状态」（规格 §0），不归保活管
             restoreMainScreenIfItLeftForScreenOff(context);
+            com.kooo.evcam.recovery.Recovery.restore(context, "screen-on");
         }
         if (!new AppConfig(context).isKeepAliveEnabled()) {
             // 保活关着（规格 §3）：不拉
@@ -235,6 +236,7 @@ public class KeepAliveReceiver extends BroadcastReceiver {
                 ensureServicesRunning(context, "应用更新");
                 // 应用更新后重新注册 TIME_TICK
                 registerTimeTick(context);
+                com.kooo.evcam.recovery.Recovery.restore(context, "package-replaced");
                 break;
                 
             case Intent.ACTION_PACKAGE_ADDED:
@@ -284,6 +286,8 @@ public class KeepAliveReceiver extends BroadcastReceiver {
             config.setUiLeftForScreenOff(false);
             Intent intent = new Intent(context, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            // 不是人点开的：这一趟的录像选择不清（规格 1.2）
+            intent.putExtra("restored_by_app", true);
             context.startActivity(intent);
             AppLog.i(TAG, "亮屏，主界面已不在，按熄屏前的状态把它拉回来");
         } catch (Exception e) {

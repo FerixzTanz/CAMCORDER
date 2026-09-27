@@ -324,6 +324,13 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.blackbox.BlackBox.note("主界面 onCreate savedState=" + (savedInstanceState != null));
         // 用户退出之后，所有会自己拉起主界面的路都被拦住了 —— 这时主界面被创建，只能是人点开的
         UserExit.clear(this, "manual open");
+        // 人点开的主界面 = 新的一趟（规格 1.2）：手动停录、自动开过的记录清零。
+        // 我们自己静默拉起来的（恢复录像、亮屏接回）不算，界面重建（savedState 非空）也不算
+        if (savedInstanceState == null
+                && !getIntent().getBooleanExtra(com.kooo.evcam.recovery.Recovery.EXTRA_SILENT, false)
+                && !getIntent().getBooleanExtra("restored_by_app", false)) {
+            com.kooo.evcam.recording.RecordingIntent.current().reset();
+        }
         instance = this;  // 设置静态实例引用
         AppLog.init(this);
         // 回到主界面时是不是换了一个新实例、Holder 里还有没有旧的相机管理器 ——
@@ -396,18 +403,10 @@ public class MainActivity extends AppCompatActivity {
             // 清除标志，避免后续重复检测
             getIntent().removeExtra("auto_start_from_boot");
 
-            // 判断是否需要移到后台：
-            // - 如果开启了自动录制：不移到后台，显示主界面并开始录制
-            // - 如果未开启自动录制（只开启悬浮窗/推送等）：移到后台
-            if (appConfig.isAutoStartRecording()) {
-                AppLog.d(TAG, "开机自启动模式：已开启自动录制，保持前台显示");
-                shouldMoveToBackgroundOnReady = false;
-            } else {
-                AppLog.d(TAG, "开机自启动模式：未开启自动录制，等待窗口准备好后移到后台");
-                // 设置标志，等待 onWindowFocusChanged 时再移到后台
-                // 这确保 Activity 完全初始化后再执行，避免中断初始化过程
-                shouldMoveToBackgroundOnReady = true;
-            }
+            // 静默拉起来的主界面闪一下就退后台（规格 1.6）：录像不靠主界面显示，
+            // 退到后台照常录；开始录像那一步在等相机的两秒里自己会跑到
+            AppLog.d(TAG, "开机自启动模式：等待窗口准备好后移到后台");
+            shouldMoveToBackgroundOnReady = true;
         }
 
         // 检查是否是从录制悬浮按钮启动（需要自动开始录制）
@@ -2961,8 +2960,8 @@ public class MainActivity extends AppCompatActivity {
                 keepRecordingOffAtElapsed = android.os.SystemClock.elapsedRealtime();
                 keepRecordingOffAtUptime = android.os.SystemClock.uptimeMillis();
                 keepRecordingStops = 0;
+                // 唤醒锁由 ScreenOffRecording 自己拿：它注册了熄屏广播，主界面在不在都一样
                 com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
-                com.kooo.evcam.recording.ScreenOffRecording.onScreenOff(this, true);
                 return;
             }
             
@@ -3153,8 +3152,6 @@ public class MainActivity extends AppCompatActivity {
     private void onScreenOn() {
         isScreenOff = false;
         AppLog.d(TAG, "检测到亮屏");
-        // 熄屏录制拿着的唤醒锁，亮屏就放
-        com.kooo.evcam.recording.ScreenOffRecording.release("screen-on");
         noteKeepRecordingStretch();
         
 // 取消可能存在的息屏停止录制任务
@@ -3409,8 +3406,6 @@ public class MainActivity extends AppCompatActivity {
             stopRecordingTimer();
             // 状态条上「录像改写到别的盘」那句随这次录像结束
             updateStatusLine();
-            // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
-            com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
 
             // 为什么停的：停之前有人写下原因的就用它；没人写，就是录制器自己停的
             com.kooo.evcam.recording.RecordingStops.Reason reason = nextStopReason != null ? nextStopReason
