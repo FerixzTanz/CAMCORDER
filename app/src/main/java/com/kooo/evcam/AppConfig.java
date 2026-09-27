@@ -80,9 +80,6 @@ public class AppConfig {
     private static final String KEY_RELAY_WRITE_ENABLED = "relay_write_enabled";  // 中转写入开关（U盘存储时）
 
 
-    // 鱼眼矫正配置
-    private static final String KEY_FISHEYE_CORRECTION_PREFIX = "fisheye_correction_";
-
     // 时间角标配置
     private static final String KEY_TIMESTAMP_WATERMARK_ENABLED = "timestamp_watermark_enabled";  // 时间角标开关
     private static final String KEY_WATERMARK_SPEC_ENABLED = "watermark_spec_enabled";  // 角标附带录制规格
@@ -91,12 +88,6 @@ public class AppConfig {
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
 
-    // 视频编码器配置
-    
-    // 录制摄像头选择配置
-    
-    // 摄像头画面显示配置（与录制开关分离）
-    
     // 亮度/降噪调节配置
     private static final String KEY_IMAGE_ADJUST_ENABLED = "image_adjust_enabled";  // 是否启用亮度/降噪调节
     private static final String KEY_EXPOSURE_COMPENSATION = "exposure_compensation";  // 曝光补偿值
@@ -105,7 +96,6 @@ public class AppConfig {
     private static final String KEY_EDGE_MODE = "edge_mode";  // 边缘增强模式
     private static final String KEY_NOISE_REDUCTION_MODE = "noise_reduction_mode";  // 降噪模式
     private static final String KEY_EFFECT_MODE = "effect_mode";  // 特效模式
-    private static final String KEY_SCENE_MODE = "scene_mode";  // 场景模式
     
     // 白平衡模式常量（对应 CameraMetadata.CONTROL_AWB_MODE_*）
     public static final int AWB_MODE_DEFAULT = -1;  // 默认（不设置）
@@ -174,8 +164,6 @@ public class AppConfig {
     public static final String RECORDING_MODE_MEDIA_RECORDER = "media_recorder";  // MediaRecorder（硬件编码）
     public static final String RECORDING_MODE_CODEC = "codec";  // MediaCodec（软编码）
     
-    // 码率配置相关键名
-    
     // 码率等级常量
     public static final String BITRATE_LOW = "low";        // 低码率（计算值的50%）
     public static final String BITRATE_MEDIUM = "medium";  // 中码率（计算值，默认）
@@ -230,17 +218,6 @@ public class AppConfig {
     /**
      * 获取开机自启动设置
      * @return true 表示启用开机自启动
-     */
-    /**
-     * 常驻唤醒锁：拿着它车机就不会深睡。<b>开发者选项，默认关。</b>
-     *
-     * <p>它原来挂在「开机自启动」上 —— 那个开关的名字只说开机要不要自己起来，
-     * 没说「车机从此不再深睡」。实测车机 26 小时里有 20.8 小时在深睡，全是停着的时候；
-     * 锁一拿，那 20.8 小时就变成醒着，停在那儿耗 12V 电瓶。两件事捆在一个开关上，
-     * 打开的人不会知道自己同时买了哪一件。</p>
-     *
-     * <p>拆开之后「开机自启动」只管开机自启动。这一项单独放在开发者选项里，
-     * 等真需要时再说。数据见 {@code docs/zeekr-platform-notes.md} §3.6。</p>
      */
     /** 熄屏录制默认最多不让车机睡 1 小时（项目所有者 2026-09-27 定）。 */
     public static final int DEFAULT_SCREEN_OFF_WAKE_MINUTES = 60;
@@ -335,8 +312,7 @@ public class AppConfig {
      * 车机会一直醒着、只是黑屏；这时 App 开着录像，人下车、屏幕黑了，录像照样一直录。
      * 这个选项就是为了保住这件事，所以<b>默认开</b>。</p>
      *
-     * <p>和开发者选项里的「息屏录制」是两回事：那个没在录的时候也不关相机，这个不管那件事。
-     * 让车机保持醒着（保活）留给「定时保活」去研究。</p>
+     * <p>和开发者选项里的「息屏录制」是两回事：那个没在录的时候也不关相机，这个不管那件事。</p>
      */
     public boolean isScreenOffKeepRecording() {
         return prefs.getBoolean(KEY_SCREEN_OFF_KEEP_RECORDING, true);
@@ -417,17 +393,6 @@ public class AppConfig {
         }
     }
     
-    /**
-     * 重置所有配置为默认值
-     */
-    public void resetToDefault() {
-        prefs.edit().clear().apply();
-        AppLog.d(TAG, "配置已重置为默认值");
-    }
-    
-    // ==================== 分辨率配置相关方法 ====================
-
-
     // ==================== 码率配置相关方法 ====================
 
 
@@ -523,10 +488,6 @@ public class AppConfig {
      * <p>0 而不是某个很大的数：下游拿到 0 就知道「不要设任何门槛」，
      * 拿到 999 还得先判断这是不是一个真实的目标值。</p>
      */
-
-    // ==================== 录制帧率（显式选择） ====================
-
-    // ==================== 预览/录制分辨率解耦 ====================
 
     // ==================== 手动指定相机映射 ====================
 
@@ -1249,9 +1210,6 @@ public class AppConfig {
     }
     
         
-    // ==================== 分段录制配置相关方法 ====================
-
-
     // ==================== 录制状态显示配置相关方法 ====================
     
     /**
@@ -1272,32 +1230,6 @@ public class AppConfig {
         return prefs.getBoolean(KEY_RECORDING_STATS_ENABLED, true);
     }
     
-    // ==================== 补盲功能全局开关 ====================
-
-
-    // ==================== 鱼眼矫正配置相关方法 ====================
-
-    /**
-     * 全屏预览窗口的缩放、中心、旋转，按相机位置存。
-     *
-     * <p>键名里的 {@code fisheye_correction_} 是历史 —— 这几个值原来属于那套已经删掉的
-     * 鱼眼矫正。现在它们只驱动全屏预览窗口自己的矩阵。名字没改：改了，用户已经调好的
-     * 那几个值就全丢了，而这几个字符串只有本类看得到。</p>
-     */
-    private String getFisheyeCorrectionKey(String cameraPos, String suffix) {
-        return KEY_FISHEYE_CORRECTION_PREFIX + cameraPos + "_" + suffix;
-    }
-
-
-    // ==================== 主屏悬浮窗配置相关方法 ====================
-
-
-    // ==================== 转向灯联动配置相关方法 ====================
-
-
-    // ==================== 车门联动配置 ====================
-
-
     // ==================== 时间角标配置相关方法 ====================
     
     /**
@@ -1411,12 +1343,6 @@ public class AppConfig {
         // 默认开启（项目所有者 2026-09-27 定；以前默认关）
         return prefs.getBoolean(KEY_TIMESTAMP_WATERMARK_ENABLED, true);
     }
-
-    // ==================== 视频编码器配置相关方法 ====================
-
-
-    // ==================== 录制摄像头选择配置相关方法 ====================
-
 
     // ==================== 亮度/降噪调节配置相关方法 ====================
     
@@ -1551,7 +1477,6 @@ public class AppConfig {
             .putInt(KEY_EDGE_MODE, EDGE_MODE_DEFAULT)
             .putInt(KEY_NOISE_REDUCTION_MODE, NOISE_REDUCTION_DEFAULT)
             .putInt(KEY_EFFECT_MODE, EFFECT_MODE_DEFAULT)
-            .putInt(KEY_SCENE_MODE, -1)
             .apply();
         AppLog.d(TAG, "亮度/降噪调节参数已重置为默认值");
     }
@@ -1628,15 +1553,6 @@ public class AppConfig {
             default: return "—";
         }
     }
-
-
-    // ==================== 全景影像避让配置相关方法 ====================
-
-
-    // ==================== 定制键唤醒配置相关方法 ====================
-
-
-    // ==================== 前轮/后轮模式视图配置相关方法 ====================
 
 
     // ==================== 悬浮按钮的动作 ====================
