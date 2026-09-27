@@ -4,6 +4,11 @@ Notable changes only, newest first. Each version's section becomes the body of i
 [GitHub release](../../releases).
 
 ## [Unreleased]
+
+Nothing yet.
+
+## [1.55.0-alpha] - 2026-09-27
+
 - **Camera yielding (1.54.0) is now a developer option, off by default.** Recording keeps its
   cameras; the head unit's own cabin view is not expected to conflict with the surround stream,
   so the contention is logged instead of avoided: the black box records who took which camera,
