@@ -335,7 +335,7 @@
     <string name="photo_no_image">No photo</string>
     <string name="photo_pick_hint">Pick a photo from the list</string>
     <string name="photo_tap_hint">Tap a view to enlarge it</string>
-    <string name="photo_fisheye">Fisheye</string>
+    <string name="photo_fisheye">Straighten</string>
 
     <!-- Send to phone -->
     <string name="action_send_to_phone">Send to phone</string>
@@ -635,9 +635,9 @@
     <string name="dev_raw_frame_title">Also save the raw frame</string>
     <string name="dev_raw_frame_summary">Uncut and unstamped, with a note on the frame geometry, in photos/raw. For working out the lane layout and the lens parameters</string>
     <string name="dev_gpu_fisheye_preview_title">Preview: per-pixel fisheye correction on the GPU</string>
-    <string name="dev_gpu_fisheye_preview_summary">The live surround view is corrected pixel by pixel on the GPU, as straight as in photo playback, instead of in patches. The camera picture goes through the app\'s own GL before it is shown. This picks the method only; the Fisheye button still turns correction on and off. Takes effect after restarting the app</string>
+    <string name="dev_gpu_fisheye_preview_summary">The live surround view is corrected pixel by pixel on the GPU, as straight as in photo playback, instead of in patches. The camera picture goes through the app\'s own GL before it is shown. This picks the method only; the Straighten button still turns correction on and off. Takes effect after restarting the app</string>
     <string name="dev_gpu_fisheye_video_title">Video playback: per-pixel fisheye correction on the GPU</string>
-    <string name="dev_gpu_fisheye_video_summary">The surround view in video playback is corrected pixel by pixel on the GPU. This picks the method only; the Fisheye button still turns correction on and off. Takes effect the next time video playback opens</string>
+    <string name="dev_gpu_fisheye_video_summary">The surround view in video playback is corrected pixel by pixel on the GPU. This picks the method only; the Straighten button still turns correction on and off. Takes effect the next time video playback opens</string>
     <string name="dev_repair_mp4_title">Repair unfinalised videos</string>
     <string name="dev_repair_mp4_summary">A clip cut short by a power loss has no index, so nothing will open it. Rebuilds one using a healthy clip from the same camera, keeping the file name</string>
     <string name="dev_note">“Custom” in Stream profile is only available here. Tap “Safety notice” in About to turn developer options off; this section then hides.</string>
