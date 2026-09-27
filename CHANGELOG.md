@@ -7,6 +7,18 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.59.0-alpha] - 2026-09-27
+
+- **No file I/O on the main thread for storage or the black box.** The black box writes on
+  its own thread (every important line used to fsync on the caller's thread: recording
+  start/stop, screen off, every settings switch); quit and crash wait for it briefly.
+  Storage is now a snapshot taken on a background thread (drive present, free space,
+  mounted volumes), refreshed on drive events, recording start/stop, a drive switch, a
+  settings change, return to the main screen and every 30 s while it is showing; the status
+  bar, the record button's availability, the pre-start check and the 30-second free-space
+  check read the snapshot instead of stat-ing the USB drive, which is what stalled the
+  screen when a drive dropped. Second step of the consolidation plan.
+
 ## [1.58.0-alpha] - 2026-09-27
 
 - **Cleanup, no behaviour change.** Leftovers of removed features are gone: remote

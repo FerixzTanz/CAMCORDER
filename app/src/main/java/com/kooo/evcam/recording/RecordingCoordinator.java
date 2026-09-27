@@ -7,7 +7,6 @@ import com.kooo.evcam.AppLog;
 import com.kooo.evcam.CameraForegroundService;
 import com.kooo.evcam.service.RecordingFloatingService;
 import com.kooo.evcam.R;
-import com.kooo.evcam.StorageHelper;
 import com.kooo.evcam.camera.MultiCameraManager;
 
 import java.text.SimpleDateFormat;
@@ -107,25 +106,38 @@ public class RecordingCoordinator {
             return;
         }
 
+        // 查盘（有没有 U 盘、剩多少）会碰盘，去存储线程做；查完回主线程接着开。
+        // 主线程上不 stat U 盘：盘掉线时那一下会卡住整个界面
+        com.kooo.evcam.storage.StorageState.refresh(context, "start",
+                snapshot -> startWith(snapshot, cameras, checkStorage));
+    }
+
+    /** 查完盘之后的下半段（主线程）。 */
+    private void startWith(com.kooo.evcam.storage.StorageState.Snapshot storage,
+                           Set<String> cameras, boolean checkStorage) {
+        if (cameraManager == null || cameraManager.isRecording()) {
+            return;
+        }
+
         // 正常模式下不往内置存储录：行车记录是一直在写的，而车机闪存换不了。
         //
         // 这条规则原先只拦住了「手动按录制」那一条路，另外八处（开机自动录、
         // 悬浮按钮拉起、主题切换后恢复、定时自检、亮屏恢复）都是直接开录的 ——
         // 也就是说，说好的「没有 U 盘就不录」，实际上只有按按钮时才成立。
         // 判断放在这里，九条路才是同一个答案。
-        if (!StorageHelper.isRecordingStorageAvailable(context)) {
+        if (!storage.available) {
             notifyRefused(context.getString(R.string.msg_refuse_no_external));
             return;
         }
 
         // 开录前先确认写得下：以前不查，盘满时照常开录，第一笔数据写不进去，
-        // 按钮就卡在「正在准备」。只看一次剩余空间，很快；不够时才去列目录、删文件
-        if (checkStorage && !ensureRoomToStart()) {
+        // 按钮就卡在「正在准备」。只看快照里的剩余空间；不够时才去列目录、删文件
+        if (checkStorage && !ensureRoomToStart(storage)) {
             return;
         }
 
         // 开发者模式下允许落到内置存储，但要让上层知道这次是回退
-        boolean sdFellBack = StorageHelper.isSdCardFallback(context);
+        boolean sdFellBack = storage.sdFellBack;
 
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
                 .format(new Date());
@@ -165,10 +177,10 @@ public class RecordingCoordinator {
      * 空间够就返回 true。不够时：没设上限直接拒绝（不删录像）；设了上限就在后台清理，
      * 清完再开一次，这次返回 false。
      */
-    private boolean ensureRoomToStart() {
-        java.io.File dir = StorageHelper.getVideoDir(context);
-        long free = com.kooo.evcam.camera.StorageGuard.freeBytes(dir);
-        if (free < 0 || free >= com.kooo.evcam.camera.StorageGuard.lastMarginBytes()) {
+    private boolean ensureRoomToStart(com.kooo.evcam.storage.StorageState.Snapshot storage) {
+        java.io.File dir = storage.videoDir;
+        long free = storage.freeBytes;
+        if (dir == null || free < 0 || free >= com.kooo.evcam.camera.StorageGuard.lastMarginBytes()) {
             return true;
         }
         if (new AppConfig(context).getVideoStorageLimitGb() <= 0) {

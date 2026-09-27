@@ -176,7 +176,6 @@ public class MainActivity extends AppCompatActivity {
     // 息屏录制相关
     private android.content.BroadcastReceiver screenStateReceiver;  // 屏幕状态广播接收器
     private android.content.BroadcastReceiver toggleRecordingReceiver;  // 录制切换广播接收器（来自悬浮窗）
-    private android.content.BroadcastReceiver storageReceiver;  // U 盘插拔：录制键可不可录、状态条余量
     private android.os.Handler screenStateHandler;  // 息屏/亮屏延迟处理
     private Runnable screenOffStopRunnable;  // 息屏停止录制的延迟任务
     private Runnable screenOnStartRunnable;  // 亮屏恢复录制的延迟任务
@@ -296,6 +295,11 @@ public class MainActivity extends AppCompatActivity {
     /** 状态条最右那一格的正文（合成流识别结果）；环视被拿走时那一格临时改写成提示。 */
     private String compositeInfoText = "";
     private boolean cameraTakenHint;
+    /** 存储快照变了（U 盘插拔、换盘、定时探测）：录制键可不可录、状态条余量跟着变。 */
+    private final com.kooo.evcam.storage.StorageState.Listener storageListener = snapshot -> {
+        refreshRecordAvailability();
+        updateStatusLine();
+    };
     private final android.os.Handler surroundResumeHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
     /** 多久看一次环视回来了没有。 */
@@ -1021,14 +1025,16 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 待机时录制键该是「开始录制」还是「插入 U 盘后可录制」。
      *
-     * <p>判断和拒录是同一个（{@code StorageHelper.isRecordingStorageAvailable}）——
+     * <p>判断和拒录是同一个（快照里的 {@code available}，源头都是 {@code StorageHelper.isRecordingStorageAvailable}）——
      * 按钮不会显示能录、按下去却被拒。录制中不动它：盘拔了由录制链路自己处理。</p>
      */
     private void refreshRecordAvailability() {
         if (recordButtonUi == null || isRecording) {
             return;
         }
-        recordButtonUi.setState(StorageHelper.isRecordingStorageAvailable(this)
+        // 只读快照，不碰盘；还没探测过时先按能录画，探测完监听器会再画一次
+        com.kooo.evcam.storage.StorageState.Snapshot storage = com.kooo.evcam.storage.StorageState.current();
+        recordButtonUi.setState(!storage.known || storage.available
                 ? com.kooo.evcam.ui.RecordButtonUi.State.IDLE
                 : com.kooo.evcam.ui.RecordButtonUi.State.UNAVAILABLE);
     }
@@ -2790,8 +2796,6 @@ public class MainActivity extends AppCompatActivity {
         
         AppLog.d(TAG, "息屏状态广播接收器已注册");
         
-        initStorageReceiver();
-        
         // 初始化录制切换广播接收器（来自悬浮窗）
         initToggleRecordingReceiver();
     }
@@ -2826,27 +2830,6 @@ public class MainActivity extends AppCompatActivity {
         AppLog.d(TAG, "录制切换广播接收器已注册");
     }
     
-    /** U 盘插拔：录制键的「可不可录」和状态条的余量跟着变。 */
-    private void initStorageReceiver() {
-        storageReceiver = new android.content.BroadcastReceiver() {
-            @Override
-            public void onReceive(android.content.Context context, android.content.Intent intent) {
-                // 存储探测结果有缓存，插拔之后得先作废
-                StorageHelper.clearCache();
-                refreshRecordAvailability();
-                updateStatusLine();
-            }
-        };
-        android.content.IntentFilter filter = new android.content.IntentFilter();
-        filter.addAction(android.content.Intent.ACTION_MEDIA_MOUNTED);
-        filter.addAction(android.content.Intent.ACTION_MEDIA_UNMOUNTED);
-        filter.addAction(android.content.Intent.ACTION_MEDIA_REMOVED);
-        filter.addAction(android.content.Intent.ACTION_MEDIA_BAD_REMOVAL);
-        filter.addAction(android.content.Intent.ACTION_MEDIA_EJECT);
-        // 这几条系统广播带的是卷的路径，不加 file 这个 scheme 收不到
-        filter.addDataScheme("file");
-        registerReceiver(storageReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
-    }
     
     /**
      * 息屏时的处理逻辑
@@ -3483,6 +3466,8 @@ public class MainActivity extends AppCompatActivity {
                     + "ms 强制结束。" + (mainDone ? "" : "主线程收尾没做完；")
                     + (stuck.isEmpty() ? "" : "相机 " + stuck + " 还没关好"));
         }
+        // 黑匣子在自己的线程上写：等它把上面几行写完再结束进程
+        com.kooo.evcam.blackbox.BlackBox.flush(1000);
         System.exit(0);
     }
 
@@ -3695,6 +3680,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        com.kooo.evcam.storage.StorageState.addListener(this, storageListener);
         AppLog.i(TAG, "onStart " + instanceTag() + " surround: " + describeComposite());
     }
 
@@ -3716,6 +3702,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        com.kooo.evcam.storage.StorageState.removeListener(storageListener);
         // 界面是怎么离开的：关掉？只是切走？还是在重建？三种后果完全不同
         com.kooo.evcam.blackbox.BlackBox.note("主界面 onStop finishing=" + isFinishing()
                 + " changingConfigurations=" + isChangingConfigurations()
@@ -3755,9 +3742,10 @@ public class MainActivity extends AppCompatActivity {
         // 界面记的录制状态和录制器的真实状态先对一下；对不上就以录制器为准
         reconcileRecordingState();
 
-        // U 盘可能在后台时插拔过
+        // U 盘可能在后台时插拔过：先按上一份快照画，再去后台探测一次（结果经 storageListener 回来）
         refreshRecordAvailability();
         updateStatusLine();
+        com.kooo.evcam.storage.StorageState.refresh(this, "resume");
         
         // 返回前台时，检查摄像头连接状态
         if (cameraManager != null && wasInBackground) {
@@ -3857,15 +3845,6 @@ public class MainActivity extends AppCompatActivity {
             screenStateReceiver = null;
         }
         
-        if (storageReceiver != null) {
-            try {
-                unregisterReceiver(storageReceiver);
-            } catch (Exception e) {
-                AppLog.w(TAG, "注销 U 盘插拔广播接收器时出错: " + e.getMessage());
-            }
-            storageReceiver = null;
-        }
-
         // 清理录制切换广播接收器
         if (toggleRecordingReceiver != null) {
             try {

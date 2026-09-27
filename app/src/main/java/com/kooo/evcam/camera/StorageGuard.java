@@ -139,4 +139,16 @@ public final class StorageGuard {
             }
         });
     }
+
+    /** 剩余空间的异步版：在自己的线程上读，结果回主线程（-1 = 不知道）。 */
+    public interface FreeBytesCallback {
+        void onFreeBytes(long freeBytes);
+    }
+
+    public static void freeBytesAsync(File dir, FreeBytesCallback callback) {
+        EXECUTOR.execute(() -> {
+            long free = freeBytes(dir);
+            MAIN.post(() -> callback.onFreeBytes(free));
+        });
+    }
 }

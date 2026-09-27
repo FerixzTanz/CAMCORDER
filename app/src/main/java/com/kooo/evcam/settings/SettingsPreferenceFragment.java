@@ -367,6 +367,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         }
         // 盘的探测结果有 5 秒缓存：不清的话，回到主界面时状态条还写着换之前那个盘的余量
         StorageHelper.clearCache();
+        com.kooo.evcam.storage.StorageState.refresh(pref.getContext(), "storage-setting");
         pref.setValue(value);
         pref.setSummary(pref.getEntry());
         toast(getString(R.string.msg_storage_changed, pref.getEntry()));

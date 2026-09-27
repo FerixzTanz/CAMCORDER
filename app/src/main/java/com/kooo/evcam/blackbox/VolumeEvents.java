@@ -7,7 +7,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 
 import com.kooo.evcam.AppLog;
-import com.kooo.evcam.StorageHelper;
 
 /**
  * U 盘挂上、卸下、异常掉线，每一次都进黑匣子。
@@ -47,9 +46,9 @@ public final class VolumeEvents {
             @Override
             public void onReceive(Context ctx, Intent intent) {
                 String path = intent.getData() != null ? intent.getData().getPath() : "?";
-                StorageHelper.clearCache();
-                BlackBox.noteImportant("U 盘事件：" + BlackBox.shortAction(intent.getAction())
-                        + " " + path + "；此刻挂着的盘：" + StorageHelper.describeMounts());
+                BlackBox.noteImportant("U 盘事件：" + BlackBox.shortAction(intent.getAction()) + " " + path);
+                // 挂着哪些盘由快照去后台看，变了它自己会记一行；主线程不碰盘
+                com.kooo.evcam.storage.StorageState.refresh(ctx, "media-event");
             }
         };
         try {

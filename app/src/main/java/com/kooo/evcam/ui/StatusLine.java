@@ -12,7 +12,6 @@ import com.kooo.evcam.profile.Profile;
 import com.kooo.evcam.profile.RecordSpecs;
 import com.kooo.evcam.profile.StreamSpec;
 
-import java.io.File;
 
 /**
  * 填 ⑤ 状态条。
@@ -131,12 +130,15 @@ public final class StatusLine {
                     volumeLabel(context, fallback[0]), volumeLabel(context, fallback[1])));
             storage.setVisibility(View.VISIBLE);
         } else if (storage != null) {
-            File sdCard = StorageHelper.getExternalSdCardRoot(context);
-            long free = sdCard != null ? StorageHelper.getAvailableSpace(sdCard) : -1;
-            NumberRoll.set(storage, free >= 0
-                    ? context.getString(R.string.status_storage_free, StorageHelper.formatSize(free))
-                    : context.getString(R.string.status_storage_none));
-            storage.setVisibility(View.VISIBLE);
+            // 只读快照，不碰盘（探测在 StorageState 的后台线程上）；还没探测过就先不写
+            com.kooo.evcam.storage.StorageState.Snapshot state = com.kooo.evcam.storage.StorageState.current();
+            if (state.known) {
+                long free = state.root != null ? state.freeBytes : -1;
+                NumberRoll.set(storage, free >= 0
+                        ? context.getString(R.string.status_storage_free, StorageHelper.formatSize(free))
+                        : context.getString(R.string.status_storage_none));
+                storage.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

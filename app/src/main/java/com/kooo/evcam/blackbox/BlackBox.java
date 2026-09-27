@@ -5,6 +5,9 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 
@@ -27,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 黑匣子：把「我们请求了什么」和「实际发生了什么」成对记下来。
@@ -79,6 +84,14 @@ public final class BlackBox {
     private static final int PENDING_LIMIT = 200;
 
     private static final Object LOCK = new Object();
+    /** 写盘只在这条线程上：别的线程记一行只是入队（以前每条要紧事件都在调用线程上 fsync）。 */
+    private static final HandlerThread THREAD = new HandlerThread("blackbox");
+    private static final Handler BOX;
+
+    static {
+        THREAD.start();
+        BOX = new Handler(THREAD.getLooper());
+    }
     private static final List<String> PENDING = new ArrayList<>();
     private static final Map<String, int[]> COUNTS = new LinkedHashMap<>();
 
@@ -126,11 +139,15 @@ public final class BlackBox {
         }
         startedAtMs = SystemClock.elapsedRealtime();
         noteImportant("==== 进程启动，起因: " + starter + " ====");
+        // 重启判断别人马上要用（UserExit），留在调用线程；其余都是读文件、问系统，去黑匣子线程做
         noteBootIfNew(appContext, starter);
-        noteVersionIfNew(appContext);
-        // 这一次进程起来时开关是什么样的 —— 事后看一段时间线，才知道当时在什么设置下
-        noteImportant("开关: " + describeSwitches(appContext));
-        appendPreviousExits();
+        final Context app = appContext;
+        BOX.post(() -> {
+            noteVersionIfNew(app);
+            // 这一次进程起来时开关是什么样的 —— 事后看一段时间线，才知道当时在什么设置下
+            noteImportant("开关: " + describeSwitches(app));
+            appendPreviousExits();
+        });
     }
 
     /**
@@ -204,9 +221,10 @@ public final class BlackBox {
     }
 
     /**
-     * 要紧的事件：<b>同步落盘</b>。
+     * 要紧的事件：写完还要 fsync。
      *
-     * <p>进程启动、退出、服务销毁这类 —— 记完下一刻可能就没了，不能赌缓存。</p>
+     * <p>进程启动、退出、服务销毁这类 —— 记完下一刻可能就没了，不能赌缓存。
+     * 写在黑匣子线程上；退出、崩溃那两条路用 {@link #flush} 等它写完。</p>
      */
     public static void noteImportant(String event) {
         write(event, true);
@@ -258,7 +276,30 @@ public final class BlackBox {
     // ================================================================= 写
 
     private static void write(String event, boolean sync) {
-        String line = stamp() + "  " + event;
+        // 时间戳在调用线程上取（记的是事发的时刻），写盘排到黑匣子线程上
+        final String line = stamp() + "  " + event;
+        BOX.post(() -> writeNow(line, sync));
+    }
+
+    /**
+     * 等黑匣子线程把已经排队的都写完，最多等 {@code timeoutMs}。
+     *
+     * <p>只给退出（紧接着 {@code System.exit}）、崩溃处理器和导出报告用；别处不该等。</p>
+     */
+    public static void flush(long timeoutMs) {
+        if (Looper.myLooper() == THREAD.getLooper()) {
+            return;
+        }
+        CountDownLatch done = new CountDownLatch(1);
+        BOX.post(done::countDown);
+        try {
+            done.await(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void writeNow(String line, boolean sync) {
         Context context = appContext;
         if (context == null) {
             synchronized (LOCK) {
@@ -550,6 +591,8 @@ public final class BlackBox {
         if (context == null) {
             return "（没有上下文）\n";
         }
+        // 把还在排队的先写完，报告才是最新的
+        flush(500);
         StringBuilder sb = new StringBuilder();
         try {
             File dir = new File(context.getFilesDir(), DIR);

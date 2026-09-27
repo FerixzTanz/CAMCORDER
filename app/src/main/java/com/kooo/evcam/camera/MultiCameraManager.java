@@ -288,10 +288,12 @@ public class MultiCameraManager {
             if (!isRecording) {
                 return;
             }
-            long free = StorageGuard.freeBytes(guardedVideoDir());
-            if (free >= 0 && free < StorageGuard.lastMarginBytes()) {
-                checkStorage("剩余空间低于余量");
-            }
+            // statfs 去存储线程做（盘掉线时它会卡住），结果回主线程再判断
+            StorageGuard.freeBytesAsync(guardedVideoDir(), free -> {
+                if (isRecording && free >= 0 && free < StorageGuard.lastMarginBytes()) {
+                    checkStorage("剩余空间低于余量");
+                }
+            });
             mainHandler.postDelayed(this, STORAGE_TICK_MS);
         }
     };
@@ -339,7 +341,7 @@ public class MultiCameraManager {
                     com.kooo.evcam.blackbox.BlackBox.noteImportant("录像写不进文件：" + worstKey + " 已 "
                             + (worst / 1000) + " 秒没有新数据（"
                             + (stuck == null ? "" : stuck.describeWriteState())
-                            + "）；此刻挂着的盘：" + StorageHelper.describeMounts());
+                            + "）；此刻挂着的盘：" + com.kooo.evcam.storage.StorageState.current().mounts);
                     onWriteStalled(worst);
                     return;
                 }
@@ -371,7 +373,7 @@ public class MultiCameraManager {
                     offTarget ? StorageHelper.volumeOf(custom) : null);
             com.kooo.evcam.blackbox.BlackBox.noteImportant("录像写到 " + dir.getAbsolutePath()
                     + (offTarget ? "（设定的是 " + custom + "，那个盘此刻不可用）" : "")
-                    + "；此刻挂着的盘：" + StorageHelper.describeMounts());
+                    + "；此刻挂着的盘：" + com.kooo.evcam.storage.StorageState.current().mounts);
         } catch (RuntimeException e) {
             AppLog.w(TAG, "noteRecordingDir failed: " + e);
         }
@@ -467,6 +469,7 @@ public class MultiCameraManager {
         StorageHelper.noteRecordingFallback(offTarget ? StorageHelper.volumeOf(dir.getAbsolutePath()) : null,
                 offTarget ? StorageHelper.volumeOf(custom) : null);
         checkStorage("换盘");
+        com.kooo.evcam.storage.StorageState.refresh(context, "relocated");
     }
 
     public void setWriteStallCallback(WriteStallCallback callback) {
