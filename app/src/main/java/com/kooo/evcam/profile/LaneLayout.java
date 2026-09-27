@@ -87,7 +87,8 @@ public final class LaneLayout {
      * 校正后是一幅正常的画面，上下两边是天和地，裁掉一点换中间更大更值 ——
      * 只开环视的主界面里，每格比画面宽，「适应」会在左右留两条黑。</p>
      *
-     * <p>默认「填充」。还没有地方改它：留给以后配置编辑里的摆位，按格单独调。</p>
+     * <p>默认「填充」。还没有地方改它：以后配置编辑的摆位里和 {@link #fit} 合成一项显示，
+     * 见 docs/profile-todo.md。</p>
      */
     public String fitCorrected = FILL;
 

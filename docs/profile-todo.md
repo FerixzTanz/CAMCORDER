@@ -15,6 +15,19 @@ configuration rework.
 - The editor asks for a recording quality preset first, then per-camera tuning; the three
   cameras are always listed and switched on or off (0.49.0–0.51.0).
 
+## Fit and fisheye correction: one item in the editor
+
+After 1.57.0-beta a surround cell has two scale modes: `LaneLayout.fit` while fisheye correction
+is off (default fit) and `LaneLayout.fitCorrected` while it is on (default fill, so the
+corrected picture fills the wide cells of the surround-only layout). The editor's
+"Fit / Fill" row edits only `fit`; nothing edits `fitCorrected` yet.
+
+Decided (2026-09-27): when the layout editing is built, show **one** item, not one per
+correction state. How one item maps onto the two stored values is still to settle; the
+likely shape is that the two fields fold into one, with an untouched cell keeping today's
+defaults (fit uncorrected, fill corrected) and a cell the user has set using that choice
+in both states.
+
 ## Crop is switched off
 
 `LaneOrientation.CROP_SUPPORTED` is `false`. Setting a crop on a surround lane wrecks the
