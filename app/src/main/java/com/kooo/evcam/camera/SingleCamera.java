@@ -171,6 +171,8 @@ public class SingleCamera {
     private int reconnectAttempts = 0;  // 重连尝试次数
     private static final long RECONNECT_DELAY_MS = 2000;  // 重连延迟（毫秒）
     private long reconnectDelayFloorMs = 0;
+    /** 因为别的程序拿着相机而没重连（CameraYield）；它放开后 MultiCameraManager 会来接。 */
+    private volatile boolean yieldedForOthers;
     private Runnable reconnectRunnable;  // 重连任务
     private boolean isPausedByLifecycle = false;  // 是否因生命周期暂停（用于区分主动关闭和系统剥夺）
     private boolean isReconnecting = false;  // 是否正在重连中（防止多个重连任务同时运行）
@@ -1211,6 +1213,17 @@ public class SingleCamera {
             // 如果已经在重连中，忽略新的重连请求
             if (isReconnecting) {
                 AppLog.d(TAG, "Camera " + cameraId + " already reconnecting, skipping new request");
+                return;
+            }
+
+            // 原厂功能拿着相机（平台笔记 §3.1）：不重连、不去抢，等它放开再接
+            if (CameraYield.shouldYield()) {
+                if (!yieldedForOthers) {
+                    yieldedForOthers = true;
+                    com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 让路：别的程序在用相机 "
+                            + CameraYield.describe() + "，不重连，等它放开再接");
+                }
+                isReconnecting = false;
                 return;
             }
 
@@ -2647,6 +2660,11 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping reconnect");
             return;
         }
+        if (CameraYield.shouldYield()) {
+            yieldedForOthers = true;
+            AppLog.i(TAG, "Camera " + cameraId + " reconnect skipped: yielding to " + CameraYield.describe());
+            return;
+        }
         
         synchronized (reconnectLock) {
             AppLog.d(TAG, "Camera " + cameraId + " manual reconnect requested (PRIMARY instance)");
@@ -2670,6 +2688,15 @@ public class SingleCamera {
      */
     public boolean isConnected() {
         return cameraDevice != null;
+    }
+
+    /** 是不是因为让路才没接回来（见 CameraYield）。 */
+    public boolean isYieldedForOthers() {
+        return yieldedForOthers;
+    }
+
+    public void clearYield() {
+        yieldedForOthers = false;
     }
 
     /**
@@ -2742,6 +2769,11 @@ public class SingleCamera {
         // 如果不是主实例，不执行重开操作
         if (!isPrimaryInstance) {
             AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping forceReopen");
+            return;
+        }
+        if (CameraYield.shouldYield()) {
+            yieldedForOthers = true;
+            AppLog.i(TAG, "Camera " + cameraId + " force reopen skipped: yielding to " + CameraYield.describe());
             return;
         }
 

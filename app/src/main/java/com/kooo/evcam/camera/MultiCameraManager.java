@@ -197,7 +197,8 @@ public class MultiCameraManager {
      * 这一层只看有没有帧，不看任何状态标志。</p>
      */
     private void checkLiveness() {
-        if (cameras.isEmpty()) {
+        if (cameras.isEmpty() || CameraYield.shouldYield()) {
+            // 原厂功能拿着相机时不算卡：让路（平台笔记 §3.1），放开了再接
             return;
         }
         long now = android.os.SystemClock.uptimeMillis();
@@ -2699,7 +2700,7 @@ public class MultiCameraManager {
      * @return 需要重新打开的摄像头数量
      */
     public int checkAndRepairCameras() {
-        if (repairSuppressed) {
+        if (repairSuppressed || CameraYield.shouldYield()) {
             return 0;
         }
         int disconnectedCount = 0;
@@ -2718,6 +2719,24 @@ public class MultiCameraManager {
         }
         
         return disconnectedCount;
+    }
+
+    /**
+     * 原厂功能放开相机了：把让路时断掉的、该开着的接回来（{@link CameraYield} 在主线程调）。
+     */
+    public void resumeAfterYield(String releasedCameraId) {
+        StringBuilder which = new StringBuilder();
+        for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
+            SingleCamera camera = entry.getValue();
+            if (camera.isYieldedForOthers() || (camera.wantsFrames() && !camera.isConnected())) {
+                camera.clearYield();
+                camera.forceReopen();
+                which.append(which.length() > 0 ? ", " : "")
+                        .append(entry.getKey()).append("(").append(camera.getCameraId()).append(")");
+            }
+        }
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("别的程序放开了相机 " + releasedCameraId + "，接回: "
+                + (which.length() == 0 ? "没有要接的" : which));
     }
 
     /**

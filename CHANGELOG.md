@@ -8,6 +8,12 @@ Notable changes only, newest first. Each version's section becomes the body of i
 - Main screen, surround view only: the top-left cell is labelled "Front" again. It showed
   "Surround", the name of the camera the composite stream comes from, while the other three
   cells read Rear, Left and Right.
+- **The car's own cabin views open even while this app's main screen is up.** When the head
+  unit takes a camera for its own feature, the surround camera gets disconnected (the two
+  conflict in the HAL); the app used to reconnect within half a second and, from the
+  foreground, win the camera back, killing the factory view. Now it yields: no reconnects,
+  reopens or watchdog resets while another app holds a camera, and it reconnects once that
+  app lets go (a hold longer than 10 minutes is treated as a stale camera-service entry).
 
 ## [1.53.0-alpha] - 2026-09-27
 

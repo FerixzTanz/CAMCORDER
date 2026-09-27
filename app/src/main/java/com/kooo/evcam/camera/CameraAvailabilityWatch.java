@@ -83,6 +83,12 @@ public final class CameraAvailabilityWatch {
         boolean ours = weHoldOrOpen(cameraId);
         SINCE.put(cameraId, SystemClock.elapsedRealtime());
         OURS.put(cameraId, ours);
+        // 别的程序拿走了相机就让路，它放开了再接回（CameraYield，平台笔记 §3.1）
+        if (available) {
+            CameraYield.othersReleased(cameraId);
+        } else if (!ours) {
+            CameraYield.othersTook(cameraId);
+        }
         if (available) {
             BlackBox.noteImportant("相机服务: " + cameraId + " 空闲" + (before == null ? "（初始状态）" : ""));
         } else {
