@@ -81,17 +81,21 @@
     <string name="set_auto_start_summary">Launches automatically after the system starts</string>
     <string name="set_auto_record_title">Record on launch</string>
     <string name="set_auto_record_summary">Starts recording when the app opens, and picks an interrupted recording back up once the surround view returns. Never restarts one you stopped</string>
-    <string name="set_screen_off_title">Screen-off recording (developer)</string>
-    <string name="set_screen_off_summary">Keeps recording after the screen turns off</string>
+    <string name="set_screen_off_title">Screen-off recording</string>
+    <string name="set_screen_off_summary">If recording when the screen goes off, keep going and keep the car awake, for up to the time set below</string>
+    <string name="set_screen_off_wake_title">Keep the car awake for up to</string>
+    <string name="opt_wake_30m">30 minutes</string>
+    <string name="opt_wake_1h">1 hour</string>
+    <string name="opt_wake_2h">2 hours</string>
+    <string name="opt_wake_4h">4 hours</string>
+    <string name="opt_wake_8h">8 hours</string>
     <string name="set_screen_off_keep_title">Keep recording when the screen goes off</string>
     <string name="set_screen_off_keep_summary">If recording when the screen goes off, keep going. It never wakes the car: recording pauses while the car sleeps and carries on when it wakes</string>
-    <string name="set_keep_alive_title">Periodic keep-alive</string>
-    <string name="set_keep_alive_summary">Wakes the app periodically so the system does not close it</string>
+    <string name="set_keep_alive_title">Keep alive</string>
+    <string name="set_keep_alive_summary">Brings the app back after it is killed or the car restarts. Off: it stays gone</string>
     <string name="set_recording_mode_title">Recording pipeline</string>
     <string name="set_force_h264_title">Force H.264</string>
     <string name="set_force_h264_summary">Overrides the codec set for each camera</string>
-    <string name="set_persistent_wake_lock_title">Persistent wake lock</string>
-    <string name="set_persistent_wake_lock_summary">Keeps the head unit from deep sleep. Parked, it sleeps about four fifths of the time; with this on it stays awake on the battery</string>
     <string name="set_image_adjust_title">Brightness / noise reduction</string>
     <string name="set_image_adjust_summary">Adjust the picture live in a floating window</string>
     <string name="set_image_adjust_reset_title">Reset brightness / noise reduction</string>
@@ -155,7 +159,6 @@
 
     <!-- Main interface -->
     <string name="about_title">About &amp; credits</string>
-    <string name="accessibility_service_description">Keeps the app running in the background so recording is not interrupted.\n\nIt does not read or control the screen and collects no personal data.</string>
     <string name="zeekr_composite_not_found">No surround composite stream found. This head unit may not be supported</string>
     <string name="zeekr_lane_front">Front</string>
     <string name="zeekr_lane_back">Rear</string>
@@ -380,7 +383,6 @@
     <string name="cd_menu">Menu</string>
     <string name="cd_minimize">Hide to background</string>
     <string name="nav_exit">Quit app</string>
-    <string name="set_screen_off_locked">Locked: requires developer options</string>
     <string name="set_rail_side_title">Button side</string>
     <string name="set_rail_side_summary">Put them on the driver\'s side</string>
     <string name="opt_rail_right">Right</string>

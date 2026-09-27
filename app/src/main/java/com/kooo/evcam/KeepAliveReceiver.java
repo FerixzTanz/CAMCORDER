@@ -71,15 +71,20 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         if (UserExit.blocks(context, "KeepAliveReceiver")) {
             return;
         }
+        if (Intent.ACTION_SCREEN_ON.equals(action)) {
+            // 亮屏把因熄屏退下去的主界面接回来，是「回到用户设定的状态」（规格 §0），不归保活管
+            restoreMainScreenIfItLeftForScreenOff(context);
+        }
+        if (!new AppConfig(context).isKeepAliveEnabled()) {
+            // 保活关着（规格 §3）：不拉
+            return;
+        }
 
-        // 保活功能已改为始终开启（车机必需）
-        
         switch (action) {
             // ========== 屏幕相关（车机点火必亮屏，最稳触发） ==========
             case Intent.ACTION_SCREEN_ON:
                 AppLog.d(TAG, "【屏幕】屏幕亮起（点火信号）");
                 ensureServicesRunning(context, "屏幕亮起");
-                restoreMainScreenIfItLeftForScreenOff(context);
                 break;
                 
             case Intent.ACTION_SCREEN_OFF:
@@ -286,25 +291,9 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         }
     }
 
-    /**
-     * TIME_TICK 处理（每分钟调用）
-     * 使用轻量级检查，避免频繁操作
-     */
+    /** TIME_TICK 处理（每分钟调用）：前台服务不在就拉起来。 */
     private void onTimeTick(Context context) {
-        // 检查无障碍服务状态
-        boolean accessibilityRunning = KeepAliveAccessibilityService.isRunning();
-        
-        if (accessibilityRunning) {
-            // 无障碍服务运行中，只需简单日志
-            long runningMinutes = KeepAliveAccessibilityService.getRunningMinutes();
-            if (runningMinutes % 5 == 0) {  // 每5分钟输出一次详细日志
-                AppLog.d(TAG, "【定时】无障碍服务已运行 " + runningMinutes + " 分钟");
-            }
-        } else {
-            // 无障碍服务未运行，尝试拉起前台服务
-            AppLog.d(TAG, "【定时】无障碍服务未运行，尝试拉起前台服务");
-            ensureServicesRunning(context, "定时检查");
-        }
+        ensureServicesRunning(context, "定时检查");
     }
     
     /**

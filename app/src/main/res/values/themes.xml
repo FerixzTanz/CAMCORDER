@@ -56,17 +56,6 @@
 
     <style name="Theme.Cam" parent="Base.Theme.Cam" />
 
-    <!-- 完全透明主题（用于开机自启动） -->
-    <style name="Theme.Cam.Transparent" parent="Theme.Cam">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:backgroundDimEnabled">false</item>
-        <item name="android:windowAnimationStyle">@null</item>
-        <item name="android:windowDisablePreview">true</item>
-    </style>
 
     <!-- ================= 动作栏控件（原生 MaterialButton，只定样式） ================= -->
 

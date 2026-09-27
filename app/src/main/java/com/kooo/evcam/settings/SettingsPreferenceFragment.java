@@ -133,6 +133,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         onClick("pref_profile_editor",
                 pref -> openFragment(new ProfileEditorFragment(), R.string.set_profile_editor_title));
 
+        bindSwitch("pref_auto_record", appConfig.isAutoStartRecording(),
+                value -> appConfig.setAutoStartRecording(value));
+
         bindSwitch("pref_photo_via_jpeg", appConfig.isPhotoViaJpegEnabled(),
                 enabled -> {
                     appConfig.setPhotoViaJpegEnabled(enabled);
@@ -793,19 +796,6 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
      * <p>用「锁」不用「藏」：这是一个普通人会来找的选项，藏起来的话找的人不知道它存在，
      * 也不知道去哪打开。值那边 AppConfig 同样锁着，界面写着关，实际就是关。</p>
      */
-    private void lockScreenOffRecording() {
-        if (DeveloperMode.isUnlocked()) {
-            return;
-        }
-        SwitchPreferenceCompat pref = findPreference("pref_screen_off_recording");
-        if (pref == null) {
-            return;
-        }
-        pref.setChecked(false);
-        pref.setEnabled(false);
-        pref.setSummary(R.string.set_screen_off_locked);
-    }
-
     private void bindSystem() {
         // 诊断信息放在系统里：它是给所有人导出报告用的
         onClick("pref_diagnostics", pref ->
@@ -813,15 +803,18 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
         bindSwitch("pref_auto_start", appConfig.isAutoStartOnBoot(),
                 value -> appConfig.setAutoStartOnBoot(value));
-        bindSwitch("pref_auto_record", appConfig.isAutoStartRecording(),
-                value -> appConfig.setAutoStartRecording(value));
-        bindSwitch("pref_screen_off_recording", appConfig.isScreenOffRecordingEnabled(),
-                value -> appConfig.setScreenOffRecordingEnabled(value));
-        lockScreenOffRecording();
+        // 保活开关接手全部保活手段（规格 §3）：关了就把定时任务也取消，别等它下次到点再自己退出
+        bindSwitch("pref_keep_alive", appConfig.isKeepAliveEnabled(),
+                value -> {
+                    appConfig.setKeepAliveEnabled(value);
+                    if (value) {
+                        com.kooo.evcam.KeepAliveManager.startKeepAliveWork(requireContext());
+                    } else {
+                        com.kooo.evcam.KeepAliveManager.stopKeepAliveWork(requireContext());
+                    }
+                });
         bindSwitch("pref_screen_off_keep_recording", appConfig.isScreenOffKeepRecording(),
                 value -> appConfig.setScreenOffKeepRecording(value));
-        bindSwitch("pref_keep_alive", appConfig.isKeepAliveEnabled(),
-                value -> appConfig.setKeepAliveEnabled(value));
     }
 
     // ------------------------------------------------------------------ 原「高级」，现在在开发者选项里
@@ -830,8 +823,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindEnum("pref_recording_mode", SettingsRegistry.RECORDING_MODE,
                 appConfig.getRecordingMode(), value -> appConfig.setRecordingMode(value));
 
-        bindSwitch("pref_persistent_wake_lock", appConfig.isPersistentWakeLockEnabled(),
-                value -> appConfig.setPersistentWakeLockEnabled(value));
+        // 熄屏录制 = 熄屏持续录制 + 唤醒锁（规格 §3.1）。整块只在开发者选项里出现，不用再单独锁
+        bindSwitch("pref_screen_off_recording", appConfig.isScreenOffRecordingEnabled(),
+                value -> appConfig.setScreenOffRecordingEnabled(value));
+        bindEnum("pref_screen_off_wake_minutes", SettingsRegistry.SCREEN_OFF_WAKE,
+                appConfig.getScreenOffWakeMode(), value -> appConfig.setScreenOffWakeMode(value));
         bindSwitch("pref_force_h264", appConfig.isForceH264Encoding(),
                 value -> appConfig.setForceH264Encoding(value));
 

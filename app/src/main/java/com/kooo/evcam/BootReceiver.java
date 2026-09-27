@@ -8,14 +8,11 @@ import android.os.Handler;
 import android.os.Looper;
 
 /**
- * 开机启动广播接收器
- * 监听系统开机广播，自动启动必要的服务
- * 
- * 关键改进（参考保活效果好的应用）：
- * 1. 直接启动前台服务，不依赖 Activity（Android 10+ 后台启动 Activity 受限）
- * 2. 简化启动逻辑，减少失败点
- * 3. 延迟启动，等待系统稳定
- * 4. 注册 TIME_TICK 广播，建立保活机制
+ * 开机启动广播接收器。
+ *
+ * <p>这个容器不给我们送开机广播（三次重启都没送到，平台笔记 §3.6）。留着它是为了万一哪天送到了：
+ * 记黑匣子、清掉用户退出的标记（规格 1.4）、保活开着就起前台服务和定时任务。
+ * 「开机后恢复什么」不在这里 —— 前台服务起来时按开机自启动的规矩去做。</p>
  */
 public class BootReceiver extends BroadcastReceiver {
     private static final String TAG = "BootReceiver";
@@ -43,9 +40,11 @@ public class BootReceiver extends BroadcastReceiver {
             // 真正开机：用户上一次的「退出」到此为止
             UserExit.clear(context, "boot");
             
-            // 立即启动前台服务（最重要！参考应用0的做法）
-            startForegroundServiceImmediately(context);
-            
+            // 保活开着才起前台服务（规格 §3）
+            if (new AppConfig(context).isKeepAliveEnabled()) {
+                startForegroundServiceImmediately(context);
+            }
+                        
             // 延迟执行其他初始化（等待系统稳定）
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 performDelayedInit(context);
@@ -87,51 +86,20 @@ public class BootReceiver extends BroadcastReceiver {
         AppLog.d(TAG, "执行延迟初始化...");
         
         try {
-            // 注册 TIME_TICK 广播（建立每分钟唤醒机制）
-            KeepAliveReceiver.registerTimeTick(context);
-            AppLog.d(TAG, "TIME_TICK 广播已注册");
+            if (new AppConfig(context).isKeepAliveEnabled()) {
+                KeepAliveReceiver.registerTimeTick(context);
+            }
         } catch (Exception e) {
             AppLog.e(TAG, "注册 TIME_TICK 失败: " + e.getMessage(), e);
         }
-        
+                
         try {
-            // 检查是否需要启动其他服务
-            AppConfig appConfig = new AppConfig(context);
-            
-            // 启动 WorkManager 保活任务（车机必需，始终开启）
+            // WorkManager 保活任务（它自己看保活开关）
             KeepAliveManager.startKeepAliveWork(context);
-            AppLog.d(TAG, "WorkManager 保活任务已启动");
-            
-            // 如果用户启用了开机自启动，尝试启动完整应用
-            if (appConfig.isAutoStartOnBoot()) {
-                AppLog.d(TAG, "尝试启动完整应用...");
-                tryStartMainActivity(context);
-            }
         } catch (Exception e) {
             AppLog.e(TAG, "延迟初始化失败: " + e.getMessage(), e);
         }
-        
+
         AppLog.d(TAG, "开机自启动初始化完成");
-    }
-    
-    /**
-     * 尝试启动 MainActivity
-     * Android 10+ 后台启动 Activity 受限，可能失败，但不影响服务运行
-     */
-    private void tryStartMainActivity(Context context) {
-        try {
-            // 方案1：尝试启动透明 Activity
-            Intent transparentIntent = new Intent(context, TransparentBootActivity.class);
-            transparentIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK | 
-                Intent.FLAG_ACTIVITY_NO_ANIMATION |
-                Intent.FLAG_ACTIVITY_CLEAR_TOP
-            );
-            context.startActivity(transparentIntent);
-            AppLog.d(TAG, "透明 Activity 已启动");
-        } catch (Exception e) {
-            AppLog.w(TAG, "启动 Activity 失败（Android 10+ 后台限制）: " + e.getMessage());
-            // 失败也没关系，前台服务已经在运行了
-        }
     }
 }

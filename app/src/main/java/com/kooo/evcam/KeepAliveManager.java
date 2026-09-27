@@ -20,6 +20,11 @@ public class KeepAliveManager {
      * 每15分钟执行一次（Android WorkManager 最小间隔）
      */
     public static void startKeepAliveWork(Context context) {
+        if (!new AppConfig(context).isKeepAliveEnabled()) {
+            // 保活关着：不登记，已经登记的也取消（规格 §3：关 = 被杀了不回来）
+            stopKeepAliveWork(context);
+            return;
+        }
         AppLog.d(TAG, "启动定时保活任务（每15分钟）");
 
         // 创建周期性任务请求

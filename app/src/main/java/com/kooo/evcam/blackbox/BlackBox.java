@@ -85,6 +85,12 @@ public final class BlackBox {
     private static volatile Context appContext;
     private static volatile boolean started;
     private static long lastCountFlushMs;
+    /** 进程起来的时刻（开机起算，含深睡），拉起者那一行用来算「多久之后才知道是谁」。 */
+    private static long startedAtMs;
+    /** 真正的拉起者记过了没。 */
+    private static volatile boolean starterNoted;
+    /** 这个进程是不是车机重启后第一次运行（{@link #noteBootIfNew} 查出来的，进程内不变）。 */
+    private static volatile boolean rebootedSinceLastRun;
 
     private BlackBox() {
     }
@@ -115,14 +121,40 @@ public final class BlackBox {
             }
         }
         if (!first) {
+            noteStarterIfInformative(starter);
             return;
         }
+        startedAtMs = SystemClock.elapsedRealtime();
         noteImportant("==== 进程启动，起因: " + starter + " ====");
         noteBootIfNew(appContext, starter);
         noteVersionIfNew(appContext);
         // 这一次进程起来时开关是什么样的 —— 事后看一段时间线，才知道当时在什么设置下
         noteImportant("开关: " + describeSwitches(appContext));
         appendPreviousExits();
+    }
+
+    /**
+     * 「起因」永远是最先跑的 ContentProvider，分不出真正是谁把进程拉起来的（26 次全写它）。
+     * 所以 Provider 之后<b>第一个</b>跑到的广播 / 保活任务 / 主界面另记一行 —— 它才是拉起者。
+     * 服务不算：服务都是我们自己起的，不是拉起者。
+     */
+    private static void noteStarterIfInformative(String starter) {
+        if (starterNoted || starter == null) {
+            return;
+        }
+        boolean informative = starter.startsWith("Receiver:") || starter.startsWith("BootReceiver:")
+                || starter.equals("WorkManager") || starter.startsWith("Activity:");
+        if (!informative) {
+            return;
+        }
+        starterNoted = true;
+        noteImportant("拉起者: " + starter + "（进程启动后 "
+                + (SystemClock.elapsedRealtime() - startedAtMs) + " ms）");
+    }
+
+    /** 这个进程是不是车机重启后第一次运行。用户退出的标记按规格 1.4 在真正开机时清掉，靠它。 */
+    public static boolean rebootedSinceLastRun() {
+        return rebootedSinceLastRun;
     }
 
     /**
@@ -143,9 +175,9 @@ public final class BlackBox {
                     + " 熄屏录制=" + onOff(c.isScreenOffRecordingEnabled())
                     + (c.isScreenOffRecordingStoredOn() && !c.isScreenOffRecordingEnabled()
                             ? "(存着是开，开发者选项没解锁，没生效)" : "")
+                    + (c.isScreenOffRecordingEnabled() ? "(最多 " + c.getScreenOffWakeMinutes() + " 分钟不让睡)" : "")
                     + " 熄屏持续录制=" + onOff(c.isScreenOffKeepRecording())
-                    + " 定时保活=" + onOff(c.isKeepAliveEnabled()) + "(开关未接线)"
-                    + " 常驻唤醒锁=" + onOff(c.isPersistentWakeLockEnabled())
+                    + " 保活=" + onOff(c.isKeepAliveEnabled())
                     + " 超级后视镜=" + onOff(c.isRearViewEnabled())
                     + " 按键模式=" + onOff(c.isRearViewButtonMode())
                     + " 录制悬浮按钮=" + onOff(c.isRecordingFloatingEnabled());
@@ -373,6 +405,7 @@ public final class BlackBox {
             if (first) {
                 noteImportant("车机本次开机于 " + wallClock(bootWall) + "（第一次记录）");
             } else if (rebooted) {
+                rebootedSinceLastRun = true;
                 noteImportant("车机重启过：本次开机于 " + wallClock(bootWall)
                         + "（上次记录的开机 " + wallClock(lastWall) + "），开机 "
                         + (elapsed / 60000) + " 分钟后我们才第一次运行，起因 " + starter);

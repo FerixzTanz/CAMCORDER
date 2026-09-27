@@ -22,7 +22,7 @@ public class AppConfig {
     private static final String KEY_LANGUAGE_CHOSEN = "language_chosen";  // 首次启动的语言选择是否已完成
     private static final String KEY_RAIL_SIDE_CHOSEN = "rail_side_chosen";  // 「方向盘在哪边」是否问过
     private static final String KEY_REDUCE_MOTION_RECORDING = "reduce_motion_recording";  // 录制时减少动效
-    private static final String KEY_PERSISTENT_WAKE_LOCK = "persistent_wake_lock";  // 常驻唤醒锁（开发者选项）
+    private static final String KEY_SCREEN_OFF_WAKE_MINUTES = "screen_off_wake_minutes";  // 熄屏录制：最多不让车机睡多久
     private static final String KEY_AUTO_START_ON_BOOT = "auto_start_on_boot";  // 开机自启动
     private static final String KEY_AUTO_START_RECORDING = "auto_start_recording";  // 启动自动录制
     private static final String KEY_SCREEN_OFF_RECORDING = "screen_off_recording";  // 息屏录制（锁车录制）
@@ -242,13 +242,29 @@ public class AppConfig {
      * <p>拆开之后「开机自启动」只管开机自启动。这一项单独放在开发者选项里，
      * 等真需要时再说。数据见 {@code docs/zeekr-platform-notes.md} §3.6。</p>
      */
-    public boolean isPersistentWakeLockEnabled() {
-        return prefs.getBoolean(KEY_PERSISTENT_WAKE_LOCK, false);
+    /**
+     * 熄屏录制最多不让车机睡多久（分钟），存的是 {@code SettingsRegistry.SCREEN_OFF_WAKE} 里的取值。
+     *
+     * <p>从熄屏那一刻起算：App 拿不到「下车」这个事件，熄屏是最接近的近似（平台笔记 §3.6）。
+     * 到点放开唤醒锁，车机该睡就睡（规格 §3.1）。</p>
+     */
+    public String getScreenOffWakeMode() {
+        return prefs.getString(KEY_SCREEN_OFF_WAKE_MINUTES,
+                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.defaultValue());
     }
 
-    public void setPersistentWakeLockEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_PERSISTENT_WAKE_LOCK, enabled).apply();
-        AppLog.d(TAG, "常驻唤醒锁: " + (enabled ? "开" : "关"));
+    public void setScreenOffWakeMode(String value) {
+        prefs.edit().putString(KEY_SCREEN_OFF_WAKE_MINUTES,
+                com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE.sanitize(value)).apply();
+    }
+
+    public int getScreenOffWakeMinutes() {
+        try {
+            return Integer.parseInt(com.kooo.evcam.settings.SettingsRegistry.SCREEN_OFF_WAKE
+                    .sanitize(getScreenOffWakeMode()));
+        } catch (NumberFormatException e) {
+            return 60;
+        }
     }
 
     public boolean isAutoStartOnBoot() {
@@ -338,9 +354,8 @@ public class AppConfig {
     }
 
     /**
-     * 息屏录制（开发者选项）有没有生效。
-     *
-     * @return true 表示息屏时继续录制，而且没在录时也不关相机
+     * 熄屏录制（开发者选项，规格 §3.1）有没有生效：熄屏时在录像就接着录，并拿住唤醒锁不让车机睡，
+     * 最长 {@link #getScreenOffWakeMinutes()} 分钟；没在录时也不关相机。
      */
     public boolean isScreenOffRecordingEnabled() {
         // 默认禁用息屏录制
@@ -351,21 +366,17 @@ public class AppConfig {
                 && prefs.getBoolean(KEY_SCREEN_OFF_RECORDING, false);
     }
     
-    /**
-     * 设置保活服务
-     * @param enabled true 表示启用保活服务
-     */
     public void setKeepAliveEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_KEEP_ALIVE_ENABLED, enabled).apply();
-        AppLog.d(TAG, "保活服务设置: " + (enabled ? "启用" : "禁用"));
+        AppLog.d(TAG, "保活: " + (enabled ? "开" : "关"));
     }
-    
+
     /**
-     * 获取保活服务设置
-     * @return true 表示启用保活服务
+     * 保活（规格 §3）：不正常的状态下用各种手段让进程尽量活着。App 里所有保活手段都归它管 ——
+     * WorkManager 任务、广播拉起、每分钟的 TIME_TICK、ContentProvider 起前台服务、
+     * 系统对 START_STICKY 服务的重启。关 = 被杀了不回来。默认开。
      */
     public boolean isKeepAliveEnabled() {
-        // 默认启用保活服务
         return prefs.getBoolean(KEY_KEEP_ALIVE_ENABLED, true);
     }
     

@@ -74,12 +74,9 @@ public class CameraForegroundService extends Service {
         AppLog.d(TAG, "Service created");
         createNotificationChannel();
         
-        // 如果无障碍服务未运行，则在此注册 TIME_TICK 广播
+        // 保活开着就注册 TIME_TICK 广播（每分钟确认一次前台服务在）
         registerTimeTickIfNeeded();
-        
-        // 获取 WakeLock 防止系统休眠（车机必须）
-        acquireWakeLock();
-        
+                
         // 黑匣子心跳：每分钟一行。停车那一夜有没有真的睡过去、睡了多久，
         // 全在这些行的 slept= 里；中间断掉的那一段就是「我们不在」
         startBlackBoxHeartbeat();
@@ -121,7 +118,7 @@ public class CameraForegroundService extends Service {
      * 启动 MainActivity 进行自动录制
      * 用于：
      * 1. 杀后台后服务重启时恢复自动录制
-     * 2. 与开机启动（TransparentBootActivity）行为保持一致
+     * 2. 与开机启动行为保持一致
      */
     private void startMainActivityForAutoRecording() {
         try {
@@ -148,36 +145,13 @@ public class CameraForegroundService extends Service {
     }
     
     /**
-     * 获取 WakeLock 防止系统休眠
-     * 只有开启"开机自启动"时才获取，因为 WakeLock 会阻止 CPU 休眠
-     * 用途：
-     * 1. 息屏状态下继续录制
-     * 2. 保持 WebSocket 连接接收远程命令
-     * 3. 执行远程拍照/录制任务
+     * 唤醒锁不在这里管了：它只属于「熄屏录制」（规格 §3.1，{@code ScreenOffRecording}），
+     * 熄屏时在录像才拿、录像停了就放、到了用户设的时长就放。
      */
-    private void acquireWakeLock() {
-        try {
-            AppConfig appConfig = new AppConfig(this);
-            if (appConfig.isPersistentWakeLockEnabled()) {
-                WakeUpHelper.acquirePersistentWakeLock(this);
-                AppLog.d(TAG, "WakeLock acquired (常驻唤醒锁已开启)");
-            } else {
-                // 关着就把可能还持有的那一把放掉 —— 拿着它车机永远不深睡
-                WakeUpHelper.releasePersistentWakeLock();
-                AppLog.d(TAG, "WakeLock not acquired (常驻唤醒锁未开启)");
-            }
-        } catch (Exception e) {
-            AppLog.e(TAG, "Failed to handle WakeLock: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * 如果无障碍服务未运行，则注册 TIME_TICK 广播
-     * 作为备份保活方案（每分钟触发，比 AlarmManager 更频繁更可靠）
-     */
+
+    /** 保活开着就注册 TIME_TICK 广播（每分钟触发，前台服务不在就拉起来）。 */
     private void registerTimeTickIfNeeded() {
-        if (!KeepAliveAccessibilityService.isRunning() && !KeepAliveReceiver.isTimeTickRegistered()) {
-            AppLog.d(TAG, "无障碍服务未运行，在前台服务中注册 TIME_TICK");
+        if (new AppConfig(this).isKeepAliveEnabled() && !KeepAliveReceiver.isTimeTickRegistered()) {
             KeepAliveReceiver.registerTimeTick(this);
         }
     }
@@ -206,10 +180,7 @@ public class CameraForegroundService extends Service {
         
         // 每次启动时检查并注册 TIME_TICK
         registerTimeTickIfNeeded();
-        
-        // 确保 WakeLock 已获取
-        acquireWakeLock();
-        
+                
         // 确保远程服务和悬浮窗已启动（处理 START_STICKY 自动重启的情况）
         // onCreate 可能不会被调用（服务自动恢复时），所以这里也要检查
         ensureRemoteServicesStarted();
@@ -241,9 +212,10 @@ public class CameraForegroundService extends Service {
             pendingReadyCallbacks.clear();
         }
 
-        return START_STICKY;
+        // 保活关着就不让系统重启我们（规格 §3：关 = 被杀了不回来）
+        return new AppConfig(this).isKeepAliveEnabled() ? START_STICKY : START_NOT_STICKY;
     }
-    
+
     /** 黑匣子心跳间隔：一分钟看一次。 */
     private static final long BLACK_BOX_TICK_MS = 60_000L;
     /** 状态没变的话，多久才值得再写一行。 */

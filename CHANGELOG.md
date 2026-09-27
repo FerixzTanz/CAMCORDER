@@ -5,7 +5,25 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- **Settings → System now answers two questions only**: whether the app brings itself back
+  when it is gone ("Start on boot"), and whether recording survives the screen going off
+  ("Keep recording when the screen goes off"). "Record on launch" moved to Recording: it is
+  part of what the user wants running, not a rule.
+- **"Keep alive" is a real switch.** It now governs every keep-alive means (the 15-minute job,
+  broadcast wake-ups, the per-minute tick, the early foreground service, sticky restarts);
+  off means the app stays gone once killed. The accessibility service is removed: it never
+  ran on the head unit and could not be enabled there.
+- **Screen-off recording (developer options) = keep recording + keep the car awake.** While a
+  recording is running and the screen goes off, the app holds a wake lock so the head unit
+  does not deep-sleep, for a duration you choose (30 minutes to 8 hours, counted from the
+  moment the screen went off; default 1 hour). The lock is released when recording stops,
+  the screen comes back on, or the time is up. The separate "Persistent wake lock" option is
+  gone. Applies to manual recordings too.
+- After a real reboot the "exited" state is cleared, so the app may come back as the spec
+  says; the boot broadcast never reaches the app on this head unit, so reboot is detected
+  from the uptime clock instead.
+- The black box records who actually started the process (the first broadcast, keep-alive
+  job or screen after the content provider), not just "ContentProvider".
 
 ## [1.50.0-alpha] - 2026-09-27
 

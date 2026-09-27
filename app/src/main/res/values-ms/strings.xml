@@ -81,17 +81,21 @@
     <string name="set_auto_start_summary">Dilancarkan secara automatik selepas sistem bermula</string>
     <string name="set_auto_record_title">Rakam semasa dibuka</string>
     <string name="set_auto_record_summary">Mula merakam apabila apl dibuka, dan menyambung semula rakaman yang terganggu apabila paparan sekeliling kembali. Tidak memulakan semula rakaman yang anda hentikan</string>
-    <string name="set_screen_off_title">Rakaman skrin padam (pembangun)</string>
-    <string name="set_screen_off_summary">Terus merakam selepas skrin dimatikan</string>
+    <string name="set_screen_off_title">Rakaman skrin padam</string>
+    <string name="set_screen_off_summary">Jika sedang merakam semasa skrin padam, teruskan dan kekalkan kereta berjaga, sehingga masa yang ditetapkan di bawah</string>
+    <string name="set_screen_off_wake_title">Kekalkan kereta berjaga sehingga</string>
+    <string name="opt_wake_30m">30 minit</string>
+    <string name="opt_wake_1h">1 jam</string>
+    <string name="opt_wake_2h">2 jam</string>
+    <string name="opt_wake_4h">4 jam</string>
+    <string name="opt_wake_8h">8 jam</string>
     <string name="set_screen_off_keep_title">Terus merakam apabila skrin padam</string>
     <string name="set_screen_off_keep_summary">Jika sedang merakam semasa skrin padam, teruskan. Tidak mengejutkan kereta: rakaman berhenti sementara kereta tidur dan bersambung apabila ia bangun</string>
-    <string name="set_keep_alive_title">Kekal hidup berkala</string>
-    <string name="set_keep_alive_summary">Mengejutkan apl secara berkala supaya sistem tidak menutupnya</string>
+    <string name="set_keep_alive_title">Kekal hidup</string>
+    <string name="set_keep_alive_summary">Membawa apl kembali selepas dimatikan atau kereta dimulakan semula. Tutup: ia kekal hilang</string>
     <string name="set_recording_mode_title">Saluran rakaman</string>
     <string name="set_force_h264_title">Paksa H.264</string>
     <string name="set_force_h264_summary">Mengatasi kodek yang ditetapkan bagi setiap kamera</string>
-    <string name="set_persistent_wake_lock_title">Kunci jaga berterusan</string>
-    <string name="set_persistent_wake_lock_summary">Menghalang unit kepala daripada tidur dalam. Semasa diletakkan ia tidur kira-kira empat perlima masa; dengan ini dibuka ia terus berjaga menggunakan bateri</string>
     <string name="set_image_adjust_title">Kecerahan / pengurangan hingar</string>
     <string name="set_image_adjust_summary">Laraskan gambar secara langsung dalam tetingkap terapung</string>
     <string name="set_image_adjust_reset_title">Set semula kecerahan / pengurangan hingar</string>
@@ -155,7 +159,6 @@
 
     <!-- Antara muka utama -->
     <string name="about_title">Perihal &amp; penghargaan</string>
-    <string name="accessibility_service_description">Mengekalkan apl berjalan di latar belakang supaya rakaman tidak terputus.\n\nIa tidak membaca atau mengawal skrin dan tidak mengumpul data peribadi.</string>
     <string name="zeekr_composite_not_found">Tiada strim komposit keliling ditemui. Unit kepala ini mungkin tidak disokong</string>
     <string name="zeekr_lane_front">Depan</string>
     <string name="zeekr_lane_back">Belakang</string>
@@ -380,7 +383,6 @@
     <string name="cd_menu">Menu</string>
     <string name="cd_minimize">Sembunyi ke latar belakang</string>
     <string name="nav_exit">Keluar apl</string>
-    <string name="set_screen_off_locked">Dikunci: memerlukan pilihan pembangun</string>
     <string name="set_rail_side_title">Sebelah butang</string>
     <string name="set_rail_side_summary">Letak di sebelah pemandu</string>
     <string name="opt_rail_right">Kanan</string>

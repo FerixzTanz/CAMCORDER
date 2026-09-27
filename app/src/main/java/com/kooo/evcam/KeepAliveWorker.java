@@ -1,6 +1,5 @@
 package com.kooo.evcam;
 
-import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -23,27 +22,15 @@ public class KeepAliveWorker extends Worker {
         // WorkManager 在停车之后还跑不跑，只能靠这一行的时间戳看
         com.kooo.evcam.blackbox.BlackBox.attach(getApplicationContext(), "WorkManager");
         com.kooo.evcam.blackbox.BlackBox.noteImportant("保活任务执行");
-        if (UserExit.blocks(getApplicationContext(), "KeepAliveWorker")) {
-            // 退出时已经取消过；还能跑到这里说明取消没赶上，再取消一次
+        if (UserExit.blocks(getApplicationContext(), "KeepAliveWorker")
+                || !new AppConfig(getApplicationContext()).isKeepAliveEnabled()) {
+            // 退出时 / 关保活时已经取消过；还能跑到这里说明取消没赶上，再取消一次
             KeepAliveManager.stopKeepAliveWork(getApplicationContext());
             return Result.success();
         }
-
-        try {
-            // 检查远程查看服务状态
-            Context context = getApplicationContext();
-            
-            // 记录当前运行状态
-            AppLog.d(TAG, "应用进程保持活跃");
-            AppLog.d(TAG, "无障碍服务状态: " + (KeepAliveAccessibilityService.isRunning() ? "运行中" : "未运行"));
-            
-            // 可以在这里做一些轻量级的检查，确保核心服务正常
-            // 例如检查钉钉连接状态等
-            
-            return Result.success();
-        } catch (Exception e) {
-            AppLog.e(TAG, "保活任务执行失败", e);
-            return Result.retry();
-        }
+        // 它本身不用做别的：登记着这个任务，进程死了系统到点就把它拉起来，这就是它的全部作用。
+        // 醒来后一秒内必跑（平台笔记 §3.6），「睡醒了要恢复什么」以后挂在这里（规格 1.5）
+        AppLog.d(TAG, "应用进程保持活跃");
+        return Result.success();
     }
 }

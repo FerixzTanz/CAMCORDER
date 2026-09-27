@@ -103,10 +103,9 @@ public class WakeUpHelper {
      * <p>同一份日志里还有一条：两段深睡前后进程 pid 一模一样，
      * <b>进程不需要这个锁也能活下来</b>。所以名叫「防止休眠」的那个开关 1.25.0 删掉了。</p>
      *
-     * <p><b>但这个方法还活着</b>：它现在由<b>开机自启动</b>决定
-     * （{@code CameraForegroundService} 和 {@code MainActivity} 各一处）——
-     * 也就是说开着「开机自启动」等于车机永不深睡。这和开关的名字对不上，
-     * 改动需要项目所有者拍板。完整数据见 {@code docs/zeekr-platform-notes.md} §3.6。</p>
+     * <p>现在只有一个调用者：「熄屏录制」（规格 §3.1，{@code ScreenOffRecording}）——
+     * 熄屏时在录像才拿，录像停了、亮屏了、到了用户设的时长就放。项目所有者 2026-09-27
+     * 明确允许熄屏录制不让车机睡。完整数据见 {@code docs/zeekr-platform-notes.md} §3.6。</p>
      */
     public static void acquirePersistentWakeLock(Context context) {
         AppLog.d(TAG, "Acquiring persistent wake lock (prevent sleep)...");

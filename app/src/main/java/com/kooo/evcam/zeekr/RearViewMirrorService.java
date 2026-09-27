@@ -554,7 +554,7 @@ public class RearViewMirrorService extends Service {
         if (!screenIsDark()) {
             return;
         }
-        if (appConfig.isAutoStartRecording() && appConfig.isScreenOffRecordingEnabled()) {
+        if (appConfig.isScreenOffRecordingEnabled()) {
             // 熄屏录制生效时，主界面刻意让相机保持活跃（1.19.0 起就是这样），这里不能替它关。
             // 1.24.0 加这一步时漏了这一条
             return;

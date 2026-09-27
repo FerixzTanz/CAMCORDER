@@ -94,15 +94,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 透明启动 Activity：用于开机自启动，完全无感知 -->
-        <activity
-            android:name=".TransparentBootActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Cam.Transparent"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:taskAffinity="" />
-
         <!-- 前台服务：用于后台录制保护 -->
         <service
             android:name=".CameraForegroundService"
@@ -162,19 +153,6 @@
             android:label="@string/about_title"
             android:theme="@style/Theme.Cam"
             android:exported="false" />
-
-        <!-- 无障碍服务：用于保活 -->
-        <service
-            android:name=".KeepAliveAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
 
         <!-- 开机自启动广播接收器 -->
         <receiver

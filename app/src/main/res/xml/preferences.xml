@@ -41,6 +41,12 @@
             android:title="@string/set_profile_editor_title"
             android:summary="@string/set_profile_editor_summary" />
 
+        <!-- 「我要它一直在录」是设定状态的一部分，不是规则，所以在录制分区（规格 §2） -->
+        <SwitchPreferenceCompat
+            android:key="pref_auto_record"
+            android:title="@string/set_auto_record_title"
+            android:summary="@string/set_auto_record_summary" />
+
         <SwitchPreferenceCompat
             android:key="pref_photo_via_jpeg"
             android:title="@string/set_photo_jpeg_title"
@@ -277,32 +283,23 @@
         android:key="screen_system"
         android:title="@string/set_section_system">
 
+        <!-- 这个分区只回答两个问题（规格 §0）：App 不在了要不要自己回来；熄屏算不算出状况 -->
         <SwitchPreferenceCompat
             android:key="pref_auto_start"
             android:title="@string/set_auto_start_title"
             android:summary="@string/set_auto_start_summary" />
 
         <SwitchPreferenceCompat
-            android:key="pref_auto_record"
-            android:title="@string/set_auto_record_title"
-            android:summary="@string/set_auto_record_summary" />
-
-        <SwitchPreferenceCompat
-            android:key="pref_screen_off_recording"
-            android:dependency="pref_auto_record"
-            android:title="@string/set_screen_off_title"
-            android:summary="@string/set_screen_off_summary" />
+            android:key="pref_keep_alive"
+            android:defaultValue="true"
+            android:title="@string/set_keep_alive_title"
+            android:summary="@string/set_keep_alive_summary" />
 
         <SwitchPreferenceCompat
             android:key="pref_screen_off_keep_recording"
             android:defaultValue="true"
             android:title="@string/set_screen_off_keep_title"
             android:summary="@string/set_screen_off_keep_summary" />
-
-        <SwitchPreferenceCompat
-            android:key="pref_keep_alive"
-            android:title="@string/set_keep_alive_title"
-            android:summary="@string/set_keep_alive_summary" />
 
         <Preference
             android:key="pref_diagnostics"
@@ -331,10 +328,17 @@
             android:title="@string/set_force_h264_title"
             android:summary="@string/set_force_h264_summary" />
 
+        <!-- 熄屏录制 = 熄屏持续录制 + 防止休眠（规格 §3.1）：留在开发者选项里继续完善 -->
         <SwitchPreferenceCompat
-            android:key="pref_persistent_wake_lock"
-            android:title="@string/set_persistent_wake_lock_title"
-            android:summary="@string/set_persistent_wake_lock_summary" />
+            android:key="pref_screen_off_recording"
+            android:title="@string/set_screen_off_title"
+            android:summary="@string/set_screen_off_summary" />
+
+        <ListPreference
+            android:key="pref_screen_off_wake_minutes"
+            android:dependency="pref_screen_off_recording"
+            android:title="@string/set_screen_off_wake_title"
+            android:summary="%s" />
 
         <Preference
             android:key="pref_image_adjust"

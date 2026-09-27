@@ -71,6 +71,12 @@ public final class UserExit {
         if (!isExited(context)) {
             return false;
         }
+        // 开机广播这个容器不送（平台笔记 §3.6），「真正开机」靠黑匣子的重启检测：
+        // 进程起来时发现车机重启过，退出标记就作废（规格 1.4）
+        if (BlackBox.rebootedSinceLastRun()) {
+            clear(context, "reboot (" + who + ")");
+            return false;
+        }
         return true;
     }
 

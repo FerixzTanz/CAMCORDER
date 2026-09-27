@@ -381,18 +381,8 @@ public class MainActivity extends AppCompatActivity {
         KeepAliveManager.startKeepAliveWork(this);
         AppLog.d(TAG, "定时保活任务已启动");
         
-        // 常驻唤醒锁：开发者选项里那一项，默认关。主要在 CameraForegroundService
-        // 里维护，这里是备份，保证界面在时也有一把。
-        //
-        // 它原来挂在「开机自启动」上：那个开关只说开机要不要自己起来，
-        // 却顺带让车机永不深睡（实测 26 小时里本该睡 20.8 小时）。两件事拆开了
-        if (appConfig.isPersistentWakeLockEnabled()) {
-            WakeUpHelper.acquirePersistentWakeLock(this);
-            AppLog.d(TAG, "WakeLock 已获取（常驻唤醒锁已开启）");
-        } else {
-            AppLog.d(TAG, "WakeLock 未获取（常驻唤醒锁未开启）");
-        }
-        
+        // 唤醒锁只属于「熄屏录制」（规格 §3.1）：熄屏时在录像才拿，见 ScreenOffRecording
+                
         // 启动存储清理任务（如果用户设置了限制）
         storageCleanupManager = new StorageCleanupManager(this);
         storageCleanupManager.start();
@@ -2962,15 +2952,17 @@ public class MainActivity extends AppCompatActivity {
             screenOnStartRunnable = null;
         }
         
-        // 判断是否为"自动录制+息屏录制"组合（需要保持相机活跃）
-        boolean keepCameraActive = appConfig.isAutoStartRecording() && appConfig.isScreenOffRecordingEnabled();
-        
+        // 熄屏录制（开发者选项，规格 §3.1）：熄屏后接着录，并拿住唤醒锁不让车机睡。手动、自动都算
+        boolean keepCameraActive = appConfig.isScreenOffRecordingEnabled();
+
         // 如果正在录制
         if (isRecording) {
-            // 如果开启了自动录制+息屏录制，继续录制
             if (keepCameraActive) {
-                AppLog.d(TAG, "息屏录制已启用，继续录制");
+                keepRecordingOffAtElapsed = android.os.SystemClock.elapsedRealtime();
+                keepRecordingOffAtUptime = android.os.SystemClock.uptimeMillis();
+                keepRecordingStops = 0;
                 com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
+                com.kooo.evcam.recording.ScreenOffRecording.onScreenOff(this, true);
                 return;
             }
             
@@ -3093,8 +3085,8 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             
-            // 如果开启了自动录制+息屏录制，不退后台
-            if (appConfig.isAutoStartRecording() && appConfig.isScreenOffRecordingEnabled()) {
+            // 熄屏录制开着，不退后台
+            if (appConfig.isScreenOffRecordingEnabled()) {
                 AppLog.d(TAG, "息屏录制模式已启用，不退后台");
                 return;
             }
@@ -3136,7 +3128,7 @@ public class MainActivity extends AppCompatActivity {
             if (!reconcileScreenState("1.5s-camera") || !isScreenOff || isRecording) {
                 return;
             }
-            if (appConfig.isAutoStartRecording() && appConfig.isScreenOffRecordingEnabled()) {
+            if (appConfig.isScreenOffRecordingEnabled()) {
                 return;
             }
             com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
@@ -3161,6 +3153,8 @@ public class MainActivity extends AppCompatActivity {
     private void onScreenOn() {
         isScreenOff = false;
         AppLog.d(TAG, "检测到亮屏");
+        // 熄屏录制拿着的唤醒锁，亮屏就放
+        com.kooo.evcam.recording.ScreenOffRecording.release("screen-on");
         noteKeepRecordingStretch();
         
 // 取消可能存在的息屏停止录制任务
@@ -3415,6 +3409,8 @@ public class MainActivity extends AppCompatActivity {
             stopRecordingTimer();
             // 状态条上「录像改写到别的盘」那句随这次录像结束
             updateStatusLine();
+            // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
+            com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
 
             // 为什么停的：停之前有人写下原因的就用它；没人写，就是录制器自己停的
             com.kooo.evcam.recording.RecordingStops.Reason reason = nextStopReason != null ? nextStopReason
