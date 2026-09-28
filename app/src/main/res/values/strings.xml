@@ -52,7 +52,7 @@
     <string name="set_storage_usage_title">当前写入位置</string>
     <string name="set_rearview_summary">将环视中的任一路单独放大为悬浮窗。后视一路做左右镜像，与实际后视镜一致</string>
     <string name="set_rearview_button_mode_title">按键模式</string>
-    <string name="set_rearview_button_mode_summary">四个方位按钮代替中间的左右划：碰一下窗口出现，5 秒后消失</string>
+    <string name="set_rearview_button_mode_summary">窗口按对角线分成四块，点上、下、左、右那一块就切到前、后、左、右那一路，代替中间的左右划</string>
     <string name="set_rearview_front_rear_title">只显示前后视</string>
     <string name="set_rearview_front_rear_summary">左右滑动仅在后视与前视之间切换，不经过两侧</string>
     <string name="set_rearview_fisheye_title">鱼眼校正</string>

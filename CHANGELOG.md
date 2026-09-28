@@ -5,7 +5,12 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- Super mirror, button mode: the four direction buttons are gone. The window is split along
+  its diagonals into four parts, top, bottom, left and right, which switch to the front, rear,
+  left and right camera. Nothing is drawn on them and a tap works at any time, with no need
+  to bring buttons up first; the tapped part flashes brand orange at 50% as confirmation.
+  Dragging, swiping up and down for framing and pinching work as before. The window no
+  longer has a larger minimum size in this mode.
 
 ## [1.63.0-alpha] - 2026-09-28
 

@@ -38,7 +38,7 @@
     <string name="set_storage_usage_title">Lokasi tulis semasa</string>
     <string name="set_rearview_summary">Menunjukkan satu kamera keliling dalam tetingkap terapung. Pandangan belakang dicerminkan, seperti cermin sebenar</string>
     <string name="set_rearview_button_mode_title">Mod butang</string>
-    <string name="set_rearview_button_mode_summary">Empat butang arah menggantikan leretan di tengah: muncul apabila anda menyentuh tetingkap dan hilang selepas lima saat</string>
+    <string name="set_rearview_button_mode_summary">Tetingkap dibahagi mengikut pepenjurunya kepada empat bahagian: ketik bahagian atas, bawah, kiri atau kanan untuk bertukar ke kamera hadapan, belakang, kiri atau kanan, menggantikan leretan di tengah</string>
     <string name="set_rearview_front_rear_title">Depan dan belakang sahaja</string>
     <string name="set_rearview_front_rear_summary">Leret hanya bertukar antara belakang dan depan</string>
     <string name="set_rearview_fisheye_title">Pembetulan mata ikan</string>

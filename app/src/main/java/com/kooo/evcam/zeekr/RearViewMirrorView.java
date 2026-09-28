@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.os.Build;
@@ -19,6 +20,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -127,11 +129,10 @@ public class RearViewMirrorView extends ViewGroup {
     /** 没有画面时靠它定期重画 —— 画面停了就没有帧来驱动重画了。 */
     private static final long IDLE_TICK_MS = 1000L;
 
-    /** 碰一下之后，那四个按钮还显示多久。 */
-    private static final long BUTTONS_VISIBLE_MS = 5000L;
-    /** 没选中的按钮：深底，八成不透明 —— 压得住画面，又不至于挡死。 */
-    private static final int BUTTON_IDLE_FILL = 0xCC1A1C1F;
-    private static final int BUTTON_IDLE_TEXT = 0xFFF0F1F2;
+    /** 按键模式点中一块之后，那块三角闪多久（从半透明橙淡到没有）。 */
+    private static final long TAP_FLASH_MS = 350L;
+    /** 闪光最亮时的不透明度：极氪橙的一半，压在画面上还看得见底下的路。 */
+    private static final float TAP_FLASH_ALPHA = 0.5f;
 
     private final Handler idleHandler = new Handler(Looper.getMainLooper());
     private final Paint scrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -142,12 +143,17 @@ public class RearViewMirrorView extends ViewGroup {
     private boolean frozen;
     /** 贴边收起：那一条窄边上不画画面，只写名字。 */
     private boolean docked;
-    /** 按键模式：左右划换路换成四个按钮。 */
+    /** 按键模式：左右划换路换成点四块三角（{@link LaneTapZones}）。 */
     private boolean buttonMode;
-    /** 最后碰这个窗口的时刻 —— 按钮从这一刻起再显示 5 秒。 */
-    private long lastTouchUptimeMs;
-    /** 正按着哪个按钮；-1 表示没有。 */
-    private int pressedButton = -1;
+    /** 抬手的位置，按键模式判断点在哪一块；被系统收回的手势是 NaN，不算点。 */
+    private float tapX = Float.NaN;
+    private float tapY = Float.NaN;
+    /** 正在闪的是哪一路那块三角；-1 表示没在闪。 */
+    private int flashLane = -1;
+    /** 闪光还剩多亮，1 → 0。 */
+    private float flashLevel;
+    private ValueAnimator flashAnimator;
+    private final Path flashPath = new Path();
     /** 点一下要做的恢复动作，由服务给。 */
     private Runnable resumeAction;
     /** 贴边状态变了通知服务，好把相机那一路的推流停掉 / 接回来。 */
@@ -258,41 +264,10 @@ public class RearViewMirrorView extends ViewGroup {
     /**
      * 设置里改了按键模式之后推过来。
      *
-     * <p>打开时可能要把窗口撑大：按钮不跟着缩放，窗口比那一组还小的话，
-     * 按钮就会画到框外面去。</p>
+     * <p>四块三角就是整个窗口，平时什么都不画，所以窗口不用撑大，也没有要重画的。</p>
      */
     public void applyButtonModeFromConfig() {
         buttonMode = appConfig.isRearViewButtonMode();
-        if (buttonMode && params != null) {
-            int min = minWindowSize();
-            if (params.width < min || params.height < min) {
-                params.width = Math.max(params.width, min);
-                params.height = Math.max(params.height, min);
-                params.x = RearViewTouchModel.clampX(
-                        params.x, params.width, screenWidth(), PEEK_WIDTH_PX);
-                params.y = RearViewTouchModel.clampY(params.y, params.height, screenHeight());
-                applyLayout();
-                savePosition();
-                AppLog.i(TAG, "按键模式：窗口撑到 " + min + "px，否则按钮会画到框外");
-            }
-        }
-        lastTouchUptimeMs = SystemClock.uptimeMillis();
-        invalidate();
-    }
-
-    /** 这个模式下窗口最小能多小。按键模式要装得下那一组按钮。 */
-    private int minWindowSize() {
-        if (!buttonMode) {
-            return AppConfig.REARVIEW_MIN_SIZE;
-        }
-        return Math.max(AppConfig.REARVIEW_MIN_SIZE,
-                LaneButtonPad.minWindowPx(getResources().getDisplayMetrics().density));
-    }
-
-    /** 那四个现在该不该显示。碰一下出现，5 秒不碰就消失。 */
-    private boolean buttonsShowing() {
-        return buttonMode && !docked && !frozen
-                && SystemClock.uptimeMillis() - lastTouchUptimeMs < BUTTONS_VISIBLE_MS;
     }
 
     /** 服务每收到一帧新画面调一次。 */
@@ -336,10 +311,6 @@ public class RearViewMirrorView extends ViewGroup {
             }
             boolean nowFrozen = !docked
                     && SystemClock.uptimeMillis() - lastFrameUptimeMs > FROZEN_AFTER_MS;
-            if (buttonMode) {
-                // 那四个到点就该自己退场，而没有帧的时候没人推着重画
-                invalidate();
-            }
             if (nowFrozen != frozen) {
                 frozen = nowFrozen;
                 AppLog.i(TAG, frozen ? "后视镜画面停了，改显示「点击恢复」" : "后视镜画面回来了");
@@ -386,6 +357,7 @@ public class RearViewMirrorView extends ViewGroup {
     public void hide() {
         idleHandler.removeCallbacks(idleTick);
         cancelGlide();
+        cancelTapFlash();
         if (!attached) {
             return;
         }
@@ -406,8 +378,8 @@ public class RearViewMirrorView extends ViewGroup {
     /**
      * 直接切到某一路（按键模式用）。
      *
-     * <p>不走 {@link LaneCycle} 那个环：按按钮是点名要哪一路，不是「往下一个」。
-     * 「只显示前后视」也不拦它 —— 那个设置管的是划动那个环，而按钮是明确的指名。</p>
+     * <p>不走 {@link LaneCycle} 那个环：点哪一块是点名要哪一路，不是「往下一个」。
+     * 「只显示前后视」也不拦它 —— 那个设置管的是划动那个环，而点那四块是明确的指名。</p>
      */
     private void selectLane(int lane) {
         if (lane == laneIndex) {
@@ -536,72 +508,51 @@ public class RearViewMirrorView extends ViewGroup {
         if (frozen) {
             drawFrozenHint(canvas, width, height);
         }
-        if (buttonsShowing()) {
-            drawLaneButtons(canvas, width, height);
+        if (flashLane >= 0 && flashLevel > 0f) {
+            drawTapFlash(canvas, width, height);
         }
     }
 
     /**
-     * 按键模式那四个「前 后 左 右」，摆成菱形。
+     * 按键模式点中的那块三角闪一下：极氪橙，最亮时一半透明，随后淡掉。
      *
-     * <p>画在这里而不是放四个真的 View：这个窗口的画面是用矩阵重画出来的，
-     * 混进子视图会跟着那套变换一起被缩放 —— 而按钮恰恰是<b>不该跟着缩放</b>的东西。
-     * 画在视图坐标系里，窗口拉大拉小都不影响它们的大小。</p>
-     *
-     * <p>选中的那个用极氪橙实底，其余是深色底、八成不透明。
-     * 位置为什么是菱形、各自摆在哪，见 {@link LaneButtonPad}。</p>
+     * <p>这是「已经切过去了」的回执。平时四块什么都不画 —— 没有字、没有边框，
+     * 画面本身就是按钮。画在镜像之外：左边那块永远是左。</p>
      */
-    private void drawLaneButtons(Canvas canvas, int width, int height) {
-        float density = getResources().getDisplayMetrics().density;
-        float corner = LaneButtonPad.corner(density);
-        int active = LaneButtonPad.indexForLane(laneIndex);
-        labelPaint.setTextAlign(Paint.Align.CENTER);
-        labelPaint.setTextSize(buttonTextSize(density));
-        Paint.FontMetrics fm = labelPaint.getFontMetrics();
-
-        for (int i = 0; i < LaneButtonPad.COUNT; i++) {
-            float[] r = LaneButtonPad.rectFor(i, width, height, density);
-            boolean selected = i == active;
-            scrimPaint.setColor(selected
-                    ? androidx.core.content.ContextCompat.getColor(getContext(), R.color.energy)
-                    : BUTTON_IDLE_FILL);
-            canvas.drawRoundRect(r[0], r[1], r[2], r[3], corner, corner, scrimPaint);
-
-            labelPaint.setColor(selected
-                    ? androidx.core.content.ContextCompat.getColor(getContext(), R.color.on_energy)
-                    : BUTTON_IDLE_TEXT);
-            canvas.drawText(getContext().getString(laneLabelRes(i)),
-                    (r[0] + r[2]) / 2f,
-                    (r[1] + r[3]) / 2f - (fm.ascent + fm.descent) / 2f, labelPaint);
-        }
+    private void drawTapFlash(Canvas canvas, int width, int height) {
+        float[] t = LaneTapZones.triangle(flashLane, width, height);
+        flashPath.rewind();
+        flashPath.moveTo(t[0], t[1]);
+        flashPath.lineTo(t[2], t[3]);
+        flashPath.lineTo(t[4], t[5]);
+        flashPath.close();
+        scrimPaint.setColor(androidx.core.content.ContextCompat.getColor(
+                getContext(), R.color.energy));
+        scrimPaint.setAlpha(Math.round(255 * TAP_FLASH_ALPHA * flashLevel));
+        canvas.drawPath(flashPath, scrimPaint);
     }
 
-    /**
-     * 四个按钮上的字用多大。
-     *
-     * <p>先按按钮高度取一个字号，再拿<b>最长的那一个</b>去比按钮的宽：
-     * 中文是一个字，英文是「Front」五个字母，同一个字号下宽度差着三倍。
-     * 收就四个一起收 —— 一个键的字比旁边小一号，比四个都小一号更显眼。</p>
-     */
-    private float buttonTextSize(float density) {
-        float size = LaneButtonPad.buttonHeight(density) * 0.42f;
-        float room = LaneButtonPad.buttonWidth(density) * 0.82f;
-        labelPaint.setTextSize(size);
-        float widest = 0f;
-        for (int i = 0; i < LaneButtonPad.COUNT; i++) {
-            widest = Math.max(widest,
-                    labelPaint.measureText(getContext().getString(laneLabelRes(i))));
-        }
-        return widest > room ? size * room / widest : size;
+    private void startTapFlash(int lane) {
+        cancelTapFlash();
+        flashLane = lane;
+        flashAnimator = ValueAnimator.ofFloat(1f, 0f);
+        flashAnimator.setDuration(TAP_FLASH_MS);
+        // 先亮着停一下再淡：一上来就开始褪，余光里几乎看不到
+        flashAnimator.setInterpolator(new AccelerateInterpolator());
+        flashAnimator.addUpdateListener(animation -> {
+            flashLevel = (Float) animation.getAnimatedValue();
+            invalidate();
+        });
+        flashAnimator.start();
     }
 
-    private static int laneLabelRes(int index) {
-        switch (index) {
-            case LaneCycle.REAR: return R.string.zeekr_lane_back;
-            case LaneCycle.LEFT: return R.string.zeekr_lane_left;
-            case LaneCycle.RIGHT: return R.string.zeekr_lane_right;
-            default: return R.string.zeekr_lane_front;
+    private void cancelTapFlash() {
+        if (flashAnimator != null) {
+            flashAnimator.cancel();
+            flashAnimator = null;
         }
+        flashLane = -1;
+        flashLevel = 0f;
     }
 
     /**
@@ -626,22 +577,6 @@ public class RearViewMirrorView extends ViewGroup {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                // 按钮看不见的时候不能被点中 —— 所以先问「这一下之前它们在不在」，
-                // 再把计时器拨回去。反过来的话，第一下就会误触到一个还没出现的按钮
-                boolean buttonsWereShowing = buttonsShowing();
-                lastTouchUptimeMs = SystemClock.uptimeMillis();
-                if (buttonsWereShowing) {
-                    pressedButton = LaneButtonPad.hitTest(event.getX(), event.getY(),
-                            getWidth(), getHeight(),
-                            getResources().getDisplayMetrics().density);
-                    if (pressedButton >= 0) {
-                        invalidate();
-                        return true;   // 这一下归按钮，不拖窗口也不调取景
-                    }
-                }
-                if (buttonMode) {
-                    invalidate();      // 让那四个现身
-                }
                 if (velocityTracker == null) {
                     velocityTracker = VelocityTracker.obtain();
                 } else {
@@ -684,20 +619,15 @@ public class RearViewMirrorView extends ViewGroup {
                 return true;
 
             case MotionEvent.ACTION_UP:
-                if (pressedButton >= 0) {
-                    int released = LaneButtonPad.hitTest(event.getX(), event.getY(),
-                            getWidth(), getHeight(),
-                            getResources().getDisplayMetrics().density);
-                    // 按下和抬起要在同一个按钮上 —— 按下之后滑开，算作反悔
-                    if (released == pressedButton) {
-                        selectLane(LaneButtonPad.laneFor(pressedButton));
-                    }
-                    pressedButton = -1;
-                    lastTouchUptimeMs = SystemClock.uptimeMillis();
-                    invalidate();
-                    return true;
-                }
+                tapX = event.getX();
+                tapY = event.getY();
+                endTouch(takeXVelocity(event));
+                return true;
+
             case MotionEvent.ACTION_CANCEL:
+                // 被系统收回的手势不算点
+                tapX = Float.NaN;
+                tapY = Float.NaN;
                 endTouch(takeXVelocity(event));
                 return true;
 
@@ -723,8 +653,6 @@ public class RearViewMirrorView extends ViewGroup {
     }
 
     private void beginPinch(MotionEvent event) {
-        // 按着按钮又落下第二根手指：这一下是要缩放，不是要切换
-        pressedButton = -1;
         pinching = true;
         dragging = false;
         pinchStartSpan = spanOf(event);
@@ -773,7 +701,7 @@ public class RearViewMirrorView extends ViewGroup {
                 params.x, params.y, pinchStartWidth, pinchStartHeight,
                 pinchAnchorRatioX, pinchAnchorRatioY,
                 rawFocusX(event), rawFocusY(event), span / pinchStartSpan,
-                minWindowSize(), screenWidth(), screenHeight());
+                AppConfig.REARVIEW_MIN_SIZE, screenWidth(), screenHeight());
 
         params.width = result.width;
         params.height = result.height;
@@ -853,6 +781,14 @@ public class RearViewMirrorView extends ViewGroup {
                     // 画面停住时点一下就是「把它接回来」—— 那时候除了这个也没别的可做
                     AppLog.i(TAG, "点了停住的后视镜，重新接相机");
                     resumeAction.run();
+                } else if (buttonMode && !pinchedThisGesture && !Float.isNaN(tapX)) {
+                    // 按键模式：点哪一块三角就切到哪一路，随时点随时生效，不用先唤出什么。
+                    // 拖窗口、上下划取景、双指缩放都不是点，走不到这里
+                    int lane = LaneTapZones.laneAt(tapX, tapY, getWidth(), getHeight());
+                    if (lane >= 0) {
+                        selectLane(lane);
+                        startTapFlash(lane);
+                    }
                 }
             }
             return;
@@ -860,7 +796,7 @@ public class RearViewMirrorView extends ViewGroup {
 
         if (activeZone == RearViewTouchModel.Zone.ADJUST_CROP && dragging) {
             if (horizontalDrag != null && horizontalDrag) {
-                // 按键模式下横划不换路：那件事交给了按钮，两条路都留着的话，
+                // 按键模式下横划不换路：那件事交给了点四块三角，两条路都留着的话，
                 // 调取景时手一歪就会莫名其妙跳到别的一路
                 if (!buttonMode && RearViewTouchModel.isDeliberateSwipe(
                         lastDx, velocityX, LANE_SWIPE_MIN_PX, minFlingVelocity)) {

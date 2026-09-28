@@ -38,7 +38,7 @@
     <string name="set_storage_usage_title">Current write location</string>
     <string name="set_rearview_summary">Shows one surround camera in a floating window. The rear view is mirrored, like a real mirror</string>
     <string name="set_rearview_button_mode_title">Button mode</string>
-    <string name="set_rearview_button_mode_summary">Four direction buttons instead of swiping the middle: they appear when you touch the window and go after five seconds</string>
+    <string name="set_rearview_button_mode_summary">The window is split along its diagonals into four parts: tap the top, bottom, left or right part to switch to the front, rear, left or right camera, instead of swiping the middle</string>
     <string name="set_rearview_front_rear_title">Front and rear only</string>
     <string name="set_rearview_front_rear_summary">Swiping switches between rear and front only</string>
     <string name="set_rearview_fisheye_title">Fisheye correction</string>
