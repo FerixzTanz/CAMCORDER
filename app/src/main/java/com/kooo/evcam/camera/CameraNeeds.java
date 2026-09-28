@@ -49,18 +49,48 @@ public final class CameraNeeds {
 
     private final Set<Holder> holders = EnumSet.noneOf(Holder.class);
 
+    /** 登记表变了谁来看：相机层（MultiCameraManager.reconcileCameras）—— 有人要就开，没人要就关。 */
+    public interface Listener {
+        void onNeedsChanged();
+    }
+
+    private volatile Listener listener;
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
     /**
      * 登记：我要用相机。
      *
      * <p>重复登记无害 —— 同一个登记者只算一次，所以不需要配对计数。</p>
      */
-    public synchronized void claim(Holder holder) {
-        holders.add(holder);
+    public void claim(Holder holder) {
+        boolean changed;
+        synchronized (this) {
+            changed = holders.add(holder);
+        }
+        if (changed) {
+            notifyChanged();
+        }
     }
 
     /** 注销：我不用了。没登记过就注销也无害。 */
-    public synchronized void release(Holder holder) {
-        holders.remove(holder);
+    public void release(Holder holder) {
+        boolean changed;
+        synchronized (this) {
+            changed = holders.remove(holder);
+        }
+        if (changed) {
+            notifyChanged();
+        }
+    }
+
+    private void notifyChanged() {
+        Listener l = listener;
+        if (l != null) {
+            l.onNeedsChanged();
+        }
     }
 
     /** 这一项此刻有没有登记着。 */

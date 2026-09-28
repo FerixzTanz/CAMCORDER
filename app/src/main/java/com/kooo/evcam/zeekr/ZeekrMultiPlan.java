@@ -132,6 +132,15 @@ public final class ZeekrMultiPlan {
         if (manual) {
             why.append("应用了手动指定的相机映射\n");
         }
+        // 两个槽位指到同一路：后指定的作废。同一路相机只建一份，不再有「从实例」
+        if (cabin1 != null && cabin1.equals(composite)) {
+            why.append("座舱 1 指定的 ").append(cabin1).append(" 已经是环视，忽略\n");
+            cabin1 = null;
+        }
+        if (cabin2 != null && (cabin2.equals(composite) || cabin2.equals(cabin1))) {
+            why.append("座舱 2 指定的 ").append(cabin2).append(" 已经用在别的槽位，忽略\n");
+            cabin2 = null;
+        }
 
         ZeekrMultiPlan plan = new ZeekrMultiPlan(composite, cabin1, cabin2,
                 compositeIsReal, why.toString());

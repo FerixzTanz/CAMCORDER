@@ -188,12 +188,8 @@ public final class RecordingCoordinator {
         }
         pending = why;
         pendingCounts = counts;
-        // 等的时候相机算「录像要用」，熄屏那一步不会把它放掉
+        // 等的时候相机算「录像要用」：登记了相机层就会开着它，熄屏那一步也不会把它放掉
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
-        // 相机层自己的开关规则接手之前，这里是唯一一处「没开着就开」
-        if (cameraManager != null && !cameraManager.isReleased() && !cameraManager.hasConnectedCameras()) {
-            cameraManager.openAllCameras();
-        }
         main.removeCallbacks(poll);
         main.post(poll);
     }
@@ -452,10 +448,6 @@ public final class RecordingCoordinator {
         boolean willResume = resumeAfter(reason);
         if (!willResume && pending == null) {
             CameraNeeds.current().release(CameraNeeds.Holder.RECORDING);
-            // 黑着的时候录像停了：没人要相机就关掉，别开着相机睡过去（主界面不在时没别人做这一步）
-            if (com.kooo.evcam.screen.ScreenState.dark()) {
-                com.kooo.evcam.screen.ScreenState.releaseCamerasIfNobodyNeeds();
-            }
         }
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingStopped(reason, lasted, willResume);

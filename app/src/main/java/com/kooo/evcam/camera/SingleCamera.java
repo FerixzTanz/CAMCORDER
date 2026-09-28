@@ -182,7 +182,6 @@ public class SingleCamera {
     private static final long OPEN_WAIT_FOR_CLOSE_MS = 10_000L;
     /** 关的时候还有一次打开在途：它的回调可能晚到，这一轮的相机线程多留这么久，好把晚到的设备关掉。 */
     private static final long LATE_OPEN_GRACE_MS = 3_000L;
-    private boolean isPrimaryInstance = true;  // 是否是主实例（用于多实例共享同一个cameraId时，只有主实例负责重连）
     private boolean isConfiguring = false; // 新增：标记是否正在配置中
     private boolean isPendingReconfiguration = false; // 新增：标记是否有待处理的配置请求
     private boolean isSessionClosing = false; // 新增：标记 Session 是否正在关闭中
@@ -252,28 +251,6 @@ public class SingleCamera {
         }
     }
 
-
-    /**
-     * 设置是否为主实例（用于多实例共享同一个cameraId时）
-     * 只有主实例负责打开摄像头和重连，从属实例只负责显示
-     */
-    public void setPrimaryInstance(boolean isPrimary) {
-        this.isPrimaryInstance = isPrimary;
-        if (!isPrimary) {
-            // 从属实例不需要重连
-            synchronized (reconnectLock) {
-                shouldReconnect = false;
-            }
-        }
-        AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") set as " + (isPrimary ? "PRIMARY" : "SECONDARY") + " instance");
-    }
-
-    /**
-     * 检查是否是主实例
-     */
-    public boolean isPrimaryInstance() {
-        return isPrimaryInstance;
-    }
 
     /**
      * 这一路的摆法：旋转、镜像、裁剪、缩放平移，全部来自配置里那一格。
@@ -740,8 +717,7 @@ public class SingleCamera {
      */
     public String describeForStall() {
         long last = lastFrameTimestampMs;
-        return "camera " + cameraId + " (" + cameraPosition + ", "
-                + (isPrimaryInstance ? "primary" : "secondary") + " @"
+        return "camera " + cameraId + " (" + cameraPosition + " @"
                 + Integer.toHexString(System.identityHashCode(this)) + ")"
                 + " device=" + (cameraDevice != null)
                 + " session=" + (captureSession != null)
@@ -817,9 +793,7 @@ public class SingleCamera {
      * 那些状态标志卡住的情形，拿卡住的标志当前提就等于不救。</p>
      */
     public boolean wantsFrames() {
-        return isPrimaryInstance
-                && (previewSurface != null || mainFloatingSurface != null
-                || recordSurface != null);
+        return previewSurface != null || mainFloatingSurface != null || recordSurface != null;
     }
 
     /** 最后一次报错的短名，没有就返回 null。 */
@@ -838,12 +812,6 @@ public class SingleCamera {
      * 打开摄像头
      */
     public void openCamera() {
-        // 如果不是主实例，不执行打开操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping openCamera");
-            return;
-        }
-
         // 已经打开，不重复打开
         if (cameraDevice != null) {
             AppLog.d(TAG, "Camera " + cameraId + " already opened, skipping openCamera");
@@ -873,7 +841,7 @@ public class SingleCamera {
                 return;
             }
             
-            AppLog.d(TAG, "openCamera: Starting for camera " + cameraId + " (PRIMARY instance)");
+            AppLog.d(TAG, "openCamera: Starting for camera " + cameraId + "");
             shouldReconnect = true;  // 启用自动重连
             reconnectAttempts = 0;  // 重置重连计数
         }
@@ -940,6 +908,10 @@ public class SingleCamera {
                 // 相机声明的帧率上限记下来 —— 设置界面拿不到相机对象，
                 // 而「原始帧率」那一项以前显示的是一个和相机无关的写死的数
                 CameraCapabilities.record(cameraId, characteristics);
+                // 镜像判断要的 LENS_FACING 也顺手记下：sourceMirrored() 在视图线程上被调，不该再进相机服务
+                cameraCharacteristics = characteristics;
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                sourceMirrored = facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT;
             } catch (Exception e) {
                 AppLog.e(TAG, "Camera " + cameraId + " failed to get characteristics - camera may be virtual/invalid", e);
                 if (callback != null) {
@@ -1062,12 +1034,6 @@ public class SingleCamera {
      * 调度重连任务
      */
     private void scheduleReconnect() {
-        // 如果不是主实例，不执行重连
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping reconnect");
-            return;
-        }
-        
         synchronized (reconnectLock) {
             // 检查是否允许重连
             if (!shouldReconnect) {
@@ -1920,22 +1886,27 @@ public class SingleCamera {
     private boolean requestJpeg(JpegCallback callback) {
         ImageReader reader = jpegReader;
         CameraCaptureSession currentSession = captureSession;
-        if (reader == null || currentSession == null || cameraDevice == null) {
+        CameraDevice device = cameraDevice;
+        Handler handler = backgroundHandler;
+        if (reader == null || currentSession == null || device == null || handler == null) {
             return false;
         }
-        try {
-            CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(
-                    CameraDevice.TEMPLATE_STILL_CAPTURE);
-            builder.addTarget(reader.getSurface());
-            builder.set(CaptureRequest.JPEG_QUALITY, (byte) 95);
-            pendingJpeg = callback;
-            currentSession.capture(builder.build(), null, backgroundHandler);
-            return true;
-        } catch (Exception e) {
-            pendingJpeg = null;
-            AppLog.w(TAG, "Camera " + cameraId + " 拍照请求失败: " + e);
-            return false;
-        }
+        pendingJpeg = callback;
+        // 建请求、下发都是进相机服务的调用：放到这一路的相机线程上（以前在主线程，相机服务一卡主线程跟着卡）
+        handler.post(() -> {
+            try {
+                CaptureRequest.Builder builder = device.createCaptureRequest(
+                        CameraDevice.TEMPLATE_STILL_CAPTURE);
+                builder.addTarget(reader.getSurface());
+                builder.set(CaptureRequest.JPEG_QUALITY, (byte) 95);
+                currentSession.capture(builder.build(), null, handler);
+            } catch (Exception e) {
+                pendingJpeg = null;
+                AppLog.w(TAG, "Camera " + cameraId + " 拍照请求失败: " + e);
+                callback.onFailed("capture: " + e.getMessage());
+            }
+        });
+        return true;
     }
 
     private void closeJpegReader() {
@@ -2318,12 +2289,6 @@ public class SingleCamera {
      * @param why 为什么关（英文短语）。给了就在关完时往黑匣子记一行，带用时；null 表示例行的关，不记
      */
     public void closeCamera(String why) {
-        // 如果不是主实例，不执行关闭操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping closeCamera");
-            return;
-        }
-
         final CameraCaptureSession session;
         final CameraDevice device;
         final Surface preview;
@@ -2511,11 +2476,6 @@ public class SingleCamera {
      * 以前旧的是在调用方线程上、拿着 {@link #reconnectLock} 关的。</p>
      */
     public void forceReopen() {
-        // 如果不是主实例，不执行重开操作
-        if (!isPrimaryInstance) {
-            AppLog.d(TAG, "Camera " + cameraId + " (" + cameraPosition + ") is SECONDARY instance, skipping forceReopen");
-            return;
-        }
         if (reopenInFlight) {
             AppLog.d(TAG, "Camera " + cameraId + " force reopen already in flight, coalesced");
             return;
@@ -2525,7 +2485,7 @@ public class SingleCamera {
         final CameraDevice oldDevice;
         final Handler handler;
         synchronized (reconnectLock) {
-            AppLog.d(TAG, "Camera " + cameraId + " force reopen requested (PRIMARY instance)");
+            AppLog.d(TAG, "Camera " + cameraId + " force reopen requested");
 
             // 取消所有待执行的重连任务
             if (reconnectRunnable != null && backgroundHandler != null) {
@@ -2978,12 +2938,22 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " image adjust not enabled, skip update");
             return false;
         }
-        
-        if (cameraDevice == null || captureSession == null || currentRequestBuilder == null) {
+        Handler handler = backgroundHandler;
+        if (cameraDevice == null || captureSession == null || currentRequestBuilder == null || handler == null) {
             AppLog.w(TAG, "Camera " + cameraId + " not ready for image adjust update");
             return false;
         }
-        
+        // 改请求、重新提交都是进相机服务的调用：放到这一路的相机线程上（以前在主线程，画面调节窗口每拖一下都可能卡一下）
+        handler.post(() -> applyImageAdjustParamsNow(exposureCompensation, awbMode, tonemapMode,
+                edgeMode, noiseReductionMode, effectMode));
+        return true;
+    }
+
+    private boolean applyImageAdjustParamsNow(int exposureCompensation, int awbMode, int tonemapMode,
+                                              int edgeMode, int noiseReductionMode, int effectMode) {
+        if (cameraDevice == null || captureSession == null || currentRequestBuilder == null) {
+            return false;
+        }
         try {
             // 应用曝光补偿
             if (exposureCompensation != Integer.MIN_VALUE) {

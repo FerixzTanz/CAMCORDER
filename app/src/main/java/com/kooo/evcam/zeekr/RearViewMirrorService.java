@@ -390,7 +390,6 @@ public class RearViewMirrorService extends Service {
             // 让 ScreenState 按熄屏那条规矩再确认一遍（1.5 秒后没人要就关）—— 别开着相机睡过去
             com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏中录像结束：后视镜放开相机");
             unbindCamera();
-            com.kooo.evcam.screen.ScreenState.releaseCamerasIfNobodyNeeds();
             return;
         }
         if (mirrorView.isDocked() || com.kooo.evcam.screen.ScreenState.dark()) {

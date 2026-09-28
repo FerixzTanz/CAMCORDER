@@ -9,12 +9,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 
-import com.kooo.evcam.AppConfig;
 import com.kooo.evcam.AppLog;
 import com.kooo.evcam.blackbox.BlackBox;
-import com.kooo.evcam.camera.CameraManagerHolder;
-import com.kooo.evcam.camera.CameraNeeds;
-import com.kooo.evcam.camera.MultiCameraManager;
 import com.kooo.evcam.recording.RecordingCoordinator;
 import com.kooo.evcam.recording.ScreenOffRecording;
 import com.kooo.evcam.recovery.Recovery;
@@ -41,7 +37,8 @@ import java.util.List;
  *   <li>熄屏录制的唤醒锁（{@link ScreenOffRecording}）；</li>
  *   <li>录像的规矩（{@link RecordingCoordinator#screenOff()} / {@link RecordingCoordinator#screenOn()}）：
  *       熄屏持续录制关着就 10 秒后停，亮屏再判接不接；</li>
- *   <li>相机：熄屏 {@link #RELEASE_CAMERAS_AFTER_MS} 后没人登记要相机就关掉（车机熄屏六秒就深睡，晚一步就是开着相机睡过去）；</li>
+ *   <li>相机不在这里管：谁要用就登记，没人登记 1.5 秒后关，由相机层按登记表判（MultiCameraManager.reconcileCameras）——
+ *       熄屏时后视镜注销、主界面暂停注销，相机自然就关了，正好赶在深睡之前；</li>
  *   <li>界面：因熄屏自己退下去的主界面，亮屏就接回来（{@link Recovery#bringBackUiAfterScreenOn}）；</li>
  *   <li>之后才是主界面、后视镜自己登记的监听者（退后台、摘/接后视镜）。</li>
  * </ol>
@@ -51,8 +48,6 @@ public final class ScreenState {
     private static final String TAG = "ScreenState";
     /** 黑着的时候多久问一次系统「亮了没」。 */
     static final long WAKE_POLL_MS = 2_000L;
-    /** 熄屏后多久确认没人要相机就关。 */
-    static final long RELEASE_CAMERAS_AFTER_MS = 1_500L;
 
     /** 主线程上收到。 */
     public interface Listener {
@@ -139,18 +134,6 @@ public final class ScreenState {
         LISTENERS.remove(listener);
     }
 
-    /**
-     * 黑着的时候有人放开了相机（后视镜在熄屏中录像结束后补摘）：按熄屏那条规矩再确认一遍，
-     * {@link #RELEASE_CAMERAS_AFTER_MS} 后没人登记要相机就关 —— 别开着相机睡过去。亮着时什么都不做。主线程调。
-     */
-    public static void releaseCamerasIfNobodyNeeds() {
-        if (!dark) {
-            return;
-        }
-        MAIN.removeCallbacks(RELEASE_CAMERAS);
-        MAIN.postDelayed(RELEASE_CAMERAS, RELEASE_CAMERAS_AFTER_MS);
-    }
-
     private static final Runnable WAKE_POLL = new Runnable() {
         @Override
         public void run() {
@@ -166,28 +149,6 @@ public final class ScreenState {
         }
     };
 
-    private static final Runnable RELEASE_CAMERAS = () -> {
-        Context context = app;
-        if (!dark || context == null) {
-            return;
-        }
-        if (new AppConfig(context).isScreenOffRecordingEnabled()) {
-            // 熄屏录制生效时相机刻意保持活跃
-            return;
-        }
-        CameraNeeds needs = CameraNeeds.current();
-        if (needs.heldByAnyone()) {
-            AppLog.d(TAG, "熄屏，但相机还有人要: " + needs.describe());
-            return;
-        }
-        MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
-        if (manager != null) {
-            // 关是相机线程去做的，这里不等；每一路关完时各自记一行「相机 X 已关」，带用时
-            manager.closeAllCameras("screen off");
-            BlackBox.noteImportant("熄屏：没人要相机，让相机去关（深睡前）");
-        }
-    };
-
     private static void screenOff() {
         if (dark) {
             return;
@@ -196,8 +157,6 @@ public final class ScreenState {
         BlackBox.noteImportant("熄屏");
         ScreenOffRecording.onScreenOff(app);
         RecordingCoordinator.get(app).screenOff();
-        MAIN.removeCallbacks(RELEASE_CAMERAS);
-        MAIN.postDelayed(RELEASE_CAMERAS, RELEASE_CAMERAS_AFTER_MS);
         for (Listener listener : new ArrayList<>(LISTENERS)) {
             listener.onScreenOff();
         }
@@ -211,7 +170,6 @@ public final class ScreenState {
         }
         dark = false;
         MAIN.removeCallbacks(WAKE_POLL);
-        MAIN.removeCallbacks(RELEASE_CAMERAS);
         // 总原则（规格 §0）：停车熄屏是特殊情况；屏幕亮了，特殊情况就结束了，回到用户设定的状态
         BlackBox.noteImportant("亮屏（" + how + "）");
         ScreenOffRecording.onScreenOn();

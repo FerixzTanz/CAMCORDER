@@ -166,8 +166,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean shouldMoveToBackgroundOnReady = false;  // 开机自启动后，窗口准备好时移到后台
 
     // 摄像头重连防抖相关
-    private android.os.Handler reopenCameraHandler;  // 重新打开摄像头的 Handler
-    private Runnable reopenCameraRunnable;  // 重新打开摄像头的 Runnable
     
     // 悬浮按钮发来的广播
     private android.content.BroadcastReceiver toggleRecordingReceiver;  // 录制切换广播接收器（来自悬浮窗）
@@ -2386,12 +2384,6 @@ public class MainActivity extends AppCompatActivity {
             // 在这之前只退不回，人上车看到的是车机桌面，得自己再点一次图标
             appConfig.setUiLeftForScreenOff(true);
 
-            // 关闭摄像头释放资源
-            if (cameraManager != null) {
-                cameraManager.closeAllCameras("screen off 15s");
-                AppLog.d(TAG, "已让所有摄像头去关");
-            }
-
             // 退到后台
             moveTaskToBack(true);
 
@@ -2803,17 +2795,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 预览不在前台了，注销这一项；剩下还有没有人要，问登记表。
         // 录像那一项由协调器登记（在录、在等环视都算），这里不替它填
-        com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
-        needs.release(com.kooo.evcam.camera.CameraNeeds.Holder.PREVIEW);
-        if (cameraManager != null) {
-            if (needs.heldByAnyone() || recordingCoordinator.isWaiting()) {
-                AppLog.d(TAG, "退到后台，相机留着 —— 还有人要: " + needs.describe()
-                        + (recordingCoordinator.isWaiting() ? "（协调器在等环视开录）" : ""));
-            } else {
-                AppLog.d(TAG, "退到后台，没人要相机，关掉");
-                cameraManager.closeAllCameras("background");
-            }
-        }
+        // 关不关由相机层按登记表判（没人要 1.5 秒后关），这里不再自己关
+        com.kooo.evcam.camera.CameraNeeds.current().release(com.kooo.evcam.camera.CameraNeeds.Holder.PREVIEW);
     }
 
     @Override
@@ -2885,40 +2868,7 @@ public class MainActivity extends AppCompatActivity {
         updateStatusLine();
         com.kooo.evcam.storage.StorageState.refresh(this, "resume");
         
-        // 返回前台时，检查摄像头连接状态
-        if (cameraManager != null && wasInBackground) {
-            // 初始化 Handler（如果需要）
-            if (reopenCameraHandler == null) {
-                reopenCameraHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-            }
-            
-            // 取消之前的延迟任务（防抖：避免 onResume 被多次调用时重复打开摄像头）
-            if (reopenCameraRunnable != null) {
-                reopenCameraHandler.removeCallbacks(reopenCameraRunnable);
-                AppLog.d(TAG, "Cancelled previous camera reopen task (debounce)");
-            }
-            
-            // 创建新的延迟任务
-            reopenCameraRunnable = () -> {
-                // 只在没有正在录制时重新打开（录制时摄像头应该保持连接）
-                if (!isRecording) {
-                    AppLog.d(TAG, "Reopening cameras after returning from background");
-                    cameraManager.openAllCameras();
-
-                    // 这里原本还有一段：只要开着「启动自动录制」，回到前台就开始录。
-                    // 它不看用户停没停过，也不看这一趟有没有录起来过 ——
-                    // 于是「打开视频回放再切回主界面」就会自己录上。
-                    // 回到前台不是开始录制的理由：启动时开一次由 checkAutoStartRecording 提出，
-                    // 录着录着意外停了由 RecordingCoordinator 自己接，要不要都看 RecordingIntent。
-                } else {
-                    AppLog.d(TAG, "Recording in progress, cameras should still be connected");
-                }
-                
-            };
-            
-            // 延迟100ms后执行（只有最后一次 onResume 会真正执行）
-            reopenCameraHandler.postDelayed(reopenCameraRunnable, 100);
-        }
+        // 回到前台要用相机：上面 claim(PREVIEW) 那一下相机层自己会开（reconcileCameras）
 }
 
     @Override

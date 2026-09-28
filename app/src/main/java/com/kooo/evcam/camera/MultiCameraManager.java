@@ -161,6 +161,44 @@ public class MultiCameraManager {
         this.context = context;
         livenessRunning = true;
         mainHandler.postDelayed(livenessTick, LIVENESS_TICK_MS);
+        // 登记表一变就来看：有人要就开，没人要就关（相机开关的唯一裁判）
+        CameraNeeds.current().setListener(this::reconcileCameras);
+    }
+
+    // ------------------------------------------------------------------ 相机开关的裁判
+
+    /** 没人要相机了多久才关：主界面重建、切去回看那一下会先注销再登记，别跟着关了又开。 */
+    private static final long CLOSE_WHEN_UNNEEDED_MS = 1_500L;
+
+    private final Runnable closeWhenUnneeded = () -> {
+        if (isRecording || CameraNeeds.current().heldByAnyone()) {
+            return;
+        }
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("没人要相机了，让相机去关");
+        closeAllCameras("nobody-needs");
+    };
+
+    /**
+     * 相机开不开、关不关，只看登记表（{@link CameraNeeds}）：谁要用就登记，没人登记才关（1.65.0）。
+     *
+     * <p>主界面预览、录像要的是全部启用的路，登记了就开；后视镜只要自己那一路，它自己开（{@code bindCamera}）。
+     * 没人要了等 {@link #CLOSE_WHEN_UNNEEDED_MS} 再关 —— 熄屏后 1.5 秒也正好是深睡之前。
+     * 以前这个判断散在主界面退后台、熄屏 1.5 秒、熄屏 15 秒、后视镜四处，各问一遍登记表。</p>
+     */
+    public void reconcileCameras() {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            mainHandler.post(this::reconcileCameras);
+            return;
+        }
+        CameraNeeds needs = CameraNeeds.current();
+        mainHandler.removeCallbacks(closeWhenUnneeded);
+        if (needs.heldByAnyone()) {
+            if (!isReleased() && (needs.isHeld(CameraNeeds.Holder.PREVIEW) || needs.isHeld(CameraNeeds.Holder.RECORDING))) {
+                openAllCameras();   // 已经开着的那几路会被 openCamera 自己跳过
+            }
+        } else {
+            mainHandler.postDelayed(closeWhenUnneeded, CLOSE_WHEN_UNNEEDED_MS);
+        }
     }
 
     // ------------------------------------------------------------------ 相机兜底看门狗
@@ -636,54 +674,40 @@ public class MultiCameraManager {
 
         // 清空之前的摄像头实例
         cameras.clear();
-        
+
+        // 同一路相机只建一份：两个槽位指到同一个 id（手动映射填错）时，后面的槽位空着。
+        // 以前是两份都建、标成主 / 从实例，从实例什么都不做 —— 十处守卫只为这一种配置错误
+        Set<String> used = new HashSet<>();
         // 根据参数创建摄像头实例（支持 null TextureView 用于后台初始化）
-        if (frontId != null) {
+        if (frontId != null && used.add(frontId)) {
             SingleCamera frontCamera = new SingleCamera(context, frontId, frontView);
             frontCamera.setCameraPosition("front");
             cameras.put("front", frontCamera);
             AppLog.d(TAG, "初始化前摄像头: ID=" + frontId);
         }
 
-        if (backId != null) {
-            SingleCamera backCamera = new SingleCamera(context, backId, backView);
+        if (backId != null && used.add(backId)) {
+            SingleCamera backCamera= new SingleCamera(context, backId, backView);
             backCamera.setCameraPosition("back");
             cameras.put("back", backCamera);
             AppLog.d(TAG, "初始化后摄像头: ID=" + backId);
         }
 
-        if (leftId != null) {
-            SingleCamera leftCamera = new SingleCamera(context, leftId, leftView);
+        if (leftId != null && used.add(leftId)) {
+            SingleCamera leftCamera= new SingleCamera(context, leftId, leftView);
             leftCamera.setCameraPosition("left");
             cameras.put("left", leftCamera);
             AppLog.d(TAG, "初始化左摄像头: ID=" + leftId);
         }
 
-        if (rightId != null) {
-            SingleCamera rightCamera = new SingleCamera(context, rightId, rightView);
+        if (rightId != null && used.add(rightId)) {
+            SingleCamera rightCamera= new SingleCamera(context, rightId, rightView);
             rightCamera.setCameraPosition("right");
             cameras.put("right", rightCamera);
             AppLog.d(TAG, "初始化右摄像头: ID=" + rightId);
         }
         
         AppLog.d(TAG, "共初始化 " + cameras.size() + " 个摄像头");
-
-        // 检测重复的cameraId，只让第一个实例成为主实例
-        Set<String> primaryIds = new HashSet<>();
-        for (Map.Entry<String, SingleCamera> entry : cameras.entrySet()) {
-            SingleCamera camera = entry.getValue();
-            String id = camera.getCameraId();
-            
-            if (primaryIds.add(id)) {
-                // 第一次遇到这个ID，设为主实例
-                camera.setPrimaryInstance(true);
-                AppLog.d(TAG, "Camera " + id + " at position " + entry.getKey() + " set as PRIMARY");
-            } else {
-                // 重复的ID，设为从属实例
-                camera.setPrimaryInstance(false);
-                AppLog.d(TAG, "Camera " + id + " at position " + entry.getKey() + " set as SECONDARY (sharing with primary)");
-            }
-        }
 
         // 为每个摄像头设置回调
         CameraCallback callback = new CameraCallback() {
@@ -2252,6 +2276,8 @@ public class MultiCameraManager {
      * 添加完善的清理逻辑和异常保护
      */
     public void release() {
+        CameraNeeds.current().setListener(null);
+        mainHandler.removeCallbacks(closeWhenUnneeded);
         AppLog.d(TAG, "Releasing MultiCameraManager resources");
         livenessRunning = false;
         

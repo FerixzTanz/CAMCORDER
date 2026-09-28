@@ -7,6 +7,24 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.65.0-alpha] - 2026-09-28
+
+- **One judge of whether the cameras are open: the registry of who needs them.** The main
+  screen's preview, a recording (running or waiting for the surround view) and the super
+  mirror each register their need; when someone registers, the cameras open, and 1.5
+  seconds after nobody needs them they close. That single rule replaces the four places
+  that used to decide (main screen going to the background, 1.5 s and 15 s after
+  screen-off, the mirror service), the main screen's "reopen after returning from the
+  background" timer and the recording coordinator's own open. The screen-off case works
+  through it: the mirror and the paused main screen unregister, so the cameras close
+  before deep sleep as before.
+- The camera's photo capture and the picture-adjust window's changes are sent from the
+  camera's own thread instead of the main thread, and the "front camera is mirrored" fact
+  is read once when the camera opens instead of on the view thread.
+- Two configuration slots naming the same camera no longer create a second, inert camera
+  object ("secondary instance"); the second slot is left empty and the camera mapping
+  note says so. Fifth step of the consolidation plan, part two.
+
 ## [1.64.0-alpha] - 2026-09-28
 
 - **The foreground service lives as long as "keep alive" is on or a recording is running.**
