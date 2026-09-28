@@ -7,6 +7,20 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.66.0-alpha] - 2026-09-28
+
+- **One way to rebuild a camera's capture session.** Whenever a camera's outputs change
+  (recording starts or stops, the super mirror attaches or detaches, the photo channel is
+  dropped, a configuration attempt fails, a surface was abandoned) the request goes through
+  a single entry that keeps at most one rebuild queued. The old session is closed first and
+  the new one is built when the close completes (with one fallback if the close callback
+  never arrives); a request that arrives while a configuration is in flight voids that
+  attempt, which is closed and rebuilt once with the latest outputs, tracked by a
+  generation number. Closing the camera, forcing a reopen and reconnecting after a
+  disconnect all void in-flight work the same way. This replaces five separate entry
+  points with their own delays, a "rebuild pending" flag and a separate fallback task.
+  Fifth step of the consolidation plan, part three.
+
 ## [1.65.0-alpha] - 2026-09-28
 
 - **One judge of whether the cameras are open: the registry of who needs them.** The main
