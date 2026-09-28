@@ -49,9 +49,41 @@ public final class Recovery {
         }
     }
 
+    /**
+     * 因熄屏自己退下去的主界面，屏幕亮了就接回来（规格 §0：停车熄屏是特殊情况，亮了就回到用户设定的状态）。
+     *
+     * <p>只认「是它自己因为熄屏退下去的」这个记号：用户自己切走的、从来没进过前台的，一律不动。
+     * 界面还活着就把它挪到前面；已经被系统收走了就重新起一个（带记号，这一趟的录像选择不清，规格 1.2）。
+     * ScreenState 在亮屏时调；进程在屏幕亮着时被拉起来也调一次（那时没有亮屏事件可听）。</p>
+     */
+    public static void bringBackUiAfterScreenOn(Context context) {
+        try {
+            AppConfig config = new AppConfig(context);
+            if (!config.didUiLeaveForScreenOff() || UserExit.isExited(context)) {
+                return;
+            }
+            config.setUiLeftForScreenOff(false);
+            boolean alive = MainActivity.getInstance() != null;
+            Intent intent = new Intent(context, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    | (alive ? Intent.FLAG_ACTIVITY_SINGLE_TOP : 0));
+            if (!alive) {
+                intent.putExtra("restored_by_app", true);
+            }
+            context.startActivity(intent);
+            BlackBox.noteImportant("亮屏：把因熄屏退下去的主界面接回前台（" + (alive ? "界面还在" : "重新起一个") + "）");
+        } catch (Exception e) {
+            AppLog.w(TAG, "bringBackUiAfterScreenOn failed: " + e);
+        }
+    }
+
     private static void restoreNow(Context context, String why) {
         if (UserExit.isExited(context)) {
             return;
+        }
+        // 进程是在屏幕亮着时被拉起来的：亮屏事件早过了，该接回的界面在这里接
+        if (!com.kooo.evcam.screen.ScreenState.dark()) {
+            bringBackUiAfterScreenOn(context);
         }
         AppConfig config = new AppConfig(context);
         if (!config.isAutoStartOnBoot()) {

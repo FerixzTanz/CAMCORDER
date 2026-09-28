@@ -71,11 +71,8 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         if (UserExit.blocks(context, "KeepAliveReceiver")) {
             return;
         }
-        if (Intent.ACTION_SCREEN_ON.equals(action)) {
-            // 亮屏把因熄屏退下去的主界面接回来，是「回到用户设定的状态」（规格 §0），不归保活管
-            restoreMainScreenIfItLeftForScreenOff(context);
-            com.kooo.evcam.recovery.Recovery.restore(context, "screen-on");
-        }
+        // 亮屏把因熄屏退下去的主界面接回来，是「回到用户设定的状态」（规格 §0），不归保活管：
+        // 那是 ScreenState → Recovery.bringBackUiAfterScreenOn 的事，这里只把亮屏当保活的触发
         if (!new AppConfig(context).isKeepAliveEnabled()) {
             // 保活关着（规格 §3）：不拉
             return;
@@ -264,37 +261,6 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         }
     }
     
-    /**
-     * 熄屏时自己退下去、之后又被系统收走的主界面，亮屏时拉回来。
-     *
-     * <p>界面还活着的时候它自己会回来（{@code MainActivity.onScreenOn}）；
-     * 这里管的是它已经不在了的那种 —— 停了一夜，进程还在（前台服务保着），
-     * 界面早被系统回收了。</p>
-     *
-     * <p>只认「是它自己因为熄屏退下去的」这个记号。用户自己切走的、从来没进过前台的，
-     * 一律不动：不能因为有人点亮了屏幕就抢到最前面。</p>
-     */
-    private void restoreMainScreenIfItLeftForScreenOff(Context context) {
-        try {
-            if (MainActivity.getInstance() != null) {
-                return;
-            }
-            AppConfig config = new AppConfig(context);
-            if (!config.didUiLeaveForScreenOff()) {
-                return;
-            }
-            config.setUiLeftForScreenOff(false);
-            Intent intent = new Intent(context, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            // 不是人点开的：这一趟的录像选择不清（规格 1.2）
-            intent.putExtra("restored_by_app", true);
-            context.startActivity(intent);
-            AppLog.i(TAG, "亮屏，主界面已不在，按熄屏前的状态把它拉回来");
-        } catch (Exception e) {
-            AppLog.w(TAG, "恢复主界面失败: " + e);
-        }
-    }
-
     /** TIME_TICK 处理（每分钟调用）：前台服务不在就拉起来。无障碍服务在跑的话它自己有心跳，这里不重复。 */
     private void onTimeTick(Context context) {
         if (KeepAliveAccessibilityService.isRunning()) {

@@ -169,64 +169,38 @@ public class MainActivity extends AppCompatActivity {
     private android.os.Handler reopenCameraHandler;  // 重新打开摄像头的 Handler
     private Runnable reopenCameraRunnable;  // 重新打开摄像头的 Runnable
     
-    // 息屏录制相关
-    private android.content.BroadcastReceiver screenStateReceiver;  // 屏幕状态广播接收器
+    // 悬浮按钮发来的广播
     private android.content.BroadcastReceiver toggleRecordingReceiver;  // 录制切换广播接收器（来自悬浮窗）
-    private android.os.Handler screenStateHandler;  // 息屏/亮屏延迟处理
-    private Runnable screenOffStopRunnable;  // 息屏停止录制的延迟任务
+
+    // 熄屏：屏幕状态只有 ScreenState 一份（熄屏广播 + 黑着时每 2 秒问系统一次代替亮屏广播）。
+    // 唤醒锁、录像的 10 秒停 / 亮屏接回、1.5 秒没人要就关相机、亮屏把退下去的界面接回来，
+    // 都在它那里按固定顺序做完；主界面只剩自己的事 —— 熄屏 15 秒退后台
+    private final android.os.Handler screenStateHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());  // 熄屏退后台的延迟处理
     private Runnable screenOffBackgroundRunnable;  // 息屏退后台的延迟任务
-    private Runnable screenOffCameraRunnable;  // 息屏尽快关相机的延迟任务
-    private boolean isScreenOff = false;  // 收到过熄屏、还没收到亮屏。亮屏广播深睡醒来后不来，见 reconcileScreenState
+    private static final long SCREEN_OFF_BACKGROUND_DELAY_MS = 15000;  // 息屏后等待15秒（退后台）
 
     /**
-     * 把「记下来的熄屏」和「屏幕实际亮着」对一下。
-     *
-     * <p>实测（2026-09-24）：熄屏广播四次四次都到，深睡醒来后的亮屏广播一次都没到。
-     * 于是 {@link #isScreenOff} 一旦置上就再也没人清 —— {@link #onScreenOn()} 不跑，
-     * 相机不重开、界面不接回来；十五秒那个退后台的任务按 uptime 算，醒来十几秒后照样执行，
-     * 读到的还是「熄屏中」。</p>
-     *
-     * <p>所以凡是要看「现在是不是熄屏」的地方，先调这一步：屏幕其实亮着，
-     * 就补跑一次 {@link #onScreenOn()}，回到用户设定的状态（规格 §0）。
-     * 车机停车后自己醒来亮屏的那两分钟也一样（规格 §1.3 选 a）。</p>
-     *
-     * @return 屏幕此刻是不是真的黑着
+     * 熄屏 / 亮屏（{@link com.kooo.evcam.screen.ScreenState} 在主线程调；onStart 登记、onStop 摘掉，
+     * 和存储监听放在一起）。只管界面自己的事：熄屏 15 秒退后台，亮屏取消它。
+     * 接回录像、接回界面不在这里 —— ScreenState 在叫到这里之前已经做完了。
      */
-    private boolean reconcileScreenState(String where) {
-        android.os.PowerManager power = (android.os.PowerManager) getSystemService(POWER_SERVICE);
-        boolean dark = power != null ? !power.isInteractive() : isScreenOff;
-        if (isScreenOff && !dark) {
-            // 总原则（规格 §0）：停车熄屏是特殊情况；屏幕亮了，特殊情况就结束了，
-            // 回到用户设定的状态 —— 把漏掉的亮屏逻辑补跑一次（接回界面、接回录像）
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("亮屏但没收到广播，补跑亮屏逻辑（" + where + "）");
-            onScreenOn();
-        }
-        return dark;
-    }
-    /**
-     * 熄屏持续录制这一段是什么时候熄的屏（elapsedRealtime，含深睡）；0 表示不在这种状态。
-     * 亮屏时和 {@link #keepRecordingOffAtUptime}（不含深睡）一减，就知道车机睡了多久。
-     */
-    private long keepRecordingOffAtElapsed;
-    private long keepRecordingOffAtUptime;
-    /** 熄屏持续录制这一段里录像停过几次（停了又接回的也算）。 */
-    private int keepRecordingStops;
-    private static final long SCREEN_OFF_DELAY_MS = 10000;  // 息屏后等待10秒（停止录制）
-    private static final long SCREEN_OFF_BACKGROUND_DELAY_MS = 15000;  // 息屏后等待15秒（退后台）
-    /**
-     * 息屏后多久放开相机。
-     *
-     * <p>退后台那一步可以慢慢来，<b>放开相机不能</b>：实测车机熄屏六秒后就深睡了，
-     * 而 15 秒的延迟任务用的是 uptime 时钟，深睡期间根本不走 —— 那一次它是在
-     * 十九分钟后、车机醒来时才执行的，相机就这么开着睡了过去。醒来时会话已经作废，
-     * 关它卡在 binder 里，接着被相机服务断开（日志里的 error -4，基座自定义码），靠看门狗重开花了 9.4 秒。</p>
-     *
-     * <p>1.5 秒既躲得开深睡，也还留着一点余地：屏幕闪一下就亮回来的话，
-     * 相机还没来得及关。</p>
-     */
-    private static final long SCREEN_OFF_CAMERA_DELAY_MS = 1500;
-    
-    
+    private final com.kooo.evcam.screen.ScreenState.Listener screenListener =
+            new com.kooo.evcam.screen.ScreenState.Listener() {
+                @Override
+                public void onScreenOff() {
+                    AppLog.d(TAG, "检测到息屏，15 秒后退后台（录像中、熄屏录制生效则留在前台）");
+                    scheduleBackgroundTask();
+                }
+
+                @Override
+                public void onScreenOn() {
+                    AppLog.d(TAG, "检测到亮屏，取消退后台任务");
+                    cancelBackgroundTask();
+                }
+            };
+
+
     // 车型配置相关
     private AppConfig appConfig;
     private int configuredCameraCount = 4;  // 配置的摄像头数量
@@ -378,8 +352,10 @@ public class MainActivity extends AppCompatActivity {
         // 录制悬浮按钮 / 补盲）。该不该开、能不能开都在协调器里判断。
         OverlayCoordinator.restoreOnLaunch(this, this::broadcastCurrentRecordingState);
         
-        // 初始化息屏录制检测
-        initScreenStateReceiver();
+        // 悬浮按钮发来的录制切换 / 拍照广播
+        // 屏幕状态只听 ScreenState；整个界面生命周期都听着（熄屏时界面可能先被暂停、广播后到）
+        com.kooo.evcam.screen.ScreenState.addListener(screenListener);
+        initToggleRecordingReceiver();
     }
 
     @Override
@@ -2333,39 +2309,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 初始化息屏状态广播接收器
-     * 用于检测屏幕开关状态，实现息屏录制功能
-     */
-    private void initScreenStateReceiver() {
-        screenStateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-        
-        screenStateReceiver = new android.content.BroadcastReceiver() {
-            @Override
-            public void onReceive(android.content.Context context, android.content.Intent intent) {
-                String action = intent.getAction();
-                if (action == null) return;
-                
-                if (android.content.Intent.ACTION_SCREEN_OFF.equals(action)) {
-                    onScreenOff();
-                } else if (android.content.Intent.ACTION_SCREEN_ON.equals(action)) {
-                    onScreenOn();
-                }
-            }
-        };
-        
-        // 注册广播接收器
-        android.content.IntentFilter filter = new android.content.IntentFilter();
-        filter.addAction(android.content.Intent.ACTION_SCREEN_OFF);
-        filter.addAction(android.content.Intent.ACTION_SCREEN_ON);
-        registerReceiver(screenStateReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
-        
-        AppLog.d(TAG, "息屏状态广播接收器已注册");
-        
-        // 初始化录制切换广播接收器（来自悬浮窗）
-        initToggleRecordingReceiver();
-    }
-    
-    /**
      * 初始化录制切换广播接收器
      * 用于接收录制悬浮按钮的录制切换指令
      */
@@ -2397,133 +2340,36 @@ public class MainActivity extends AppCompatActivity {
     
     
     /**
-     * 息屏时的处理逻辑
-     */
-    private void onScreenOff() {
-        isScreenOff = true;
-        AppLog.d(TAG, "检测到息屏");
-
-        // 熄屏录制（开发者选项，规格 §3.1）：熄屏后接着录，并拿住唤醒锁不让车机睡。手动、自动都算
-        boolean keepCameraActive = appConfig.isScreenOffRecordingEnabled();
-
-        // 正在录制，或者正在等环视接回（黑着的时候不该自己录起来，也按熄屏的规矩停）
-        if (isRecording || recordingCoordinator.isWaiting()) {
-            if (keepCameraActive) {
-                keepRecordingOffAtElapsed = android.os.SystemClock.elapsedRealtime();
-                keepRecordingOffAtUptime = android.os.SystemClock.uptimeMillis();
-                keepRecordingStops = 0;
-                // 唤醒锁由 ScreenOffRecording 自己拿：它注册了熄屏广播，主界面在不在都一样
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
-                return;
-            }
-
-            // 熄屏持续录制：停车前在录，熄屏后接着录，手动、自动都一样。
-            // 不申请唤醒、不拉住车机 —— 车机睡了录像就停在那一刻，醒来接着录；
-            // 熄屏期间断了由协调器等环视恢复再接（规格 §2.3）
-            if (appConfig.isScreenOffKeepRecording()) {
-                keepRecordingOffAtElapsed = android.os.SystemClock.elapsedRealtime();
-                keepRecordingOffAtUptime = android.os.SystemClock.uptimeMillis();
-                keepRecordingStops = 0;
-                AppLog.d(TAG, "熄屏持续录制开着，接着录");
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏时在录像：熄屏持续录制开着，接着录（不唤醒车机）");
-                return;
-            }
-
-            // 两个都没开：熄屏 10 秒停录，手动开的、自动开的一样停（项目所有者 2026-09-27）；
-            // 亮屏后接不接由协调器判（自动录制开着才接）。15 秒后退后台
-            AppLog.d(TAG, "熄屏录制、熄屏持续录制都没开，将在10秒后停止录制，15秒后退后台...");
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏时在录像：熄屏录制没生效"
-                    + (appConfig.isScreenOffRecordingStoredOn() ? "（存着是开，开发者选项没解锁）" : "")
-                    + "、熄屏持续录制关着，10 秒后停录");
-
-            screenOffStopRunnable = () -> {
-                // 再次检查是否仍然息屏 —— 问实际状态。深睡时这个计时是停住的，醒来之后才到点，
-                // 而醒来时亮屏广播不来，只看标记会以为还黑着，把刚回到车上的人的录像停掉
-                if (!reconcileScreenState("10s-stop") || !isScreenOff) {
-                    AppLog.d(TAG, "屏幕已亮起，取消停止录制");
-                    return;
-                }
-
-                // 没在录、也没在等：不用停
-                if (!isRecording && !recordingCoordinator.isWaiting()) {
-                    AppLog.d(TAG, "已不在录制状态，无需停止");
-                    return;
-                }
-
-                // 等的这 10 秒里用户可能把哪个熄屏开关打开了
-                if (appConfig.isScreenOffRecordingEnabled() || appConfig.isScreenOffKeepRecording()) {
-                    AppLog.d(TAG, "熄屏录制已被启用，继续录制");
-                    return;
-                }
-
-                AppLog.d(TAG, "息屏已持续10秒，自动停止录制");
-                recordingCoordinator.stop(RecordingStops.Reason.SCREEN_OFF);
-            };
-
-            screenStateHandler.postDelayed(screenOffStopRunnable, SCREEN_OFF_DELAY_MS);
-
-            // 同时安排15秒后退后台（与停止录制任务并行）
-            scheduleBackgroundTask();
-        } else {
-            // 未在录制
-            if (keepCameraActive) {
-                // 开启了自动录制+息屏录制，保持前台（以便亮屏后可以立即录制）
-                AppLog.d(TAG, "息屏录制模式，保持相机活跃");
-                return;
-            }
-            
-            // 其他情况：15秒后退后台，释放相机资源
-            AppLog.d(TAG, "未在录制，将在15秒后退到后台释放相机资源...");
-            scheduleBackgroundTask();
-        }
-    }
-    
-    /** 亮屏时，熄屏持续录制那一段的结果记一行：熄屏多久、其中车机睡了多久、录像是不是一直在录。 */
-    private void noteKeepRecordingStretch() {
-        if (keepRecordingOffAtElapsed <= 0) {
-            return;
-        }
-        long offMs = android.os.SystemClock.elapsedRealtime() - keepRecordingOffAtElapsed;
-        long awakeMs = android.os.SystemClock.uptimeMillis() - keepRecordingOffAtUptime;
-        keepRecordingOffAtElapsed = 0;
-        keepRecordingOffAtUptime = 0;
-        int stops = keepRecordingStops;
-        keepRecordingStops = 0;
-        com.kooo.evcam.blackbox.BlackBox.noteImportant("亮屏：熄屏持续录制这一段结束。熄屏 "
-                + offMs / 1000 + " 秒，其中车机睡了 " + Math.max(0L, offMs - awakeMs) / 1000
-                + " 秒；录像" + (stops == 0 && isRecording ? "一直在录"
-                        : "中途停过 " + stops + " 次（原因见上面的「录像停止原因」），现在"
-                        + (isRecording ? "在录" : "没在录")));
-    }
-
-    /**
-     * 安排息屏后退到后台的任务
+     * 熄屏 15 秒后退到后台 —— 主界面在熄屏这件事上唯一自己管的一步。
+     *
+     * <p>唤醒锁、录像（10 秒停 / 接着录）、1.5 秒没人要就关相机、亮屏接回因熄屏退下去的界面，
+     * 都在 {@link com.kooo.evcam.screen.ScreenState} 里按固定顺序做完了，这里不再有自己的一份。
+     * 到点先问一遍屏幕是不是真的还黑着：深睡时这个计时是停住的，醒来之后才到点，
+     * 而醒来时亮屏广播不来，只信旧标记就会把刚回到车上的人的界面退下去。
+     * 录像还在（或还在等环视接回）、熄屏录制生效，就留在前台。</p>
      */
     private void scheduleBackgroundTask() {
-        // 取消可能存在的退后台任务
-        if (screenOffBackgroundRunnable != null) {
-            screenStateHandler.removeCallbacks(screenOffBackgroundRunnable);
-        }
-        
+        cancelBackgroundTask();
+
         screenOffBackgroundRunnable = () -> {
-            // 再次检查是否仍然息屏 —— 问实际状态：深睡醒来后亮屏广播不来，标记是旧的
-            if (!reconcileScreenState("15s-background") || !isScreenOff) {
+            screenOffBackgroundRunnable = null;
+            if (!com.kooo.evcam.screen.ScreenState.refresh()) {
                 AppLog.d(TAG, "屏幕已亮起，取消退后台");
                 return;
             }
-            
-            // 如果正在录制，不退后台
-            if (isRecording) {
-                AppLog.d(TAG, "正在录制中，不退后台");
+
+            // 正在录制、或在等环视接回：不退后台
+            if (isRecording || recordingCoordinator.isWaiting()) {
+                AppLog.d(TAG, "正在录制中（或在等环视接回），不退后台");
                 return;
             }
-            
+
             // 熄屏录制开着，不退后台
             if (appConfig.isScreenOffRecordingEnabled()) {
                 AppLog.d(TAG, "息屏录制模式已启用，不退后台");
                 return;
             }
-            
+
             // 以前这里直接关相机，不看后视镜也不看悬浮窗 —— 于是开着后视镜时
             // 关掉两秒后又被它的看门狗打开，每次熄屏白做一遍。现在问同一张登记表
             com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
@@ -2536,93 +2382,32 @@ public class MainActivity extends AppCompatActivity {
 
             AppLog.d(TAG, "息屏已持续15秒，退到后台释放相机资源");
 
-            // 留个记号：是我们自己因为熄屏退下去的。亮屏时据此把界面接回来 ——
+            // 留个记号：是我们自己因为熄屏退下去的。亮屏时 Recovery 据此把界面接回来 ——
             // 在这之前只退不回，人上车看到的是车机桌面，得自己再点一次图标
             appConfig.setUiLeftForScreenOff(true);
-            
+
             // 关闭摄像头释放资源
             if (cameraManager != null) {
                 cameraManager.closeAllCameras("screen off 15s");
                 AppLog.d(TAG, "已让所有摄像头去关");
             }
-            
+
             // 退到后台
             moveTaskToBack(true);
-            
-            runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, R.string.msg_screen_off_background, Toast.LENGTH_SHORT).show();
-            });
+
+            Toast.makeText(MainActivity.this, R.string.msg_screen_off_background, Toast.LENGTH_SHORT).show();
         };
-        
+
         screenStateHandler.postDelayed(screenOffBackgroundRunnable, SCREEN_OFF_BACKGROUND_DELAY_MS);
-
-        // 相机不等那 15 秒：车机熄屏没几秒就深睡，晚一步就是开着相机睡过去
-        screenOffCameraRunnable = () -> {
-            if (!reconcileScreenState("1.5s-camera") || !isScreenOff || isRecording) {
-                return;
-            }
-            if (appConfig.isScreenOffRecordingEnabled()) {
-                return;
-            }
-            com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
-            if (needs.heldByAnyone()) {
-                AppLog.d(TAG, "熄屏，但相机还有人要: " + needs.describe() + "，等退后台那一步再说");
-                return;
-            }
-            if (cameraManager != null) {
-                // 关是相机线程去做的，这里不等；每一路关完时各自记一行「相机 X 已关」，带用时 ——
-                // 深睡前到底关没关好，看那几行
-                cameraManager.closeAllCameras("screen off");
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：让相机去关（深睡前）");
-                AppLog.i(TAG, "熄屏，没人要相机，先关掉 —— 别开着相机睡过去");
-            }
-        };
-        screenStateHandler.postDelayed(screenOffCameraRunnable, SCREEN_OFF_CAMERA_DELAY_MS);
     }
-    
-    /**
-     * 亮屏时的处理逻辑
-     */
-    private void onScreenOn() {
-        isScreenOff = false;
-        AppLog.d(TAG, "检测到亮屏");
-        noteKeepRecordingStretch();
-        
-        // 取消可能存在的息屏停止录制任务
-        if (screenOffStopRunnable != null) {
-            screenStateHandler.removeCallbacks(screenOffStopRunnable);
-            screenOffStopRunnable = null;
-        }
 
-        // 取消可能存在的退后台任务
+    private void cancelBackgroundTask() {
         if (screenOffBackgroundRunnable != null) {
             screenStateHandler.removeCallbacks(screenOffBackgroundRunnable);
             screenOffBackgroundRunnable = null;
-            AppLog.d(TAG, "亮屏，取消退后台任务");
         }
-        if (screenOffCameraRunnable != null) {
-            screenStateHandler.removeCallbacks(screenOffCameraRunnable);
-            screenOffCameraRunnable = null;
-        }
-
-        // 因为熄屏自己退下去的，亮屏就自己回来。界面已经被系统收走的那种情况
-        // 由 KeepAliveReceiver 接手（那时候这里根本不会被调用）
-        if (appConfig.didUiLeaveForScreenOff()) {
-            appConfig.setUiLeftForScreenOff(false);
-            AppLog.i(TAG, "亮屏，把因熄屏退下去的主界面接回前台");
-            try {
-                Intent back = new Intent(this, MainActivity.class);
-                back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-                startActivity(back);
-            } catch (Exception e) {
-                AppLog.w(TAG, "接回前台失败: " + e);
-            }
-        }
-
-        // 因熄屏停下来的录像接不接回：自动录制开着就接，由协调器判，相机它自己会开
-        recordingCoordinator.screenOn();
     }
+
     /**
      * 切换录制状态（开始/停止）
      */
@@ -2737,9 +2522,6 @@ public class MainActivity extends AppCompatActivity {
             stopRecordingTimer();
             // 状态条上「录像改写到别的盘」那句随这次录像结束
             updateStatusLine();
-            if (keepRecordingOffAtElapsed > 0) {
-                keepRecordingStops++;
-            }
 
             // 为什么停的、接不接，协调器已经定了；这里只按它说的提示
             String text;
@@ -2778,10 +2560,9 @@ public class MainActivity extends AppCompatActivity {
             // 相机被别的程序拿走、正在等它放开：状态条上说一声
             showCameraTakenHint(reason == RecordingStops.Reason.CAMERA_LOST && willResume);
 
-            // 熄屏期间停下来的（熄屏持续录制录不下去了，或者别的原因）：照熄屏的规矩放开相机、
-            // 退后台，别开着相机睡过去；亮屏再接回。熄屏 10 秒停录那一条在熄屏时已经安排过了
-            if (reason != RecordingStops.Reason.SCREEN_OFF
-                    && isScreenOff && reconcileScreenState("recording-stopped")) {
+            // 熄屏期间停下来的（熄屏持续录制录不下去了，或者别的原因）：照熄屏的规矩退后台、
+            // 放开相机，别开着相机睡过去；亮屏再接回。熄屏 10 秒停录那一条协调器在熄屏时已经安排过了
+            if (reason != RecordingStops.Reason.SCREEN_OFF && com.kooo.evcam.screen.ScreenState.refresh()) {
                 scheduleBackgroundTask();
             }
         }
@@ -3086,8 +2867,8 @@ public class MainActivity extends AppCompatActivity {
         
         AppLog.d(TAG, "onResume called, wasInBackground=" + wasInBackground + ", isRecording=" + isRecording);
         
-        // 人已经在界面上了，屏幕一定亮着。熄屏标记还挂着就说明亮屏广播没来，补跑一次
-        reconcileScreenState("onResume");
+        // 人已经在界面上了，屏幕一定亮着。ScreenState 记的还是黑着就说明亮屏广播没来，让它补跑一次亮屏
+        com.kooo.evcam.screen.ScreenState.refresh();
 
         // 人已经在界面上了，「因熄屏退下去」这个记号就作废 —— 不管是自己接回来的，
         // 还是用户自己点回来的
@@ -3192,16 +2973,6 @@ public class MainActivity extends AppCompatActivity {
         // 协调器是进程级的，录像和它的等待都不随这个界面走；只把画面反馈摘掉
         recordingCoordinator.removeListener(recordingListener);
 
-        // 清理息屏录制相关资源
-        if (screenStateReceiver != null) {
-            try {
-                unregisterReceiver(screenStateReceiver);
-            } catch (Exception e) {
-                AppLog.w(TAG, "注销息屏广播接收器时出错: " + e.getMessage());
-            }
-            screenStateReceiver = null;
-        }
-        
         // 清理录制切换广播接收器
         if (toggleRecordingReceiver != null) {
             try {
@@ -3211,14 +2982,9 @@ public class MainActivity extends AppCompatActivity {
             }
             toggleRecordingReceiver = null;
         }
-        if (screenStateHandler != null) {
-            if (screenOffStopRunnable != null) {
-                screenStateHandler.removeCallbacks(screenOffStopRunnable);
-            }
-            if (screenOffBackgroundRunnable != null) {
-                screenStateHandler.removeCallbacks(screenOffBackgroundRunnable);
-            }
-        }
+        // 熄屏退后台的那一步：界面都没了，不用退
+        com.kooo.evcam.screen.ScreenState.removeListener(screenListener);
+        cancelBackgroundTask();
 
         // 前台服务：录制还在继续就不能停 —— 没有它，系统会在后台把录制掐掉
         if (!keepPipeline) {

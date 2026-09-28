@@ -188,8 +188,6 @@ public class CameraForegroundService extends Service {
                 lastBeatScreenOn = screenOn;
                 lastBeatAtMs = now;
             }
-            // 熄屏录制拿着的锁，屏幕其实亮了就该放（亮屏广播漏了也不至于一直拿着）
-            com.kooo.evcam.recording.ScreenOffRecording.checkScreenOn(CameraForegroundService.this);
             com.kooo.evcam.blackbox.BlackBox.flushCountsIfDue();
             blackBoxHandler.postDelayed(this, BLACK_BOX_TICK_MS);
         }

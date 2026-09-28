@@ -1,13 +1,8 @@
 package com.kooo.evcam.recording;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.os.SystemClock;
 
 import com.kooo.evcam.AppConfig;
@@ -29,8 +24,8 @@ import com.kooo.evcam.camera.MultiCameraManager;
  *   <li>最长拿多久由用户设，<b>从熄屏那一刻起算</b>（App 拿不到「下车」这个事件，熄屏是最接近的近似）；
  *       到点放开，车机该睡就睡，录像停在那一刻，醒来接着录（同 §2.4）；</li>
  *   <li>屏幕已经黑着时才开始的录像（熄屏期间接回的那种）同样拿，剩余时长从熄屏那一刻算；</li>
- *   <li>活在进程上，不靠主界面：熄屏 / 亮屏广播只能动态注册，这里自己注册一份，
- *       主界面在不在都一样；前台服务每分钟再核对一次屏幕状态。</li>
+ *   <li>活在进程上，不靠主界面：熄屏、亮屏由 {@code ScreenState}（进程里唯一的屏幕状态源）告诉这里，
+ *       主界面在不在都一样。</li>
  * </ul>
  */
 public final class ScreenOffRecording {
@@ -38,7 +33,6 @@ public final class ScreenOffRecording {
     private static final String TAG = "ScreenOffRecording";
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
 
-    private static boolean installed;
     private static Runnable timeout;
     /** 屏幕什么时候黑的（开机起算，含深睡）；0 = 亮着或不知道。 */
     private static long screenOffAtMs;
@@ -46,34 +40,6 @@ public final class ScreenOffRecording {
     private static int heldForMinutes;
 
     private ScreenOffRecording() {
-    }
-
-    /** 进程一起来就装上：熄屏、亮屏广播只能动态注册，而主界面可能不在。 */
-    public static synchronized void install(Context context) {
-        if (installed) {
-            return;
-        }
-        installed = true;
-        Context app = context.getApplicationContext();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent intent) {
-                String action = intent == null ? null : intent.getAction();
-                if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                    onScreenOff(c);
-                } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
-                    onScreenOn();
-                }
-            }
-        };
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            app.registerReceiver(receiver, filter);
-        }
     }
 
     /** 熄屏了：记下时刻；正在录像、熄屏录制开着，就拿锁。 */
@@ -84,7 +50,7 @@ public final class ScreenOffRecording {
 
     /** 录像开始了。屏幕可能早就黑着（熄屏期间接回的那种），那也要拿。 */
     public static void onRecordingStarted(Context context) {
-        if (!screenDark(context)) {
+        if (!com.kooo.evcam.screen.ScreenState.dark()) {
             return;
         }
         if (screenOffAtMs == 0) {
@@ -98,14 +64,6 @@ public final class ScreenOffRecording {
     public static void onScreenOn() {
         screenOffAtMs = 0;
         release("screen-on");
-    }
-
-    /** 前台服务每分钟问一次：锁还拿着、屏幕其实亮着，就放。亮屏广播漏了也不会一直拿着。 */
-    public static void checkScreenOn(Context context) {
-        if (WakeUpHelper.isPersistentWakeLockHeld() && !screenDark(context)) {
-            screenOffAtMs = 0;
-            release("screen-on-noticed");
-        }
     }
 
     /** 该拿就拿、到点就放。幂等，多调无害。 */
@@ -166,8 +124,4 @@ public final class ScreenOffRecording {
         }
     }
 
-    private static boolean screenDark(Context context) {
-        PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        return power != null && !power.isInteractive();
-    }
 }

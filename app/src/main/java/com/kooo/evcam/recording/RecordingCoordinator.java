@@ -105,6 +105,14 @@ public final class RecordingCoordinator {
     private RecordingStops.Reason lastStopReason;
     private long startedAtMs;
 
+    /** 熄屏持续录制关着时，熄屏后多久停录 —— 唯一的一个缓冲（项目所有者 2026-09-27）。 */
+    static final long SCREEN_OFF_STOP_MS = 10_000L;
+    private Runnable screenOffStop;
+    /** 熄屏那一刻在录（含等接回）：熄屏时刻（含深睡 / 不含深睡）和中途停过几次，亮屏时汇总一行。 */
+    private long darkSinceElapsedMs;
+    private long darkSinceUptimeMs;
+    private int stopsWhileDark;
+
     private RecordingCoordinator(Context context) {
         this.context = context.getApplicationContext();
         this.appConfig = new AppConfig(this.context);
@@ -231,9 +239,74 @@ public final class RecordingCoordinator {
     };
 
     /**
-     * 亮屏了：因熄屏停下来的录像，自动录制开着就接回（项目所有者 2026-09-27）。
+     * 熄屏了（ScreenState 在主线程调）。规矩只有一条（项目所有者 2026-09-27）：
+     * 「熄屏录制」（开发者，拿唤醒锁）或「熄屏持续录制」开着就接着录；两个都没开，熄屏 10 秒后停，
+     * 手动开的、自动开的一样停。
+     */
+    public void screenOff() {
+        cancelScreenOffStop();
+        if (!isRecording() && pending == null) {
+            return;
+        }
+        darkSinceElapsedMs = android.os.SystemClock.elapsedRealtime();
+        darkSinceUptimeMs = android.os.SystemClock.uptimeMillis();
+        stopsWhileDark = 0;
+        if (appConfig.isScreenOffRecordingEnabled()) {
+            // 唤醒锁由 ScreenOffRecording 拿
+            BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
+            return;
+        }
+        if (appConfig.isScreenOffKeepRecording()) {
+            // 不申请唤醒、不拉住车机 —— 车机睡了录像就停在那一刻，醒来接着录；熄屏期间断了照样等环视接回
+            BlackBox.noteImportant("熄屏时在录像：熄屏持续录制开着，接着录（不唤醒车机）");
+            return;
+        }
+        BlackBox.noteImportant("熄屏时在录像：熄屏录制没生效"
+                + (appConfig.isScreenOffRecordingStoredOn() ? "（存着是开，开发者选项没解锁）" : "")
+                + "、熄屏持续录制关着，" + (SCREEN_OFF_STOP_MS / 1000) + " 秒后停录");
+        screenOffStop = () -> {
+            screenOffStop = null;
+            // 到点再看一眼：屏幕其实亮了、录像早停了、等的这几秒里开关被打开了 —— 都不停
+            if (!com.kooo.evcam.screen.ScreenState.refresh()) {
+                return;
+            }
+            if (!isRecording() && pending == null) {
+                return;
+            }
+            if (appConfig.isScreenOffRecordingEnabled() || appConfig.isScreenOffKeepRecording()) {
+                return;
+            }
+            BlackBox.noteImportant("熄屏已 " + (SCREEN_OFF_STOP_MS / 1000) + " 秒，停录");
+            stop(RecordingStops.Reason.SCREEN_OFF);
+        };
+        main.postDelayed(screenOffStop, SCREEN_OFF_STOP_MS);
+    }
+
+    private void cancelScreenOffStop() {
+        if (screenOffStop != null) {
+            main.removeCallbacks(screenOffStop);
+            screenOffStop = null;
+        }
+    }
+
+    /**
+     * 亮屏了（ScreenState 在主线程调）：熄屏那一段的结果记一行；
+     * 因熄屏停下来的录像，自动录制开着就接回（项目所有者 2026-09-27）。
      */
     public void screenOn() {
+        cancelScreenOffStop();
+        if (darkSinceElapsedMs > 0) {
+            long offMs = android.os.SystemClock.elapsedRealtime() - darkSinceElapsedMs;
+            long awakeMs = android.os.SystemClock.uptimeMillis() - darkSinceUptimeMs;
+            int stops = stopsWhileDark;
+            darkSinceElapsedMs = 0;
+            darkSinceUptimeMs = 0;
+            stopsWhileDark = 0;
+            BlackBox.noteImportant("亮屏：熄屏这一段结束。熄屏 " + offMs / 1000 + " 秒，其中车机睡了 "
+                    + Math.max(0L, offMs - awakeMs) / 1000 + " 秒；录像"
+                    + (stops == 0 && isRecording() ? "一直在录"
+                    : "中途停过 " + stops + " 次（原因见上面的「录像停止原因」），现在" + (isRecording() ? "在录" : "没在录")));
+        }
         if (isRecording() || pending != null) {
             return;
         }
@@ -369,6 +442,9 @@ public final class RecordingCoordinator {
         long lasted = startedAtMs > 0 ? android.os.SystemClock.elapsedRealtime() - startedAtMs : 0;
         startedAtMs = 0;
         lastStopReason = reason;
+        if (darkSinceElapsedMs > 0) {
+            stopsWhileDark++;
+        }
         budget.noteRecordingLasted(lasted);
         BlackBox.noteImportant("录像停止原因: " + reason + "，这一段录了 " + (lasted / 1000) + " 秒");
         AppLog.d(TAG, "录制已停止（" + reason + "），前台服务已关闭");
@@ -376,6 +452,10 @@ public final class RecordingCoordinator {
         boolean willResume = resumeAfter(reason);
         if (!willResume && pending == null) {
             CameraNeeds.current().release(CameraNeeds.Holder.RECORDING);
+            // 黑着的时候录像停了：没人要相机就关掉，别开着相机睡过去（主界面不在时没别人做这一步）
+            if (com.kooo.evcam.screen.ScreenState.dark()) {
+                com.kooo.evcam.screen.ScreenState.releaseCamerasIfNobodyNeeds();
+            }
         }
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingStopped(reason, lasted, willResume);

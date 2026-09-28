@@ -7,6 +7,24 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.63.0-alpha] - 2026-09-28
+
+- **One source of screen state.** Screen-off comes from the broadcast; while the screen is
+  dark the app asks the system every two seconds whether it is lit again, which stands in for
+  the screen-on broadcast that never arrives after deep sleep. Everything reacts in one fixed
+  order: the screen-off wake lock, the recording rule (stop after 10 s when "keep recording
+  when the screen is off" is off; on screen-on decide whether to resume), closing the cameras
+  1.5 s after screen-off when nobody needs them, bringing the main screen back after
+  screen-on if it had retreated because of screen-off, then the main screen's own 15-second
+  retreat and the super mirror's unbind/rebind. Removed: the main screen's, the mirror
+  service's and the wake-lock code's separate receivers and flags, the five "ask the system
+  again" corrections, the foreground service's minute check of the screen, and the
+  keep-alive receiver's own copy of "bring the main screen back". Screen-on also runs the
+  normal restore (overlays, recording) as before. Sixth step of the consolidation plan,
+  part one.
+- After a recording stops while the screen is dark, the cameras are closed if nobody needs
+  them, also when the main screen is not showing.
+
 ## [1.62.0-alpha] - 2026-09-28
 
 - **One judge of whether a camera is alive.** The frame-age watchdog (8 s without progress,

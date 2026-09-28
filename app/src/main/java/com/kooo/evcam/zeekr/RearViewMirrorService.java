@@ -128,75 +128,47 @@ public class RearViewMirrorService extends Service {
     }
 
     /**
-     * 屏幕是不是黑着。黑着就不占相机 —— 这一条是<b>实测拿到的</b>：
+     * 屏幕黑着就不占相机 —— 这一条是<b>实测拿到的</b>：
      *
      * <p>熄屏两秒后这个窗口就已经在显示「点击恢复」，因为屏幕黑了本来就没有帧可看；
-     * 但它对相机的那一份登记还在，于是主界面那个「熄屏 15 秒关相机」的任务只能报告
+     * 但它对相机的那一份登记还在，于是「熄屏后没人要就关相机」那一步只能报告
      * 「相机还有人要: MIRROR，不关」。相机就这样开着进了深睡。等十几分钟后车机醒来，
      * 会话已经是上一世的：关它的那次调用卡在 binder 里一秒多，紧接着
      * DISCONNECTED（日志里的 error -4 是基座自定义码，不是资源耗尽），最后靠看门狗重开，花了 9.4 秒。
      * 运气差的那次，是连重开都失败，只能重启车机。</p>
      *
-     * <p>所以现在熄屏就放手：看不见的画面不值得占着相机睡过去。亮屏再接回来。</p>
+     * <p>所以熄屏就放手：看不见的画面不值得占着相机睡过去。亮屏再接回来。
+     * 后视镜在 {@link #unbindCamera} 里注销自己那一份登记，{@link com.kooo.evcam.screen.ScreenState}
+     * 熄屏 1.5 秒后「没人要就关相机」那条规矩才成立。</p>
      *
-     * <h3>但「亮屏」这个广播靠不住（1.27.0 修的回归）</h3>
+     * <h3>屏幕亮没亮，只问 ScreenState</h3>
      *
      * <p>2026-09-24 那份黑匣子：四次熄屏都有「熄屏：后视镜放开相机」，四次醒来
-     * <b>一次「亮屏：后视镜重新接相机」都没有</b> —— 而每次醒来三十秒内心跳就写着
-     * {@code screenOn=true}。也就是说车机深睡醒来后，{@code ACTION_SCREEN_ON}
-     * 根本不送到这里。</p>
+     * <b>一次「亮屏：后视镜重新接相机」都没有</b> —— 车机深睡醒来后，{@code ACTION_SCREEN_ON}
+     * 根本不送到这里。1.24.0 把「屏幕黑着」记成一个标记、只等这个广播来清掉，于是标记永远清不掉：
+     * {@link #bindCamera} 一律拒绝，连用户点「点击恢复」也被拒 —— 那就是「点了没反应」（1.27.0 修）。</p>
      *
-     * <p>1.24.0 把「屏幕黑着」记成一个标记、只等这个广播来清掉，于是标记永远清不掉：
-     * {@link #bindCamera} 一律拒绝，连用户点「点击恢复」也被拒 —— 那就是「点了没反应」。
-     * 同一个点击在新进程里（标记重新从 PowerManager 读）一点就好，证实了是这个标记。</p>
-     *
-     * <p>所以这个字段现在只表示「收到过熄屏、放开过相机」；<b>该不该接相机，一律问
-     * {@link #screenIsDark()} 读实时状态</b>。看门狗两秒一次，屏幕一亮就接回来，
-     * 不管广播来不来。</p>
+     * <p>1.63.0 起这里不再自己记标记、不再自己注册广播：屏幕状态只有 ScreenState 一份，
+     * 黑着的时候它每两秒问系统一次，亮了就当收到了亮屏，按固定顺序叫到这里。</p>
      */
-    private boolean screenOff;
-
-    /**
-     * 屏幕此刻是不是黑的 —— 问系统，不信记下来的标记。
-     *
-     * <p>熄屏广播是可靠的（实测四次四次都到），亮屏广播在深睡醒来之后一次都没到。
-     * 所以「黑」可以由广播告诉我们，「亮」只能自己去看。</p>
-     */
-    private boolean screenIsDark() {
-        android.os.PowerManager power =
-                (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
-        if (power == null) {
-            return screenOff;
-        }
-        return !power.isInteractive();
-    }
-
-
-    /** 熄屏之后等多久再确认没人要相机。车机熄屏六秒就深睡，这一步不能慢。 */
-    private static final long CLOSE_AFTER_SCREEN_OFF_MS = 1500;
-
-    private final android.content.BroadcastReceiver screenWatch =
-            new android.content.BroadcastReceiver() {
+    private final com.kooo.evcam.screen.ScreenState.Listener screenListener =
+            new com.kooo.evcam.screen.ScreenState.Listener() {
                 @Override
-                public void onReceive(android.content.Context context, Intent intent) {
-                    String action = intent == null ? null : intent.getAction();
-                    if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                        screenOff = true;
-                        if (recordingHoldsCamera()) {
-                            // 正在录像：相机反正不会关，摘掉后视镜什么也省不下，
-                            // 只会多一次会话重建 —— 见 recordingHoldsCamera 的说明。录完再摘
-                            com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：正在录像，后视镜先不放开，录完再放");
-                            return;
-                        }
-                        com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：后视镜放开相机");
-                        unbindCamera();
-                        handler.postDelayed(RearViewMirrorService.this::closeCamerasIfNobodyWants,
-                                CLOSE_AFTER_SCREEN_OFF_MS);
-                    } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
-                        screenOff = false;
-                        com.kooo.evcam.blackbox.BlackBox.noteImportant("亮屏：后视镜重新接相机");
-                        rebindNow();
+                public void onScreenOff() {
+                    if (recordingHoldsCamera()) {
+                        // 正在录像：相机反正不会关，摘掉后视镜什么也省不下，
+                        // 只会多一次会话重建 —— 见 recordingHoldsCamera 的说明。录完再摘
+                        com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：正在录像，后视镜先不放开，录完再放");
+                        return;
                     }
+                    com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：后视镜放开相机");
+                    unbindCamera();
+                }
+
+                @Override
+                public void onScreenOn() {
+                    com.kooo.evcam.blackbox.BlackBox.noteImportant("亮屏：后视镜重新接相机");
+                    rebindNow();
                 }
             };
 
@@ -207,14 +179,8 @@ public class RearViewMirrorService extends Service {
         com.kooo.evcam.blackbox.BlackBox.noteImportant("后台服务 RearViewMirrorService onCreate");
         appConfig = new AppConfig(this);
         instance = this;
-        android.os.PowerManager power =
-                (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
-        screenOff = power != null && !power.isInteractive();
-        android.content.IntentFilter filter = new android.content.IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        // 和主界面那个屏幕监听用同一种注册方式（系统广播，不对外）
-        registerReceiver(screenWatch, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
+        // 熄屏摘、亮屏接：听进程里唯一那份屏幕状态（主线程回调）
+        com.kooo.evcam.screen.ScreenState.addListener(screenListener);
     }
 
     @Override
@@ -311,7 +277,7 @@ public class RearViewMirrorService extends Service {
      * 而不是一次不成就放弃 —— 那样后视镜会永远黑着。</p>
      */
     private void bindCamera(SurfaceTexture surfaceTexture) {
-        if (screenIsDark()) {
+        if (com.kooo.evcam.screen.ScreenState.dark()) {
             // 画布准备好、看门狗到点、贴边放回来 —— 通往这里的路不止一条，
             // 所以这一条守在入口，而不是守在每一个调用方
             AppLog.d(TAG, "屏幕黑着，后视镜先不接相机");
@@ -418,24 +384,18 @@ public class RearViewMirrorService extends Service {
         if (mirrorView == null || !mirrorView.isShowing()) {
             return;
         }
-        if (screenIsDark() && boundCamera != null && !recordingHoldsCamera()) {
-            // 熄屏那一刻在录像，所以没摘；现在录完了，补上
+        if (com.kooo.evcam.screen.ScreenState.dark() && boundCamera != null && !recordingHoldsCamera()) {
+            // 熄屏那一刻在录像，所以没摘；现在录完了，补上。放开之后相机就可能没人要了，
+            // 让 ScreenState 按熄屏那条规矩再确认一遍（1.5 秒后没人要就关）—— 别开着相机睡过去
             com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏中录像结束：后视镜放开相机");
             unbindCamera();
-            handler.postDelayed(this::closeCamerasIfNobodyWants, CLOSE_AFTER_SCREEN_OFF_MS);
+            com.kooo.evcam.screen.ScreenState.releaseCamerasIfNobodyNeeds();
             return;
         }
-        if (mirrorView.isDocked() || screenIsDark()) {
-            // 贴边收起、或者屏幕黑着，本来就是故意不接相机的，别把它又接回去
+        if (mirrorView.isDocked() || com.kooo.evcam.screen.ScreenState.dark()) {
+            // 贴边收起、或者屏幕黑着，本来就是故意不接相机的，别把它又接回去。
+            // 深睡醒来亮屏广播不来的那种，ScreenState 自己每两秒问一次系统，亮了会叫 onScreenOn 接回
             return;
-        }
-        if (screenOff) {
-            // 屏幕已经亮了，亮屏广播却没来 —— 深睡醒来就是这样，车机停车后自己醒那一次也是。
-            // 总原则（规格 §0）：用户开着后视镜，后视镜就该开着；停车时放开相机是特殊情况，
-            // 醒来特殊情况就结束了，回到用户设定的状态。车机自己醒的那一次同样接（§1.3 选 a）。
-            // 1.28.0 曾在开发者选项里放过一个「亮屏后自动接回相机」、默认等人点，1.34.0 删掉
-            screenOff = false;
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("亮屏但没收到广播：后视镜自己接回相机");
         }
         if (boundCamera != null && boundCamera.isCameraOpened()) {
             return;
@@ -480,10 +440,6 @@ public class RearViewMirrorService extends Service {
             unbindCamera();
             return;
         }
-        if (screenOff && !screenIsDark()) {
-            // 把贴边的窗口拉回来，也是人的动作
-            screenOff = false;
-        }
         rebindNow();
     }
 
@@ -498,10 +454,11 @@ public class RearViewMirrorService extends Service {
      *                         接不上就得说出为什么（相机被占着、还是别的）
      */
     private void rebindNow(boolean explainIfItFails) {
-        if (explainIfItFails && screenOff && !screenIsDark()) {
-            // 人点了，那就是人回来了
-            screenOff = false;
+        if (explainIfItFails && com.kooo.evcam.screen.ScreenState.dark()) {
+            // 人点了，那就是人回来了：记下来的还黑着，就是亮屏还没被察觉（黑着时它每两秒才问一次）。
+            // 让 ScreenState 现在就问 —— 真亮了它会照亮屏的顺序走一遍，其中就有这里的 onScreenOn
             com.kooo.evcam.blackbox.BlackBox.noteImportant("点了后视镜：接回相机");
+            com.kooo.evcam.screen.ScreenState.refresh();
         }
         if (mirrorView == null || !mirrorView.isShowing()) {
             return;
@@ -543,36 +500,6 @@ public class RearViewMirrorService extends Service {
         }
     }
 
-    /**
-     * 熄屏之后确认一遍：没人要相机就整个关掉。
-     *
-     * <p>主界面那边也有同样一步，但它<b>可能根本不在</b> —— 退出应用之后只剩这几个
-     * 服务，那时候没人会去关相机，于是又变成开着相机睡过去。所以这里也管一次；
-     * 两边都关是无害的，漏了才有害。</p>
-     */
-    private void closeCamerasIfNobodyWants() {
-        if (!screenIsDark()) {
-            return;
-        }
-        if (appConfig.isScreenOffRecordingEnabled()) {
-            // 熄屏录制生效时，主界面刻意让相机保持活跃（1.19.0 起就是这样），这里不能替它关。
-            // 1.24.0 加这一步时漏了这一条
-            return;
-        }
-        com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
-        if (needs.heldByAnyone()) {
-            AppLog.d(TAG, "熄屏，但相机还有人要: " + needs.describe());
-            return;
-        }
-        MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
-        if (manager != null) {
-            // 关是相机线程去做的，这里不等；每一路关完时各自记一行「相机 X 已关」，带用时
-            manager.closeAllCameras("screen off (mirror)");
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("熄屏：让相机去关（后视镜这边）");
-            AppLog.i(TAG, "熄屏且没人要相机，关掉");
-        }
-    }
-
     private void unbindCamera() {
         cancelRetry();
         com.kooo.evcam.camera.CameraNeeds.current().release(com.kooo.evcam.camera.CameraNeeds.Holder.MIRROR);
@@ -592,11 +519,7 @@ public class RearViewMirrorService extends Service {
     public void onDestroy() {
         com.kooo.evcam.blackbox.BlackBox.noteImportant("RearViewMirrorService onDestroy");
         instance = null;
-        try {
-            unregisterReceiver(screenWatch);
-        } catch (Exception e) {
-            AppLog.w(TAG, "屏幕监听取消失败: " + e);
-        }
+        com.kooo.evcam.screen.ScreenState.removeListener(screenListener);
         cancelRetry();
         cancelWatchdog();
         unbindCamera();

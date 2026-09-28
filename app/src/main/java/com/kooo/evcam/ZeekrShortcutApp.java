@@ -33,7 +33,7 @@ public class ZeekrShortcutApp extends Application {
         // U 盘挂上、卸下、异常掉线进黑匣子（2026-09-26 录像盘掉线，系统那边发生了什么一行都没记下）
         com.kooo.evcam.blackbox.VolumeEvents.register(this);
         // 熄屏录制的唤醒锁活在进程上：熄屏 / 亮屏广播在这里注册，主界面在不在都一样（规格 §3.1）
-        com.kooo.evcam.recording.ScreenOffRecording.install(this);
+        com.kooo.evcam.screen.ScreenState.install(this);
         // 「这一趟」的录像选择落盘（规格 1.2）：进程被杀又拉回来时还在；车机真正开机就清
         final android.content.SharedPreferences choices = getSharedPreferences("recording_intent", MODE_PRIVATE);
         com.kooo.evcam.recording.RecordingIntent.current().attach(new com.kooo.evcam.recording.RecordingIntent.Store() {
