@@ -127,7 +127,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
      * 辅助服务拉起前台服务，形成双重保活
      */
     private void ensureForegroundServiceRunning() {
-        if (!new AppConfig(this).isKeepAliveEnabled()) {
+        if (!new AppConfig(this).isKeepAliveEnabled() || CameraForegroundService.isRunning()) {
             return;
         }
         try {

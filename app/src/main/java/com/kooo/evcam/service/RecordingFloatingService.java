@@ -315,7 +315,8 @@ public class RecordingFloatingService extends Service {
                 showFloatingWindow();
             }
         }
-        return START_STICKY;
+        // 被杀了要不要重启：跟着「保活」开关（规格 §3）。悬浮按钮由 Recovery 按设置恢复，不用自己粘着
+        return com.kooo.evcam.CameraForegroundService.stickiness(this);
     }
 
     @Nullable

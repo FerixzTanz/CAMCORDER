@@ -207,7 +207,8 @@ public class RearViewMirrorService extends Service {
             return START_NOT_STICKY;
         }
         showMirror();
-        return START_STICKY;
+        // 被杀了要不要重启：跟着「保活」开关（规格 §3）。悬浮窗本身由 Recovery 按设置恢复，不用自己粘着
+        return com.kooo.evcam.CameraForegroundService.stickiness(this);
     }
 
     private void showMirror() {

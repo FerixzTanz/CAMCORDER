@@ -275,13 +275,17 @@ public class KeepAliveReceiver extends BroadcastReceiver {
      * @param reason 触发原因：只写进日志。通知栏上给人看的是「在后台运行」，「屏幕亮起」「电量正常」这类原因是排查用的
      */
     private void ensureServicesRunning(Context context, String reason) {
+        // 前台服务在就什么都不做：以前每分钟都去 start 一次，服务每分钟重跑 onStartCommand、重发通知
+        if (CameraForegroundService.isRunning()) {
+            return;
+        }
         // 防止短时间内重复触发
         long now = System.currentTimeMillis();
         if (now - lastTriggerTime < MIN_TRIGGER_INTERVAL) {
             return;
         }
         lastTriggerTime = now;
-        
+
         try {
             // 启动前台服务
             CameraForegroundService.start(context,
@@ -298,6 +302,9 @@ public class KeepAliveReceiver extends BroadcastReceiver {
      * @param context 上下文
      */
     private void ensureServicesRunningQuiet(Context context) {
+        if (CameraForegroundService.isRunning()) {
+            return;
+        }
         // 防止短时间内重复触发
         long now = System.currentTimeMillis();
         if (now - lastTriggerTime < MIN_TRIGGER_INTERVAL) {

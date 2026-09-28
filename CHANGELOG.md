@@ -5,6 +5,20 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.64.0-alpha] - 2026-09-28
+
+- **The foreground service lives as long as "keep alive" is on or a recording is running.**
+  Stopping a recording now only switches its notification back to "running in the
+  background" instead of stopping the service (which then restarted itself a second later,
+  flashing the notification and re-running the start-up restore). Its self-restart after
+  being killed or swiped away, the system's sticky restart, and the sticky flag of the
+  super-mirror, floating-button and background-recording services all follow the one
+  "keep alive" switch. The minute tick, the static broadcasts and the accessibility
+  heartbeat start the service only when it is actually missing (they used to restart it
+  every minute). The start-up restore runs once per service start, not twice. Sixth step
+  of the consolidation plan, part two.
 - Super mirror, button mode: the four direction buttons are gone. The window is split along
   its diagonals into four parts, top, bottom, left and right, which switch to the front, rear,
   left and right camera. Nothing is drawn on them and a tap works at any time, with no need
