@@ -40,7 +40,7 @@
     <string name="set_rearview_button_mode_title">Button mode</string>
     <string name="set_rearview_button_mode_summary">The window is split along its diagonals into four parts: tap the top, bottom, left or right part to switch to the front, rear, left or right camera, instead of swiping the middle</string>
     <string name="set_rearview_front_rear_title">Front and rear only</string>
-    <string name="set_rearview_front_rear_summary">Swiping switches between rear and front only</string>
+    <string name="set_rearview_front_rear_summary">Switch between rear and front only, skipping the sides. In button mode the window is split into a top half for front and a bottom half for rear</string>
     <string name="set_rearview_fisheye_title">Fisheye correction</string>
     <string name="set_rearview_fisheye_summary">Corrects barrel distortion on screen; recordings are unchanged. The picture is slightly softer</string>
     <string name="set_rearview_fov_title">Field of view</string>

@@ -11,6 +11,8 @@ Notable changes only, newest first. Each version's section becomes the body of i
   to bring buttons up first; the tapped part flashes brand orange at 50% as confirmation.
   Dragging, swiping up and down for framing and pinching work as before. The window no
   longer has a larger minimum size in this mode.
+  With "Front and rear only" on, the window is split into a top half (front) and a bottom
+  half (rear) instead, so that setting applies to tapping as it does to swiping.
 
 ## [1.63.0-alpha] - 2026-09-28
 

@@ -143,13 +143,15 @@ public class RearViewMirrorView extends ViewGroup {
     private boolean frozen;
     /** 贴边收起：那一条窄边上不画画面，只写名字。 */
     private boolean docked;
-    /** 按键模式：左右划换路换成点四块三角（{@link LaneTapZones}）。 */
+    /** 按键模式：左右划换路换成点窗口的几块（{@link LaneTapZones}）。 */
     private boolean buttonMode;
     /** 抬手的位置，按键模式判断点在哪一块；被系统收回的手势是 NaN，不算点。 */
     private float tapX = Float.NaN;
     private float tapY = Float.NaN;
-    /** 正在闪的是哪一路那块三角；-1 表示没在闪。 */
+    /** 正在闪的是哪一路那一块；-1 表示没在闪。 */
     private int flashLane = -1;
+    /** 闪的那一块按哪种切法画：点下去那一刻的，免得闪到一半设置变了、形状跟着跳。 */
+    private boolean flashFrontRearOnly;
     /** 闪光还剩多亮，1 → 0。 */
     private float flashLevel;
     private ValueAnimator flashAnimator;
@@ -379,7 +381,7 @@ public class RearViewMirrorView extends ViewGroup {
      * 直接切到某一路（按键模式用）。
      *
      * <p>不走 {@link LaneCycle} 那个环：点哪一块是点名要哪一路，不是「往下一个」。
-     * 「只显示前后视」也不拦它 —— 那个设置管的是划动那个环，而点那四块是明确的指名。</p>
+     * 「只显示前后视」时窗口只分上下两半（{@link LaneTapZones}），点不出侧视。</p>
      */
     private void selectLane(int lane) {
         if (lane == laneIndex) {
@@ -514,17 +516,18 @@ public class RearViewMirrorView extends ViewGroup {
     }
 
     /**
-     * 按键模式点中的那块三角闪一下：极氪橙，最亮时一半透明，随后淡掉。
+     * 按键模式点中的那一块闪一下：极氪橙，最亮时一半透明，随后淡掉。
      *
-     * <p>这是「已经切过去了」的回执。平时四块什么都不画 —— 没有字、没有边框，
+     * <p>这是「已经切过去了」的回执。平时那几块什么都不画 —— 没有字、没有边框，
      * 画面本身就是按钮。画在镜像之外：左边那块永远是左。</p>
      */
     private void drawTapFlash(Canvas canvas, int width, int height) {
-        float[] t = LaneTapZones.triangle(flashLane, width, height);
+        float[] points = LaneTapZones.outline(flashLane, width, height, flashFrontRearOnly);
         flashPath.rewind();
-        flashPath.moveTo(t[0], t[1]);
-        flashPath.lineTo(t[2], t[3]);
-        flashPath.lineTo(t[4], t[5]);
+        flashPath.moveTo(points[0], points[1]);
+        for (int i = 2; i < points.length; i += 2) {
+            flashPath.lineTo(points[i], points[i + 1]);
+        }
         flashPath.close();
         scrimPaint.setColor(androidx.core.content.ContextCompat.getColor(
                 getContext(), R.color.energy));
@@ -532,9 +535,10 @@ public class RearViewMirrorView extends ViewGroup {
         canvas.drawPath(flashPath, scrimPaint);
     }
 
-    private void startTapFlash(int lane) {
+    private void startTapFlash(int lane, boolean frontRearOnly) {
         cancelTapFlash();
         flashLane = lane;
+        flashFrontRearOnly = frontRearOnly;
         flashAnimator = ValueAnimator.ofFloat(1f, 0f);
         flashAnimator.setDuration(TAP_FLASH_MS);
         // 先亮着停一下再淡：一上来就开始褪，余光里几乎看不到
@@ -782,12 +786,14 @@ public class RearViewMirrorView extends ViewGroup {
                     AppLog.i(TAG, "点了停住的后视镜，重新接相机");
                     resumeAction.run();
                 } else if (buttonMode && !pinchedThisGesture && !Float.isNaN(tapX)) {
-                    // 按键模式：点哪一块三角就切到哪一路，随时点随时生效，不用先唤出什么。
-                    // 拖窗口、上下划取景、双指缩放都不是点，走不到这里
-                    int lane = LaneTapZones.laneAt(tapX, tapY, getWidth(), getHeight());
+                    // 按键模式：点哪一块就切到哪一路，随时点随时生效，不用先唤出什么。
+                    // 「只显示前后视」时只分上下两半。拖窗口、上下划取景、双指缩放都不是点，走不到这里
+                    boolean frontRearOnly = appConfig.isRearViewFrontRearOnly();
+                    int lane = LaneTapZones.laneAt(
+                            tapX, tapY, getWidth(), getHeight(), frontRearOnly);
                     if (lane >= 0) {
                         selectLane(lane);
-                        startTapFlash(lane);
+                        startTapFlash(lane, frontRearOnly);
                     }
                 }
             }

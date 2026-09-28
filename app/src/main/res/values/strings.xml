@@ -54,7 +54,7 @@
     <string name="set_rearview_button_mode_title">按键模式</string>
     <string name="set_rearview_button_mode_summary">窗口按对角线分成四块，点上、下、左、右那一块就切到前、后、左、右那一路，代替中间的左右划</string>
     <string name="set_rearview_front_rear_title">只显示前后视</string>
-    <string name="set_rearview_front_rear_summary">左右滑动仅在后视与前视之间切换，不经过两侧</string>
+    <string name="set_rearview_front_rear_summary">只在后视与前视之间切换，不经过两侧。按键模式下窗口只分上下两半：上前、下后</string>
     <string name="set_rearview_fisheye_title">鱼眼校正</string>
     <string name="set_rearview_fisheye_summary">校正鱼眼镜头的桶形畸变。仅影响显示，录制的原始画面不变。校正会放大画面中心，清晰度略低于不校正时</string>
     <string name="set_rearview_fov_title">视野角度</string>
