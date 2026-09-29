@@ -20,11 +20,12 @@ public final class VehicleState {
     public static final int TURN_LEFT = 1;
     public static final int TURN_RIGHT = 2;
 
-    /** 车门 / 座椅的位掩码：位 0 左前、位 1 右前、位 2 左后、位 3 右后。 */
+    /** 车门 / 座椅的位掩码：位 0 左前、位 1 右前、位 2 左后、位 3 右后、位 4 后排中间（只有座椅有）。 */
     public static final int FRONT_LEFT = 1;
     public static final int FRONT_RIGHT = 1 << 1;
     public static final int REAR_LEFT = 1 << 2;
     public static final int REAR_RIGHT = 1 << 3;
+    public static final int REAR_CENTER = 1 << 4;
 
     /** 每发布一份就 +1，画的人据此知道要不要重画。 */
     public final long version;
@@ -45,6 +46,15 @@ public final class VehicleState {
     public final Boolean laneCentering;
     /** 原厂 360 画面此刻显示着（倒车时车机自己的环视；它开着时占着相机）。 */
     public final Boolean stockSurroundShown;
+    /** 驾驶员手在方向盘上（车上还没找到读数，先留着位置）。 */
+    public final Boolean handsOnWheel;
+    /** 六项安全辅助的开关：自动紧急制动、前碰预警、车道偏离预警、车道保持、盲区辅助、后碰预警。 */
+    public final Boolean aeb;
+    public final Boolean forwardCollisionWarning;
+    public final Boolean laneDepartureWarning;
+    public final Boolean laneKeepingAid;
+    public final Boolean blindSpotAssist;
+    public final Boolean rearCollisionWarning;
     /** 开着的门（位掩码）。 */
     public final Integer doorsOpen;
     /** 没系安全带的座位（位掩码）。 */
@@ -70,6 +80,13 @@ public final class VehicleState {
         this.adaptiveCruise = b.adaptiveCruise;
         this.laneCentering = b.laneCentering;
         this.stockSurroundShown = b.stockSurroundShown;
+        this.handsOnWheel = b.handsOnWheel;
+        this.aeb = b.aeb;
+        this.forwardCollisionWarning = b.forwardCollisionWarning;
+        this.laneDepartureWarning = b.laneDepartureWarning;
+        this.laneKeepingAid = b.laneKeepingAid;
+        this.blindSpotAssist = b.blindSpotAssist;
+        this.rearCollisionWarning = b.rearCollisionWarning;
         this.doorsOpen = b.doorsOpen;
         this.beltsUnbuckled = b.beltsUnbuckled;
         this.daytimeRunningLights = b.daytimeRunningLights;
@@ -95,7 +112,9 @@ public final class VehicleState {
     public int knownCount() {
         int n = 0;
         Object[] all = {turnSignal, hazard, steeringDegrees, gear, throttle, brake, speedKmh,
-                autoHold, adaptiveCruise, laneCentering, stockSurroundShown, doorsOpen, beltsUnbuckled,
+                autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
+                aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
+                rearCollisionWarning, doorsOpen, beltsUnbuckled,
                 daytimeRunningLights, lowBeam, highBeam, fogLights, odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
@@ -118,6 +137,13 @@ public final class VehicleState {
         private Boolean adaptiveCruise;
         private Boolean laneCentering;
         private Boolean stockSurroundShown;
+        private Boolean handsOnWheel;
+        private Boolean aeb;
+        private Boolean forwardCollisionWarning;
+        private Boolean laneDepartureWarning;
+        private Boolean laneKeepingAid;
+        private Boolean blindSpotAssist;
+        private Boolean rearCollisionWarning;
         private Integer doorsOpen;
         private Integer beltsUnbuckled;
         private Boolean daytimeRunningLights;
@@ -144,6 +170,13 @@ public final class VehicleState {
             adaptiveCruise = s.adaptiveCruise;
             laneCentering = s.laneCentering;
             stockSurroundShown = s.stockSurroundShown;
+            handsOnWheel = s.handsOnWheel;
+            aeb = s.aeb;
+            forwardCollisionWarning = s.forwardCollisionWarning;
+            laneDepartureWarning = s.laneDepartureWarning;
+            laneKeepingAid = s.laneKeepingAid;
+            blindSpotAssist = s.blindSpotAssist;
+            rearCollisionWarning = s.rearCollisionWarning;
             doorsOpen = s.doorsOpen;
             beltsUnbuckled = s.beltsUnbuckled;
             daytimeRunningLights = s.daytimeRunningLights;
@@ -166,6 +199,13 @@ public final class VehicleState {
         public Builder adaptiveCruise(Boolean v) { adaptiveCruise = v; return this; }
         public Builder laneCentering(Boolean v) { laneCentering = v; return this; }
         public Builder stockSurroundShown(Boolean v) { stockSurroundShown = v; return this; }
+        public Builder handsOnWheel(Boolean v) { handsOnWheel = v; return this; }
+        public Builder aeb(Boolean v) { aeb = v; return this; }
+        public Builder forwardCollisionWarning(Boolean v) { forwardCollisionWarning = v; return this; }
+        public Builder laneDepartureWarning(Boolean v) { laneDepartureWarning = v; return this; }
+        public Builder laneKeepingAid(Boolean v) { laneKeepingAid = v; return this; }
+        public Builder blindSpotAssist(Boolean v) { blindSpotAssist = v; return this; }
+        public Builder rearCollisionWarning(Boolean v) { rearCollisionWarning = v; return this; }
         public Builder doorsOpen(Integer v) { doorsOpen = v; return this; }
         public Builder beltsUnbuckled(Integer v) { beltsUnbuckled = v; return this; }
         public Builder daytimeRunningLights(Boolean v) { daytimeRunningLights = v; return this; }

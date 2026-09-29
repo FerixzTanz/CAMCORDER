@@ -7,6 +7,18 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.71.0-alpha] - 2026-09-29
+
+- Driving info bar, second pass on the design: seat belts moved into the cabin cell
+  (top-view car, four doors, five seats: two in front, three behind, an unbuckled seat in
+  red); brake and throttle are one cell with two horizontal bars, brake above, throttle
+  below, the depth in percent to the left of each; the four lamp icons differ by their rays
+  (fan for daytime running, slanted for low beam, straight for high beam, slanted with a
+  wave for fog); icons are outlines when off and filled when on. New cells: hands on the
+  wheel (no reading found on the car yet, shown as no data) and six safety-assist switches
+  read from the car (AEB, forward collision warning, lane departure warning, lane keeping
+  aid, blind spot assist, rear collision warning). Position is shown on two lines.
+
 ## [1.70.0-alpha] - 2026-09-29
 
 - Driving info bar: a new cell shows whether the car's own 360 view is on screen (a car

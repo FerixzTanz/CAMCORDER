@@ -338,7 +338,8 @@ Camera2 ──写入──> 一个普通的 TextureView（唯一的相机消费�
 | **ECARX 车辆接口**（`com.ecarx.xui.adaptapi.car.Car`） | ✅ **容器里能用，不要任何权限** | zeekr-shortcut-lab 2026-09-28 在 7X 实测（`docs/findings.md` §2）：`ecarx.adaptapi.impl.jar` 在 BOOTCLASSPATH，`Car.create(context)` 约 1 秒，之后 `getICarFunction().getFunctionValue(功能号[, 区域])`、`getSensorManager().getSensorEvent / getSensorLatestValue(类型)` 每次 0.2–0.9 ms。占位值 255 / 254 / 253 / -1 / -65535，浮点没数据是极小非零数 |
 | 转向灯 / 档位 P R D / 刹车踏板与深度 / 主驾门 / 近光 / 日行灯 / 自动驻车 / 原厂 360 是否显示（`SETTING_FUNC_AVM_SHOW_STATUS` 0x2031FE00：2 平时、1 显示中） | ✅ 车上操作时跟着变 | 同上 §2.6。1.69.0 起 `telemetry.EcarxSource` 每 200 ms 读一轮喂给行驶信息条；转向灯闪烁用 1.5 秒保持判定，双闪 = 两侧都在闪（双闪功能号本身读 255） |
 | 车速 / 油门深度 / 方向盘转角 / 远光 / 雾灯 / 其余三扇门 / 安全带 / 车道居中（信息条上也画） | ⏳ 读得到，含义待对 | 车速单位按 km/h、转角按度记，未验证；右舵车上 `VehicleZone` 的 ROW_1_DRVR（=ROW_1_LEFT）是哪扇门待对；安全带事件 0 / 1 含义待对。第一轮读数记在黑匣子「行驶信息 ecarx 第一轮读数」 |
-| ACC 是否激活 | ❌ 没找到读法 | 遍历里没有明确的 ACC 状态功能号（`SETTING_FUNC_DRIVE_PILOT` 0x28070400 读 255） |
+| 安全辅助开关：AEB 0x20070E00、前碰预警 0x200E0100、车道偏离 0x28084100、车道保持 0x20070100、盲区 0x28081600、后碰预警 0x20071000 | ⏳ 读得到开关（静止时 AEB / LKA / RCW = 1，FCW / LDW = 255） | 1.71.0 起信息条「安全辅助」六个标牌；是开关状态，不是「正在干预」 |
+| ACC 是否激活 / 手扶方向盘 | ❌ 没找到读法 | 遍历里没有明确的 ACC 状态功能号（`SETTING_FUNC_DRIVE_PILOT` 0x28070400 读 255）；HOD / hands-on 一类的名字一个都没有，只有 DMS 分心 / 疲劳开关 |
 | 安卓标准 `android.car`（车辆属性） | ❌ 结构性拿不到 | 容器里 SecurityException，见上；1.68.0 短暂接过一次，1.69.0 删了 |
 | 经纬度 / GPS 车速（1.68.0） | ⏳ 待实测 | `telemetry.LocationSource`，要 `ACCESS_FINE_LOCATION`（开信息条时申请）；容器给不给定位没测过，看黑匣子「行驶信息来源 location」 |
 

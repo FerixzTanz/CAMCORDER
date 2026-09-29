@@ -17,10 +17,9 @@ import java.util.Locale;
  * <h3>画法</h3>
  *
  * <ul>
- *   <li>只有图标、数字、动态条，没有文字说明。</li>
- *   <li>三种样子分得开：<b>亮</b>（极氪橙；双闪、开着的门、没系的安全带用红）、
- *       <b>灭</b>（暗灰）、<b>没数据</b>（更暗，加一道斜杠）。没数据不能画成灭 ——
- *       转向灯亮着而我们读不到，画成「没打灯」就是在撒谎。</li>
+ *   <li>只有图标、数字、动态条，没有文字说明（安全辅助那几项用行业通用的缩写当符号，和档位字母一样）。</li>
+ *   <li>线条图标：灭的画细线轮廓（暗灰），亮的填实（极氪橙；双闪、开着的门、没系的安全带用红），
+ *       没数据的更暗再盖一道斜杠。没数据不能画成灭 —— 转向灯亮着而我们读不到，画成「没打灯」就是在撒谎。</li>
  *   <li>底色是设计方案里夜间的「面」色（colors.xml 的 surface），上沿一条分隔线。</li>
  * </ul>
  *
@@ -36,10 +35,15 @@ public final class InfoBarRenderer {
     private static final int TRACK = 0xFF3A3D42;
     private static final int ON = 0xFFF26B38;
     private static final int WARN = 0xFFF0555A;
-    private static final int OFF = 0x80A3A6AB;
+    private static final int OFF = 0x99A3A6AB;
     private static final int UNKNOWN = 0x9975787D;
     private static final int TEXT = 0xFFF0F1F2;
     private static final int TEXT_DIM = 0xFFA3A6AB;
+
+    /** 图标的线宽。 */
+    private static final float LINE = 4f;
+
+    private static final String[] ASSIST_LABELS = {"AEB", "FCW", "LDW", "LKA", "BSD", "RCW"};
 
     private final int width;
     private final List<InfoBarLayout.Placed> cells;
@@ -131,14 +135,14 @@ public final class InfoBarRenderer {
             case STEERING:
                 drawSteering(cx, cy, s.steeringDegrees);
                 break;
+            case HANDS:
+                drawHands(cx, cy, s.handsOnWheel);
+                break;
             case GEAR:
                 drawGear(cx, cy, s.gear);
                 break;
-            case THROTTLE:
-                drawPedal(cell.width, s.throttle, false);
-                break;
-            case BRAKE:
-                drawPedal(cell.width, s.brake, true);
+            case PEDALS:
+                drawPedals(cell.width, s.brake, s.throttle);
                 break;
             case SPEED:
                 drawSpeed(cell.width, s.speedKmh);
@@ -155,11 +159,8 @@ public final class InfoBarRenderer {
             case STOCK_360:
                 drawStock360(cx, cy, s.stockSurroundShown);
                 break;
-            case DOORS:
-                drawDoors(cx, cy, s.doorsOpen);
-                break;
-            case BELTS:
-                drawBelt(cx, cy, s.beltsUnbuckled);
+            case CABIN:
+                drawCabin(cx, cy, s.doorsOpen, s.beltsUnbuckled);
                 break;
             case DRL:
                 drawLamp(cx, cy, 0, s.daytimeRunningLights);
@@ -172,6 +173,10 @@ public final class InfoBarRenderer {
                 break;
             case FOG:
                 drawLamp(cx, cy, 3, s.fogLights);
+                break;
+            case ASSIST:
+                drawAssist(cell.width, new Boolean[]{s.aeb, s.forwardCollisionWarning,
+                        s.laneDepartureWarning, s.laneKeepingAid, s.blindSpotAssist, s.rearCollisionWarning});
                 break;
             case ODOMETER:
                 drawOdometer(s.odometerKm);
@@ -211,26 +216,37 @@ public final class InfoBarRenderer {
         canvas.drawText(s, cx, baseline, paint);
     }
 
+    /** 亮的填实，灭的和没数据的画轮廓。 */
+    private void shape(Path p, Boolean on, boolean warn) {
+        int color = tone(on, warn);
+        if (Boolean.TRUE.equals(on)) {
+            fill.setColor(color);
+            canvas.drawPath(p, fill);
+        } else {
+            stroke.setColor(color);
+            stroke.setStrokeWidth(LINE);
+            canvas.drawPath(p, stroke);
+        }
+    }
+
     // ================================================================= 各格
 
     private void drawTurn(float cx, float cy, boolean left, Integer signal) {
         Boolean on = signal == null ? null
                 : signal == (left ? VehicleState.TURN_LEFT : VehicleState.TURN_RIGHT);
-        fill.setColor(tone(on, false));
         float d = left ? -1f : 1f;
         path.reset();
-        // 箭头：头 + 尾
-        path.moveTo(cx + d * 24, cy);
-        path.lineTo(cx + d * 2, cy - 18);
-        path.lineTo(cx + d * 2, cy - 8);
-        path.lineTo(cx - d * 22, cy - 8);
-        path.lineTo(cx - d * 22, cy + 8);
-        path.lineTo(cx + d * 2, cy + 8);
-        path.lineTo(cx + d * 2, cy + 18);
+        path.moveTo(cx + d * 26, cy);
+        path.lineTo(cx + d * 4, cy - 19);
+        path.lineTo(cx + d * 4, cy - 9);
+        path.lineTo(cx - d * 22, cy - 9);
+        path.lineTo(cx - d * 22, cy + 9);
+        path.lineTo(cx + d * 4, cy + 9);
+        path.lineTo(cx + d * 4, cy + 19);
         path.close();
-        canvas.drawPath(path, fill);
+        shape(path, on, false);
         if (on == null) {
-            slash(cx, cy, 22);
+            slash(cx, cy, 24);
         }
     }
 
@@ -238,13 +254,13 @@ public final class InfoBarRenderer {
         int color = tone(on, true);
         stroke.setColor(color);
         stroke.setStrokeWidth(6f);
-        triangle(cx, cy + 2, 26);
+        triangle(cx, cy + 2, 27);
         canvas.drawPath(path, stroke);
-        stroke.setStrokeWidth(4f);
-        triangle(cx, cy + 2, 14);
+        stroke.setStrokeWidth(LINE);
+        triangle(cx, cy + 3, 14);
         canvas.drawPath(path, stroke);
         if (on == null) {
-            slash(cx, cy, 26);
+            slash(cx, cy, 27);
         }
     }
 
@@ -259,24 +275,48 @@ public final class InfoBarRenderer {
     private void drawSteering(float cx, float cy, Float degrees) {
         int color = degrees == null ? UNKNOWN : ON;
         stroke.setColor(color);
-        stroke.setStrokeWidth(6f);
-        float r = 36f;
+        stroke.setStrokeWidth(5f);
+        float r = 35f;
         canvas.save();
         if (degrees != null) {
             canvas.rotate(degrees, cx, cy);
         }
         canvas.drawCircle(cx, cy, r, stroke);
         // 三根辐条：左、右、下；中间留给角度数字
-        stroke.setStrokeWidth(5f);
         float inner = 17f;
         canvas.drawLine(cx - r, cy, cx - inner, cy, stroke);
         canvas.drawLine(cx + r, cy, cx + inner, cy, stroke);
         canvas.drawLine(cx, cy + r, cx, cy + inner, stroke);
         canvas.restore();
         String label = degrees == null ? "--" : String.format(Locale.US, "%d°", Math.round(degrees));
-        centeredText(label, cx, cy + 7, degrees == null ? 18f : 17f, degrees == null ? TEXT_DIM : TEXT, text);
+        centeredText(label, cx, cy + 7, 17f, degrees == null ? TEXT_DIM : TEXT, text);
         if (degrees == null) {
             slash(cx, cy, r);
+        }
+    }
+
+    /** 手扶方向盘：一个小方向盘，两侧各一只手（有手就填实）。 */
+    private void drawHands(float cx, float cy, Boolean on) {
+        int color = tone(on, false);
+        stroke.setColor(color);
+        stroke.setStrokeWidth(LINE);
+        canvas.drawCircle(cx, cy, 22, stroke);
+        canvas.drawLine(cx - 22, cy, cx - 9, cy, stroke);
+        canvas.drawLine(cx + 22, cy, cx + 9, cy, stroke);
+        canvas.drawLine(cx, cy + 22, cx, cy + 9, stroke);
+        // 两只手：握在九点和三点的位置
+        for (int side = -1; side <= 1; side += 2) {
+            float hx = cx + side * 27;
+            rect.set(hx - 7, cy - 12, hx + 7, cy + 12);
+            if (Boolean.TRUE.equals(on)) {
+                fill.setColor(color);
+                canvas.drawRoundRect(rect, 6, 6, fill);
+            } else {
+                canvas.drawRoundRect(rect, 6, 6, stroke);
+            }
+        }
+        if (on == null) {
+            slash(cx, cy, 30);
         }
     }
 
@@ -293,52 +333,46 @@ public final class InfoBarRenderer {
         }
     }
 
-    /** 踏板：左边一个踏板图标（踩着就亮），右边一根竖条按开度填。 */
-    private void drawPedal(int cellWidth, Float value, boolean brake) {
-        Boolean active = value == null ? null : value > 0.02f;
-        int color = tone(active, brake);
-        // 踏板：斜放的圆角矩形
-        float px = 30f;
-        float py = HEIGHT / 2f;
-        canvas.save();
-        canvas.rotate(-14f, px, py);
-        rect.set(px - 12, py - 22, px + 12, py + 22);
-        fill.setColor(color);
-        canvas.drawRoundRect(rect, 6, 6, fill);
-        stroke.setColor(BG);
-        stroke.setStrokeWidth(2.5f);
-        for (int i = -1; i <= 1; i++) {
-            canvas.drawLine(px - 7, py + i * 10, px + 7, py + i * 10, stroke);
-        }
-        canvas.restore();
-        if (active == null) {
-            slash(px, py, 20);
-        }
-        // 开度条
-        float bx = cellWidth - 34f;
-        float top = 16f;
-        float bottom = HEIGHT - 16f;
-        rect.set(bx, top, bx + 16, bottom);
+    /** 刹车（上，红）和油门（下，橙）：横向的两根条，左边是深度数字。 */
+    private void drawPedals(int cellWidth, Float brake, Float throttle) {
+        drawDepthBar(cellWidth, 16f, brake, WARN);
+        drawDepthBar(cellWidth, 62f, throttle, ON);
+    }
+
+    private void drawDepthBar(int cellWidth, float top, Float value, int color) {
+        float bottom = top + 22f;
+        String number = value == null ? "--" : String.format(Locale.US, "%d", Math.round(value * 100f));
+        text.setTextSize(22f);
+        text.setColor(value == null ? TEXT_DIM : TEXT);
+        text.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(number, 44f, bottom - 3f, text);
+        float left = 54f;
+        float right = cellWidth - 8f;
+        rect.set(left, top, right, bottom);
         fill.setColor(TRACK);
-        canvas.drawRoundRect(rect, 5, 5, fill);
+        canvas.drawRoundRect(rect, 6, 6, fill);
         if (value != null) {
-            float h = (bottom - top) * Math.max(0f, Math.min(1f, value));
-            rect.set(bx, bottom - h, bx + 16, bottom);
-            fill.setColor(brake ? WARN : ON);
-            canvas.drawRoundRect(rect, 5, 5, fill);
+            float w = (right - left) * Math.max(0f, Math.min(1f, value));
+            if (w > 0f) {
+                rect.set(left, top, left + Math.max(w, 6f), bottom);
+                fill.setColor(color);
+                canvas.drawRoundRect(rect, 6, 6, fill);
+            }
+        } else {
+            slash(left + (right - left) / 2f, top + 11f, 11f);
         }
     }
 
     private void drawSpeed(int cellWidth, Float kmh) {
         String number = kmh == null ? "--" : String.format(Locale.US, "%d", Math.round(kmh));
-        text.setTextSize(64f);
+        text.setTextSize(60f);
         text.setColor(kmh == null ? TEXT_DIM : TEXT);
         text.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(number, cellWidth - 74f, 72f, text);
+        canvas.drawText(number, cellWidth - 58f, 71f, text);
         text.setTextSize(18f);
         text.setColor(TEXT_DIM);
         text.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("km/h", cellWidth - 64f, 72f, text);
+        canvas.drawText("km/h", cellWidth - 50f, 71f, text);
     }
 
     private void drawAutoHold(float cx, float cy, Boolean on) {
@@ -346,7 +380,7 @@ public final class InfoBarRenderer {
         stroke.setColor(color);
         stroke.setStrokeWidth(5f);
         canvas.drawCircle(cx, cy, 25, stroke);
-        centeredText("A", cx, cy + 10, 28f, on == null ? UNKNOWN : (on ? TEXT : OFF), text);
+        centeredText("A", cx, cy + 10, 28f, on == null ? UNKNOWN : (on ? ON : OFF), text);
         if (on == null) {
             slash(cx, cy, 25);
         }
@@ -355,18 +389,19 @@ public final class InfoBarRenderer {
     /** ACC：前面一辆车 + 两道雷达弧。 */
     private void drawAcc(float cx, float cy, Boolean on) {
         int color = tone(on, false);
-        fill.setColor(color);
-        rect.set(cx - 38, cy - 12, cx - 8, cy + 12);
-        canvas.drawRoundRect(rect, 6, 6, fill);
+        rect.set(cx - 34, cy - 11, cx - 8, cy + 11);
+        path.reset();
+        path.addRoundRect(rect, 6, 6, Path.Direction.CW);
+        shape(path, on, false);
         stroke.setColor(color);
-        stroke.setStrokeWidth(5f);
+        stroke.setStrokeWidth(LINE);
         for (int i = 0; i < 2; i++) {
-            float r = 16 + i * 14;
+            float r = 14 + i * 13;
             rect.set(cx - 8 - r, cy - r, cx - 8 + r, cy + r);
             canvas.drawArc(rect, -40, 80, false, stroke);
         }
         if (on == null) {
-            slash(cx, cy, 30);
+            slash(cx, cy, 28);
         }
     }
 
@@ -374,27 +409,29 @@ public final class InfoBarRenderer {
     private void drawLcc(float cx, float cy, Boolean on) {
         int color = tone(on, false);
         stroke.setColor(color);
-        stroke.setStrokeWidth(5f);
+        stroke.setStrokeWidth(LINE);
         stroke.setPathEffect(new DashPathEffect(new float[]{9, 7}, 0));
-        canvas.drawLine(cx - 30, cy + 28, cx - 18, cy - 28, stroke);
-        canvas.drawLine(cx + 30, cy + 28, cx + 18, cy - 28, stroke);
+        canvas.drawLine(cx - 28, cy + 27, cx - 17, cy - 27, stroke);
+        canvas.drawLine(cx + 28, cy + 27, cx + 17, cy - 27, stroke);
         stroke.setPathEffect(null);
-        fill.setColor(color);
         rect.set(cx - 9, cy - 14, cx + 9, cy + 14);
-        canvas.drawRoundRect(rect, 5, 5, fill);
+        path.reset();
+        path.addRoundRect(rect, 5, 5, Path.Direction.CW);
+        shape(path, on, false);
         if (on == null) {
-            slash(cx, cy, 30);
+            slash(cx, cy, 28);
         }
     }
 
     /** 原厂 360 画面：俯视的车，四周四段弧（环视）；显示中就亮。 */
     private void drawStock360(float cx, float cy, Boolean shown) {
         int color = tone(shown, false);
-        fill.setColor(color);
         rect.set(cx - 8, cy - 14, cx + 8, cy + 14);
-        canvas.drawRoundRect(rect, 4, 4, fill);
+        path.reset();
+        path.addRoundRect(rect, 4, 4, Path.Direction.CW);
+        shape(path, shown, false);
         stroke.setColor(color);
-        stroke.setStrokeWidth(4f);
+        stroke.setStrokeWidth(LINE);
         rect.set(cx - 27, cy - 27, cx + 27, cy + 27);
         for (int start = -160; start < 200; start += 90) {
             canvas.drawArc(rect, start, 50, false, stroke);
@@ -404,111 +441,158 @@ public final class InfoBarRenderer {
         }
     }
 
-    /** 车门：俯视的车身，四扇门开着的翘出来、变红。 */
-    private void drawDoors(float cx, float cy, Integer mask) {
-        boolean unknown = mask == null;
+    /**
+     * 车厢：俯视的车身，四扇门开着的翘出来变红；车里五个座位（前两后三）的安全带，
+     * 没系的填红，系着的画轮廓。
+     */
+    private void drawCabin(float cx, float cy, Integer doors, Integer belts) {
+        boolean unknown = doors == null && belts == null;
         int body = unknown ? UNKNOWN : TEXT_DIM;
         stroke.setColor(body);
-        stroke.setStrokeWidth(4f);
-        rect.set(cx - 20, cy - 36, cx + 20, cy + 36);
-        canvas.drawRoundRect(rect, 12, 12, stroke);
-        int[] bits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
+        stroke.setStrokeWidth(LINE);
+        rect.set(cx - 28, cy - 38, cx + 28, cy + 38);
+        canvas.drawRoundRect(rect, 14, 14, stroke);
+
+        int[] doorBits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
                 VehicleState.REAR_LEFT, VehicleState.REAR_RIGHT};
         for (int i = 0; i < 4; i++) {
             boolean left = i % 2 == 0;
             boolean front = i < 2;
-            boolean open = !unknown && (mask & bits[i]) != 0;
-            float hx = left ? cx - 20 : cx + 20;
-            float hy = front ? cy - 26 : cy + 4;
+            Boolean open = doors == null ? null : (doors & doorBits[i]) != 0;
+            float hx = left ? cx - 28 : cx + 28;
+            float hy = front ? cy - 28 : cy + 2;
             canvas.save();
-            if (open) {
+            if (Boolean.TRUE.equals(open)) {
                 canvas.rotate(left ? 40f : -40f, hx, hy);
             }
-            fill.setColor(open ? WARN : body);
-            rect.set(left ? hx - 6 : hx, hy, left ? hx : hx + 6, hy + 22);
-            canvas.drawRoundRect(rect, 2, 2, fill);
+            rect.set(left ? hx - 7 : hx, hy, left ? hx : hx + 7, hy + 22);
+            if (Boolean.TRUE.equals(open)) {
+                fill.setColor(WARN);
+                canvas.drawRoundRect(rect, 2, 2, fill);
+            } else {
+                stroke.setColor(open == null ? UNKNOWN : OFF);
+                stroke.setStrokeWidth(3f);
+                canvas.drawRoundRect(rect, 2, 2, stroke);
+            }
             canvas.restore();
         }
+
+        int[] beltBits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
+                VehicleState.REAR_LEFT, VehicleState.REAR_CENTER, VehicleState.REAR_RIGHT};
+        float[] sx = {cx - 12, cx + 12, cx - 16, cx, cx + 16};
+        float[] sy = {cy - 17, cy - 17, cy + 16, cy + 16, cy + 16};
+        for (int i = 0; i < 5; i++) {
+            Boolean unbuckled = belts == null ? null : (belts & beltBits[i]) != 0;
+            drawSeat(sx[i], sy[i], unbuckled);
+        }
         if (unknown) {
-            slash(cx, cy, 30);
+            slash(cx, cy, 34);
         }
     }
 
-    /** 安全带：一条斜着的带子和扣，谁没系就红。 */
-    private void drawBelt(float cx, float cy, Integer mask) {
-        Boolean unbuckled = mask == null ? null : mask != 0;
-        int color = tone(unbuckled, true);
-        // 头
-        fill.setColor(color);
-        canvas.drawCircle(cx, cy - 22, 9, fill);
-        // 肩和带子
-        stroke.setColor(color);
-        stroke.setStrokeWidth(7f);
-        canvas.drawLine(cx - 16, cy - 6, cx + 16, cy - 6, stroke);
-        canvas.drawLine(cx - 14, cy - 6, cx + 12, cy + 24, stroke);
-        // 扣
-        rect.set(cx + 6, cy + 14, cx + 20, cy + 26);
-        canvas.drawRoundRect(rect, 3, 3, fill);
-        if (unbuckled == null) {
-            slash(cx, cy, 26);
+    /** 一个座位：小方块加一条斜着的带子。 */
+    private void drawSeat(float x, float y, Boolean unbuckled) {
+        rect.set(x - 6.5f, y - 6.5f, x + 6.5f, y + 6.5f);
+        if (Boolean.TRUE.equals(unbuckled)) {
+            fill.setColor(WARN);
+            canvas.drawRoundRect(rect, 2, 2, fill);
+            stroke.setColor(BG);
+        } else {
+            stroke.setColor(unbuckled == null ? UNKNOWN : OFF);
+            stroke.setStrokeWidth(2.5f);
+            canvas.drawRoundRect(rect, 2, 2, stroke);
         }
+        stroke.setStrokeWidth(2.5f);
+        canvas.drawLine(x - 5, y - 5, x + 5, y + 5, stroke);
     }
 
     /**
-     * 灯：右边一个灯罩，左边射出去的光线。
+     * 灯：右边一个灯罩，左边射出去的光线。四种靠光线的样子分：
      *
-     * @param kind 0 日行灯（短线）、1 近光（斜向下）、2 远光（平）、3 雾灯（斜线 + 一道波浪）
+     * @param kind 0 日行灯（三道扇形散开）、1 近光（三道平行、斜向下）、2 远光（三道平行、水平）、
+     *             3 雾灯（斜向下 + 一道竖着的波浪穿过）
      */
     private void drawLamp(float cx, float cy, int kind, Boolean on) {
         int color = tone(on, false);
-        fill.setColor(color);
         // 灯罩：D 形，平边朝左
+        float edge = cx - 2;
         path.reset();
-        path.moveTo(cx + 4, cy - 20);
-        rect.set(cx - 14, cy - 20, cx + 22, cy + 20);
+        path.moveTo(edge, cy - 22);
+        rect.set(edge - 20, cy - 22, edge + 20, cy + 22);
         path.arcTo(rect, -90, 180, false);
-        path.lineTo(cx + 4, cy + 20);
         path.close();
-        canvas.drawPath(path, fill);
+        shape(path, on, false);
         stroke.setColor(color);
-        stroke.setStrokeWidth(4f);
-        for (int i = -1; i <= 1; i++) {
-            float y = cy + i * 13;
-            float x1 = cx - 4;
-            float x0 = kind == 0 ? cx - 16 : cx - 28;
-            float y0 = kind == 1 || kind == 3 ? y + 6 : y;
-            canvas.drawLine(x0, y0, x1, y, stroke);
+        stroke.setStrokeWidth(LINE);
+        float x1 = edge - 8;
+        float x0 = edge - 32;
+        if (kind == 0) {
+            canvas.drawLine(x1, cy - 4, x0 + 4, cy - 18, stroke);
+            canvas.drawLine(x1, cy, x0, cy, stroke);
+            canvas.drawLine(x1, cy + 4, x0 + 4, cy + 18, stroke);
+        } else {
+            for (int i = -1; i <= 1; i++) {
+                float y = cy + i * 14;
+                float y0 = kind == 2 ? y : y + 7;
+                canvas.drawLine(x1, y, x0, y0, stroke);
+            }
         }
         if (kind == 3) {
             // 雾：一道竖着的波浪穿过光线
             path.reset();
-            float wx = cx - 22;
-            path.moveTo(wx, cy - 22);
+            float wx = edge - 24;
+            path.moveTo(wx, cy - 24);
             for (int i = 0; i < 4; i++) {
-                path.quadTo(wx + (i % 2 == 0 ? 6 : -6), cy - 22 + i * 11 + 5, wx, cy - 22 + (i + 1) * 11);
+                path.quadTo(wx + (i % 2 == 0 ? 7 : -7), cy - 24 + i * 12 + 6, wx, cy - 24 + (i + 1) * 12);
             }
             stroke.setStrokeWidth(3f);
             canvas.drawPath(path, stroke);
         }
         if (on == null) {
-            slash(cx, cy, 26);
+            slash(cx, cy, 28);
+        }
+    }
+
+    /** 六项安全辅助：两行三列的小标牌，开着的亮，关着的暗，读不到的加斜杠。 */
+    private void drawAssist(int cellWidth, Boolean[] states) {
+        float badgeW = 52f;
+        float badgeH = 34f;
+        float gap = 6f;
+        float x0 = (cellWidth - (3 * badgeW + 2 * gap)) / 2f;
+        for (int i = 0; i < ASSIST_LABELS.length; i++) {
+            float left = x0 + (i % 3) * (badgeW + gap);
+            float top = i < 3 ? 12f : 54f;
+            Boolean on = states[i];
+            int color = tone(on, false);
+            rect.set(left, top, left + badgeW, top + badgeH);
+            stroke.setColor(color);
+            stroke.setStrokeWidth(3f);
+            canvas.drawRoundRect(rect, 8, 8, stroke);
+            centeredText(ASSIST_LABELS[i], left + badgeW / 2f, top + 23f, 15f,
+                    on == null ? UNKNOWN : (on ? ON : OFF), text);
+            if (on == null) {
+                stroke.setColor(UNKNOWN);
+                stroke.setStrokeWidth(2f);
+                canvas.drawLine(left + 4, top + badgeH - 4, left + badgeW - 4, top + 4, stroke);
+            }
         }
     }
 
     private void drawOdometer(Float km) {
         String label = km == null ? "-- km" : String.format(Locale.US, "%d km", Math.round(km));
-        mono.setTextSize(28f);
+        mono.setTextSize(26f);
         mono.setColor(km == null ? TEXT_DIM : TEXT);
         mono.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(label, 4, 62, mono);
+        canvas.drawText(label, 4, 60, mono);
     }
 
+    /** 经纬度：两行，纬度在上。 */
     private void drawPosition(Double lat, Double lon) {
-        String label = lat == null || lon == null ? "--"
-                : String.format(Locale.US, "%.6f, %.6f", lat, lon);
-        mono.setTextSize(24f);
-        mono.setColor(lat == null ? TEXT_DIM : TEXT);
+        boolean known = lat != null && lon != null;
+        mono.setTextSize(22f);
+        mono.setColor(known ? TEXT : TEXT_DIM);
         mono.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(label, 4, 60, mono);
+        canvas.drawText(known ? String.format(Locale.US, "%.6f", lat) : "--", 4, 44, mono);
+        canvas.drawText(known ? String.format(Locale.US, "%.6f", lon) : "--", 4, 76, mono);
     }
 }

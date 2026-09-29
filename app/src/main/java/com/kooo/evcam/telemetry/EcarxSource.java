@@ -44,7 +44,8 @@ import java.util.Map;
  * <p>验证过跟着变的：左右转向灯、档位 P/R/D、刹车踏板、刹车深度、主驾门、近光、日行灯、自动驻车、原厂 360 显示状态。
  * 读得到但还没操作验证：车速（单位按 km/h 记）、油门深度、方向盘转角（单位按度记）、远光、雾灯、
  * 其余三扇门（区域按值对左右，右舵车上哪个区域是哪扇门待对）、安全带（0 / 1 的含义待对）、车道居中。
- * 没找到读法的：ACC。这些在信息条上照样画，车上看它们跟不跟着变。</p>
+ * 六项安全辅助读的是开关（AEB、车道保持、后碰预警静止时读 1；前碰预警、车道偏离读 255）。
+ * 没找到读法的：ACC、手扶方向盘。这些在信息条上照样画，车上看它们跟不跟着变。</p>
  */
 final class EcarxSource {
 
@@ -69,6 +70,13 @@ final class EcarxSource {
     static final int F_AUTO_HOLD = 0x20060400;      // SETTING_FUNC_AUTO_HOLD
     static final int F_LCC_ACTIVE = 0x28085B00;     // SETTING_FUNC_LCC_ACTIVE_STATE（静止时 255，编码待验证）
     static final int F_AVM_SHOW = 0x2031FE00;       // SETTING_FUNC_AVM_SHOW_STATUS：2 平时，1 原厂 360 画面显示中（验证过）
+    // 安全辅助的开关（IADAS / IVehicle）：0 关 1 开；静止时 AEB、LKA、RCW 读到 1，FCW、LDW 读到 255
+    static final int F_AEB = 0x20070E00;            // SETTING_FUNC_AUTONOMOUS_EMERGENCY_BRAKING
+    static final int F_FCW = 0x200E0100;            // SETTING_FUNC_FORWARD_COLLISION_WARN
+    static final int F_LDW = 0x28084100;            // SETING_FUNC_LDW_SWITCH（原文拼写）
+    static final int F_LKA = 0x20070100;            // SETTING_FUNC_LANE_KEEPING_AID
+    static final int F_BSD = 0x28081600;            // SETTING_FUNC_BLIND_SPOT_ASSIST
+    static final int F_RCW = 0x20071000;            // SETTING_FUNC_REAR_COLLISION_WARNING
 
     // ---- 传感器（ISensor），类型值 ----
     static final int S_SPEED = 0x00100100;          // SENSOR_TYPE_CAR_SPEED，getSensorLatestValue
@@ -81,12 +89,16 @@ final class EcarxSource {
     static final int S_BELT_PASSENGER = 0x00201300;
     static final int S_BELT_ROW2_LEFT = 0x00201800;
     static final int S_BELT_ROW2_RIGHT = 0x00201900;
+    static final int S_BELT_ROW2_CENTER = 0x00201A00;
 
     /** 车门的四个区域：名字按车上的 {@code VehicleZone} 取值；取不到时用极氪 OS 6.0.5 的值。 */
     private static final String[] DOOR_ZONES = {"ROW_1_DRVR", "ROW_1_PASS", "ROW_2_LEFT", "ROW_2_RIGHT"};
     private static final int[] DOOR_ZONE_FALLBACK = {0x1, 0x4, 0x10, 0x40};
     private static final int[] DOOR_BITS = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
             VehicleState.REAR_LEFT, VehicleState.REAR_RIGHT};
+    /** 安全带的五个座位：主驾、副驾、后左、后中、后右（主驾算在「左前」那一位，和车门的区域一致）。 */
+    private static final int[] BELT_BITS = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
+            VehicleState.REAR_LEFT, VehicleState.REAR_CENTER, VehicleState.REAR_RIGHT};
 
     /** 档位枚举里认得的几个：值 = 0x00200200 + 序号，序号从车上的 ISensor.GEAR_* 常量按名字取；取不到时用这份。 */
     private static final int[] GEAR_FALLBACK_VALUES = {0x00200220, 0x00200230, 0x00200240};
@@ -269,6 +281,12 @@ final class EcarxSource {
         final Boolean autoHold = onOff(readFunction(F_AUTO_HOLD));
         final Boolean lcc = onOff(readFunction(F_LCC_ACTIVE));
         final Boolean stock360 = avmShown(readFunction(F_AVM_SHOW));
+        final Boolean aeb = onOff(readFunction(F_AEB));
+        final Boolean fcw = onOff(readFunction(F_FCW));
+        final Boolean ldw = onOff(readFunction(F_LDW));
+        final Boolean lka = onOff(readFunction(F_LKA));
+        final Boolean bsd = onOff(readFunction(F_BSD));
+        final Boolean rcw = onOff(readFunction(F_RCW));
         final Boolean[] doors = new Boolean[DOOR_ZONES.length];
         for (int i = 0; i < DOOR_ZONES.length; i++) {
             doors[i] = onOff(readFunctionZoned(F_DOOR, doorZones[i]));
@@ -282,7 +300,8 @@ final class EcarxSource {
         final String gear = gearEvent == null ? null : gearLetters.get(gearEvent);
         final Boolean[] belts = {
                 unbuckled(readEvent(S_BELT_DRIVER)), unbuckled(readEvent(S_BELT_PASSENGER)),
-                unbuckled(readEvent(S_BELT_ROW2_LEFT)), unbuckled(readEvent(S_BELT_ROW2_RIGHT))};
+                unbuckled(readEvent(S_BELT_ROW2_LEFT)), unbuckled(readEvent(S_BELT_ROW2_CENTER)),
+                unbuckled(readEvent(S_BELT_ROW2_RIGHT))};
 
         if (speed != null) {
             telemetry.noteCarSpeed();
@@ -297,8 +316,14 @@ final class EcarxSource {
             b.autoHold(autoHold);
             b.laneCentering(lcc);
             b.stockSurroundShown(stock360);
-            b.doorsOpen(mask(doors));
-            b.beltsUnbuckled(mask(belts));
+            b.aeb(aeb);
+            b.forwardCollisionWarning(fcw);
+            b.laneDepartureWarning(ldw);
+            b.laneKeepingAid(lka);
+            b.blindSpotAssist(bsd);
+            b.rearCollisionWarning(rcw);
+            b.doorsOpen(mask(doors, DOOR_BITS));
+            b.beltsUnbuckled(mask(belts, BELT_BITS));
             if (speed != null) {
                 b.speedKmh(speed);
             }
@@ -314,8 +339,9 @@ final class EcarxSource {
             String summary = "turn=" + name(left) + "/" + name(right) + " low=" + name(lowBeam) + " high=" + name(highBeam)
                     + " fog=" + name(fog) + " drl=" + name(drl) + " hold=" + name(autoHold) + " lcc=" + name(lcc)
                     + " avm=" + name(stock360)
+                    + " assist=" + name(aeb) + name(fcw) + name(ldw) + name(lka) + name(bsd) + name(rcw)
                     + " doors=" + name(doors[0]) + name(doors[1]) + name(doors[2]) + name(doors[3])
-                    + " belts=" + name(belts[0]) + name(belts[1]) + name(belts[2]) + name(belts[3])
+                    + " belts=" + name(belts[0]) + name(belts[1]) + name(belts[2]) + name(belts[3]) + name(belts[4])
                     + " speed=" + speed + " odo=" + odometer + " steer=" + steering + " brake=" + brake
                     + " throttle=" + throttle + " gear=" + gear + "(" + (gearEvent == null ? "-" : Integer.toHexString(gearEvent)) + ")";
             com.kooo.evcam.blackbox.BlackBox.note("行驶信息 ecarx 第一轮读数：" + summary);
@@ -442,8 +468,8 @@ final class EcarxSource {
         return buckled == null ? null : !buckled;
     }
 
-    /** 四个位置的开 / 没系 → 位掩码；一个都不知道时为 null。 */
-    static Integer mask(Boolean[] flags) {
+    /** 各位置的开 / 没系 → 位掩码；一个都不知道时为 null。 */
+    static Integer mask(Boolean[] flags, int[] bits) {
         int mask = 0;
         boolean any = false;
         for (int i = 0; i < flags.length; i++) {
@@ -452,7 +478,7 @@ final class EcarxSource {
             }
             any = true;
             if (flags[i]) {
-                mask |= DOOR_BITS[i];
+                mask |= bits[i];
             }
         }
         return any ? mask : null;

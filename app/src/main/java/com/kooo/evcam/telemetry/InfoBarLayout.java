@@ -22,24 +22,28 @@ public final class InfoBarLayout {
         TURN_LEFT(70, 1),
         HAZARD(80, 1),
         TURN_RIGHT(70, 1),
-        STEERING(150, 2),
+        STEERING(130, 2),
+        /** 驾驶员手在不在方向盘上（还没找到车上的读数，先画着）。 */
+        HANDS(80, 2),
         GEAR(70, 3),
-        THROTTLE(100, 4),
-        BRAKE(100, 4),
-        SPEED(230, 0),
+        /** 刹车（上）和油门（下）两根横条，左边带深度数字。 */
+        PEDALS(160, 4),
+        SPEED(200, 0),
         AUTO_HOLD(70, 8),
-        ACC(90, 8),
-        LCC(90, 8),
+        ACC(80, 8),
+        LCC(80, 8),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
         STOCK_360(80, 3),
-        DOORS(110, 5),
-        BELTS(70, 5),
-        DRL(70, 7),
-        LOW_BEAM(70, 6),
-        HIGH_BEAM(70, 6),
-        FOG(70, 7),
-        ODOMETER(190, 9),
-        POSITION(330, 9);
+        /** 俯视的车：四扇门 + 五个座位的安全带。 */
+        CABIN(150, 5),
+        DRL(80, 7),
+        LOW_BEAM(80, 6),
+        HIGH_BEAM(80, 6),
+        FOG(80, 7),
+        /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
+        ASSIST(180, 6),
+        ODOMETER(160, 9),
+        POSITION(170, 9);
 
         public final int width;
         public final int priority;
@@ -74,8 +78,7 @@ public final class InfoBarLayout {
         switch (cell) {
             case SPEED:
                 return options.speed;
-            case THROTTLE:
-            case BRAKE:
+            case PEDALS:
                 return options.pedals;
             case STEERING:
                 return options.steering;

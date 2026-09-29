@@ -56,11 +56,10 @@ public class InfoBarLayoutTest {
         List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND,
                 new InfoBar.Options(false, false, false));
         assertFalse(has(placed, InfoBarLayout.Cell.SPEED));
-        assertFalse(has(placed, InfoBarLayout.Cell.THROTTLE));
-        assertFalse(has(placed, InfoBarLayout.Cell.BRAKE));
+        assertFalse(has(placed, InfoBarLayout.Cell.PEDALS));
         assertFalse(has(placed, InfoBarLayout.Cell.STEERING));
         assertTrue(has(placed, InfoBarLayout.Cell.GEAR));
-        assertEquals(InfoBarLayout.Cell.values().length - 4, placed.size());
+        assertEquals(InfoBarLayout.Cell.values().length - 3, placed.size());
     }
 
     @Test

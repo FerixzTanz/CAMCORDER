@@ -65,10 +65,12 @@ public class EcarxDecodeTest {
 
     @Test
     public void masksCombineKnownPositionsOnly() {
-        assertNull(EcarxSource.mask(new Boolean[]{null, null, null, null}));
-        assertEquals(Integer.valueOf(0), EcarxSource.mask(new Boolean[]{false, null, false, null}));
-        assertEquals(Integer.valueOf(VehicleState.FRONT_RIGHT | VehicleState.REAR_LEFT),
-                EcarxSource.mask(new Boolean[]{false, true, true, false}));
+        int[] bits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT, VehicleState.REAR_LEFT,
+                VehicleState.REAR_CENTER, VehicleState.REAR_RIGHT};
+        assertNull(EcarxSource.mask(new Boolean[]{null, null, null, null, null}, bits));
+        assertEquals(Integer.valueOf(0), EcarxSource.mask(new Boolean[]{false, null, false, null, null}, bits));
+        assertEquals(Integer.valueOf(VehicleState.FRONT_RIGHT | VehicleState.REAR_CENTER),
+                EcarxSource.mask(new Boolean[]{false, true, false, true, false}, bits));
     }
 
     @Test
