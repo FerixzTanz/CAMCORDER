@@ -28,10 +28,10 @@
     <string name="set_watermark_spec_title">Include recording specs</string>
     <string name="set_watermark_spec_summary">Adds resolution and frame rate to the stamp</string>
     <string name="set_info_bar_title">Driving info bar</string>
-    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, gear, speed, pedals, doors, lights and position. Experimental; by default only items verified on the car are shown</string>
-    <string name="set_info_bar_all_title">Show all driving info</string>
-    <string name="set_info_bar_all_summary">Also shows items not yet verified on the car</string>
-    <string name="set_info_bar_all_dev_only">Includes unverified items; developer mode only</string>
+    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, gear, speed, pedals, doors, lights and position. Experimental; by default only items verified on the car are live, the rest are crossed out</string>
+    <string name="set_info_bar_all_title">Activate all items</string>
+    <string name="set_info_bar_all_summary">Also activates items not yet verified on the car, to check that each one is real and usable</string>
+    <string name="set_info_bar_all_dev_only">Unverified items stay crossed out; activating all is for developer mode only</string>
     <string name="set_storage_location_title">Storage location</string>
     <string name="set_storage_sentry_note">With Sentry Mode on after you leave the car, only the USB-A port (where Sentry Mode saves its footage) stays powered, so recording can go on. A USB drive on the Type-C port works too: when it loses power, recording moves to the drive on the USB-A port and carries on.</string>
     <string name="set_relay_title">Relay write</string>

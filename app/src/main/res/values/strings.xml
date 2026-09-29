@@ -42,10 +42,10 @@
     <string name="set_watermark_spec_title">角标附带录制规格</string>
     <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
     <string name="set_info_bar_title">行驶信息条</string>
-    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能，默认只显示实车验证过的项</string>
-    <string name="set_info_bar_all_title">显示所有行车信息</string>
-    <string name="set_info_bar_all_summary">连还没在实车验证过的项一起显示</string>
-    <string name="set_info_bar_all_dev_only">含未验证的项，仅限开发者模式</string>
+    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能，默认只有实车验证过的栏目可用，其余用斜线划掉</string>
+    <string name="set_info_bar_all_title">激活所有栏目信息</string>
+    <string name="set_info_bar_all_summary">连还没在实车验证过的栏目一起启用，用来验证各栏图标的真实性和可用性</string>
+    <string name="set_info_bar_all_dev_only">未验证的栏目用斜线划掉；全部激活仅限开发者模式</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>

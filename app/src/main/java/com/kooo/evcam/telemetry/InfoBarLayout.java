@@ -1,6 +1,7 @@
 package com.kooo.evcam.telemetry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -13,8 +14,9 @@ import java.util.List;
  * 环视（2560 宽）放得下全部；座舱那种窄一点的流放得下多少放多少 ——
  * 同一条规则，不按流分别配。</p>
  *
- * <p>每一格还写明它靠哪几个信号（{@link Signal}）：信号都验证过的格才算验证过，
- * 非开发者的信息条只放这些格（{@link InfoBar.Options}）。</p>
+ * <p>每一格还写明它靠哪几个信号（{@link Signal}）：信号都验证过的格才算验证过。
+ * 格子永远全放；没验证过的格默认不启用，画成没数据（斜杠划掉），开发者「激活所有栏目信息」后
+ * 才启用（{@link #live}）。</p>
  *
  * <p>纯函数，{@code InfoBarLayoutTest} 里测。</p>
  */
@@ -115,8 +117,11 @@ public final class InfoBarLayout {
     private InfoBarLayout() {
     }
 
-    /** 非开发者只放验证过的格。 */
-    static boolean wanted(Cell cell, InfoBar.Options options) {
+    /**
+     * 这一格启不启用：验证过的都启用；没验证的只有开发者「激活所有栏目信息」之后才启用。
+     * 没启用的格照样放在条上，画成没数据（斜杠划掉）。
+     */
+    public static boolean live(Cell cell, InfoBar.Options options) {
         return options.all || cell.verified();
     }
 
@@ -124,13 +129,8 @@ public final class InfoBarLayout {
      * @param width 信息条（= 视频）的宽度
      * @return 放得下的格，按显示顺序，带位置
      */
-    public static List<Placed> fit(int width, InfoBar.Options options) {
-        List<Cell> candidates = new ArrayList<>();
-        for (Cell cell : Cell.values()) {
-            if (wanted(cell, options)) {
-                candidates.add(cell);
-            }
-        }
+    public static List<Placed> fit(int width) {
+        List<Cell> candidates = Arrays.asList(Cell.values());
         // 先按优先级挑（同级按显示顺序），再按显示顺序摆
         List<Cell> byPriority = new ArrayList<>(candidates);
         Collections.sort(byPriority, new Comparator<Cell>() {

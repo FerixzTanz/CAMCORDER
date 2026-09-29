@@ -18,7 +18,8 @@ import java.util.Locale;
  *
  * <ul>
  *   <li>录进视频要经过 H.265 压缩，所以：线宽不小于 6 px，最小形状不小于 8 px，能填实的填实；
- *       灭的用实心中灰，不用半透明；没数据的用深灰底加一道亮斜杠；数字加粗、不小于 26 px；
+ *       灭的用实心中灰，不用半透明；没数据的、没启用的（没验证过）都是深灰加一道亮斜杠；
+ *       数字加粗、不小于 26 px；
  *       不用虚线、点阵和 1–3 px 的缝。</li>
  *   <li>亮是极氪橙；双闪、开着的门、没系的安全带用红；刹车条红、油门条绿（明度也分得开）；
  *       方向盘角度左偏黄、右偏白，不带正负号。</li>
@@ -60,6 +61,7 @@ public final class InfoBarRenderer {
 
     private final int width;
     private final List<InfoBarLayout.Placed> cells;
+    private final InfoBar.Options options;
     private final Bitmap bitmap;
     private final Canvas canvas;
     private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -74,7 +76,8 @@ public final class InfoBarRenderer {
 
     public InfoBarRenderer(int width, InfoBar.Options options) {
         this.width = Math.max(2, width);
-        this.cells = InfoBarLayout.fit(this.width, options);
+        this.cells = InfoBarLayout.fit(this.width);
+        this.options = options;
         this.bitmap = Bitmap.createBitmap(this.width, HEIGHT, Bitmap.Config.ARGB_8888);
         this.canvas = new Canvas(bitmap);
         stroke.setStyle(Paint.Style.STROKE);
@@ -130,7 +133,8 @@ public final class InfoBarRenderer {
         for (InfoBarLayout.Placed placed : cells) {
             canvas.save();
             canvas.translate(placed.x, 0);
-            drawCell(placed.cell, s);
+            // 没启用的格（没验证过、开发者也没激活）按没数据画：斜杠划掉
+            drawCell(placed.cell, InfoBarLayout.live(placed.cell, options) ? s : VehicleState.empty());
             canvas.restore();
         }
     }
@@ -161,7 +165,7 @@ public final class InfoBarRenderer {
                 drawPedals(cell.width, s.brake, s.throttle);
                 break;
             case SPEED:
-                drawSpeed(cell.width, s.speedKmh);
+                drawSpeed(cx, cy, s.speedKmh);
                 break;
             case AUTO_HOLD:
                 drawAutoHold(cx, cy, s.autoHold);
@@ -195,10 +199,10 @@ public final class InfoBarRenderer {
                         s.laneDepartureWarning, s.laneKeepingAid, s.blindSpotAssist, s.rearCollisionWarning});
                 break;
             case ODOMETER:
-                drawOdometer(s.odometerKm);
+                drawOdometer(cx, cy, s.odometerKm);
                 break;
             case POSITION:
-                drawPosition(s.latitude, s.longitude);
+                drawPosition(cx, cy, s.latitude, s.longitude);
                 break;
             default:
                 break;
@@ -396,7 +400,8 @@ public final class InfoBarRenderer {
         }
     }
 
-    private void drawSpeed(int cellWidth, Float kmh) {
+    private void drawSpeed(float cx, float cy, Float kmh) {
+        float cellWidth = cx * 2f;
         String number = kmh == null ? "--" : String.format(Locale.US, "%d", Math.round(kmh));
         text.setTextSize(64f);
         text.setColor(kmh == null ? TEXT_DIM : TEXT);
@@ -406,6 +411,9 @@ public final class InfoBarRenderer {
         text.setColor(TEXT_DIM);
         text.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("km/h", cellWidth - 52f, 72f, text);
+        if (kmh == null) {
+            slash(cx - 34, cy + 34, cx + 34, cy - 34);
+        }
     }
 
     private void drawAutoHold(float cx, float cy, Boolean on) {
@@ -678,21 +686,27 @@ public final class InfoBarRenderer {
         }
     }
 
-    private void drawOdometer(Float km) {
+    private void drawOdometer(float cx, float cy, Float km) {
         String label = km == null ? "-- km" : String.format(Locale.US, "%d km", Math.round(km));
         mono.setTextSize(28f);
         mono.setColor(km == null ? TEXT_DIM : TEXT);
         mono.setTextAlign(Paint.Align.LEFT);
         canvas.drawText(label, 4, 61, mono);
+        if (km == null) {
+            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        }
     }
 
     /** 经纬度：两行，纬度在上。 */
-    private void drawPosition(Double lat, Double lon) {
+    private void drawPosition(float cx, float cy, Double lat, Double lon) {
         boolean known = lat != null && lon != null;
         mono.setTextSize(26f);
         mono.setColor(known ? TEXT : TEXT_DIM);
         mono.setTextAlign(Paint.Align.LEFT);
         canvas.drawText(known ? String.format(Locale.US, "%.6f", lat) : "--", 4, 44, mono);
         canvas.drawText(known ? String.format(Locale.US, "%.6f", lon) : "--", 4, 78, mono);
+        if (!known) {
+            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        }
     }
 }

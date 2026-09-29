@@ -53,7 +53,7 @@ public final class Telemetry {
     private boolean running;
     /** 车速有没有从车辆接口来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
     private volatile boolean carSpeedSeen;
-    /** 信息条那份快照用全部读数（开发者的「显示所有行车信息」）还是只用验证过的。 */
+    /** 信息条那份快照用全部读数（开发者的「激活所有栏目信息」）还是只用验证过的。 */
     private volatile boolean infoBarAll;
     private EcarxSource car;
     private LocationSource location;
@@ -77,7 +77,7 @@ public final class Telemetry {
             state = VehicleState.empty();
             readings = Readings.empty();
             Context app = context.getApplicationContext();
-            infoBarAll = new AppConfig(app).isInfoBarShowAll();
+            infoBarAll = new AppConfig(app).isInfoBarAllActive();
             car = new EcarxSource(this);
             location = new LocationSource(this);
             car.start(app);
@@ -184,7 +184,7 @@ public final class Telemetry {
     }
 
     /** 信息条快照要不要没验证过的信号。 */
-    boolean infoBarShowsAll() {
+    boolean infoBarAllActive() {
         return infoBarAll;
     }
 

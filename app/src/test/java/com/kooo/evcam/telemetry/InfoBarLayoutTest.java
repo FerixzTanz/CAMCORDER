@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.util.List;
 
 /**
- * 信息条放哪几格：宽的放全，窄的按优先级去掉，非开发者只放验证过的格。
+ * 信息条放哪几格：宽的放全，窄的按优先级去掉；哪几格启用：非开发者只启用验证过的。
  *
  * <p>算错的表现是格子叠在一起或者超出画面右边 —— 录进视频里就改不了了，所以钉住。</p>
  */
@@ -29,7 +29,7 @@ public class InfoBarLayoutTest {
 
     @Test
     public void aSurroundWideBarHoldsEveryCellInDisplayOrder() {
-        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, InfoBar.Options.all());
+        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND);
         assertEquals(InfoBarLayout.Cell.values().length, placed.size());
         assertEquals(InfoBarLayout.Cell.TURN_LEFT, placed.get(0).cell);
         assertEquals(InfoBarLayout.MARGIN, placed.get(0).x);
@@ -41,7 +41,7 @@ public class InfoBarLayoutTest {
     /** 窄的流：里程、经纬度这种优先级低的先走，车速和转向灯留到最后。 */
     @Test
     public void aNarrowBarDropsLowPriorityCellsFirst() {
-        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(CABIN, InfoBar.Options.all());
+        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(CABIN);
         assertTrue(placed.size() < InfoBarLayout.Cell.values().length);
         assertTrue(has(placed, InfoBarLayout.Cell.SPEED));
         assertTrue(has(placed, InfoBarLayout.Cell.TURN_LEFT));
@@ -51,32 +51,33 @@ public class InfoBarLayoutTest {
         assertFalse(has(placed, InfoBarLayout.Cell.ODOMETER));
     }
 
-    /** 非开发者：只放信号都验证过的格；没读数来源的（手扶方向盘、ACC、自动驻车）和没验证的不放。 */
+    /** 格子永远全放；非开发者只启用信号都验证过的格，其余画斜杠；开发者激活后全部启用。 */
     @Test
-    public void withoutDeveloperOnlyVerifiedCellsArePlaced() {
-        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, InfoBar.Options.verified());
+    public void everyCellIsPlacedButOnlyVerifiedOnesAreLiveByDefault() {
+        assertEquals(InfoBarLayout.Cell.values().length, InfoBarLayout.fit(SURROUND).size());
+        InfoBar.Options byDefault = InfoBar.Options.verified();
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
-                InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.GEAR,
-                InfoBarLayout.Cell.PEDALS, InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360,
-                InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.LOW_BEAM,
-                InfoBarLayout.Cell.POSITION}) {
-            assertTrue(cell.name(), has(placed, cell));
+                InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
+                InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS, InfoBarLayout.Cell.SPEED,
+                InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.DRL,
+                InfoBarLayout.Cell.LOW_BEAM, InfoBarLayout.Cell.POSITION}) {
+            assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.AUTO_HOLD,
                 InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC, InfoBarLayout.Cell.HIGH_BEAM,
                 InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.ODOMETER}) {
-            assertFalse(cell.name(), has(placed, cell));
+            assertFalse(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
-        for (InfoBarLayout.Placed p : placed) {
-            assertTrue(p.cell.verified());
+        for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {
+            assertTrue(cell.name(), InfoBarLayout.live(cell, InfoBar.Options.all()));
         }
     }
 
     @Test
     public void cellsNeverOverlapAndKeepTheGap() {
         for (int width : new int[]{SURROUND, 1920, CABIN, 640}) {
-            List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(width, InfoBar.Options.all());
+            List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(width);
             for (int i = 1; i < placed.size(); i++) {
                 InfoBarLayout.Placed prev = placed.get(i - 1);
                 InfoBarLayout.Placed next = placed.get(i);
@@ -91,6 +92,6 @@ public class InfoBarLayoutTest {
 
     @Test
     public void tooNarrowForAnythingPlacesNothing() {
-        assertTrue(InfoBarLayout.fit(50, InfoBar.Options.all()).isEmpty());
+        assertTrue(InfoBarLayout.fit(50).isEmpty());
     }
 }

@@ -11,6 +11,14 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.76.0-alpha] - 2026-09-30
+
+- Info bar always lays out every cell; cells not verified on the car are drawn crossed
+  out instead of being left off.
+- Developer switch renamed "Activate all items": it turns the unverified cells live so
+  they can be checked on the car.
+- Speed, odometer and position draw the slash when they have no data, like the icons.
+
 ## [1.75.0-alpha] - 2026-09-29
 
 - Info bar shows only cells whose signals are verified on the car by default; the three
