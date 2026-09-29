@@ -11,9 +11,10 @@ import com.kooo.evcam.AppLog;
  *
  * <ul>
  *   <li>一份快照（{@link VehicleState}），不可变；来源改几项就发布新的一份，版本号 +1。</li>
- *   <li>来源各管一条路：{@link CarPropertySource}（车辆属性，反射；这台车机的容器里多半拿不到），
- *       {@link LocationSource}（定位：经纬度、GPS 车速）。再有新的路（车机厂商 SDK、OBD 蓝牙盒子……）
- *       就是再加一个来源，快照和信息条都不用动。</li>
+ *   <li>来源各管一条路：{@link EcarxSource}（车机系统自带的 ECARX 车辆接口，反射只读；
+ *       zeekr-shortcut-lab 在容器里验证过能用），{@link LocationSource}（定位：经纬度，车辆不给车速时用 GPS 车速）。
+ *       安卓标准的 {@code android.car} 在这台车机的容器里结构性拿不到（平台笔记），不接。
+ *       再有新的路（OBD 蓝牙盒子……）就是再加一个来源，快照和信息条都不用动。</li>
  *   <li>只在录制而且开着信息条时跑（{@link #start} / {@link #stop}，由录制的开停带着）；
  *       停了快照清空，下次不会把旧值画进新录像。</li>
  * </ul>
@@ -36,7 +37,7 @@ public final class Telemetry {
     private boolean running;
     /** 车速有没有从车辆属性来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
     private volatile boolean carSpeedSeen;
-    private CarPropertySource car;
+    private EcarxSource car;
     private LocationSource location;
 
     private Telemetry() {
@@ -56,7 +57,7 @@ public final class Telemetry {
             carSpeedSeen = false;
             state = VehicleState.empty();
             Context app = context.getApplicationContext();
-            car = new CarPropertySource(this);
+            car = new EcarxSource(this);
             location = new LocationSource(this);
             car.start(app);
             location.start(app);
@@ -66,7 +67,7 @@ public final class Telemetry {
 
     /** 停止收信号，快照清空。 */
     public void stop() {
-        CarPropertySource c;
+        EcarxSource c;
         LocationSource l;
         synchronized (lock) {
             if (!running) {
@@ -125,7 +126,7 @@ public final class Telemetry {
 
     /** 诊断报告 / 日志用的一段。 */
     public String describe() {
-        CarPropertySource c;
+        EcarxSource c;
         LocationSource l;
         synchronized (lock) {
             c = car;
@@ -135,7 +136,7 @@ public final class Telemetry {
         sb.append(running ? "running" : "stopped");
         sb.append(", known=").append(state.knownCount()).append("/19");
         if (c != null) {
-            sb.append("; car: ").append(c.status());
+            sb.append("; ecarx: ").append(c.status());
         }
         if (l != null) {
             sb.append("; location: ").append(l.status());

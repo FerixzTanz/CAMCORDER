@@ -7,6 +7,22 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.69.0-alpha] - 2026-09-29
+
+- **The driving info bar reads the car through ECARX's in-car API**, the route
+  zeekr-shortcut-lab verified on the 7X inside the App Lab container: `Car.create`, then
+  the function and sensor managers, read every 200 ms without any vehicle permission. Turn
+  signals (with a 1.5-second hold across the blink, both sides meaning hazard), gear, brake
+  and throttle depth, steering angle, speed, odometer, doors per zone, seat belts, low and
+  high beam, daytime running and fog lights, auto hold and lane centering now come from the
+  car; position still comes from the location service, which also supplies speed only when
+  the car does not. The first round of readings is written to the black box. The
+  `android.car` source added in 1.68.0 is removed: it cannot work in this container.
+- Verified on the car so far (by the lab app): turn signals, gear P/R/D, brake, driver's
+  door, low beam, daytime running lights, auto hold. Speed and steering units, the other
+  doors' left/right assignment, seat-belt values and lane centering are read but not yet
+  confirmed; there is no known reading for ACC.
+
 ## [1.68.0-alpha] - 2026-09-29
 
 - **Driving info bar under the recorded video (experimental, off by default).** Settings →

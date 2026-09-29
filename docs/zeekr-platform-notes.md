@@ -335,7 +335,11 @@ Camera2 ──写入──> 一个普通的 TextureView（唯一的相机消费�
 | 深睡「刚刚结束」 | ✅ **事后拿得到** | 醒来对比 `elapsedRealtime()`（含深睡）与 `uptimeMillis()`（不含），差值就是睡了多久 |
 | 点火 / 档位 / 手刹 | ❌ 结构性拿不到 | 容器里三个属性全是 SecurityException，见下 |
 | 关机 / 断电 | ❌ 结构性拿不到 | 至今没收到过任何电源相关广播 |
-| 转向灯 / 双闪 / 方向盘 / 油门刹车 / 车速 / 车门 / 安全带 / 灯光 / 里程（1.68.0 行驶信息条） | ⏳ 待实测（预期拿不到） | `telemetry.CarPropertySource` 按属性名反射订阅，每一项成败在录像开始时记进黑匣子「行驶信息来源 car」那一行；这是信息条的一个来源，不是又一次探测 |
+| **ECARX 车辆接口**（`com.ecarx.xui.adaptapi.car.Car`） | ✅ **容器里能用，不要任何权限** | zeekr-shortcut-lab 2026-09-28 在 7X 实测（`docs/findings.md` §2）：`ecarx.adaptapi.impl.jar` 在 BOOTCLASSPATH，`Car.create(context)` 约 1 秒，之后 `getICarFunction().getFunctionValue(功能号[, 区域])`、`getSensorManager().getSensorEvent / getSensorLatestValue(类型)` 每次 0.2–0.9 ms。占位值 255 / 254 / 253 / -1 / -65535，浮点没数据是极小非零数 |
+| 转向灯 / 档位 P R D / 刹车踏板与深度 / 主驾门 / 近光 / 日行灯 / 自动驻车 / 原厂 360 是否显示（`SETTING_FUNC_AVM_SHOW_STATUS` 0x2031FE00：2 平时、1 显示中） | ✅ 车上操作时跟着变 | 同上 §2.6。1.69.0 起 `telemetry.EcarxSource` 每 200 ms 读一轮喂给行驶信息条；转向灯闪烁用 1.5 秒保持判定，双闪 = 两侧都在闪（双闪功能号本身读 255） |
+| 车速 / 油门深度 / 方向盘转角 / 远光 / 雾灯 / 其余三扇门 / 安全带 / 车道居中（信息条上也画） | ⏳ 读得到，含义待对 | 车速单位按 km/h、转角按度记，未验证；右舵车上 `VehicleZone` 的 ROW_1_DRVR（=ROW_1_LEFT）是哪扇门待对；安全带事件 0 / 1 含义待对。第一轮读数记在黑匣子「行驶信息 ecarx 第一轮读数」 |
+| ACC 是否激活 | ❌ 没找到读法 | 遍历里没有明确的 ACC 状态功能号（`SETTING_FUNC_DRIVE_PILOT` 0x28070400 读 255） |
+| 安卓标准 `android.car`（车辆属性） | ❌ 结构性拿不到 | 容器里 SecurityException，见上；1.68.0 短暂接过一次，1.69.0 删了 |
 | 经纬度 / GPS 车速（1.68.0） | ⏳ 待实测 | `telemetry.LocationSource`，要 `ACCESS_FINE_LOCATION`（开信息条时申请）；容器给不给定位没测过，看黑匣子「行驶信息来源 location」 |
 
 #### 更正（2026-09-24）：亮屏广播靠不住，这一条最初写错了
