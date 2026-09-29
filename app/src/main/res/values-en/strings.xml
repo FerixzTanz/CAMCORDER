@@ -28,7 +28,7 @@
     <string name="set_watermark_spec_title">Include recording specs</string>
     <string name="set_watermark_spec_summary">Adds resolution and frame rate to the stamp</string>
     <string name="set_info_bar_title">Driving info bar</string>
-    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, gear, speed, pedals, doors, lights and position. Experimental; by default only items verified on the car are live, the rest are crossed out</string>
+    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, steering, gear, speed, pedals, doors, lights and position. Experimental; by default only items verified on the car are live, the rest are crossed out</string>
     <string name="set_info_bar_all_title">Activate all items</string>
     <string name="set_info_bar_all_summary">Also activates items not yet verified on the car, to check that each one is real and usable</string>
     <string name="set_info_bar_all_dev_only">Unverified items stay crossed out; activating all is for developer mode only</string>
@@ -108,7 +108,7 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Vehicle info (experimental)</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; reading stops when you leave</string>
-    <string name="vi_legend">Dark labels changed on the car when tested; light ones read fine but are unverified</string>
+    <string name="vi_legend">Dark label: confirmed on the car; grey: usable, details pending; light: readable but unverified</string>
     <string name="vi_group_drive">Driving</string>
     <string name="vi_group_lamps">Lamps</string>
     <string name="vi_group_body">Body</string>

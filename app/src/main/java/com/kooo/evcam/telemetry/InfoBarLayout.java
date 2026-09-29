@@ -14,15 +14,15 @@ import java.util.List;
  * 环视（2560 宽）放得下全部；座舱那种窄一点的流放得下多少放多少 ——
  * 同一条规则，不按流分别配。</p>
  *
- * <p>每一格还写明它靠哪几个信号（{@link Signal}）：信号都验证过的格才算验证过。
- * 格子永远全放；没验证过的格默认不启用，画成没数据（斜杠划掉），开发者「激活所有栏目信息」后
+ * <p>每一格还写明它靠哪几个信号（{@link Signal}）：信号都{@linkplain Signal#usable() 能用}的格才算能用。
+ * 格子永远全放；不能用的格默认不启用，画成没数据（斜杠划掉），开发者「激活所有栏目信息」后
  * 才启用（{@link #live}）。</p>
  *
  * <p>纯函数，{@code InfoBarLayoutTest} 里测。</p>
  */
 public final class InfoBarLayout {
 
-    /** 没有车上信号的格：它的验证结论直接写死。 */
+    /** 没有车上信号的格：能不能用直接写死。 */
     public enum Verdict {
         /** 来源不是车辆接口（定位），车上看到过它在动 */
         YES,
@@ -37,12 +37,12 @@ public final class InfoBarLayout {
         TURN_LEFT(70, 1, Signal.INDICATOR),
         HAZARD(80, 1, Signal.INDICATOR),
         TURN_RIGHT(70, 1, Signal.INDICATOR),
-        /** 方向盘随读数转；满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。 */
+        /** 方向盘随读数转；先用着，满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。 */
         STEERING(130, 2, Signal.STEERING),
         /** 驾驶员手在不在方向盘上（还没找到车上的读数，先画着）。 */
         HANDS(80, 2, Verdict.NO),
         GEAR(70, 3, Signal.GEAR),
-        /** 刹车（上）和油门（下）两根横条，左边带深度数字。踩到底是多少还没测，量程定了才启用。 */
+        /** 刹车（上）和油门（下）两根横条，左边带深度数字。先按 0–100 画，踩到底是多少等 Lab。 */
         PEDALS(170, 4, Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH),
         SPEED(210, 0, Signal.SPEED),
         /** 自动驻车「正在驻车」：0x20060400 是它的开关不是状态（一直亮），真正的状态信号等 Lab。 */
@@ -51,10 +51,10 @@ public final class InfoBarLayout {
         LCC(80, 8, Signal.LCC),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
         STOCK_360(80, 3, Signal.STOCK_360),
-        /** 俯视的车：四扇门 + 五个座位的安全带（验证看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
+        /** 俯视的车：四扇门 + 五个座位的安全带（看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
         CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
-        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。白天的读数复核了才启用。 */
+        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。接法等 Lab 白天复核，先用着。 */
         DRL(130, 7, Signal.DRL),
         LOW_BEAM(80, 6, Signal.LOW_BEAM),
         HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
@@ -84,13 +84,13 @@ public final class InfoBarLayout {
             this.verdict = verdict;
         }
 
-        /** 这一格用到的信号都在车上验证过（没有车上信号的格按写死的结论）。 */
-        public boolean verified() {
+        /** 这一格用到的信号都能用（没有车上信号的格按写死的结论）。 */
+        public boolean usable() {
             if (verdict != null) {
                 return verdict == Verdict.YES;
             }
             for (Signal s : signals) {
-                if (!s.verified) {
+                if (!s.usable()) {
                     return false;
                 }
             }
@@ -118,11 +118,11 @@ public final class InfoBarLayout {
     }
 
     /**
-     * 这一格启不启用：验证过的都启用；没验证的只有开发者「激活所有栏目信息」之后才启用。
+     * 这一格启不启用：能用的都启用；不能用的只有开发者「激活所有栏目信息」之后才启用。
      * 没启用的格照样放在条上，画成没数据（斜杠划掉）。
      */
     public static boolean live(Cell cell, InfoBar.Options options) {
-        return options.all || cell.verified();
+        return options.all || cell.usable();
     }
 
     /**

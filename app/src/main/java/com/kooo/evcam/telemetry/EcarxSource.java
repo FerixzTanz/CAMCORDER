@@ -510,8 +510,8 @@ final class EcarxSource {
         if (snapshot.number(Signal.SPEED) != null) {
             telemetry.noteCarSpeed();
         }
-        // 非开发者：没验证过的信号先滤掉再映射，信息条上不出现猜的东西
-        final Readings forBar = telemetry.infoBarAllActive() ? snapshot : snapshot.verifiedOnly();
+        // 非开发者：不能用的信号先滤掉再映射，信息条上不出现猜的东西
+        final Readings forBar = telemetry.infoBarAllActive() ? snapshot : snapshot.usableOnly();
         telemetry.edit(b -> mapper.apply(b, forBar, now, driverOnRight));
         telemetry.publishReadings(snapshot);
         if (!firstRoundReported) {

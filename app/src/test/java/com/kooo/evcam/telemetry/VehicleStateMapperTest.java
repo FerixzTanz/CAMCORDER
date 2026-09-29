@@ -79,10 +79,12 @@ public class VehicleStateMapperTest {
         assertNull(map(readings(Signal.AUTO_HOLD, true), true).autoHold);
     }
 
-    /** 非开发者：没验证过的信号在映射前滤掉 —— 副驾安全带不会被画成红的。 */
+    /** 非开发者：不能用的信号在映射前滤掉 —— 副驾安全带不会被画成红的；先用着的（方向盘）留着。 */
     @Test
-    public void unverifiedSignalsAreMaskedBeforeMapping() {
-        Readings r = readings(Signal.BELT_DRIVER, false, Signal.BELT_PASSENGER, false).verifiedOnly();
+    public void unusableSignalsAreMaskedBeforeMapping() {
+        Readings r = readings(Signal.BELT_DRIVER, false, Signal.BELT_PASSENGER, false,
+                Signal.STEERING, -12f).usableOnly();
+        assertEquals(Float.valueOf(-12f), map(r, true).steeringDegrees);
         assertNull(r.bool(Signal.BELT_PASSENGER));
         assertEquals(Boolean.FALSE, r.bool(Signal.BELT_DRIVER));
         assertEquals(Integer.valueOf(VehicleState.FRONT_RIGHT), map(r, true).beltsUnbuckled);

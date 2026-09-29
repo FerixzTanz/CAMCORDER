@@ -11,6 +11,14 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.78.0-alpha] - 2026-09-30
+
+- Signal table has three levels: confirmed, provisional (usable, details pending) and
+  unverified; the info bar activates confirmed and provisional cells by default.
+- Steering, pedals and daytime running lights are provisional, so those three info-bar
+  cells are live for everyone.
+- Vehicle info page shows the three levels by label tone.
+
 ## [1.77.0-alpha] - 2026-09-30
 
 - Signal table aligned with the lab handbook: pedal depths and daytime running lights

@@ -10,7 +10,7 @@ package com.kooo.evcam.telemetry;
  *   <li>车门和安全带按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾安全带在右前。</li>
  *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 前雾或后雾。车速在 {@link Signal#decode} 里已从 m/s 换成 km/h。</li>
  *   <li>自动驻车不从 {@link Signal#AUTO_HOLD} 推：那是功能开关（一直 1），不是「正在驻车」；状态信号找到前留空。</li>
- *   <li>非开发者拿到的读数已经滤掉了没验证的信号（{@link Readings#verifiedOnly()}），这里不再分辨。</li>
+ *   <li>非开发者拿到的读数已经滤掉了没验证的信号（{@link Readings#usableOnly()}），这里不再分辨。</li>
  * </ul>
  */
 public final class VehicleStateMapper {

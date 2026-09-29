@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.util.List;
 
 /**
- * 信息条放哪几格：宽的放全，窄的按优先级去掉；哪几格启用：非开发者只启用验证过的。
+ * 信息条放哪几格：宽的放全，窄的按优先级去掉；哪几格启用：非开发者只启用能用的。
  *
  * <p>算错的表现是格子叠在一起或者超出画面右边 —— 录进视频里就改不了了，所以钉住。</p>
  */
@@ -51,23 +51,25 @@ public class InfoBarLayoutTest {
         assertFalse(has(placed, InfoBarLayout.Cell.ODOMETER));
     }
 
-    /** 格子永远全放；非开发者只启用信号都验证过的格，其余画斜杠；开发者激活后全部启用。 */
+    /**
+     * 格子永远全放；非开发者只启用信号都能用的格，其余画斜杠；开发者激活后全部启用。
+     * 方向盘、油门刹车、日行灯是先用着的（细节等 Lab），用户定的照样启用。
+     */
     @Test
     public void everyCellIsPlacedButOnlyVerifiedOnesAreLiveByDefault() {
         assertEquals(InfoBarLayout.Cell.values().length, InfoBarLayout.fit(SURROUND).size());
-        InfoBar.Options byDefault = InfoBar.Options.verified();
+        InfoBar.Options byDefault = InfoBar.Options.usable();
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
-                InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.SPEED,
-                InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
-                InfoBarLayout.Cell.LOW_BEAM, InfoBarLayout.Cell.HIGH_BEAM,
+                InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS,
+                InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
+                InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.LOW_BEAM, InfoBarLayout.Cell.HIGH_BEAM,
                 InfoBarLayout.Cell.ODOMETER, InfoBarLayout.Cell.POSITION}) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
-                InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.PEDALS,
-                InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC,
-                InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST}) {
+                InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.ACC,
+                InfoBarLayout.Cell.LCC, InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST}) {
             assertFalse(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {

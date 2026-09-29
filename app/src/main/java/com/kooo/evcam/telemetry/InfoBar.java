@@ -16,9 +16,9 @@ import com.kooo.evcam.AppConfig;
  *
  * <h3>显示哪几项</h3>
  *
- * <p>试验项目（1.68.0），对所有人开放，默认关。格子永远全放；开了之后默认只有<b>实车验证过</b>的格
- * 启用（{@link InfoBarLayout.Cell#verified()}：这一格用到的信号都在车上看到过跟着变），其余的画斜杠划掉；
- * 没验证的信号在映射前就滤掉（{@link Readings#verifiedOnly()}），不会把猜的东西画进录像。
+ * <p>试验项目（1.68.0），对所有人开放，默认关。格子永远全放；开了之后默认只有<b>能用</b>的格
+ * 启用（{@link InfoBarLayout.Cell#usable()}：这一格用到的信号都是确认了的或先用着的），其余的画斜杠划掉；
+ * 不能用的信号在映射前就滤掉（{@link Readings#usableOnly()}），不会把猜的东西画进录像。
  * 开发者模式里的「激活所有栏目信息」启用全部格、用全部读数 —— 用来验证各栏图标真不真、能不能用。</p>
  *
  * <p>开着信息条时录制走 MediaCodec 路径（要用 GL 拼画面，和四宫格同一条规则，
@@ -32,7 +32,7 @@ public final class InfoBar {
     private InfoBar() {
     }
 
-    /** 这次录制启用哪些格：只启用验证过的，还是全部。 */
+    /** 这次录制启用哪些格：只启用能用的，还是全部。 */
     public static final class Options {
         public final boolean all;
 
@@ -44,7 +44,7 @@ public final class InfoBar {
             return new Options(true);
         }
 
-        public static Options verified() {
+        public static Options usable() {
             return new Options(false);
         }
     }

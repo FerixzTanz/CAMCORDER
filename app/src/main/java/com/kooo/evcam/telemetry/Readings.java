@@ -49,11 +49,11 @@ public final class Readings {
         return v instanceof String ? (String) v : null;
     }
 
-    /** 只留车上验证过的信号（非开发者的信息条用它，猜的东西不画进录像）。版本号不变。 */
-    public Readings verifiedOnly() {
+    /** 只留能用的信号（{@link Signal#usable()}；非开发者的信息条用它，猜的东西不画进录像）。版本号不变。 */
+    public Readings usableOnly() {
         Map<Signal, Object> kept = new EnumMap<>(Signal.class);
         for (Map.Entry<Signal, Object> e : values.entrySet()) {
-            if (e.getKey().verified) {
+            if (e.getKey().usable()) {
                 kept.put(e.getKey(), e.getValue());
             }
         }

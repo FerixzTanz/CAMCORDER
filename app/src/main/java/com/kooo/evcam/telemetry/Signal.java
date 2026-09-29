@@ -10,9 +10,8 @@ import com.kooo.evcam.R;
  * 号码和含义来自 zeekr-shortcut-lab 在 7X 上的实测：它的信号手册 {@code docs/signals.md} 是唯一依据
  * （分工：Lab 把信号找准，这里把找到的用准）。</p>
  *
- * <p>{@link #verified} 为 true = 手册「确认了的」那一节里有它，<b>而且</b>这里要用到的含义、取值、量程
- * 都没有挂着「待测 / 待复核」；只要还挂着一条就是 false（比如踏板深度：跟着变，但踩到底是多少没测）。
- * 信息条默认只启用信号全为 true 的栏目，其余划掉。</p>
+ * <p>每条信号有一个可信程度（{@link Trust}）：确认了的、先用着的、没验证的。
+ * 信息条默认只启用信号都{@linkplain #usable() 能用}的栏目，其余划掉。</p>
  *
  * <p>解码是纯函数（{@code SignalDecodeTest}）：占位值 255 / 254 / 253 / -1 / -65535，浮点 255 / -65535 和
  * 绝对值小于 1e-6 的非零数，都算「没数据」。</p>
@@ -20,76 +19,87 @@ import com.kooo.evcam.R;
 public enum Signal {
 
     // ---- 行驶
-    GEAR(Group.DRIVE, Kind.SENSOR_EVENT, 0x00200200, 0, R.string.vi_gear, true, Format.GEAR),
-    SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, true, Format.MPS),
-    IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, true, Format.IGNITION),
-    BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, true, Format.ON_OFF),
-    /** 跟着变（停车踩下 11–15），踩到底是多少没测（Lab 0.13.0），先不按 0–100 当真。 */
-    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, false, Format.PERCENT),
-    /** 行驶中跟着变，踩到底是多少没测（Lab 0.13.0）。 */
-    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, false, Format.PERCENT),
-    STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, false, Format.DEGREES),
+    GEAR(Group.DRIVE, Kind.SENSOR_EVENT, 0x00200200, 0, R.string.vi_gear, Trust.CONFIRMED, Format.GEAR),
+    SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, Trust.CONFIRMED, Format.MPS),
+    IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, Trust.CONFIRMED, Format.IGNITION),
+    BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, Trust.CONFIRMED, Format.ON_OFF),
+    /** 跟着变（停车踩下 11–15），踩到底是多少没测（Lab 0.13.0）；先按 0–100 画。用户定：保留。 */
+    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, Trust.PROVISIONAL, Format.PERCENT),
+    /** 行驶中跟着变，踩到底是多少没测（Lab 0.13.0）；先按 0–100 画。用户定：保留。 */
+    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.PROVISIONAL, Format.PERCENT),
+    /** 开车时跟着变；单位、正负、满舵读数和圈数没测（Lab 0.13.0），先按读数就是度数。用户定：能用，开放。 */
+    STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.PROVISIONAL, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
-    AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, true, Format.ON_OFF),
+    AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 灯光
-    INDICATOR(Group.LAMPS, Kind.FUNCTION, 0x2A091500, 0, R.string.vi_indicator, true, Format.INDICATOR),
-    TURN_LEFT(Group.LAMPS, Kind.FUNCTION, 0x21051100, 0, R.string.vi_turn_left, true, Format.ON_OFF),
-    TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, true, Format.ON_OFF),
-    LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, true, Format.ON_OFF),
-    HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, true, Format.ON_OFF),
-    /** 近光没亮时才是 1；晚上前灯带亮着时读 0（那时报的是前位置灯）。白天自动档是不是 1 待 Lab 白天复核。 */
-    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, false, Format.ON_OFF),
-    FRONT_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050400, 0, R.string.vi_front_fog, false, Format.ON_OFF),
-    REAR_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050500, 0, R.string.vi_rear_fog, false, Format.ON_OFF),
-    FRONT_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050800, 0, R.string.vi_front_position, true, Format.ON_OFF),
-    REAR_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050C00, 0, R.string.vi_rear_position, true, Format.ON_OFF),
-    LIGHT_SWITCH(Group.LAMPS, Kind.FUNCTION, 0x20040E00, 0, R.string.vi_light_switch, true, Format.LIGHT_SWITCH),
-    REVERSE_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050E00, 0, R.string.vi_reverse_lamp, true, Format.ON_OFF),
-    STOP_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050D00, 0, R.string.vi_stop_lamp, true, Format.ON_OFF),
+    INDICATOR(Group.LAMPS, Kind.FUNCTION, 0x2A091500, 0, R.string.vi_indicator, Trust.CONFIRMED, Format.INDICATOR),
+    TURN_LEFT(Group.LAMPS, Kind.FUNCTION, 0x21051100, 0, R.string.vi_turn_left, Trust.CONFIRMED, Format.ON_OFF),
+    TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, Trust.CONFIRMED, Format.ON_OFF),
+    LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, Trust.CONFIRMED, Format.ON_OFF),
+    HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, Trust.CONFIRMED, Format.ON_OFF),
+    /** 近光没亮时才是 1；晚上前灯带亮着时读 0（那时报的是前位置灯）。白天自动档待 Lab 复核，接法先不动。用户定：保留。 */
+    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, Trust.PROVISIONAL, Format.ON_OFF),
+    FRONT_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050400, 0, R.string.vi_front_fog, Trust.UNVERIFIED, Format.ON_OFF),
+    REAR_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050500, 0, R.string.vi_rear_fog, Trust.UNVERIFIED, Format.ON_OFF),
+    FRONT_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050800, 0, R.string.vi_front_position, Trust.CONFIRMED, Format.ON_OFF),
+    REAR_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050C00, 0, R.string.vi_rear_position, Trust.CONFIRMED, Format.ON_OFF),
+    LIGHT_SWITCH(Group.LAMPS, Kind.FUNCTION, 0x20040E00, 0, R.string.vi_light_switch, Trust.CONFIRMED, Format.LIGHT_SWITCH),
+    REVERSE_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050E00, 0, R.string.vi_reverse_lamp, Trust.CONFIRMED, Format.ON_OFF),
+    STOP_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050D00, 0, R.string.vi_stop_lamp, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 车身。区域值按 Lab 实测：0x1 = 主驾门（右舵车上是右前），0x4 = 副驾门，0x10 = 左后，0x40 = 右后，
     // 0x10000000 = 前备箱（ROOF_TOP），0x20000000 = 后备箱（VehicleZone 里没名字，直接传值）
-    DOOR_DRIVER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x1, R.string.vi_door_driver, true, Format.DOOR),
-    DOOR_PASSENGER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x4, R.string.vi_door_passenger, true, Format.DOOR),
-    DOOR_REAR_LEFT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10, R.string.vi_door_rear_left, true, Format.DOOR),
-    DOOR_REAR_RIGHT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x40, R.string.vi_door_rear_right, true, Format.DOOR),
-    DOOR_FRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10000000, R.string.vi_door_frunk, true, Format.DOOR),
-    DOOR_TRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x20000000, R.string.vi_door_trunk, true, Format.DOOR),
-    CHARGE_PORT(Group.BODY, Kind.FUNCTION, 0x21020500, 0, R.string.vi_charge_port, true, Format.DOOR),
-    SUNROOF_SHADE(Group.BODY, Kind.FUNCTION_ZONE, 0x20080100, 0x8, R.string.vi_sunroof_shade, true, Format.RAW),
-    BELT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00201200, 0, R.string.vi_belt_driver, true, Format.BELT),
-    BELT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00201300, 0, R.string.vi_belt_passenger, false, Format.BELT),
-    BELT_REAR_LEFT(Group.BODY, Kind.SENSOR_EVENT, 0x00201800, 0, R.string.vi_belt_rear_left, false, Format.BELT),
-    BELT_REAR_CENTER(Group.BODY, Kind.SENSOR_EVENT, 0x00201A00, 0, R.string.vi_belt_rear_center, false, Format.BELT),
-    BELT_REAR_RIGHT(Group.BODY, Kind.SENSOR_EVENT, 0x00201900, 0, R.string.vi_belt_rear_right, false, Format.BELT),
-    SEAT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00203300, 0, R.string.vi_seat_driver, true, Format.SEAT),
-    SEAT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00203400, 0, R.string.vi_seat_passenger, true, Format.SEAT),
+    DOOR_DRIVER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x1, R.string.vi_door_driver, Trust.CONFIRMED, Format.DOOR),
+    DOOR_PASSENGER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x4, R.string.vi_door_passenger, Trust.CONFIRMED, Format.DOOR),
+    DOOR_REAR_LEFT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10, R.string.vi_door_rear_left, Trust.CONFIRMED, Format.DOOR),
+    DOOR_REAR_RIGHT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x40, R.string.vi_door_rear_right, Trust.CONFIRMED, Format.DOOR),
+    DOOR_FRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10000000, R.string.vi_door_frunk, Trust.CONFIRMED, Format.DOOR),
+    DOOR_TRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x20000000, R.string.vi_door_trunk, Trust.CONFIRMED, Format.DOOR),
+    CHARGE_PORT(Group.BODY, Kind.FUNCTION, 0x21020500, 0, R.string.vi_charge_port, Trust.CONFIRMED, Format.DOOR),
+    SUNROOF_SHADE(Group.BODY, Kind.FUNCTION_ZONE, 0x20080100, 0x8, R.string.vi_sunroof_shade, Trust.CONFIRMED, Format.RAW),
+    BELT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00201200, 0, R.string.vi_belt_driver, Trust.CONFIRMED, Format.BELT),
+    BELT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00201300, 0, R.string.vi_belt_passenger, Trust.UNVERIFIED, Format.BELT),
+    BELT_REAR_LEFT(Group.BODY, Kind.SENSOR_EVENT, 0x00201800, 0, R.string.vi_belt_rear_left, Trust.UNVERIFIED, Format.BELT),
+    BELT_REAR_CENTER(Group.BODY, Kind.SENSOR_EVENT, 0x00201A00, 0, R.string.vi_belt_rear_center, Trust.UNVERIFIED, Format.BELT),
+    BELT_REAR_RIGHT(Group.BODY, Kind.SENSOR_EVENT, 0x00201900, 0, R.string.vi_belt_rear_right, Trust.UNVERIFIED, Format.BELT),
+    SEAT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00203300, 0, R.string.vi_seat_driver, Trust.CONFIRMED, Format.SEAT),
+    SEAT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00203400, 0, R.string.vi_seat_passenger, Trust.CONFIRMED, Format.SEAT),
 
     // ---- 原厂界面
-    STOCK_360(Group.STOCK, Kind.FUNCTION, 0x2031FE00, 0, R.string.vi_stock_360, true, Format.SHOWN),
-    PARK_ASSIST(Group.STOCK, Kind.FUNCTION, 0x23030100, 0, R.string.vi_park_assist, true, Format.ON_OFF),
+    STOCK_360(Group.STOCK, Kind.FUNCTION, 0x2031FE00, 0, R.string.vi_stock_360, Trust.CONFIRMED, Format.SHOWN),
+    PARK_ASSIST(Group.STOCK, Kind.FUNCTION, 0x23030100, 0, R.string.vi_park_assist, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 环境 / 车辆
-    ODOMETER(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100700, 0, R.string.vi_odometer, true, Format.KM),
-    BATTERY(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00404000, 0, R.string.vi_battery, true, Format.PERCENT_RAW),
-    RANGE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100800, 0, R.string.vi_range, true, Format.KM),
-    TEMP_OUTSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100B00, 0, R.string.vi_temp_outside, true, Format.CELSIUS),
-    TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, true, Format.CELSIUS),
-    BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, true, Format.CELSIUS),
+    ODOMETER(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100700, 0, R.string.vi_odometer, Trust.CONFIRMED, Format.KM),
+    BATTERY(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00404000, 0, R.string.vi_battery, Trust.CONFIRMED, Format.PERCENT_RAW),
+    RANGE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100800, 0, R.string.vi_range, Trust.CONFIRMED, Format.KM),
+    TEMP_OUTSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100B00, 0, R.string.vi_temp_outside, Trust.CONFIRMED, Format.CELSIUS),
+    TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, Trust.CONFIRMED, Format.CELSIUS),
+    BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, Trust.CONFIRMED, Format.CELSIUS),
 
     // ---- 安全辅助（读的是开关）
-    AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, true, Format.ON_OFF),
+    AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),
     /** 前碰预警的灵敏度：0 关，低 / 中 / 高是 0x200E0201–03（原来读的 0x200E0100 一直 255）。 */
-    FCW(Group.ASSIST, Kind.FUNCTION, 0x200E0200, 0, R.string.vi_fcw, true, Format.LEVEL),
-    LDW(Group.ASSIST, Kind.FUNCTION, 0x28084100, 0, R.string.vi_ldw, false, Format.ON_OFF),
-    LKA(Group.ASSIST, Kind.FUNCTION, 0x20070100, 0, R.string.vi_lka, true, Format.ON_OFF),
-    BSD(Group.ASSIST, Kind.FUNCTION, 0x28081600, 0, R.string.vi_bsd, false, Format.ON_OFF),
-    RCW(Group.ASSIST, Kind.FUNCTION, 0x20071000, 0, R.string.vi_rcw, true, Format.ON_OFF),
-    LANE_CHANGE_ASSIST(Group.ASSIST, Kind.FUNCTION, 0x20070300, 0, R.string.vi_lane_change_assist, true, Format.ON_OFF),
-    AUTO_LANE_CHANGE(Group.ASSIST, Kind.FUNCTION, 0x28040100, 0, R.string.vi_auto_lane_change, true, Format.ON_OFF),
-    DOOR_OPEN_WARNING(Group.ASSIST, Kind.FUNCTION, 0x20120100, 0, R.string.vi_door_open_warning, true, Format.ON_OFF),
-    LCC(Group.ASSIST, Kind.FUNCTION, 0x28085B00, 0, R.string.vi_lcc, false, Format.ON_OFF);
+    FCW(Group.ASSIST, Kind.FUNCTION, 0x200E0200, 0, R.string.vi_fcw, Trust.CONFIRMED, Format.LEVEL),
+    LDW(Group.ASSIST, Kind.FUNCTION, 0x28084100, 0, R.string.vi_ldw, Trust.UNVERIFIED, Format.ON_OFF),
+    LKA(Group.ASSIST, Kind.FUNCTION, 0x20070100, 0, R.string.vi_lka, Trust.CONFIRMED, Format.ON_OFF),
+    BSD(Group.ASSIST, Kind.FUNCTION, 0x28081600, 0, R.string.vi_bsd, Trust.UNVERIFIED, Format.ON_OFF),
+    RCW(Group.ASSIST, Kind.FUNCTION, 0x20071000, 0, R.string.vi_rcw, Trust.CONFIRMED, Format.ON_OFF),
+    LANE_CHANGE_ASSIST(Group.ASSIST, Kind.FUNCTION, 0x20070300, 0, R.string.vi_lane_change_assist, Trust.CONFIRMED, Format.ON_OFF),
+    AUTO_LANE_CHANGE(Group.ASSIST, Kind.FUNCTION, 0x28040100, 0, R.string.vi_auto_lane_change, Trust.CONFIRMED, Format.ON_OFF),
+    DOOR_OPEN_WARNING(Group.ASSIST, Kind.FUNCTION, 0x20120100, 0, R.string.vi_door_open_warning, Trust.CONFIRMED, Format.ON_OFF),
+    LCC(Group.ASSIST, Kind.FUNCTION, 0x28085B00, 0, R.string.vi_lcc, Trust.UNVERIFIED, Format.ON_OFF);
+
+    /** 可信到什么程度。 */
+    public enum Trust {
+        /** Lab 手册「确认了的」一节里有它，这里用到的含义、取值、量程都没挂着「待测」 */
+        CONFIRMED,
+        /** 车上跟着变、能用，但量程 / 比例 / 某个场景还等 Lab 测；用户点名先开放的（方向盘、油门刹车、日行灯） */
+        PROVISIONAL,
+        /** 读得到，含义没对上，或者还没专门测过 */
+        UNVERIFIED
+    }
 
     /** 怎么读。 */
     public enum Kind {
@@ -168,18 +178,22 @@ public enum Signal {
     /** 带区域读时的区域值；不带区域的为 0。 */
     public final int zone;
     public final int labelRes;
-    /** 车上操作时看到它跟着变过。 */
-    public final boolean verified;
+    public final Trust trust;
     public final Format format;
 
-    Signal(Group group, Kind kind, int id, int zone, int labelRes, boolean verified, Format format) {
+    Signal(Group group, Kind kind, int id, int zone, int labelRes, Trust trust, Format format) {
         this.group = group;
         this.kind = kind;
         this.id = id;
         this.zone = zone;
         this.labelRes = labelRes;
-        this.verified = verified;
+        this.trust = trust;
         this.format = format;
+    }
+
+    /** 能不能直接用：确认了的，或者先用着的。 */
+    public boolean usable() {
+        return trust != Trust.UNVERIFIED;
     }
 
     public boolean isSensor() {

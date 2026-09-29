@@ -26,7 +26,7 @@ import java.util.Map;
  * 系统信息（试验性）：车机能读到的车辆信号和此刻的状态。
  *
  * <p>行按信号表（{@link Signal}）生成，表里加一行这里就多一行；分组、名字、验证程度都从表里来，
- * 这里只管排版和把值写成人话。名字深色的是车上验证过跟着变的，浅色的读得到但没专门验证；
+ * 这里只管排版和把值写成人话。名字深色的是确认了的，中灰是先用着的（细节待定），浅色的没验证；
  * 值深色是有数据，浅色「—」是没数据。名字下面一行小字是号码，对照 Lab 的记录用。</p>
  *
  * <p>资源只在这一页开着时占：进来登记（{@link Telemetry#acquire}），离开注销 —— 没别人（录像的信息条）
@@ -63,7 +63,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 View row = inflater.inflate(R.layout.item_vehicle_info_row, list, false);
                 TextView label = row.findViewById(R.id.vehicle_info_label);
                 label.setText(s.labelRes);
-                label.setTextColor(ContextCompat.getColor(ctx, s.verified ? R.color.pref_title : R.color.text_tertiary));
+                label.setTextColor(ContextCompat.getColor(ctx, tone(s.trust)));
                 ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(address(s));
                 valueViews.put(s, row.findViewById(R.id.vehicle_info_value));
                 list.addView(row);
@@ -109,6 +109,18 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
             tv.setTextColor(v == null ? unknown : known);
         }
         statusView.setText(Telemetry.get().describe());
+    }
+
+    /** 名字的深浅：确认了的最深，先用着的中灰，没验证的最浅。 */
+    private static int tone(Signal.Trust trust) {
+        switch (trust) {
+            case CONFIRMED:
+                return R.color.pref_title;
+            case PROVISIONAL:
+                return R.color.text_secondary;
+            default:
+                return R.color.text_tertiary;
+        }
     }
 
     /** 号码那一行：怎么读 + 号码（+ 区域）。 */
