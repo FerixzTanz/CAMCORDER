@@ -110,6 +110,23 @@ public class SingleCamera {
         void onFailed(String reason);
     }
 
+    /** 这一路这一张拍完了：存下了（true）或没拍成（false）。每次拍照只回一次。 */
+    public interface PhotoDone {
+        void onDone(boolean saved);
+    }
+
+    /**
+     * 不显示的出帧口。
+     *
+     * <p>拍照登记着（{@link CameraNeeds.Holder#PHOTO}）、而这一路此刻没有预览、后视镜、录像
+     * 任何一个输出时（主界面在后台，它的预览画面已被系统收回），会话挂上它，相机才有地方出帧、
+     * 拍照才有画面可拍；拍完注销了就从会话里摘掉。和预览同尺寸、同格式，帧到了就丢。</p>
+     */
+    private ImageReader frameSink;
+
+    /** 眼下的会话里挂着出帧口没有（相机线程写，主线程读）。 */
+    private volatile boolean frameSinkInSession;
+
     // 鱼眼矫正
     
     // 亮度/降噪调节相关
@@ -801,7 +818,36 @@ public class SingleCamera {
      * 那些状态标志卡住的情形，拿卡住的标志当前提就等于不救。</p>
      */
     public boolean wantsFrames() {
-        return previewSurface != null || mainFloatingSurface != null || recordSurface != null;
+        return previewSurface != null || mainFloatingSurface != null || recordSurface != null
+                || photoWantsFrames();
+    }
+
+    /** 有人在等拍照（登记表上的 PHOTO）。 */
+    private static boolean photoWantsFrames() {
+        return CameraNeeds.current().isHeld(CameraNeeds.Holder.PHOTO);
+    }
+
+    /** 能按快门了：设备开着、会话在、最近 {@code freshMs} 毫秒里真出过画面。 */
+    public boolean readyForPhoto(long freshMs) {
+        return cameraDevice != null && captureSession != null && hasFramesWithin(freshMs);
+    }
+
+    /**
+     * 登记表变了（{@link MultiCameraManager#reconcileCameras}）：这一路的输出要不要跟着变。
+     *
+     * <p>跟着登记表走的输出只有出帧口：有人等拍照、而没有别的输出时挂上，拍完摘掉。
+     * 会话里有没有它和该不该有它对不上，就请求重建一次 —— 重建按最新情况定输出。
+     * 相机还没开好的不用管：开好建会话时自然按登记表来。</p>
+     */
+    public void followNeeds() {
+        if (cameraDevice == null) {
+            return;
+        }
+        boolean want = photoWantsFrames() && previewSurface == null
+                && mainFloatingSurface == null && recordSurface == null;
+        if (want != frameSinkInSession) {
+            requestSessionRebuild(want ? "photo-needs-frames" : "photo-done", 0);
+        }
     }
 
     /** 最后一次报错的短名，没有就返回 null。 */
@@ -970,6 +1016,7 @@ public class SingleCamera {
                 // 配不上才丢的，换了配置未必还配不上
                 jpegDropped = false;
                 prepareJpegReader(map);
+                closeFrameSink();   // 尺寸可能换了；要用时按新的预览尺寸再建
 
                 // 通知回调预览尺寸已确定
                 if (callback != null && previewSize != null) {
@@ -1349,10 +1396,15 @@ public class SingleCamera {
                 }
             }
             
+            // 有人等拍照、而这一路没有任何显示或录像输出（主界面在后台）：挂上不显示的出帧口
+            boolean nothingElse = (surface == null || !surface.isValid())
+                    && (mainFloatingSurface == null || !mainFloatingSurface.isValid())
+                    && (recordSurface == null || !recordSurface.isValid());
+            Surface sinkSurface = (nothingElse && photoWantsFrames()) ? frameSinkSurface() : null;
+            frameSinkInSession = sinkSurface != null;
+
             // 检查是否有可用的输出 Surface（后台初始化时可能全部为 null）
-            boolean hasAnySurface = (surface != null && surface.isValid())
-                    || (mainFloatingSurface != null && mainFloatingSurface.isValid())
-                    || (recordSurface != null && recordSurface.isValid());
+            boolean hasAnySurface = !nothingElse || sinkSurface != null;
             if (!hasAnySurface) {
                 AppLog.d(TAG, "Camera " + cameraId + " no available surfaces, skipping session creation (waiting for surface)");
                 // 关闭旧 session，防止继续推帧到已销毁的 Surface（queueBuffer abandoned）
@@ -1426,6 +1478,13 @@ public class SingleCamera {
 
                     outputConfigs.add(previewSharedConfig);
                 }
+            }
+
+            if (sinkSurface != null) {
+                outputConfigs.add(new OutputConfiguration(sinkSurface));
+                surfaces.add(sinkSurface);
+                previewRequestBuilder.addTarget(sinkSurface);
+                AppLog.d(TAG, "Camera " + cameraId + " 没有显示输出，拍照用不显示的出帧口: " + previewSize);
             }
 
             // 录制 Surface 作为一个独立的硬件流
@@ -1923,6 +1982,46 @@ public class SingleCamera {
         pendingJpeg = null;
     }
 
+    /** 出帧口的 Surface；还没建就按预览尺寸建一个（相机线程上调）。建不出来返回 null。 */
+    private Surface frameSinkSurface() {
+        if (frameSink == null) {
+            Size size = previewSize;
+            Handler handler = backgroundHandler;
+            if (size == null || handler == null) {
+                return null;
+            }
+            try {
+                frameSink = ImageReader.newInstance(size.getWidth(), size.getHeight(),
+                        ImageFormat.PRIVATE, 2);
+                frameSink.setOnImageAvailableListener(reader -> {
+                    // 帧只是为了让相机转起来：拿到就还回去
+                    try {
+                        Image image = reader.acquireLatestImage();
+                        if (image != null) {
+                            image.close();
+                        }
+                    } catch (Exception e) {
+                        AppLog.d(TAG, "Camera " + cameraId + " frame sink: " + e.getMessage());
+                    }
+                }, handler);
+            } catch (Exception e) {
+                AppLog.w(TAG, "Camera " + cameraId + " 建不出不显示的出帧口: " + e);
+                frameSink = null;
+                return null;
+            }
+        }
+        Surface surface = frameSink.getSurface();
+        return surface != null && surface.isValid() ? surface : null;
+    }
+
+    private void closeFrameSink() {
+        frameSinkInSession = false;
+        if (frameSink != null) {
+            frameSink.close();
+            frameSink = null;
+        }
+    }
+
     /**
      * 拍照。
      *
@@ -1931,36 +2030,37 @@ public class SingleCamera {
      * <p>多路拍的是同一个瞬间，回看是按文件名里的时间戳分组的 —— 各自取各自的
      * 时间，跨过一秒就会被拆成两组。</p>
      *
+     * <h3>结果</h3>
+     *
+     * <p>存下了还是没拍成，都经 {@code done} 回报一次 —— 界面按它说话，而不是按了就说「已保存」。</p>
+     *
      * @param timestamp 文件命名用的时间戳，由调用方统一生成
+     * @param done      这一路这一张的结果
      */
-    public void takePicture(String timestamp) {
-        if (textureView == null || !textureView.isAvailable()) {
-            AppLog.e(TAG, "Camera " + cameraId + " TextureView not available");
-            return;
-        }
-
+    public void takePicture(String timestamp, PhotoDone done) {
         if (previewSize == null) {
             AppLog.e(TAG, "Camera " + cameraId + " preview size not available");
+            done.onDone(false);
             return;
         }
 
         // 图片通道优先：那是相机自己的 JPEG 输出，分辨率是这一路的最大值，
-        // 和预览缓冲区无关。发不出去（通道没开、会话不在）就回退抓预览。
+        // 和预览缓冲区无关，主界面在不在前台都能拍。发不出去（通道没开、会话不在）就回退抓预览。
         if (requestJpeg(new JpegCallback() {
             @Override
             public void onJpeg(byte[] data) {
-                saveJpeg(data, timestamp);
+                saveJpeg(data, timestamp, done);
             }
 
             @Override
             public void onFailed(String reason) {
                 AppLog.w(TAG, "Camera " + cameraId + " 图片通道没出图（" + reason + "），改抓预览");
-                grabPreview(timestamp);
+                grabPreview(timestamp, done);
             }
         })) {
             return;
         }
-        grabPreview(timestamp);
+        grabPreview(timestamp, done);
     }
 
     /**
@@ -1970,24 +2070,27 @@ public class SingleCamera {
      * 里没有我们的应用名、车牌和时间。EXIF 由 {@code saveBitmapAsJPEG} 之后
      * 单独补写，重新编码会把相机写的标签丢掉。</p>
      */
-    private void saveJpeg(byte[] data, String timestamp) {
-        if (backgroundHandler == null) {
+    private void saveJpeg(byte[] data, String timestamp, PhotoDone done) {
+        Handler handler = backgroundHandler;
+        if (handler == null) {
+            done.onDone(false);
             return;
         }
-        backgroundHandler.post(() -> {
+        handler.post(() -> {
             android.graphics.Bitmap bitmap = null;
             try {
                 bitmap = android.graphics.BitmapFactory.decodeByteArray(data, 0, data.length);
                 if (bitmap == null) {
                     AppLog.e(TAG, "Camera " + cameraId + " JPEG 解不开，改抓预览");
-                    grabPreview(timestamp);
+                    grabPreview(timestamp, done);
                     return;
                 }
                 AppLog.d(TAG, "Camera " + cameraId + " 图片通道拍到 "
                         + bitmap.getWidth() + "x" + bitmap.getHeight());
-                saveBitmapAsJPEG(bitmap, timestamp);
+                done.onDone(saveBitmapAsJPEG(bitmap, timestamp));
             } catch (Exception e) {
                 AppLog.e(TAG, "Camera " + cameraId + " 保存 JPEG 失败", e);
+                done.onDone(false);
             } finally {
                 if (bitmap != null) {
                     bitmap.recycle();
@@ -1996,38 +2099,47 @@ public class SingleCamera {
         });
     }
 
-    /** 老路子：从 TextureView 抓一张预览画面。分辨率受预览缓冲区限制。 */
-    private void grabPreview(String timestamp) {
-        if (backgroundHandler == null) {
+    /**
+     * 老路子：从主界面的预览上抓一张。分辨率受预览缓冲区限制。
+     * 主界面不在前台就没有预览可抓（画面已被系统收回），这一路算没拍成。
+     */
+    private void grabPreview(String timestamp, PhotoDone done) {
+        Handler handler = backgroundHandler;
+        TextureView view = textureView;
+        Size size = previewSize;
+        if (handler == null || view == null || !view.isAvailable() || size == null) {
+            AppLog.w(TAG, "Camera " + cameraId + " 没有预览画面可抓，这一路没拍成");
+            done.onDone(false);
             return;
         }
-        backgroundHandler.post(() -> {
+        handler.post(() -> {
             try {
-                // 立即从 TextureView 抓一张（快速抓拍）
-                android.graphics.Bitmap bitmap = textureView.getBitmap(
-                        previewSize.getWidth(),
-                        previewSize.getHeight()
-                );
+                android.graphics.Bitmap bitmap = view.getBitmap(size.getWidth(), size.getHeight());
                 if (bitmap == null) {
                     AppLog.e(TAG, "Camera " + cameraId + " failed to get bitmap from TextureView");
+                    done.onDone(false);
                     return;
                 }
                 bitmap = toNormalView(bitmap);
                 AppLog.d(TAG, "Camera " + cameraId + " picture captured ("
                         + bitmap.getWidth() + "x" + bitmap.getHeight() + ")");
-                saveBitmapAsJPEG(bitmap, timestamp);
+                boolean saved = saveBitmapAsJPEG(bitmap, timestamp);
                 bitmap.recycle();
-                AppLog.d(TAG, "Camera " + cameraId + " picture saved");
+                done.onDone(saved);
             } catch (Exception e) {
                 AppLog.e(TAG, "Camera " + cameraId + " error capturing picture", e);
+                done.onDone(false);
             }
         });
     }
 
     /**
      * 将Bitmap保存为JPEG文件（使用指定的时间戳）
+     *
+     * @return 文件写完了（EXIF 写不进不算失败，见 {@link #writeExif}）
      */
-    private void saveBitmapAsJPEG(android.graphics.Bitmap bitmap, String timestamp) {
+    private boolean saveBitmapAsJPEG(android.graphics.Bitmap bitmap, String timestamp) {
+        boolean saved = false;
         File photoDir = StorageHelper.getPhotoDir(context);
         if (!photoDir.exists()) {
             photoDir.mkdirs();
@@ -2081,6 +2193,7 @@ public class SingleCamera {
             output.flush();
             output.close();
             output = null;
+            saved = true;
             writeExif(photoFile, timestamp, finalBitmap.getWidth(), finalBitmap.getHeight());
             AppLog.i(TAG, "Photo saved: " + photoFile.getAbsolutePath());
         } catch (IOException e) {
@@ -2112,6 +2225,7 @@ public class SingleCamera {
                 gridBitmap.recycle();
             }
         }
+        return saved;
     }
 
     /**
@@ -2341,6 +2455,7 @@ public class SingleCamera {
         if (handler == null) {
             // 没有相机线程：这一路眼下没开着，也就没有设备、会话要关，就地收拾完
             closeJpegReader();
+            closeFrameSink();
             AppLog.d(TAG, "Camera " + cameraId + " closed (was not open)");
             if (callback != null) {
                 callback.onCameraClosed(cameraId);
@@ -2364,8 +2479,9 @@ public class SingleCamera {
                     AppLog.d(TAG, "Camera " + cameraId + " ignored exception while releasing preview surface: " + e.getMessage());
                 }
             }
-            // 拍照通道也要放，否则下次建会话会多一条悬着的流
+            // 拍照通道、出帧口也要放，否则下次建会话会多一条悬着的流
             closeJpegReader();
+            closeFrameSink();
             // 同一台相机上一次的关闭要是还没完，等它：「这一次关完」要蕴含「之前的都关完」
             awaitQuietly(previous, OPEN_WAIT_FOR_CLOSE_MS);
             long ms = SystemClock.elapsedRealtime() - requestedAt;

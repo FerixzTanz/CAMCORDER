@@ -181,7 +181,8 @@ public class MultiCameraManager {
     /**
      * 相机开不开、关不关，只看登记表（{@link CameraNeeds}）：谁要用就登记，没人登记才关（1.65.0）。
      *
-     * <p>主界面预览、录像要的是全部启用的路，登记了就开；后视镜只要自己那一路，它自己开（{@code bindCamera}）。
+     * <p>主界面预览、录像、拍照要的是全部启用的路，登记了就开；后视镜只要自己那一路，它自己开（{@code bindCamera}）。
+     * 开着的每一路再按登记表调整自己的输出（{@link SingleCamera#followNeeds}：等拍照而没有别的输出时挂上出帧口）。
      * 没人要了等 {@link #CLOSE_WHEN_UNNEEDED_MS} 再关 —— 熄屏后 1.5 秒也正好是深睡之前。
      * 以前这个判断散在主界面退后台、熄屏 1.5 秒、熄屏 15 秒、后视镜四处，各问一遍登记表。</p>
      */
@@ -193,11 +194,16 @@ public class MultiCameraManager {
         CameraNeeds needs = CameraNeeds.current();
         mainHandler.removeCallbacks(closeWhenUnneeded);
         if (needs.heldByAnyone()) {
-            if (!isReleased() && (needs.isHeld(CameraNeeds.Holder.PREVIEW) || needs.isHeld(CameraNeeds.Holder.RECORDING))) {
+            if (!isReleased() && (needs.isHeld(CameraNeeds.Holder.PREVIEW)
+                    || needs.isHeld(CameraNeeds.Holder.RECORDING)
+                    || needs.isHeld(CameraNeeds.Holder.PHOTO))) {
                 openAllCameras();   // 已经开着的那几路会被 openCamera 自己跳过
             }
         } else {
             mainHandler.postDelayed(closeWhenUnneeded, CLOSE_WHEN_UNNEEDED_MS);
+        }
+        for (SingleCamera camera : cameras.values()) {
+            camera.followNeeds();
         }
     }
 
@@ -2278,6 +2284,11 @@ public class MultiCameraManager {
     public void release() {
         CameraNeeds.current().setListener(null);
         mainHandler.removeCallbacks(closeWhenUnneeded);
+        if (photoJob != null) {
+            // 拍到一半管理器没了（退出）：这一张作罢，登记也撤掉
+            photoJob = null;
+            CameraNeeds.current().release(CameraNeeds.Holder.PHOTO);
+        }
         AppLog.d(TAG, "Releasing MultiCameraManager resources");
         livenessRunning = false;
         
@@ -2360,53 +2371,175 @@ public class MultiCameraManager {
         return isRecording;
     }
 
-    /**
-     * 拍照（所有活动的摄像头顺序拍照，避免资源耗尽）
-     */
-    /**
-     * 拍照（所有摄像头，自动生成时间戳）
-     */
-    public void takePicture() {
-        // 生成统一的时间戳
-        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
-                .format(new java.util.Date());
-        takePicture(timestamp);
+    // ------------------------------------------------------------------ 拍照
+
+    /** 拍照的结果，在主线程上回调。 */
+    public interface PhotoCallback {
+        /** 相机还没出画面，要等它（开相机、建会话）。只在确实要等时调一次。 */
+        default void onWaitingForCameras() {
+        }
+
+        /**
+         * @param saved    存下了几路
+         * @param pressed  按了快门的有几路（出了画面的）
+         * @param expected 该拍几路
+         */
+        void onPhotoResult(int saved, int pressed, int expected);
     }
 
+    /** 等各路出画面最多多久：冷开相机，加上看门狗第一次重建会话（8 秒）都等得到。 */
+    private static final long PHOTO_READY_TIMEOUT_MS = 10_000L;
+    /** 按下快门后等各路存完最多多久（一张 JPEG 120–200 ms，加解码、盖角标、写盘）。 */
+    private static final long PHOTO_SAVE_TIMEOUT_MS = 5_000L;
+    /** 最近多久里出过画面算「在出画面」。 */
+    private static final long PHOTO_FRESH_MS = 1_500L;
+    /** 各路快门错开多久，免得几路同时解码、编码。 */
+    private static final long PHOTO_STAGGER_MS = 300L;
+
+    /** 正在拍的那一张；同一时刻只拍一张。 */
+    private PhotoJob photoJob;
+
+    private static final class PhotoJob {
+        final PhotoCallback callback;
+        final long startedAt = android.os.SystemClock.uptimeMillis();
+        final long readyDeadline = startedAt + PHOTO_READY_TIMEOUT_MS;
+        boolean toldWaiting;
+        boolean shutterPressed;
+        int expected;
+        int pressed;
+        int saved;
+        final Set<String> reported = new HashSet<>();
+
+        PhotoJob(PhotoCallback callback) {
+            this.callback = callback;
+        }
+    }
+
+    private final Runnable photoTick = this::stepPhoto;
+
     /**
-     * 拍照（所有摄像头，使用指定的时间戳）
-     * @param timestamp 统一的时间戳，用于所有摄像头的文件命名
+     * 拍一张 —— 主界面的拍照键、悬浮按钮都走这里。
+     *
+     * <p>拍照在登记表上登记一项（{@link CameraNeeds.Holder#PHOTO}）：相机没开，由登记表的规则去开；
+     * 主界面不在前台时，没有输出的那几路挂上出帧口出画面。等各路出了画面再按快门（最多等
+     * {@link #PHOTO_READY_TIMEOUT_MS}，到点只拍出了画面的），存完注销 —— 没人要了相机照常在 1.5 秒后关。
+     * 结果按真的存下了几路回报；以前按了就说「已保存」，相机没开时其实什么也没拍到。</p>
+     *
+     * @return false：上一张还在拍，这一次不接
      */
-    public void takePicture(String timestamp) {
-        List<String> keys = getActiveCameraKeys();
-        if (keys.isEmpty()) {
-            AppLog.e(TAG, "No active cameras for taking picture");
+    public boolean takePhoto(PhotoCallback callback) {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            mainHandler.post(() -> takePhoto(callback));
+            return true;
+        }
+        if (photoJob != null) {
+            AppLog.d(TAG, "上一张还在拍，这一次不接");
+            return false;
+        }
+        if (isReleased()) {
+            callback.onPhotoResult(0, 0, 0);
+            return false;
+        }
+        photoJob = new PhotoJob(callback);
+        // 没开的相机、没有输出的会话，都由登记表的规则去补（reconcileCameras）
+        CameraNeeds.current().claim(CameraNeeds.Holder.PHOTO);
+        stepPhoto();
+        return true;
+    }
+
+    /** 拍照这件事的唯一节拍：等画面 → 按快门 → 等存完（或到点）→ 收尾。 */
+    private void stepPhoto() {
+        PhotoJob job = photoJob;
+        if (job == null) {
             return;
         }
+        long now = android.os.SystemClock.uptimeMillis();
+        if (job.shutterPressed) {
+            // 各路都报了由 onCameraPhotoDone 收；走到这里是到点了还没报齐
+            AppLog.w(TAG, "拍照：" + PHOTO_SAVE_TIMEOUT_MS + "ms 内只报回 " + job.reported.size()
+                    + "/" + job.pressed + " 路");
+            finishPhoto(job);
+            return;
+        }
+        List<String> keys = getActiveCameraKeys();
+        List<String> ready = new ArrayList<>();
+        for (String key : keys) {
+            SingleCamera camera = cameras.get(key);
+            if (camera != null && camera.readyForPhoto(PHOTO_FRESH_MS)) {
+                ready.add(key);
+            }
+        }
+        boolean allReady = !keys.isEmpty() && ready.size() == keys.size();
+        if (!allReady && now < job.readyDeadline) {
+            if (!job.toldWaiting) {
+                job.toldWaiting = true;
+                job.callback.onWaitingForCameras();
+            }
+            mainHandler.postDelayed(photoTick, STABLE_WAIT_INTERVAL_MS);
+            return;
+        }
+        job.expected = keys.size();
+        if (ready.isEmpty()) {
+            AppLog.w(TAG, "拍照：等了 " + (now - job.startedAt) + "ms，没有一路出画面");
+            finishPhoto(job);
+            return;
+        }
+        if (!allReady) {
+            AppLog.w(TAG, "拍照：到点只有 " + ready + " 出了画面（该拍 " + keys + "），先拍这几路");
+        }
+        pressShutter(job, ready);
+    }
 
-        AppLog.d(TAG, "Taking picture with " + keys.size() + " camera(s) using timestamp: " + timestamp);
-
-        // 每一路错开 300ms 触发，避免三路同时解码 + 编码。
-        //
-        // 这里以前还给「保存」另外排了 1 秒一档的延迟，说是分散磁盘 I/O。
-        // 那个延迟加在解码之后：位图已经在内存里了，睡的是这一路相机的
-        // 后台线程 —— 相机的会话回调、健康检查、重连都排在同一个线程上。
-        // 结果是内存占得更久、文件晚两秒多才落盘（拍完立刻去看图片回看，
-        // 第三张还不在），而 I/O 本来就已经被触发延迟错开了。
+    private void pressShutter(PhotoJob job, List<String> keys) {
+        // 时间戳取按快门这一刻（不是按键那一刻：中间可能等了开相机）。几路同一个，回看按它分组
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        job.shutterPressed = true;
+        job.pressed = keys.size();
+        AppLog.d(TAG, "拍照：按快门 " + keys + " ts=" + timestamp);
+        // 每一路错开触发，避免几路同时解码 + 编码
         for (int i = 0; i < keys.size(); i++) {
             final String key = keys.get(i);
-            final int captureDelay = i * 300;
-
             mainHandler.postDelayed(() -> {
-                SingleCamera camera = cameras.get(key);
-                if (camera != null && camera.isConnected()) {
-                    AppLog.d(TAG, "Taking picture with camera " + key);
-                    camera.takePicture(timestamp);  // 统一时间戳，分到同一组
-                } else {
-                    AppLog.w(TAG, "Camera " + key + " not available for taking picture");
+                if (photoJob != job) {
+                    return;
                 }
-            }, captureDelay);
+                SingleCamera camera = cameras.get(key);
+                if (camera == null) {
+                    onCameraPhotoDone(job, key, false);
+                    return;
+                }
+                camera.takePicture(timestamp,
+                        saved -> mainHandler.post(() -> onCameraPhotoDone(job, key, saved)));
+            }, i * PHOTO_STAGGER_MS);
         }
+        mainHandler.postDelayed(photoTick, PHOTO_SAVE_TIMEOUT_MS + (keys.size() - 1) * PHOTO_STAGGER_MS);
+    }
+
+    private void onCameraPhotoDone(PhotoJob job, String key, boolean saved) {
+        if (photoJob != job || !job.reported.add(key)) {
+            return;   // 这一张已经收尾了（到点），或者同一路报了两次
+        }
+        if (saved) {
+            job.saved++;
+        }
+        if (job.reported.size() >= job.pressed) {
+            finishPhoto(job);
+        }
+    }
+
+    private void finishPhoto(PhotoJob job) {
+        if (photoJob != job) {
+            return;
+        }
+        photoJob = null;
+        mainHandler.removeCallbacks(photoTick);
+        long ms = android.os.SystemClock.uptimeMillis() - job.startedAt;
+        com.kooo.evcam.blackbox.BlackBox.note("拍照：存下 " + job.saved + "/" + job.expected + " 路"
+                + (job.pressed < job.expected ? "（" + (job.expected - job.pressed) + " 路没出画面）" : "")
+                + "，用时 " + ms + "ms" + (job.toldWaiting ? "（等了相机）" : ""));
+        // 拍完就注销：没人要了相机照常在 1.5 秒后关，出帧口也跟着摘掉
+        CameraNeeds.current().release(CameraNeeds.Holder.PHOTO);
+        job.callback.onPhotoResult(job.saved, job.pressed, job.expected);
     }
 
     private List<String> getActiveCameraKeys() {
@@ -2431,9 +2564,6 @@ public class MultiCameraManager {
         return keys;
     }
 
-    /**
-     * 检查是否有已连接的相机
-     */
     /** 环视此刻出画面到多久以内算「正常」。 */
     private static final long SURROUND_FRESH_MS = 2_000L;
 
@@ -2444,15 +2574,6 @@ public class MultiCameraManager {
     public boolean surroundHealthy() {
         SingleCamera surround = getCamera(CameraSlots.KEY_SURROUND);
         return surround != null && surround.isCameraOpened() && surround.hasFramesWithin(SURROUND_FRESH_MS);
-    }
-
-    public boolean hasConnectedCameras() {
-        for (SingleCamera camera : cameras.values()) {
-            if (camera.isConnected()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

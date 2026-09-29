@@ -5,6 +5,20 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.67.0-alpha] - 2026-09-29
+
+- **Taking a photo opens the cameras when they are closed, and says what actually happened.**
+  The floating button's photo action used to ask the main screen to take it, or launch the
+  main screen and try once after 3 seconds; with the cameras closed (main screen in the
+  background, no recording, super mirror off) nothing was taken, yet "Photo saved" was shown.
+  Now the main screen's photo button and the floating button share one photo path: it registers
+  as a camera user, so closed cameras open; a camera with no picture output (main screen in
+  the background) gets an invisible output while the photo is pending; the shutter fires
+  once the cameras deliver frames (up to 10 s, then with the ones that do). The message
+  reports the real result: saved, saved for some cameras, or not taken and why. The cameras
+  close again 1.5 s after the photo if nobody else needs them.
 - Settings -> Storage: a note under the storage location. With Sentry Mode on after you
   leave the car, only the USB-A port stays powered; a drive on the Type-C port works too,
   because recording moves to the USB-A drive when the Type-C one loses power.

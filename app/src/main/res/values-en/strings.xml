@@ -187,6 +187,10 @@
     <string name="msg_recording_lost_in_background">Recording stopped while the app was in the background</string>
     <string name="msg_record_error">Recording error</string>
     <string name="msg_photo_taken">Photo saved</string>
+    <string name="msg_photo_waiting">Opening the cameras, the photo follows shortly</string>
+    <string name="msg_photo_partial">Photo saved (%1$d of %2$d cameras)</string>
+    <string name="msg_photo_not_saved">No photo: it could not be saved</string>
+    <string name="msg_photo_no_picture">No photo: the cameras gave no picture</string>
     <string name="msg_recording_stopped">Recording stopped</string>
     <string name="msg_recording_started_all">Recording all cameras</string>
     <string name="msg_recording_started_n">Recording %1$d camera(s)</string>

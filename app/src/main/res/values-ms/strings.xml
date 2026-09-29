@@ -187,6 +187,10 @@
     <string name="msg_recording_lost_in_background">Rakaman berhenti semasa apl di latar belakang</string>
     <string name="msg_record_error">Ralat rakaman</string>
     <string name="msg_photo_taken">Foto disimpan</string>
+    <string name="msg_photo_waiting">Membuka kamera, foto akan diambil sebentar lagi</string>
+    <string name="msg_photo_partial">Foto disimpan (%1$d daripada %2$d kamera)</string>
+    <string name="msg_photo_not_saved">Tiada foto: foto tidak dapat disimpan</string>
+    <string name="msg_photo_no_picture">Tiada foto: kamera tidak memberi gambar</string>
     <string name="msg_recording_stopped">Rakaman dihentikan</string>
     <string name="msg_recording_started_all">Merakam semua kamera</string>
     <string name="msg_recording_started_n">Merakam %1$d kamera</string>

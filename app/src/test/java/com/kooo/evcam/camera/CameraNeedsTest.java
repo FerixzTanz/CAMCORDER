@@ -63,6 +63,15 @@ public class CameraNeedsTest {
                 needs.heldByAnyoneExcept(CameraNeeds.Holder.PREVIEW));
     }
 
+    /** 拍照在后台也要开相机：只有它登记着，也算有人要；存完注销，没人了才关。 */
+    @Test
+    public void aPhotoAloneKeepsItOpenUntilItIsSaved() {
+        needs.claim(CameraNeeds.Holder.PHOTO);
+        assertTrue(needs.heldByAnyoneExcept(CameraNeeds.Holder.PREVIEW));
+        needs.release(CameraNeeds.Holder.PHOTO);
+        assertFalse(needs.heldByAnyone());
+    }
+
     @Test
     public void recordingAloneKeepsItOpen() {
         needs.claim(CameraNeeds.Holder.RECORDING);

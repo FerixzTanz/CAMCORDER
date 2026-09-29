@@ -589,22 +589,15 @@ public class RecordingFloatingService extends Service {
     }
 
     /**
-     * 拍一张。
+     * 拍一张：和主界面的拍照键走同一个入口（相机层的 {@code takePhoto}）。
      *
-     * <p>应用还活着就发广播，让它用现成的相机拍 —— 服务这边没有相机。
-     * 没活着就把它拉起来并带上一个标记，等相机就绪再拍。</p>
+     * <p>主界面在不在前台、相机开没开都一样：相机没开就先开（登记表的规则），出了画面再拍，
+     * 提示按真的存下了几路说。以前这里发广播给主界面、或者把主界面拉起来等 3 秒碰运气 ——
+     * 相机没开时拍不到，却照样提示「已保存」。</p>
      */
     private void takePhoto() {
-        if (getAppState() == AppState.NOT_RUNNING) {
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            intent.putExtra(MainActivity.EXTRA_AUTO_TAKE_PHOTO, true);
-            startActivity(intent);
-            return;
-        }
-        Intent intent = new Intent(MainActivity.ACTION_TAKE_PHOTO);
-        intent.setPackage(getPackageName());
-        sendBroadcast(intent);
+        com.kooo.evcam.camera.CameraManagerHolder.getInstance().getOrInit(this)
+                .takePhoto(new com.kooo.evcam.ui.PhotoFeedback(this));
     }
 
     private void toggleMirror() {
