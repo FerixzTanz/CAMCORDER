@@ -49,6 +49,17 @@ public final class Readings {
         return v instanceof String ? (String) v : null;
     }
 
+    /** 只留车上验证过的信号（非开发者的信息条用它，猜的东西不画进录像）。版本号不变。 */
+    public Readings verifiedOnly() {
+        Map<Signal, Object> kept = new EnumMap<>(Signal.class);
+        for (Map.Entry<Signal, Object> e : values.entrySet()) {
+            if (e.getKey().verified) {
+                kept.put(e.getKey(), e.getValue());
+            }
+        }
+        return new Readings(kept, version);
+    }
+
     /** 有数据的信号个数。 */
     public int knownCount() {
         return values.size();

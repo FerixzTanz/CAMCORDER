@@ -28,10 +28,10 @@
     <string name="set_watermark_spec_title">Sertakan spesifikasi rakaman</string>
     <string name="set_watermark_spec_summary">Menambah resolusi dan kadar bingkai pada tera</string>
     <string name="set_info_bar_title">Bar maklumat pemanduan</string>
-    <string name="set_info_bar_summary">Menambah jalur di bawah video dengan lampu isyarat, stereng, gear, kelajuan, lampu, pintu dan kedudukan. Percubaan; isyarat yang tidak dapat dibaca dipaparkan sebagai tiada data</string>
-    <string name="set_info_bar_speed_title">Kelajuan</string>
-    <string name="set_info_bar_pedals_title">Pedal minyak dan brek</string>
-    <string name="set_info_bar_steering_title">Stereng</string>
+    <string name="set_info_bar_summary">Menambah jalur di bawah video dengan lampu isyarat, gear, kelajuan, pedal, pintu, lampu dan kedudukan. Percubaan; secara lalai hanya item yang disahkan di kereta dipaparkan</string>
+    <string name="set_info_bar_all_title">Tunjukkan semua maklumat pemanduan</string>
+    <string name="set_info_bar_all_summary">Turut memaparkan item yang belum disahkan di kereta</string>
+    <string name="set_info_bar_all_dev_only">Termasuk item belum disahkan; mod pembangun sahaja</string>
     <string name="set_storage_location_title">Lokasi storan</string>
     <string name="set_storage_sentry_note">Apabila Mod Sentry dihidupkan selepas anda keluar dari kereta, hanya port USB-A (tempat Mod Sentry menyimpan rakamannya) yang kekal berkuasa, jadi rakaman boleh diteruskan. Pemacu USB pada port Type-C juga boleh digunakan: apabila kuasanya terputus, rakaman beralih ke pemacu pada port USB-A dan diteruskan.</string>
     <string name="set_relay_title">Tulis melalui perantara</string>
@@ -122,7 +122,7 @@
     <string name="vi_brake_depth">Kedalaman brek</string>
     <string name="vi_throttle_depth">Kedalaman pendikit</string>
     <string name="vi_steering">Sudut stereng</string>
-    <string name="vi_auto_hold">Auto hold</string>
+    <string name="vi_auto_hold">Suis auto hold</string>
     <string name="vi_indicator">Status penunjuk</string>
     <string name="vi_turn_left">Lampu isyarat kiri</string>
     <string name="vi_turn_right">Lampu isyarat kanan</string>

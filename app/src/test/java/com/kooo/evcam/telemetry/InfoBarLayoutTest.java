@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.util.List;
 
 /**
- * 信息条放哪几格：宽的放全，窄的按优先级去掉，关掉的子项不放。
+ * 信息条放哪几格：宽的放全，窄的按优先级去掉，非开发者只放验证过的格。
  *
  * <p>算错的表现是格子叠在一起或者超出画面右边 —— 录进视频里就改不了了，所以钉住。</p>
  */
@@ -51,15 +51,26 @@ public class InfoBarLayoutTest {
         assertFalse(has(placed, InfoBarLayout.Cell.ODOMETER));
     }
 
+    /** 非开发者：只放信号都验证过的格；没读数来源的（手扶方向盘、ACC、自动驻车）和没验证的不放。 */
     @Test
-    public void switchedOffCellsAreNotPlaced() {
-        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND,
-                new InfoBar.Options(false, false, false));
-        assertFalse(has(placed, InfoBarLayout.Cell.SPEED));
-        assertFalse(has(placed, InfoBarLayout.Cell.PEDALS));
-        assertFalse(has(placed, InfoBarLayout.Cell.STEERING));
-        assertTrue(has(placed, InfoBarLayout.Cell.GEAR));
-        assertEquals(InfoBarLayout.Cell.values().length - 3, placed.size());
+    public void withoutDeveloperOnlyVerifiedCellsArePlaced() {
+        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, InfoBar.Options.verified());
+        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
+                InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.GEAR,
+                InfoBarLayout.Cell.PEDALS, InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360,
+                InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.LOW_BEAM,
+                InfoBarLayout.Cell.POSITION}) {
+            assertTrue(cell.name(), has(placed, cell));
+        }
+        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
+                InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.AUTO_HOLD,
+                InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC, InfoBarLayout.Cell.HIGH_BEAM,
+                InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.ODOMETER}) {
+            assertFalse(cell.name(), has(placed, cell));
+        }
+        for (InfoBarLayout.Placed p : placed) {
+            assertTrue(p.cell.verified());
+        }
     }
 
     @Test

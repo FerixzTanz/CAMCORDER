@@ -14,8 +14,15 @@ import com.kooo.evcam.AppConfig;
  * （回看的放大、鱼眼校正）都先把这一条减掉（{@code PlaybackViewport.infoBarInset}）。
  * 信息条本身画什么，看 {@link InfoBarRenderer}；数据从哪来，看 {@link Telemetry}。</p>
  *
- * <p>试验项目（1.68.0）：默认关。开了之后录制走 MediaCodec 路径（要用 GL 拼画面，
- * 和四宫格同一条规则，见 {@code AppConfig.shouldUseCodecRecording}）。</p>
+ * <h3>显示哪几项</h3>
+ *
+ * <p>试验项目（1.68.0），对所有人开放，默认关。开了之后默认只放<b>实车验证过</b>的格
+ * （{@link InfoBarLayout.Cell#verified()}：这一格用到的信号都在车上看到过跟着变），没验证的信号在
+ * 映射前就滤掉（{@link Readings#verifiedOnly()}），不会把猜的东西画进录像。开发者模式里的
+ * 「显示所有行车信息」放全部格，用全部读数。</p>
+ *
+ * <p>开着信息条时录制走 MediaCodec 路径（要用 GL 拼画面，和四宫格同一条规则，
+ * 见 {@code AppConfig.shouldUseCodecRecording}）。</p>
  */
 public final class InfoBar {
 
@@ -25,20 +32,20 @@ public final class InfoBar {
     private InfoBar() {
     }
 
-    /** 设置里的那几个子开关：哪几项显示。 */
+    /** 这次录制放哪些格：只放验证过的，还是全部。 */
     public static final class Options {
-        public final boolean speed;
-        public final boolean pedals;
-        public final boolean steering;
+        public final boolean all;
 
-        public Options(boolean speed, boolean pedals, boolean steering) {
-            this.speed = speed;
-            this.pedals = pedals;
-            this.steering = steering;
+        public Options(boolean all) {
+            this.all = all;
         }
 
         public static Options all() {
-            return new Options(true, true, true);
+            return new Options(true);
+        }
+
+        public static Options verified() {
+            return new Options(false);
         }
     }
 
@@ -48,6 +55,6 @@ public final class InfoBar {
         if (!config.isInfoBarEnabled()) {
             return null;
         }
-        return new Options(config.isInfoBarSpeed(), config.isInfoBarPedals(), config.isInfoBarSteering());
+        return new Options(config.isInfoBarShowAll());
     }
 }

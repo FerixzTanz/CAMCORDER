@@ -86,19 +86,10 @@
             android:summary="@string/set_info_bar_summary" />
 
         <SwitchPreferenceCompat
-            android:key="pref_info_bar_speed"
+            android:key="pref_info_bar_all"
             android:dependency="pref_info_bar"
-            android:title="@string/set_info_bar_speed_title" />
-
-        <SwitchPreferenceCompat
-            android:key="pref_info_bar_pedals"
-            android:dependency="pref_info_bar"
-            android:title="@string/set_info_bar_pedals_title" />
-
-        <SwitchPreferenceCompat
-            android:key="pref_info_bar_steering"
-            android:dependency="pref_info_bar"
-            android:title="@string/set_info_bar_steering_title" />
+            android:title="@string/set_info_bar_all_title"
+            android:summary="@string/set_info_bar_all_summary" />
     </PreferenceScreen>
 
     <!-- ==================== 存储 ==================== -->

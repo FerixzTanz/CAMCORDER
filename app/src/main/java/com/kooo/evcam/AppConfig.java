@@ -85,9 +85,7 @@ public class AppConfig {
     private static final String KEY_WATERMARK_SPEC_ENABLED = "watermark_spec_enabled";  // 角标附带录制规格
     private static final String KEY_PHOTO_VIA_JPEG = "photo_via_jpeg";
     private static final String KEY_INFO_BAR = "info_bar_enabled";  // 录像下方的行驶信息条
-    private static final String KEY_INFO_BAR_SPEED = "info_bar_speed";
-    private static final String KEY_INFO_BAR_PEDALS = "info_bar_pedals";
-    private static final String KEY_INFO_BAR_STEERING = "info_bar_steering";
+    private static final String KEY_INFO_BAR_ALL = "info_bar_all";  // 开发者：连没验证的项一起显示
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1341,7 +1339,7 @@ public class AppConfig {
      * 录像下方的行驶信息条（试验项目，1.68.0）。默认关。
      *
      * <p>开着时录制走 MediaCodec（{@link #shouldUseCodecRecording}），画面比视频高 100 像素。
-     * 三个子开关只决定显示哪几格（{@code telemetry.InfoBar}）。</p>
+     * 默认只显示实车验证过的项；{@link #isInfoBarShowAll()} 才显示全部（{@code telemetry.InfoBar}）。</p>
      */
     public boolean isInfoBarEnabled() {
         return prefs.getBoolean(KEY_INFO_BAR, false);
@@ -1352,28 +1350,18 @@ public class AppConfig {
         AppLog.i(TAG, "行驶信息条: " + (enabled ? "开" : "关"));
     }
 
-    public boolean isInfoBarSpeed() {
-        return prefs.getBoolean(KEY_INFO_BAR_SPEED, true);
+    /**
+     * 信息条连没在实车验证过的项一起显示。锁在开发者模式后面：没解锁时一律当关着，存着的值不动 ——
+     * 设置里那个开关没解锁时是灰的、关着的，这里必须和它说同一句话。
+     */
+    public boolean isInfoBarShowAll() {
+        return com.kooo.evcam.settings.DeveloperMode.isUnlocked()
+                && prefs.getBoolean(KEY_INFO_BAR_ALL, false);
     }
 
-    public void setInfoBarSpeed(boolean enabled) {
-        prefs.edit().putBoolean(KEY_INFO_BAR_SPEED, enabled).apply();
-    }
-
-    public boolean isInfoBarPedals() {
-        return prefs.getBoolean(KEY_INFO_BAR_PEDALS, true);
-    }
-
-    public void setInfoBarPedals(boolean enabled) {
-        prefs.edit().putBoolean(KEY_INFO_BAR_PEDALS, enabled).apply();
-    }
-
-    public boolean isInfoBarSteering() {
-        return prefs.getBoolean(KEY_INFO_BAR_STEERING, true);
-    }
-
-    public void setInfoBarSteering(boolean enabled) {
-        prefs.edit().putBoolean(KEY_INFO_BAR_STEERING, enabled).apply();
+    public void setInfoBarShowAll(boolean enabled) {
+        prefs.edit().putBoolean(KEY_INFO_BAR_ALL, enabled).apply();
+        AppLog.i(TAG, "行驶信息条显示全部: " + (enabled ? "开" : "关"));
     }
 
     public boolean isLicensePlateEnabled() {

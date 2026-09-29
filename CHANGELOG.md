@@ -11,6 +11,15 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.75.0-alpha] - 2026-09-29
+
+- Info bar shows only cells whose signals are verified on the car by default; the three
+  per-cell switches are gone, replaced by "Show all driving info" (developer mode only).
+- Auto hold is no longer lit from the auto-hold setting switch; the cell stays empty until
+  the holding state is found.
+- Throttle depth counted as verified.
+- Steering icon rotation scale is one constant, waiting for lock-to-lock data.
+
 ## [1.74.0-alpha] - 2026-09-29
 
 - Speed: the sensor reports m/s; converted to km/h (×3.6) for the info bar and the

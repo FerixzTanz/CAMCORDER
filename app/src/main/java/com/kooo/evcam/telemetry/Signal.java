@@ -21,8 +21,9 @@ public enum Signal {
     IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, true, Format.IGNITION),
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, true, Format.ON_OFF),
     BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, true, Format.PERCENT),
-    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, false, Format.PERCENT),
+    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, true, Format.PERCENT),
     STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, false, Format.DEGREES),
+    /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
     AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, true, Format.ON_OFF),
 
     // ---- 灯光
@@ -129,6 +130,12 @@ public enum Signal {
         KMH, KM, PERCENT, PERCENT_RAW, DEGREES, CELSIUS
     }
 
+    /**
+     * 方向盘转角：读数 → 方向盘转过的度数（信息条上的数字和图标的转动都用它）。
+     * 满舵几圈、满舵时读数多少还没测（等 Lab），先按读数就是度数（1:1）。
+     */
+    public static final float STEERING_DEGREES_PER_UNIT = 1f;
+
     public static final int IGNITION_ACC = 0x00200104;
     public static final int IGNITION_ON = 0x00200105;
     public static final int IGNITION_DRIVING = 0x00200107;
@@ -172,6 +179,10 @@ public enum Signal {
     public Object decode(Object raw) {
         if (raw == null) {
             return null;
+        }
+        if (format == Format.DEGREES) {
+            Float units = raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;
+            return units == null ? null : units * STEERING_DEGREES_PER_UNIT;
         }
         if (format == Format.MPS) {
             Float mps = raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;

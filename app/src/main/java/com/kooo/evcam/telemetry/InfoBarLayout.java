@@ -13,45 +13,86 @@ import java.util.List;
  * 环视（2560 宽）放得下全部；座舱那种窄一点的流放得下多少放多少 ——
  * 同一条规则，不按流分别配。</p>
  *
+ * <p>每一格还写明它靠哪几个信号（{@link Signal}）：信号都验证过的格才算验证过，
+ * 非开发者的信息条只放这些格（{@link InfoBar.Options}）。</p>
+ *
  * <p>纯函数，{@code InfoBarLayoutTest} 里测。</p>
  */
 public final class InfoBarLayout {
 
-    /** 一格：宽度（像素）、优先级（小的先保留）。声明的顺序就是从左到右的显示顺序。 */
+    /** 没有车上信号的格：它的验证结论直接写死。 */
+    public enum Verdict {
+        /** 来源不是车辆接口（定位），车上看到过它在动 */
+        YES,
+        /** 还没找到读数来源，先画着 */
+        NO
+    }
+
+    /**
+     * 一格：宽度（像素）、优先级（小的先保留）、靠哪几个信号。声明的顺序就是从左到右的显示顺序。
+     */
     public enum Cell {
-        TURN_LEFT(70, 1),
-        HAZARD(80, 1),
-        TURN_RIGHT(70, 1),
-        STEERING(130, 2),
+        TURN_LEFT(70, 1, Signal.INDICATOR),
+        HAZARD(80, 1, Signal.INDICATOR),
+        TURN_RIGHT(70, 1, Signal.INDICATOR),
+        /** 方向盘随读数转；满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。 */
+        STEERING(130, 2, Signal.STEERING),
         /** 驾驶员手在不在方向盘上（还没找到车上的读数，先画着）。 */
-        HANDS(80, 2),
-        GEAR(70, 3),
+        HANDS(80, 2, Verdict.NO),
+        GEAR(70, 3, Signal.GEAR),
         /** 刹车（上）和油门（下）两根横条，左边带深度数字。 */
-        PEDALS(170, 4),
-        SPEED(210, 0),
-        AUTO_HOLD(70, 8),
-        ACC(80, 8),
-        LCC(80, 8),
+        PEDALS(170, 4, Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH),
+        SPEED(210, 0, Signal.SPEED),
+        /** 自动驻车「正在驻车」：0x20060400 是它的开关不是状态（一直亮），真正的状态信号等 Lab。 */
+        AUTO_HOLD(70, 8, Verdict.NO),
+        ACC(80, 8, Verdict.NO),
+        LCC(80, 8, Signal.LCC),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
-        STOCK_360(80, 3),
-        /** 俯视的车：四扇门 + 五个座位的安全带。 */
-        CABIN(170, 5),
+        STOCK_360(80, 3, Signal.STOCK_360),
+        /** 俯视的车：四扇门 + 五个座位的安全带（验证看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
+        CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
+                Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
         /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。 */
-        DRL(130, 7),
-        LOW_BEAM(80, 6),
-        HIGH_BEAM(80, 6),
-        FOG(80, 7),
+        DRL(130, 7, Signal.DRL),
+        LOW_BEAM(80, 6, Signal.LOW_BEAM),
+        HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
+        FOG(80, 7, Signal.FRONT_FOG, Signal.REAR_FOG),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
-        ASSIST(200, 6),
-        ODOMETER(160, 9),
-        POSITION(170, 9);
+        ASSIST(200, 6, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
+        ODOMETER(160, 9, Signal.ODOMETER),
+        /** 经纬度来自系统定位，1.72.0 车上看到过。 */
+        POSITION(170, 9, Verdict.YES);
 
         public final int width;
         public final int priority;
+        private final Signal[] signals;
+        private final Verdict verdict;
 
-        Cell(int width, int priority) {
+        Cell(int width, int priority, Signal... signals) {
             this.width = width;
             this.priority = priority;
+            this.signals = signals;
+            this.verdict = null;
+        }
+
+        Cell(int width, int priority, Verdict verdict) {
+            this.width = width;
+            this.priority = priority;
+            this.signals = new Signal[0];
+            this.verdict = verdict;
+        }
+
+        /** 这一格用到的信号都在车上验证过（没有车上信号的格按写死的结论）。 */
+        public boolean verified() {
+            if (verdict != null) {
+                return verdict == Verdict.YES;
+            }
+            for (Signal s : signals) {
+                if (!s.verified) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -74,18 +115,9 @@ public final class InfoBarLayout {
     private InfoBarLayout() {
     }
 
-    /** 这几个子开关关着的格不放。 */
+    /** 非开发者只放验证过的格。 */
     static boolean wanted(Cell cell, InfoBar.Options options) {
-        switch (cell) {
-            case SPEED:
-                return options.speed;
-            case PEDALS:
-                return options.pedals;
-            case STEERING:
-                return options.steering;
-            default:
-                return true;
-        }
+        return options.all || cell.verified();
     }
 
     /**

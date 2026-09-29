@@ -173,12 +173,14 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 askLocationPermission();
             }
         });
-        bindSwitch("pref_info_bar_speed", appConfig.isInfoBarSpeed(),
-                value -> appConfig.setInfoBarSpeed(value));
-        bindSwitch("pref_info_bar_pedals", appConfig.isInfoBarPedals(),
-                value -> appConfig.setInfoBarPedals(value));
-        bindSwitch("pref_info_bar_steering", appConfig.isInfoBarSteering(),
-                value -> appConfig.setInfoBarSteering(value));
+        // 「显示所有行车信息」锁在开发者模式后面：没解锁时灰掉、关着、写明为什么（值那边 AppConfig 同样锁着）
+        bindSwitch("pref_info_bar_all", appConfig.isInfoBarShowAll(),
+                value -> appConfig.setInfoBarShowAll(value));
+        SwitchPreferenceCompat infoBarAll = findPreference("pref_info_bar_all");
+        if (infoBarAll != null && !DeveloperMode.isUnlocked()) {
+            infoBarAll.setEnabled(false);
+            infoBarAll.setSummary(getString(R.string.set_info_bar_all_dev_only));
+        }
     }
 
     private static final int REQUEST_LOCATION = 41;

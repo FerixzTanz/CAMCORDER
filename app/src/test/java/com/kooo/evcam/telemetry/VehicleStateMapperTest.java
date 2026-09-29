@@ -73,6 +73,21 @@ public class VehicleStateMapperTest {
         assertEquals(Integer.valueOf(VehicleState.FRONT_LEFT | VehicleState.REAR_CENTER), map(r, false).beltsUnbuckled);
     }
 
+    /** 0x20060400 是自动驻车的功能开关，不是「正在驻车」：信息条上不能拿它亮灯。 */
+    @Test
+    public void autoHoldSwitchDoesNotLightTheCell() {
+        assertNull(map(readings(Signal.AUTO_HOLD, true), true).autoHold);
+    }
+
+    /** 非开发者：没验证过的信号在映射前滤掉 —— 副驾安全带不会被画成红的。 */
+    @Test
+    public void unverifiedSignalsAreMaskedBeforeMapping() {
+        Readings r = readings(Signal.BELT_DRIVER, false, Signal.BELT_PASSENGER, false).verifiedOnly();
+        assertNull(r.bool(Signal.BELT_PASSENGER));
+        assertEquals(Boolean.FALSE, r.bool(Signal.BELT_DRIVER));
+        assertEquals(Integer.valueOf(VehicleState.FRONT_RIGHT), map(r, true).beltsUnbuckled);
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

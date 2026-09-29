@@ -42,10 +42,10 @@
     <string name="set_watermark_spec_title">角标附带录制规格</string>
     <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
     <string name="set_info_bar_title">行驶信息条</string>
-    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、方向盘、档位、车速、灯光、车门、经纬度等。试验功能，读不到的项显示为无数据</string>
-    <string name="set_info_bar_speed_title">当前时速</string>
-    <string name="set_info_bar_pedals_title">油门与刹车开度</string>
-    <string name="set_info_bar_steering_title">方向盘状态</string>
+    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能，默认只显示实车验证过的项</string>
+    <string name="set_info_bar_all_title">显示所有行车信息</string>
+    <string name="set_info_bar_all_summary">连还没在实车验证过的项一起显示</string>
+    <string name="set_info_bar_all_dev_only">含未验证的项，仅限开发者模式</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>
@@ -140,7 +140,7 @@
     <string name="vi_brake_depth">刹车深度</string>
     <string name="vi_throttle_depth">油门深度</string>
     <string name="vi_steering">方向盘转角</string>
-    <string name="vi_auto_hold">自动驻车</string>
+    <string name="vi_auto_hold">自动驻车开关</string>
     <string name="vi_indicator">转向指示状态</string>
     <string name="vi_turn_left">左转向灯</string>
     <string name="vi_turn_right">右转向灯</string>
