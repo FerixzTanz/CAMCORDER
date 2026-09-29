@@ -51,6 +51,11 @@ final class CarPropertySource {
     static final int ACC_ACTIVATED = 2;
     static final int LCC_ACTIVATED = 3;
 
+    // VehicleLightState（要放在映射表前面：静态初始化里按简单名引用不能往后指）
+    static final int LIGHT_OFF = 0;
+    static final int LIGHT_ON = 1;
+    static final int LIGHT_DAYTIME_RUNNING = 2;
+
     /** 一个属性值怎么落到快照上。 */
     interface Apply {
         void apply(VehicleState.Builder b, Object value);
@@ -376,11 +381,6 @@ final class CarPropertySource {
     }
 
     // ================================================================= 解码（纯函数）
-
-    // VehicleLightState
-    static final int LIGHT_OFF = 0;
-    static final int LIGHT_ON = 1;
-    static final int LIGHT_DAYTIME_RUNNING = 2;
 
     /** VehicleTurnSignal：NONE=0、RIGHT=1、LEFT=2 → 快照里的常量。 */
     static Integer decodeTurnSignal(int value) {
