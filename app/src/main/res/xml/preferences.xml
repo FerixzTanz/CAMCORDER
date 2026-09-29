@@ -90,6 +90,12 @@
             android:title="@string/set_storage_location_title"
             android:summary="%s" />
 
+        <!-- 选哪个盘之前要知道的事：下车开哨兵模式后只有 USB-A 口还通电 -->
+        <Preference
+            android:key="pref_storage_sentry_note"
+            android:selectable="false"
+            android:summary="@string/set_storage_sentry_note" />
+
         <SwitchPreferenceCompat
             android:key="pref_relay_write"
             android:title="@string/set_relay_title"

@@ -42,6 +42,7 @@
     <string name="set_watermark_spec_title">角标附带录制规格</string>
     <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
     <string name="set_storage_location_title">存储位置</string>
+    <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>
     <string name="set_relay_summary">先写入内置存储，分段完成后再转存至 U 盘。U 盘速度不稳时可减少丢帧</string>
     <string name="set_video_limit_title">视频存储上限</string>

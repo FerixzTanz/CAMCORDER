@@ -5,7 +5,9 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 ## [Unreleased]
 
-Nothing yet.
+- Settings -> Storage: a note under the storage location. With Sentry Mode on after you
+  leave the car, only the USB-A port stays powered; a drive on the Type-C port works too,
+  because recording moves to the USB-A drive when the Type-C one loses power.
 
 ## [1.66.0-alpha] - 2026-09-28
 
