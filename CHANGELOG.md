@@ -11,6 +11,17 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.77.0-alpha] - 2026-09-30
+
+- Signal table aligned with the lab handbook: pedal depths and daytime running lights
+  count as unverified until their range and daytime reading are measured (those two
+  info-bar cells are crossed out by default); high beam, odometer, range, battery,
+  temperatures, AEB, lane keeping and rear collision warning count as verified.
+- Forward collision warning read from its sensitivity setting.
+- Vehicle info page: position lamps, light switch position, battery temperature, lane
+  change assist, automatic lane change and door open warning added; indicator status
+  shows hazard.
+
 ## [1.76.0-alpha] - 2026-09-30
 
 - Info bar always lays out every cell; cells not verified on the car are drawn crossed

@@ -7,8 +7,12 @@ import com.kooo.evcam.R;
  * 读到的数怎么解、在车上验证到什么程度。
  *
  * <p>信息条（{@link VehicleStateMapper}）和「系统信息」页都从这张表取，加一个信号就是加一行。
- * 号码和含义来自 zeekr-shortcut-lab 在 7X 上的实测（其 {@code docs/findings.md}），
- * {@link #verified} 为 true 的是操作车时看到它跟着变的，false 的读数合理但还没专门验证。</p>
+ * 号码和含义来自 zeekr-shortcut-lab 在 7X 上的实测：它的信号手册 {@code docs/signals.md} 是唯一依据
+ * （分工：Lab 把信号找准，这里把找到的用准）。</p>
+ *
+ * <p>{@link #verified} 为 true = 手册「确认了的」那一节里有它，<b>而且</b>这里要用到的含义、取值、量程
+ * 都没有挂着「待测 / 待复核」；只要还挂着一条就是 false（比如踏板深度：跟着变，但踩到底是多少没测）。
+ * 信息条默认只启用信号全为 true 的栏目，其余划掉。</p>
  *
  * <p>解码是纯函数（{@code SignalDecodeTest}）：占位值 255 / 254 / 253 / -1 / -65535，浮点 255 / -65535 和
  * 绝对值小于 1e-6 的非零数，都算「没数据」。</p>
@@ -20,8 +24,10 @@ public enum Signal {
     SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, true, Format.MPS),
     IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, true, Format.IGNITION),
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, true, Format.ON_OFF),
-    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, true, Format.PERCENT),
-    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, true, Format.PERCENT),
+    /** 跟着变（停车踩下 11–15），踩到底是多少没测（Lab 0.13.0），先不按 0–100 当真。 */
+    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, false, Format.PERCENT),
+    /** 行驶中跟着变，踩到底是多少没测（Lab 0.13.0）。 */
+    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, false, Format.PERCENT),
     STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, false, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
     AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, true, Format.ON_OFF),
@@ -31,10 +37,14 @@ public enum Signal {
     TURN_LEFT(Group.LAMPS, Kind.FUNCTION, 0x21051100, 0, R.string.vi_turn_left, true, Format.ON_OFF),
     TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, true, Format.ON_OFF),
     LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, true, Format.ON_OFF),
-    HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, false, Format.ON_OFF),
-    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, true, Format.ON_OFF),
+    HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, true, Format.ON_OFF),
+    /** 近光没亮时才是 1；晚上前灯带亮着时读 0（那时报的是前位置灯）。白天自动档是不是 1 待 Lab 白天复核。 */
+    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, false, Format.ON_OFF),
     FRONT_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050400, 0, R.string.vi_front_fog, false, Format.ON_OFF),
     REAR_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050500, 0, R.string.vi_rear_fog, false, Format.ON_OFF),
+    FRONT_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050800, 0, R.string.vi_front_position, true, Format.ON_OFF),
+    REAR_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050C00, 0, R.string.vi_rear_position, true, Format.ON_OFF),
+    LIGHT_SWITCH(Group.LAMPS, Kind.FUNCTION, 0x20040E00, 0, R.string.vi_light_switch, true, Format.LIGHT_SWITCH),
     REVERSE_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050E00, 0, R.string.vi_reverse_lamp, true, Format.ON_OFF),
     STOP_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050D00, 0, R.string.vi_stop_lamp, true, Format.ON_OFF),
 
@@ -61,19 +71,24 @@ public enum Signal {
     PARK_ASSIST(Group.STOCK, Kind.FUNCTION, 0x23030100, 0, R.string.vi_park_assist, true, Format.ON_OFF),
 
     // ---- 环境 / 车辆
-    ODOMETER(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100700, 0, R.string.vi_odometer, false, Format.KM),
-    BATTERY(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00404000, 0, R.string.vi_battery, false, Format.PERCENT_RAW),
-    RANGE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100800, 0, R.string.vi_range, false, Format.KM),
-    TEMP_OUTSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100B00, 0, R.string.vi_temp_outside, false, Format.CELSIUS),
-    TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, false, Format.CELSIUS),
+    ODOMETER(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100700, 0, R.string.vi_odometer, true, Format.KM),
+    BATTERY(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00404000, 0, R.string.vi_battery, true, Format.PERCENT_RAW),
+    RANGE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100800, 0, R.string.vi_range, true, Format.KM),
+    TEMP_OUTSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100B00, 0, R.string.vi_temp_outside, true, Format.CELSIUS),
+    TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, true, Format.CELSIUS),
+    BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, true, Format.CELSIUS),
 
     // ---- 安全辅助（读的是开关）
-    AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, false, Format.ON_OFF),
-    FCW(Group.ASSIST, Kind.FUNCTION, 0x200E0100, 0, R.string.vi_fcw, false, Format.ON_OFF),
+    AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, true, Format.ON_OFF),
+    /** 前碰预警的灵敏度：0 关，低 / 中 / 高是 0x200E0201–03（原来读的 0x200E0100 一直 255）。 */
+    FCW(Group.ASSIST, Kind.FUNCTION, 0x200E0200, 0, R.string.vi_fcw, true, Format.LEVEL),
     LDW(Group.ASSIST, Kind.FUNCTION, 0x28084100, 0, R.string.vi_ldw, false, Format.ON_OFF),
-    LKA(Group.ASSIST, Kind.FUNCTION, 0x20070100, 0, R.string.vi_lka, false, Format.ON_OFF),
+    LKA(Group.ASSIST, Kind.FUNCTION, 0x20070100, 0, R.string.vi_lka, true, Format.ON_OFF),
     BSD(Group.ASSIST, Kind.FUNCTION, 0x28081600, 0, R.string.vi_bsd, false, Format.ON_OFF),
-    RCW(Group.ASSIST, Kind.FUNCTION, 0x20071000, 0, R.string.vi_rcw, false, Format.ON_OFF),
+    RCW(Group.ASSIST, Kind.FUNCTION, 0x20071000, 0, R.string.vi_rcw, true, Format.ON_OFF),
+    LANE_CHANGE_ASSIST(Group.ASSIST, Kind.FUNCTION, 0x20070300, 0, R.string.vi_lane_change_assist, true, Format.ON_OFF),
+    AUTO_LANE_CHANGE(Group.ASSIST, Kind.FUNCTION, 0x28040100, 0, R.string.vi_auto_lane_change, true, Format.ON_OFF),
+    DOOR_OPEN_WARNING(Group.ASSIST, Kind.FUNCTION, 0x20120100, 0, R.string.vi_door_open_warning, true, Format.ON_OFF),
     LCC(Group.ASSIST, Kind.FUNCTION, 0x28085B00, 0, R.string.vi_lcc, false, Format.ON_OFF);
 
     /** 怎么读。 */
@@ -108,6 +123,10 @@ public enum Signal {
     public enum Format {
         /** 0 关 1 开 → Boolean */
         ON_OFF,
+        /** 0 关，其余是档位（枚举）→ Boolean（不是 0 就算开） */
+        LEVEL,
+        /** 灯光开关的位置 → Integer（0 关、0x20040E01 位置灯、0x20040E03 自动） */
+        LIGHT_SWITCH,
         /** 0 关着 1 开着 → Boolean（开着为 true）；开关过程中的 0x…01 算没数据 */
         DOOR,
         /** 1 系着 0 没系 → Boolean（系着为 true） */
@@ -135,6 +154,9 @@ public enum Signal {
      * 满舵几圈、满舵时读数多少还没测（等 Lab），先按读数就是度数（1:1）。
      */
     public static final float STEERING_DEGREES_PER_UNIT = 1f;
+
+    public static final int LIGHT_SWITCH_POSITION = 0x20040E01;
+    public static final int LIGHT_SWITCH_AUTO = 0x20040E03;
 
     public static final int IGNITION_ACC = 0x00200104;
     public static final int IGNITION_ON = 0x00200105;
@@ -215,7 +237,10 @@ public enum Signal {
                 return v == 1 ? Boolean.TRUE : (v == 2 ? Boolean.FALSE : null);
             case INDICATOR:
                 return v >= 0 && v <= 3 ? v : null;
+            case LEVEL:
+                return v != 0;
             case IGNITION:
+            case LIGHT_SWITCH:
             case RAW:
                 return v;
             case GEAR:

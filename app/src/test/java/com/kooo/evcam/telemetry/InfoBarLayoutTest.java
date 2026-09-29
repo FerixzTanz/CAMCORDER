@@ -58,15 +58,16 @@ public class InfoBarLayoutTest {
         InfoBar.Options byDefault = InfoBar.Options.verified();
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
-                InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS, InfoBarLayout.Cell.SPEED,
-                InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.DRL,
-                InfoBarLayout.Cell.LOW_BEAM, InfoBarLayout.Cell.POSITION}) {
+                InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.SPEED,
+                InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
+                InfoBarLayout.Cell.LOW_BEAM, InfoBarLayout.Cell.HIGH_BEAM,
+                InfoBarLayout.Cell.ODOMETER, InfoBarLayout.Cell.POSITION}) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
-                InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.AUTO_HOLD,
-                InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC, InfoBarLayout.Cell.HIGH_BEAM,
-                InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.ODOMETER}) {
+                InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.PEDALS,
+                InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC,
+                InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ASSIST}) {
             assertFalse(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {

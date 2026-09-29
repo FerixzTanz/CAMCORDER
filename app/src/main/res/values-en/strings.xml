@@ -131,6 +131,9 @@
     <string name="vi_drl">Daytime running lights</string>
     <string name="vi_front_fog">Front fog lamps</string>
     <string name="vi_rear_fog">Rear fog lamp</string>
+    <string name="vi_front_position">Front position lamps</string>
+    <string name="vi_rear_position">Rear position lamps</string>
+    <string name="vi_light_switch">Light switch position</string>
     <string name="vi_reverse_lamp">Reverse lamp</string>
     <string name="vi_stop_lamp">Stop lamp</string>
     <string name="vi_door_driver">Driver door</string>
@@ -155,12 +158,16 @@
     <string name="vi_range">Range</string>
     <string name="vi_temp_outside">Outside temperature</string>
     <string name="vi_temp_inside">Cabin temperature</string>
+    <string name="vi_battery_temp">Battery temperature</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Forward collision warning</string>
     <string name="vi_ldw">Lane departure warning</string>
     <string name="vi_lka">Lane keeping aid</string>
     <string name="vi_bsd">Blind spot assist</string>
     <string name="vi_rcw">Rear collision warning</string>
+    <string name="vi_lane_change_assist">Lane change assist</string>
+    <string name="vi_auto_lane_change">Automatic lane change</string>
+    <string name="vi_door_open_warning">Door open warning</string>
     <string name="vi_lcc">Lane centering</string>
     <string name="vi_v_on">On</string>
     <string name="vi_v_off">Off</string>
@@ -175,6 +182,9 @@
     <string name="vi_v_hidden">Hidden</string>
     <string name="vi_v_left">Left</string>
     <string name="vi_v_right">Right</string>
+    <string name="vi_v_hazard">Hazard</string>
+    <string name="vi_v_light_position">Position lamps</string>
+    <string name="vi_v_light_auto">Auto</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Driving</string>

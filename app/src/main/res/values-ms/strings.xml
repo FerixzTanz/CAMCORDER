@@ -131,6 +131,9 @@
     <string name="vi_drl">Lampu siang</string>
     <string name="vi_front_fog">Lampu kabus depan</string>
     <string name="vi_rear_fog">Lampu kabus belakang</string>
+    <string name="vi_front_position">Lampu kedudukan depan</string>
+    <string name="vi_rear_position">Lampu kedudukan belakang</string>
+    <string name="vi_light_switch">Kedudukan suis lampu</string>
     <string name="vi_reverse_lamp">Lampu undur</string>
     <string name="vi_stop_lamp">Lampu brek</string>
     <string name="vi_door_driver">Pintu pemandu</string>
@@ -155,12 +158,16 @@
     <string name="vi_range">Jarak</string>
     <string name="vi_temp_outside">Suhu luar</string>
     <string name="vi_temp_inside">Suhu kabin</string>
+    <string name="vi_battery_temp">Suhu bateri</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Amaran perlanggaran hadapan</string>
     <string name="vi_ldw">Amaran keluar lorong</string>
     <string name="vi_lka">Bantuan kekal lorong</string>
     <string name="vi_bsd">Bantuan titik buta</string>
     <string name="vi_rcw">Amaran perlanggaran belakang</string>
+    <string name="vi_lane_change_assist">Bantuan tukar lorong</string>
+    <string name="vi_auto_lane_change">Tukar lorong automatik</string>
+    <string name="vi_door_open_warning">Amaran buka pintu</string>
     <string name="vi_lcc">Pemusatan lorong</string>
     <string name="vi_v_on">Hidup</string>
     <string name="vi_v_off">Mati</string>
@@ -175,6 +182,9 @@
     <string name="vi_v_hidden">Tidak dipaparkan</string>
     <string name="vi_v_left">Kiri</string>
     <string name="vi_v_right">Kanan</string>
+    <string name="vi_v_hazard">Kecemasan</string>
+    <string name="vi_v_light_position">Lampu kedudukan</string>
+    <string name="vi_v_light_auto">Auto</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Memandu</string>

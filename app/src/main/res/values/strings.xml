@@ -149,6 +149,9 @@
     <string name="vi_drl">日行灯</string>
     <string name="vi_front_fog">前雾灯</string>
     <string name="vi_rear_fog">后雾灯</string>
+    <string name="vi_front_position">前位置灯</string>
+    <string name="vi_rear_position">后位置灯</string>
+    <string name="vi_light_switch">灯光开关位置</string>
     <string name="vi_reverse_lamp">倒车灯</string>
     <string name="vi_stop_lamp">刹车灯</string>
     <string name="vi_door_driver">主驾门</string>
@@ -173,12 +176,16 @@
     <string name="vi_range">续航</string>
     <string name="vi_temp_outside">车外温度</string>
     <string name="vi_temp_inside">车内温度</string>
+    <string name="vi_battery_temp">电池温度</string>
     <string name="vi_aeb">自动紧急制动</string>
     <string name="vi_fcw">前碰预警</string>
     <string name="vi_ldw">车道偏离预警</string>
     <string name="vi_lka">车道保持</string>
     <string name="vi_bsd">盲区辅助</string>
     <string name="vi_rcw">后碰预警</string>
+    <string name="vi_lane_change_assist">变道辅助</string>
+    <string name="vi_auto_lane_change">自动变道</string>
+    <string name="vi_door_open_warning">开门预警</string>
     <string name="vi_lcc">车道居中</string>
     <string name="vi_v_on">开</string>
     <string name="vi_v_off">关</string>
@@ -193,6 +200,9 @@
     <string name="vi_v_hidden">未显示</string>
     <string name="vi_v_left">左</string>
     <string name="vi_v_right">右</string>
+    <string name="vi_v_hazard">双闪</string>
+    <string name="vi_v_light_position">位置灯</string>
+    <string name="vi_v_light_auto">自动</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">行驶</string>

@@ -110,6 +110,20 @@ public class SignalDecodeTest {
         assertEquals(Float.valueOf(0f), Signal.SPEED.decode(0f));
     }
 
+    /** 前碰预警读的是灵敏度：0 关，低 / 中 / 高（0x200E0201–03）都算开。 */
+    @Test
+    public void aLevelIsOnUnlessZero() {
+        assertEquals(Boolean.FALSE, Signal.FCW.decode(0));
+        assertEquals(Boolean.TRUE, Signal.FCW.decode(0x200E0202));
+        assertNull(Signal.FCW.decode(255));
+    }
+
+    @Test
+    public void lightSwitchKeepsTheCode() {
+        assertEquals(Integer.valueOf(0), Signal.LIGHT_SWITCH.decode(0));
+        assertEquals(Integer.valueOf(Signal.LIGHT_SWITCH_AUTO), Signal.LIGHT_SWITCH.decode(0x20040E03));
+    }
+
     /** 同一个读法 + 号码 + 区域只能对应一条信号，否则回调分不清给谁。 */
     @Test
     public void everyAddressIsUnique() {

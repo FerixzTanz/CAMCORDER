@@ -133,6 +133,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         }
         switch (s.format) {
             case ON_OFF:
+            case LEVEL:
                 return pick(ctx, v, R.string.vi_v_on, R.string.vi_v_off);
             case DOOR:
                 return pick(ctx, v, R.string.vi_v_open, R.string.vi_v_closed);
@@ -144,7 +145,21 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 return pick(ctx, v, R.string.vi_v_shown, R.string.vi_v_hidden);
             case INDICATOR: {
                 int code = v instanceof Integer ? (Integer) v : -1;
-                return ctx.getString(code == 1 ? R.string.vi_v_left : code == 2 ? R.string.vi_v_right : R.string.vi_v_off);
+                return ctx.getString(code == 1 ? R.string.vi_v_left : code == 2 ? R.string.vi_v_right
+                        : code == 3 ? R.string.vi_v_hazard : R.string.vi_v_off);
+            }
+            case LIGHT_SWITCH: {
+                int code = v instanceof Integer ? (Integer) v : -1;
+                if (code == 0) {
+                    return ctx.getString(R.string.vi_v_off);
+                }
+                if (code == Signal.LIGHT_SWITCH_POSITION) {
+                    return ctx.getString(R.string.vi_v_light_position);
+                }
+                if (code == Signal.LIGHT_SWITCH_AUTO) {
+                    return ctx.getString(R.string.vi_v_light_auto);
+                }
+                return String.format(Locale.US, "0x%08X", code);
             }
             case IGNITION: {
                 int code = v instanceof Integer ? (Integer) v : -1;

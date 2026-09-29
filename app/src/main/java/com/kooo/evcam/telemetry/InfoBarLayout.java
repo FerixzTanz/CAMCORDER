@@ -42,7 +42,7 @@ public final class InfoBarLayout {
         /** 驾驶员手在不在方向盘上（还没找到车上的读数，先画着）。 */
         HANDS(80, 2, Verdict.NO),
         GEAR(70, 3, Signal.GEAR),
-        /** 刹车（上）和油门（下）两根横条，左边带深度数字。 */
+        /** 刹车（上）和油门（下）两根横条，左边带深度数字。踩到底是多少还没测，量程定了才启用。 */
         PEDALS(170, 4, Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH),
         SPEED(210, 0, Signal.SPEED),
         /** 自动驻车「正在驻车」：0x20060400 是它的开关不是状态（一直亮），真正的状态信号等 Lab。 */
@@ -54,7 +54,7 @@ public final class InfoBarLayout {
         /** 俯视的车：四扇门 + 五个座位的安全带（验证看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
         CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
-        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。 */
+        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。白天的读数复核了才启用。 */
         DRL(130, 7, Signal.DRL),
         LOW_BEAM(80, 6, Signal.LOW_BEAM),
         HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
