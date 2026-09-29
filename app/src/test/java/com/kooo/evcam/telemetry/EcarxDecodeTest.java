@@ -45,6 +45,15 @@ public class EcarxDecodeTest {
         assertNull(EcarxSource.onOff(null));
     }
 
+    /** 原厂 360：1 显示中、2 平时（车上验证：挂 R 时 2 → 1）。 */
+    @Test
+    public void stockSurroundViewIsShownAtOneAndHiddenAtTwo() {
+        assertTrue(EcarxSource.avmShown(1));
+        assertFalse(EcarxSource.avmShown(2));
+        assertNull(EcarxSource.avmShown(0));
+        assertNull(EcarxSource.avmShown(null));
+    }
+
     @Test
     public void fogIsEitherLampAndUnknownOnlyWhenBothAre() {
         assertNull(EcarxSource.either(null, null));

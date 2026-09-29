@@ -41,7 +41,7 @@ import java.util.Map;
  *
  * <h3>哪些已经在车上验证过、哪些还没有</h3>
  *
- * <p>验证过跟着变的：左右转向灯、档位 P/R/D、刹车踏板、刹车深度、主驾门、近光、日行灯、自动驻车。
+ * <p>验证过跟着变的：左右转向灯、档位 P/R/D、刹车踏板、刹车深度、主驾门、近光、日行灯、自动驻车、原厂 360 显示状态。
  * 读得到但还没操作验证：车速（单位按 km/h 记）、油门深度、方向盘转角（单位按度记）、远光、雾灯、
  * 其余三扇门（区域按值对左右，右舵车上哪个区域是哪扇门待对）、安全带（0 / 1 的含义待对）、车道居中。
  * 没找到读法的：ACC。这些在信息条上照样画，车上看它们跟不跟着变。</p>
@@ -68,6 +68,7 @@ final class EcarxSource {
     static final int F_DOOR = 0x21020100;           // BCM_FUNC_DOOR，带区域：0 关 1 开
     static final int F_AUTO_HOLD = 0x20060400;      // SETTING_FUNC_AUTO_HOLD
     static final int F_LCC_ACTIVE = 0x28085B00;     // SETTING_FUNC_LCC_ACTIVE_STATE（静止时 255，编码待验证）
+    static final int F_AVM_SHOW = 0x2031FE00;       // SETTING_FUNC_AVM_SHOW_STATUS：2 平时，1 原厂 360 画面显示中（验证过）
 
     // ---- 传感器（ISensor），类型值 ----
     static final int S_SPEED = 0x00100100;          // SENSOR_TYPE_CAR_SPEED，getSensorLatestValue
@@ -267,6 +268,7 @@ final class EcarxSource {
         final Boolean drl = onOff(readFunction(F_DRL));
         final Boolean autoHold = onOff(readFunction(F_AUTO_HOLD));
         final Boolean lcc = onOff(readFunction(F_LCC_ACTIVE));
+        final Boolean stock360 = avmShown(readFunction(F_AVM_SHOW));
         final Boolean[] doors = new Boolean[DOOR_ZONES.length];
         for (int i = 0; i < DOOR_ZONES.length; i++) {
             doors[i] = onOff(readFunctionZoned(F_DOOR, doorZones[i]));
@@ -294,6 +296,7 @@ final class EcarxSource {
             b.daytimeRunningLights(drl);
             b.autoHold(autoHold);
             b.laneCentering(lcc);
+            b.stockSurroundShown(stock360);
             b.doorsOpen(mask(doors));
             b.beltsUnbuckled(mask(belts));
             if (speed != null) {
@@ -310,6 +313,7 @@ final class EcarxSource {
             firstRoundReported = true;
             String summary = "turn=" + name(left) + "/" + name(right) + " low=" + name(lowBeam) + " high=" + name(highBeam)
                     + " fog=" + name(fog) + " drl=" + name(drl) + " hold=" + name(autoHold) + " lcc=" + name(lcc)
+                    + " avm=" + name(stock360)
                     + " doors=" + name(doors[0]) + name(doors[1]) + name(doors[2]) + name(doors[3])
                     + " belts=" + name(belts[0]) + name(belts[1]) + name(belts[2]) + name(belts[3])
                     + " speed=" + speed + " odo=" + odometer + " steer=" + steering + " brake=" + brake
@@ -411,6 +415,20 @@ final class EcarxSource {
             return null;
         }
         return Boolean.TRUE.equals(a) || Boolean.TRUE.equals(b);
+    }
+
+    /** 原厂 360 显示状态：1 显示中、2 平时；别的算不知道。 */
+    static Boolean avmShown(Integer v) {
+        if (v == null) {
+            return null;
+        }
+        if (v == 1) {
+            return true;
+        }
+        if (v == 2) {
+            return false;
+        }
+        return null;
     }
 
     /** 深度 0–100 → 0..1。 */

@@ -152,6 +152,9 @@ public final class InfoBarRenderer {
             case LCC:
                 drawLcc(cx, cy, s.laneCentering);
                 break;
+            case STOCK_360:
+                drawStock360(cx, cy, s.stockSurroundShown);
+                break;
             case DOORS:
                 drawDoors(cx, cy, s.doorsOpen);
                 break;
@@ -381,6 +384,23 @@ public final class InfoBarRenderer {
         canvas.drawRoundRect(rect, 5, 5, fill);
         if (on == null) {
             slash(cx, cy, 30);
+        }
+    }
+
+    /** 原厂 360 画面：俯视的车，四周四段弧（环视）；显示中就亮。 */
+    private void drawStock360(float cx, float cy, Boolean shown) {
+        int color = tone(shown, false);
+        fill.setColor(color);
+        rect.set(cx - 8, cy - 14, cx + 8, cy + 14);
+        canvas.drawRoundRect(rect, 4, 4, fill);
+        stroke.setColor(color);
+        stroke.setStrokeWidth(4f);
+        rect.set(cx - 27, cy - 27, cx + 27, cy + 27);
+        for (int start = -160; start < 200; start += 90) {
+            canvas.drawArc(rect, start, 50, false, stroke);
+        }
+        if (shown == null) {
+            slash(cx, cy, 28);
         }
     }
 

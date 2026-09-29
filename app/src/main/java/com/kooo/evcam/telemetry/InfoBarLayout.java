@@ -30,6 +30,8 @@ public final class InfoBarLayout {
         AUTO_HOLD(70, 8),
         ACC(90, 8),
         LCC(90, 8),
+        /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
+        STOCK_360(80, 3),
         DOORS(110, 5),
         BELTS(70, 5),
         DRL(70, 7),

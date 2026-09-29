@@ -43,6 +43,8 @@ public final class VehicleState {
     public final Boolean autoHold;
     public final Boolean adaptiveCruise;
     public final Boolean laneCentering;
+    /** 原厂 360 画面此刻显示着（倒车时车机自己的环视；它开着时占着相机）。 */
+    public final Boolean stockSurroundShown;
     /** 开着的门（位掩码）。 */
     public final Integer doorsOpen;
     /** 没系安全带的座位（位掩码）。 */
@@ -67,6 +69,7 @@ public final class VehicleState {
         this.autoHold = b.autoHold;
         this.adaptiveCruise = b.adaptiveCruise;
         this.laneCentering = b.laneCentering;
+        this.stockSurroundShown = b.stockSurroundShown;
         this.doorsOpen = b.doorsOpen;
         this.beltsUnbuckled = b.beltsUnbuckled;
         this.daytimeRunningLights = b.daytimeRunningLights;
@@ -92,7 +95,7 @@ public final class VehicleState {
     public int knownCount() {
         int n = 0;
         Object[] all = {turnSignal, hazard, steeringDegrees, gear, throttle, brake, speedKmh,
-                autoHold, adaptiveCruise, laneCentering, doorsOpen, beltsUnbuckled,
+                autoHold, adaptiveCruise, laneCentering, stockSurroundShown, doorsOpen, beltsUnbuckled,
                 daytimeRunningLights, lowBeam, highBeam, fogLights, odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
@@ -114,6 +117,7 @@ public final class VehicleState {
         private Boolean autoHold;
         private Boolean adaptiveCruise;
         private Boolean laneCentering;
+        private Boolean stockSurroundShown;
         private Integer doorsOpen;
         private Integer beltsUnbuckled;
         private Boolean daytimeRunningLights;
@@ -139,6 +143,7 @@ public final class VehicleState {
             autoHold = s.autoHold;
             adaptiveCruise = s.adaptiveCruise;
             laneCentering = s.laneCentering;
+            stockSurroundShown = s.stockSurroundShown;
             doorsOpen = s.doorsOpen;
             beltsUnbuckled = s.beltsUnbuckled;
             daytimeRunningLights = s.daytimeRunningLights;
@@ -160,6 +165,7 @@ public final class VehicleState {
         public Builder autoHold(Boolean v) { autoHold = v; return this; }
         public Builder adaptiveCruise(Boolean v) { adaptiveCruise = v; return this; }
         public Builder laneCentering(Boolean v) { laneCentering = v; return this; }
+        public Builder stockSurroundShown(Boolean v) { stockSurroundShown = v; return this; }
         public Builder doorsOpen(Integer v) { doorsOpen = v; return this; }
         public Builder beltsUnbuckled(Integer v) { beltsUnbuckled = v; return this; }
         public Builder daytimeRunningLights(Boolean v) { daytimeRunningLights = v; return this; }

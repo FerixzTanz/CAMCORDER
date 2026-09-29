@@ -134,7 +134,7 @@ public final class Telemetry {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(running ? "running" : "stopped");
-        sb.append(", known=").append(state.knownCount()).append("/19");
+        sb.append(", known=").append(state.knownCount()).append("/20");
         if (c != null) {
             sb.append("; ecarx: ").append(c.status());
         }

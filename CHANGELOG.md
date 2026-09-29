@@ -7,6 +7,14 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.70.0-alpha] - 2026-09-29
+
+- Driving info bar: a new cell shows whether the car's own 360 view is on screen (a car
+  with four arcs; lit while the stock view is showing). It is read from the ECARX function
+  the lab verified (2 normally, 1 while the stock view is up in reverse) and sits right after
+  the driving-assist cells, with a high priority, since the stock view is what takes the
+  cameras away from this app.
+
 ## [1.69.0-alpha] - 2026-09-29
 
 - **The driving info bar reads the car through ECARX's in-car API**, the route
