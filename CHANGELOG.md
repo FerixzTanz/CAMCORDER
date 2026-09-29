@@ -92,8 +92,6 @@ Changes since 1.0.0.
 - The super mirror shows "tap to resume" when its picture stops, and reconnects by itself
   after the car wakes.
 - An interrupted recording, for example when the USB drive drops out, resumes by itself.
-- Taking a photo from the floating button opens the cameras first if they are off, and the
-  message says whether the photo was saved.
 - Improved stability and smoother operation.
 
 ## [1.67.0-alpha] - 2026-09-29
