@@ -17,7 +17,7 @@ public enum Signal {
 
     // ---- 行驶
     GEAR(Group.DRIVE, Kind.SENSOR_EVENT, 0x00200200, 0, R.string.vi_gear, true, Format.GEAR),
-    SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, false, Format.KMH),
+    SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, true, Format.MPS),
     IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, true, Format.IGNITION),
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, true, Format.ON_OFF),
     BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, true, Format.PERCENT),
@@ -29,7 +29,6 @@ public enum Signal {
     INDICATOR(Group.LAMPS, Kind.FUNCTION, 0x2A091500, 0, R.string.vi_indicator, true, Format.INDICATOR),
     TURN_LEFT(Group.LAMPS, Kind.FUNCTION, 0x21051100, 0, R.string.vi_turn_left, true, Format.ON_OFF),
     TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, true, Format.ON_OFF),
-    HAZARD(Group.LAMPS, Kind.FUNCTION, 0x21050F00, 0, R.string.vi_hazard, false, Format.ON_OFF),
     LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, true, Format.ON_OFF),
     HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, false, Format.ON_OFF),
     DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, true, Format.ON_OFF),
@@ -38,12 +37,16 @@ public enum Signal {
     REVERSE_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050E00, 0, R.string.vi_reverse_lamp, true, Format.ON_OFF),
     STOP_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050D00, 0, R.string.vi_stop_lamp, true, Format.ON_OFF),
 
-    // ---- 车身。区域值按 Lab 实测：0x1 = 主驾门（右舵车上是右前），0x4 = 副驾门，0x10 = 左后，0x40 = 右后
+    // ---- 车身。区域值按 Lab 实测：0x1 = 主驾门（右舵车上是右前），0x4 = 副驾门，0x10 = 左后，0x40 = 右后，
+    // 0x10000000 = 前备箱（ROOF_TOP），0x20000000 = 后备箱（VehicleZone 里没名字，直接传值）
     DOOR_DRIVER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x1, R.string.vi_door_driver, true, Format.DOOR),
     DOOR_PASSENGER(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x4, R.string.vi_door_passenger, true, Format.DOOR),
     DOOR_REAR_LEFT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10, R.string.vi_door_rear_left, true, Format.DOOR),
     DOOR_REAR_RIGHT(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x40, R.string.vi_door_rear_right, true, Format.DOOR),
+    DOOR_FRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x10000000, R.string.vi_door_frunk, true, Format.DOOR),
+    DOOR_TRUNK(Group.BODY, Kind.FUNCTION_ZONE, 0x21020100, 0x20000000, R.string.vi_door_trunk, true, Format.DOOR),
     CHARGE_PORT(Group.BODY, Kind.FUNCTION, 0x21020500, 0, R.string.vi_charge_port, true, Format.DOOR),
+    SUNROOF_SHADE(Group.BODY, Kind.FUNCTION_ZONE, 0x20080100, 0x8, R.string.vi_sunroof_shade, true, Format.RAW),
     BELT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00201200, 0, R.string.vi_belt_driver, true, Format.BELT),
     BELT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00201300, 0, R.string.vi_belt_passenger, false, Format.BELT),
     BELT_REAR_LEFT(Group.BODY, Kind.SENSOR_EVENT, 0x00201800, 0, R.string.vi_belt_rear_left, false, Format.BELT),
@@ -112,12 +115,16 @@ public enum Signal {
         SEAT,
         /** 1 显示中 2 平时 → Boolean（显示中为 true） */
         SHOWN,
-        /** 0 关 1 左 2 右 → Integer */
+        /** 0 关 1 左 2 右 3 双闪 → Integer */
         INDICATOR,
         /** 点火状态的枚举码 → Integer（0x00200104 ACC、05 ON、07 DRIVING） */
         IGNITION,
-        /** 档位枚举 → 字母 P / R / D */
+        /** 档位枚举 → 字母 P / R / N / D */
         GEAR,
+        /** 原样的整数（量程待定） → Integer */
+        RAW,
+        /** 传感器给的是 m/s（0.2778 = 1 km/h）→ 乘 3.6 记成 km/h（Float） */
+        MPS,
         /** 浮点 → Float */
         KMH, KM, PERCENT, PERCENT_RAW, DEGREES, CELSIUS
     }
@@ -166,6 +173,10 @@ public enum Signal {
         if (raw == null) {
             return null;
         }
+        if (format == Format.MPS) {
+            Float mps = raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;
+            return mps == null ? null : mps * 3.6f;
+        }
         if (format == Format.KMH || format == Format.KM || format == Format.PERCENT
                 || format == Format.PERCENT_RAW || format == Format.DEGREES || format == Format.CELSIUS) {
             return raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;
@@ -192,8 +203,9 @@ public enum Signal {
             case SHOWN:
                 return v == 1 ? Boolean.TRUE : (v == 2 ? Boolean.FALSE : null);
             case INDICATOR:
-                return v >= 0 && v <= 2 ? v : null;
+                return v >= 0 && v <= 3 ? v : null;
             case IGNITION:
+            case RAW:
                 return v;
             case GEAR:
                 return gearLetter(v);
@@ -235,11 +247,12 @@ public enum Signal {
         return null;
     }
 
-    /** 档位传感器事件：P = 0x00200230、R = 0x00200240、D = 0x00200220（车上实测；N 还没对上）。 */
+    /** 档位传感器事件：P = 0x00200230、R = 0x00200240、N = 0x00200210、D = 0x00200220（车上实测）。 */
     static String gearLetter(int event) {
         switch (event) {
             case 0x00200230: return "P";
             case 0x00200240: return "R";
+            case 0x00200210: return "N";
             case 0x00200220: return "D";
             default: return null;
         }

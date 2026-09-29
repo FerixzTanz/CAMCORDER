@@ -126,7 +126,6 @@
     <string name="vi_indicator">Status penunjuk</string>
     <string name="vi_turn_left">Lampu isyarat kiri</string>
     <string name="vi_turn_right">Lampu isyarat kanan</string>
-    <string name="vi_hazard">Lampu kecemasan</string>
     <string name="vi_low_beam">Lampu rendah</string>
     <string name="vi_high_beam">Lampu tinggi</string>
     <string name="vi_drl">Lampu siang</string>
@@ -138,7 +137,10 @@
     <string name="vi_door_passenger">Pintu penumpang</string>
     <string name="vi_door_rear_left">Pintu belakang kiri</string>
     <string name="vi_door_rear_right">Pintu belakang kanan</string>
+    <string name="vi_door_frunk">But hadapan</string>
+    <string name="vi_door_trunk">Pintu belakang</string>
     <string name="vi_charge_port">Penutup port cas</string>
+    <string name="vi_sunroof_shade">Bidai bumbung kaca</string>
     <string name="vi_belt_driver">Tali pinggang pemandu</string>
     <string name="vi_belt_passenger">Tali pinggang penumpang</string>
     <string name="vi_belt_rear_left">Tali pinggang belakang kiri</string>

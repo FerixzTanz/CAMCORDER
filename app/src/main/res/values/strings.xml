@@ -144,7 +144,6 @@
     <string name="vi_indicator">转向指示状态</string>
     <string name="vi_turn_left">左转向灯</string>
     <string name="vi_turn_right">右转向灯</string>
-    <string name="vi_hazard">双闪</string>
     <string name="vi_low_beam">近光灯</string>
     <string name="vi_high_beam">远光灯</string>
     <string name="vi_drl">日行灯</string>
@@ -156,7 +155,10 @@
     <string name="vi_door_passenger">副驾门</string>
     <string name="vi_door_rear_left">左后门</string>
     <string name="vi_door_rear_right">右后门</string>
+    <string name="vi_door_frunk">前备箱</string>
+    <string name="vi_door_trunk">后备箱</string>
     <string name="vi_charge_port">充电口盖</string>
+    <string name="vi_sunroof_shade">天窗遮阳帘</string>
     <string name="vi_belt_driver">主驾安全带</string>
     <string name="vi_belt_passenger">副驾安全带</string>
     <string name="vi_belt_rear_left">后排左安全带</string>

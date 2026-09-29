@@ -71,11 +71,12 @@ public class SignalDecodeTest {
     }
 
     @Test
-    public void indicatorIsZeroToTwo() {
+    public void indicatorIsZeroToThree() {
         assertEquals(Integer.valueOf(0), Signal.INDICATOR.decode(0));
         assertEquals(Integer.valueOf(1), Signal.INDICATOR.decode(1));
         assertEquals(Integer.valueOf(2), Signal.INDICATOR.decode(2));
-        assertNull(Signal.INDICATOR.decode(3));
+        assertEquals(Integer.valueOf(3), Signal.INDICATOR.decode(3));
+        assertNull(Signal.INDICATOR.decode(4));
     }
 
     @Test
@@ -88,6 +89,7 @@ public class SignalDecodeTest {
     public void gearLettersComeFromSensorEvents() {
         assertEquals("P", Signal.GEAR.decode(0x00200230));
         assertEquals("R", Signal.GEAR.decode(0x00200240));
+        assertEquals("N", Signal.GEAR.decode(0x00200210));
         assertEquals("D", Signal.GEAR.decode(0x00200220));
         assertNull(Signal.GEAR.decode(0x00200250));
     }
@@ -98,6 +100,14 @@ public class SignalDecodeTest {
         assertEquals(Float.valueOf(0f), Signal.SPEED.decode(0f));
         assertNull(Signal.SPEED.decode(255f));
         assertEquals(Float.valueOf(-12f), Signal.STEERING.decode(-12f));
+    }
+
+    /** 车速传感器给的是 m/s（Lab 0.10.0：15.833 = 57 km/h），表里直接换成 km/h。 */
+    @Test
+    public void speedIsMetresPerSecondTurnedIntoKmh() {
+        assertEquals(57f, (Float) Signal.SPEED.decode(15.833f), 0.01f);
+        assertEquals(1f, (Float) Signal.SPEED.decode(0.2778f), 0.001f);
+        assertEquals(Float.valueOf(0f), Signal.SPEED.decode(0f));
     }
 
     /** 同一个读法 + 号码 + 区域只能对应一条信号，否则回调分不清给谁。 */

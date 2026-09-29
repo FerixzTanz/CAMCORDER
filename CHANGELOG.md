@@ -11,6 +11,15 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.74.0-alpha] - 2026-09-29
+
+- Speed: the sensor reports m/s; converted to km/h (×3.6) for the info bar and the
+  vehicle info page.
+- Hazard lights taken from the indicator status (3); the dedicated hazard signal, which
+  never reads, removed from the table.
+- Gear N recognised.
+- Vehicle info page: frunk, tailgate and sunroof shade added.
+
 ## [1.73.0-alpha] - 2026-09-29
 
 - Vehicle signals now come by subscription from the head unit's vehicle interface (function

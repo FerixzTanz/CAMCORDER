@@ -5,10 +5,10 @@ package com.kooo.evcam.telemetry;
  *
  * <p>规则都在这里，纯函数（{@code VehicleStateMapperTest}）：</p>
  * <ul>
- *   <li>转向灯优先用不闪的「转向指示状态」（0 关 1 左 2 右）；读不到时退回两盏灯的闪烁保持判定。
- *       双闪只能从两盏灯同时在闪推（双闪那个功能号读 255）。</li>
+ *   <li>转向灯和双闪优先用不闪的「转向指示状态」（0 关 1 左 2 右 3 双闪）；读不到时退回两盏灯的
+ *       闪烁保持判定（双闪 = 两盏同时在闪；专用的双闪功能号一直读 255，不用）。</li>
  *   <li>车门和安全带按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾安全带在右前。</li>
- *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 前雾或后雾。</li>
+ *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 前雾或后雾。车速在 {@link Signal#decode} 里已从 m/s 换成 km/h。</li>
  * </ul>
  */
 public final class VehicleStateMapper {
@@ -21,14 +21,13 @@ public final class VehicleStateMapper {
     public void apply(VehicleState.Builder b, Readings r, long nowMs, boolean driverOnRight) {
         TurnSignalHold.Result blink = hold.update(nowMs, r.bool(Signal.TURN_LEFT), r.bool(Signal.TURN_RIGHT));
         Integer indicator = r.code(Signal.INDICATOR);
-        Integer turn;
         if (indicator != null) {
-            turn = indicator == 1 ? VehicleState.TURN_LEFT : indicator == 2 ? VehicleState.TURN_RIGHT : VehicleState.TURN_NONE;
+            b.turnSignal(indicator == 1 ? VehicleState.TURN_LEFT : indicator == 2 ? VehicleState.TURN_RIGHT : VehicleState.TURN_NONE);
+            b.hazard(indicator == 3);
         } else {
-            turn = blink.turn;
+            b.turnSignal(blink.turn);
+            b.hazard(blink.hazard);
         }
-        b.turnSignal(turn);
-        b.hazard(blink.hazard);
 
         b.steeringDegrees(r.number(Signal.STEERING));
         b.gear(r.text(Signal.GEAR));

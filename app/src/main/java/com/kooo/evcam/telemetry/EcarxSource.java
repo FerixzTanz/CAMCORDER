@@ -112,7 +112,8 @@ final class EcarxSource {
     }
 
     private static long key(Signal.Kind kind, int id, int zone) {
-        return ((long) kind.ordinal() << 56) | ((id & 0xFFFFFFFFL) << 20) | (zone & 0xFFFFF);
+        // 读法 2 位 | 号码 32 位 | 区域 30 位（后备箱的区域是 0x20000000）
+        return ((long) kind.ordinal() << 62) | ((id & 0xFFFFFFFFL) << 30) | (zone & 0x3FFFFFFFL);
     }
 
     void start(Context context) {

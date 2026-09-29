@@ -162,6 +162,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
             case GEAR:
                 return String.valueOf(v);
             case KMH:
+            case MPS:
                 return number(v, "%.0f km/h");
             case KM:
                 return number(v, "%.0f km");

@@ -41,7 +41,15 @@ public class VehicleStateMapperTest {
         assertEquals(Integer.valueOf(VehicleState.TURN_RIGHT), s.turnSignal);
     }
 
-    /** 双闪那个功能号读不到；两盏一起闪就是双闪。 */
+    /** 转向指示状态 3 = 双闪，不闪、不用等两盏灯。 */
+    @Test
+    public void indicatorThreeIsHazard() {
+        VehicleState s = map(readings(Signal.INDICATOR, 3, Signal.TURN_LEFT, false, Signal.TURN_RIGHT, false), true);
+        assertEquals(Boolean.TRUE, s.hazard);
+        assertEquals(Integer.valueOf(VehicleState.TURN_NONE), s.turnSignal);
+    }
+
+    /** 读不到指示状态时：两盏一起闪就是双闪。 */
     @Test
     public void bothLampsBlinkingIsHazard() {
         VehicleState s = map(readings(Signal.TURN_LEFT, true, Signal.TURN_RIGHT, true), true);
@@ -79,6 +87,7 @@ public class VehicleStateMapperTest {
         VehicleState s = map(readings(Signal.BRAKE_DEPTH, 15f, Signal.THROTTLE_DEPTH, 50f,
                 Signal.FRONT_FOG, false, Signal.REAR_FOG, true, Signal.GEAR, "D"), true);
         assertEquals(0.15f, s.brake, 1e-6f);
+        assertEquals(57f, map(readings(Signal.SPEED, 57f), true).speedKmh, 1e-3f);
         assertEquals(0.5f, s.throttle, 1e-6f);
         assertEquals(Boolean.TRUE, s.fogLights);
         assertEquals("D", s.gear);

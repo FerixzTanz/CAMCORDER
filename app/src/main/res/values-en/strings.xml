@@ -126,7 +126,6 @@
     <string name="vi_indicator">Indicator status</string>
     <string name="vi_turn_left">Left turn lamp</string>
     <string name="vi_turn_right">Right turn lamp</string>
-    <string name="vi_hazard">Hazard lights</string>
     <string name="vi_low_beam">Low beam</string>
     <string name="vi_high_beam">High beam</string>
     <string name="vi_drl">Daytime running lights</string>
@@ -138,7 +137,10 @@
     <string name="vi_door_passenger">Passenger door</string>
     <string name="vi_door_rear_left">Rear left door</string>
     <string name="vi_door_rear_right">Rear right door</string>
+    <string name="vi_door_frunk">Frunk</string>
+    <string name="vi_door_trunk">Tailgate</string>
     <string name="vi_charge_port">Charge port lid</string>
+    <string name="vi_sunroof_shade">Sunroof shade</string>
     <string name="vi_belt_driver">Driver belt</string>
     <string name="vi_belt_passenger">Passenger belt</string>
     <string name="vi_belt_rear_left">Rear left belt</string>
