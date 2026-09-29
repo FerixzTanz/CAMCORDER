@@ -105,4 +105,23 @@ public class EncodeSizeTest {
         assertEquals(0, EncodeSize.forSource(0, 0, true).width);
         assertEquals(0, EncodeSize.forSource(-1, 100, false).width);
     }
+
+    /** 行驶信息条：画面下面加 100 像素；总高超过上限时先把画面缩到装得下。 */
+    @Test
+    public void anInfoBarAddsItsHeightBelowThePicture() {
+        EncodeSize size = EncodeSize.forSource(COMPOSITE, 1280, 5140, true).withInfoBar(100);
+        assertTrue(size.grid);
+        assertEquals(2560, size.width);
+        assertEquals(2660, size.height);
+        assertEquals(100, size.infoBar);
+        assertEquals(2560, size.contentHeight());
+
+        EncodeSize tall = EncodeSize.forSource("0", 2000, 4096, false).withInfoBar(100);
+        assertTrue(tall.height <= EncodeSize.MAX_SIDE);
+        assertEquals(100, tall.infoBar);
+        assertEquals(tall.height - 100, tall.contentHeight());
+
+        assertEquals(0, EncodeSize.forSource("0", 1920, 1080, false).infoBar);
+        assertEquals(1080, EncodeSize.forSource("0", 1920, 1080, false).withInfoBar(0).height);
+    }
 }

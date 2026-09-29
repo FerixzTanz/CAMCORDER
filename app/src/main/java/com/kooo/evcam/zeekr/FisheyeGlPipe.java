@@ -161,8 +161,9 @@ public final class FisheyeGlPipe {
     private final SurfaceTexture output;
     private final int inputWidth;
     private final int inputHeight;
-    private final float[] lanes;
-    private final int laneCount;
+    /** 四格的位置；只在管线线程上读写（{@link #setLanes} 也是投过去改）。 */
+    private float[] lanes;
+    private int laneCount;
     private final HandlerThread thread;
     private final Handler handler;
 
@@ -258,6 +259,40 @@ public final class FisheyeGlPipe {
 
     public boolean isAlive() {
         return !released && !outputBroken;
+    }
+
+    /**
+     * 四格换个位置（例如画面下面带着行驶信息条，四格只占上面一部分）。任何线程都能调，下一帧生效。
+     */
+    public void setLanes(float[] newLanes) {
+        final int count = Math.min(MAX_LANES, newLanes == null ? 0 : newLanes.length / 4);
+        final float[] copy = Arrays.copyOf(newLanes == null ? new float[0] : newLanes, MAX_LANES * 4);
+        if (released) {
+            return;
+        }
+        handler.post(() -> {
+            if (Arrays.equals(copy, lanes) && count == laneCount) {
+                return;
+            }
+            lanes = copy;
+            laneCount = count;
+            drawLatest();
+        });
+    }
+
+    /**
+     * 2×2 四格，只占画面上面 {@code contentFraction} 那一部分（1 = 整幅，就是 {@link #GRID_2X2}）。
+     * 下面剩下的那一条不在任何一格里，着色器原样拷过去。
+     */
+    public static float[] gridLanes(float contentFraction) {
+        float f = Math.max(0.01f, Math.min(1f, contentFraction));
+        float h = 0.5f * f;
+        return new float[]{
+                0f, 0f, 0.5f, h,
+                0.5f, 0f, 0.5f, h,
+                0f, h, 0.5f, h,
+                0.5f, h, 0.5f, h,
+        };
     }
 
     public SurfaceTexture output() {

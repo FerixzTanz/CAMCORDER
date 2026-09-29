@@ -250,4 +250,35 @@ public class PlaybackViewportTest {
         assertFalse(PlaybackViewport.hasSquareCells(0, 0));
         assertFalse(PlaybackViewport.hasSquareCells(2560, -1));
     }
+
+    /** 带行驶信息条的环视录像：减掉 100 像素格子更方，那 100 像素就是信息条。 */
+    @Test
+    public void anInfoBarUnderTheGridIsRecognisedByItsGeometry() {
+        assertEquals(0, PlaybackViewport.infoBarInset(2560, 2560, true));
+        assertEquals(0, PlaybackViewport.infoBarInset(2560, 2570, true));
+        assertEquals(100, PlaybackViewport.infoBarInset(2560, 2660, true));
+        assertEquals(100, PlaybackViewport.infoBarInset(2560, 2670, true));
+        assertEquals(100, PlaybackViewport.infoBarInset(1280, 1385, true));
+        assertEquals("整幅录像没有格子可比", 0, PlaybackViewport.infoBarInset(1920, 1180, false));
+        assertEquals(0, PlaybackViewport.infoBarInset(0, 0, true));
+    }
+
+    /** 放大一格时，格子只占信息条以上的部分；点在信息条上不算任何一格。 */
+    @Test
+    public void cellsAboveAnInfoBarStopAtTheBar() {
+        // 2560x2660 的视频铺在同样大的视图上（1:1），下面 100 是信息条
+        float[] r = PlaybackViewport.transformRects(2, 2560, 2660, 100, 2560, 2660);
+        assertEquals(0f, r[0], TOLERANCE);
+        assertEquals(1280f, r[1], TOLERANCE);
+        assertEquals(1280f, r[2], TOLERANCE);
+        assertEquals(2560f, r[3], TOLERANCE);
+        assertEquals(PlaybackViewport.NO_CELL,
+                PlaybackViewport.cellAtInPicture(100, 2620, 2560, 2660, 100, 2560, 2660));
+        assertEquals(2, PlaybackViewport.cellAtInPicture(100, 2000, 2560, 2660, 100, 2560, 2660));
+        assertEquals(1, PlaybackViewport.cellAtInPicture(2000, 100, 2560, 2660, 100, 2560, 2660));
+        // 没有信息条时和原来一样
+        float[] plain = PlaybackViewport.transformRects(2, 2560, 2560, 0, 2560, 2560);
+        assertEquals(1280f, plain[1], TOLERANCE);
+        assertEquals(2560f, plain[3], TOLERANCE);
+    }
 }

@@ -27,6 +27,11 @@
     <string name="set_watermark_off">No stamp on saved files</string>
     <string name="set_watermark_spec_title">Include recording specs</string>
     <string name="set_watermark_spec_summary">Adds resolution and frame rate to the stamp</string>
+    <string name="set_info_bar_title">Driving info bar</string>
+    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, steering, gear, speed, lights, doors and position. Experimental; signals that cannot be read show as no data</string>
+    <string name="set_info_bar_speed_title">Speed</string>
+    <string name="set_info_bar_pedals_title">Throttle and brake</string>
+    <string name="set_info_bar_steering_title">Steering wheel</string>
     <string name="set_storage_location_title">Storage location</string>
     <string name="set_storage_sentry_note">With Sentry Mode on after you leave the car, only the USB-A port (where Sentry Mode saves its footage) stays powered, so recording can go on. A USB drive on the Type-C port works too: when it loses power, recording moves to the drive on the USB-A port and carries on.</string>
     <string name="set_relay_title">Relay write</string>

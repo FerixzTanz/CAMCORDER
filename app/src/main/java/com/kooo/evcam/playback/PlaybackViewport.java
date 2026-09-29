@@ -33,7 +33,31 @@ public final class PlaybackViewport {
     /** 2×2 的格子编号：0=左上，1=右上，2=左下，3=右下。 */
     public static final int CELL_COUNT = 4;
 
+    /** 行驶信息条的高（和 {@code telemetry.InfoBar.HEIGHT} 同一个数；回放只认几何，不引那个包）。 */
+    public static final int INFO_BAR_HEIGHT = 100;
+
     private PlaybackViewport() {
+    }
+
+    /**
+     * 这段录像下面带没带行驶信息条 —— 带了返回它的高（像素），没带返回 0。
+     *
+     * <p>文件里没有写着「带不带」，只能从几何上看：按 2×2 存的环视录像每格是正方形，
+     * 减掉 100 像素之后格子<b>更方</b>，那 100 像素就是信息条。座舱那种整幅录像没有格子可比，
+     * 也不需要知道 —— 它不放大某一格、不做鱼眼校正，信息条就是画面的一部分。</p>
+     */
+    public static int infoBarInset(int videoWidth, int videoHeight, boolean grid) {
+        if (!grid || videoWidth <= 0 || videoHeight <= INFO_BAR_HEIGHT) {
+            return 0;
+        }
+        float asIs = Math.abs(cellRatio(videoWidth, videoHeight) - 1f);
+        float withoutBar = Math.abs(cellRatio(videoWidth, videoHeight - INFO_BAR_HEIGHT) - 1f);
+        return withoutBar < asIs && hasSquareCells(videoWidth, videoHeight - INFO_BAR_HEIGHT)
+                ? INFO_BAR_HEIGHT : 0;
+    }
+
+    private static float cellRatio(int width, int height) {
+        return ((float) width / 2f) / ((float) height / 2f);
     }
 
     /**
@@ -64,6 +88,16 @@ public final class PlaybackViewport {
      */
     public static int cellAtInPicture(float x, float y, int imageWidth, int imageHeight,
                                       int viewWidth, int viewHeight) {
+        return cellAtInPicture(x, y, imageWidth, imageHeight, 0, viewWidth, viewHeight);
+    }
+
+    /**
+     * 同上，画面下沿带着一条不属于四格的信息条时用：格子只在信息条以上分，点在信息条上不算任何一格。
+     *
+     * @param bottomInset 信息条的高（像素），0 表示没有
+     */
+    public static int cellAtInPicture(float x, float y, int imageWidth, int imageHeight,
+                                      int bottomInset, int viewWidth, int viewHeight) {
         float[] r = imageRects(NO_CELL, imageWidth, imageHeight, viewWidth, viewHeight);
         if (r == null) {
             return NO_CELL;
@@ -72,12 +106,21 @@ public final class PlaybackViewport {
         float top = r[5];
         float right = r[6];
         float bottom = r[7];
-        if (x < left || x > right || y < top || y > bottom) {
+        float contentBottom = top + (bottom - top) * contentFraction(imageHeight, bottomInset);
+        if (x < left || x > right || y < top || y > contentBottom) {
             return NO_CELL;
         }
         int column = x < (left + right) / 2f ? 0 : 1;
-        int row = y < (top + bottom) / 2f ? 0 : 1;
+        int row = y < (top + contentBottom) / 2f ? 0 : 1;
         return row * 2 + column;
+    }
+
+    /** 画面里四格占的那一部分（0..1）：没有信息条就是 1。 */
+    private static float contentFraction(int height, int bottomInset) {
+        if (height <= 0 || bottomInset <= 0 || bottomInset >= height) {
+            return 1f;
+        }
+        return (float) (height - bottomInset) / height;
     }
 
     /**
@@ -96,6 +139,17 @@ public final class PlaybackViewport {
      */
     public static float[] transformRects(int cell, int videoWidth, int videoHeight,
                                          int viewWidth, int viewHeight) {
+        return transformRects(cell, videoWidth, videoHeight, 0, viewWidth, viewHeight);
+    }
+
+    /**
+     * 同上，画面下沿带着一条不属于四格的信息条时用（{@link #infoBarInset}）：
+     * 整幅照常连着信息条一起显示；放大一格时四格只在信息条以上分。
+     *
+     * @param bottomInset 信息条的高（像素），0 表示没有
+     */
+    public static float[] transformRects(int cell, int videoWidth, int videoHeight,
+                                         int bottomInset, int viewWidth, int viewHeight) {
         if (videoWidth <= 0 || videoHeight <= 0 || viewWidth <= 0 || viewHeight <= 0) {
             return null;
         }
@@ -110,14 +164,15 @@ public final class PlaybackViewport {
         if (cell >= 0 && cell < CELL_COUNT) {
             int column = cell % 2;
             int row = cell / 2;
+            float fraction = contentFraction(videoHeight, bottomInset);
             float halfWidth = viewWidth / 2f;
-            float halfHeight = viewHeight / 2f;
+            float halfHeight = viewHeight * fraction / 2f;
             srcLeft = column * halfWidth;
             srcTop = row * halfHeight;
             srcRight = srcLeft + halfWidth;
             srcBottom = srcTop + halfHeight;
-            // 一格的宽高比与整幅相同（2×2 等分），写成除法是为了不依赖这个巧合
-            sourceAspect = ((float) videoWidth / 2f) / ((float) videoHeight / 2f);
+            // 一格的宽高比与四格那部分相同（2×2 等分），写成除法是为了不依赖这个巧合
+            sourceAspect = ((float) videoWidth / 2f) / ((videoHeight * fraction) / 2f);
         }
 
         float[] dest = destRect(sourceAspect, viewWidth, viewHeight);

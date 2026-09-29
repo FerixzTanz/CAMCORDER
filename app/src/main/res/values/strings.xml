@@ -41,6 +41,11 @@
     <string name="set_watermark_off">不添加水印。仅影响保存的文件，预览始终不显示</string>
     <string name="set_watermark_spec_title">角标附带录制规格</string>
     <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
+    <string name="set_info_bar_title">行驶信息条</string>
+    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、方向盘、档位、车速、灯光、车门、经纬度等。试验功能，读不到的项显示为无数据</string>
+    <string name="set_info_bar_speed_title">当前时速</string>
+    <string name="set_info_bar_pedals_title">油门与刹车开度</string>
+    <string name="set_info_bar_steering_title">方向盘状态</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>

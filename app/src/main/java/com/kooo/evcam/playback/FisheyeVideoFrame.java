@@ -60,6 +60,8 @@ public class FisheyeVideoFrame extends FrameLayout {
     private int cell = PlaybackViewport.NO_CELL;
     private int videoWidth;
     private int videoHeight;
+    /** 画面下沿的行驶信息条有多高（{@link PlaybackViewport#infoBarInset}）；0 表示没有。 */
+    private int inset;
     /** 此刻是不是在分格校正着画：开关开着、这段录像真是四路鱼眼、而且没走 GPU。 */
     private boolean correcting;
     /** GPU 逐像素校正的管线；没开那个开发者选项、或者管线没起来时为 null。 */
@@ -169,16 +171,20 @@ public class FisheyeVideoFrame extends FrameLayout {
         if (video == null) {
             return;
         }
+        // 带行驶信息条的录像：四格只在信息条以上，信息条那一条原样显示、不校正
+        inset = PlaybackViewport.infoBarInset(videoWidth, videoHeight, grid);
         boolean fisheyeVideo = switchedOn && grid
-                && PlaybackViewport.hasSquareCells(videoWidth, videoHeight);
+                && PlaybackViewport.hasSquareCells(videoWidth, videoHeight - inset);
         if (pipe != null) {
             // 走 GPU：开没开交给管线，这里只做取景。输出按视频原尺寸，放大一格时才不糊
             pipe.setCorrection(fisheyeVideo, mesh.fovDegrees(), mesh.projection(), mesh.strength());
             if (videoWidth > 0 && videoHeight > 0) {
                 pipe.setOutputSize(videoWidth, videoHeight);
+                pipe.setLanes(FisheyeGlPipe.gridLanes(
+                        inset > 0 ? (videoHeight - inset) / (float) videoHeight : 1f));
             }
         }
-        float[] r = PlaybackViewport.transformRects(cell, videoWidth, videoHeight,
+        float[] r = PlaybackViewport.transformRects(cell, videoWidth, videoHeight, inset,
                 video.getWidth(), video.getHeight());
         if (r == null) {
             return;
@@ -214,7 +220,7 @@ public class FisheyeVideoFrame extends FrameLayout {
         }
         int viewWidth = video.getWidth();
         int viewHeight = video.getHeight();
-        float[] r = PlaybackViewport.transformRects(cell, videoWidth, videoHeight,
+        float[] r = PlaybackViewport.transformRects(cell, videoWidth, videoHeight, inset,
                 viewWidth, viewHeight);
         if (r == null) {
             super.dispatchDraw(canvas);
@@ -228,11 +234,12 @@ public class FisheyeVideoFrame extends FrameLayout {
                     offsetX + r[4], offsetY + r[5], r[6] - r[4], r[7] - r[5]);
             return;
         }
-        // 整幅：四格各自校正，每一格有自己的光心
+        // 整幅：四格各自校正，每一格有自己的光心。带信息条时四格只占上面那部分
+        float fraction = inset > 0 && videoHeight > inset ? (videoHeight - inset) / (float) videoHeight : 1f;
         float sourceWidth = (r[2] - r[0]) / 2f;
-        float sourceHeight = (r[3] - r[1]) / 2f;
+        float sourceHeight = (r[3] - r[1]) * fraction / 2f;
         float targetWidth = (r[6] - r[4]) / 2f;
-        float targetHeight = (r[7] - r[5]) / 2f;
+        float targetHeight = (r[7] - r[5]) * fraction / 2f;
         for (int index = 0; index < PlaybackViewport.CELL_COUNT; index++) {
             int column = index % 2;
             int row = index / 2;
@@ -242,6 +249,29 @@ public class FisheyeVideoFrame extends FrameLayout {
                     offsetX + r[4] + column * targetWidth, offsetY + r[5] + row * targetHeight,
                     targetWidth, targetHeight);
         }
+        if (fraction < 1f) {
+            // 信息条那一条：不校正，按取景原样贴到四格下面
+            drawPlainBand(canvas,
+                    offsetX + r[0], offsetY + r[1] + sourceHeight * 2f, r[2] - r[0], (r[3] - r[1]) - sourceHeight * 2f,
+                    offsetX + r[4], offsetY + r[5] + targetHeight * 2f, r[6] - r[4], (r[7] - r[5]) - targetHeight * 2f);
+        }
+    }
+
+    /** 把画面上的一条（源，视图坐标）不加校正地画到目标位置。 */
+    private void drawPlainBand(Canvas canvas,
+                               float sourceLeft, float sourceTop, float sourceWidth, float sourceHeight,
+                               float targetLeft, float targetTop, float targetWidth, float targetHeight) {
+        if (sourceWidth <= 0f || sourceHeight <= 0f || targetWidth <= 0f || targetHeight <= 0f) {
+            return;
+        }
+        sourceRect.set(sourceLeft, sourceTop, sourceLeft + sourceWidth, sourceTop + sourceHeight);
+        destinationRect.set(targetLeft, targetTop, targetLeft + targetWidth, targetTop + targetHeight);
+        matrix.setRectToRect(sourceRect, destinationRect, Matrix.ScaleToFit.FILL);
+        canvas.save();
+        canvas.clipRect(destinationRect);
+        canvas.concat(matrix);
+        drawChild(canvas, video, getDrawingTime());
+        canvas.restore();
     }
 
     private void drawLane(Canvas canvas,

@@ -179,6 +179,16 @@ public class EglSurfaceEncoder {
     /** 输入带不带左右镜像；null 表示还没看过。只在变化时写日志。 */
     private Boolean inputMirrored;
 
+    // ---- 行驶信息条（画面下方）----
+    /**
+     * 非 null 时输出的最下面 {@link #barHeight} 像素是信息条，相机画面（含角标）画在
+     * 上面 {@link #contentHeight} 高的区域里 —— 两块各用各的视口，画面那边的代码不用知道有它。
+     */
+    private com.kooo.evcam.telemetry.InfoBarRenderer infoBar;
+    private int barHeight;
+    private int contentHeight;
+    private int infoBarTextureId;
+
     // 输入 SurfaceTexture（来自 Camera）
     private SurfaceTexture inputSurfaceTexture;
 
@@ -322,9 +332,21 @@ public class EglSurfaceEncoder {
         this.cameraId = cameraId;
         this.width = width;
         this.height = height;
+        this.contentHeight = height;
 
         // 初始化 MVP 矩阵为单位矩阵
         Matrix.setIdentityM(mvpMatrix, 0);
+    }
+
+    /**
+     * 录像下方的行驶信息条。要在 {@link #initialize} 之前设：画面区域按它的高让出来，
+     * 编码尺寸（构造时的 height）必须已经包含它。
+     */
+    public void setInfoBar(com.kooo.evcam.telemetry.InfoBarRenderer bar) {
+        this.infoBar = bar;
+        this.barHeight = bar == null ? 0
+                : Math.min(com.kooo.evcam.telemetry.InfoBar.HEIGHT, Math.max(0, height - 2));
+        this.contentHeight = height - barHeight;
     }
 
     /**
@@ -507,8 +529,8 @@ public class EglSurfaceEncoder {
             lastFrameTimeNs = currentTimeNs;
             renderedFrames++;   // 过了节流这一关，这一帧才真的进编码器
 
-            // 设置视口
-            GLES20.glViewport(0, 0, width, height);
+            // 画面的视口：有信息条时让出下面那一条
+            GLES20.glViewport(0, barHeight, width, contentHeight);
 
             // 优化：只在必要时清除缓冲，避免闪屏
             if (needsClear) {
@@ -529,6 +551,7 @@ public class EglSurfaceEncoder {
             } else {
                 drawFrameWithoutWatermark();
             }
+            drawInfoBar();
 
             // 设置呈现时间戳并交换缓冲区
             EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNs);
@@ -744,7 +767,7 @@ public class EglSurfaceEncoder {
         // 性能优化：缓存水印位置计算结果
         if (!watermarkPositionCached) {
             watermarkW = (float) WATERMARK_WIDTH / width;   // 水印宽度占比
-            watermarkH = (float) WATERMARK_HEIGHT / height; // 水印高度占比
+            watermarkH = (float) WATERMARK_HEIGHT / contentHeight; // 水印高度占比（画面区，不含信息条）
             watermarkX = 1.0f - watermarkW - 0.01f;  // 右边距 1%
             watermarkY = 0.01f;  // 上边距 1%
             watermarkPositionCached = true;
@@ -893,6 +916,10 @@ public class EglSurfaceEncoder {
             if (brandTextureId != 0) {
                 GLES20.glDeleteTextures(1, new int[]{brandTextureId}, 0);
                 brandTextureId = 0;
+            }
+            if (infoBarTextureId != 0) {
+                GLES20.glDeleteTextures(1, new int[]{infoBarTextureId}, 0);
+                infoBarTextureId = 0;
             }
             if (watermarkBitmap != null) {
                 watermarkBitmap.recycle();
@@ -1065,7 +1092,71 @@ public class EglSurfaceEncoder {
             AppLog.w(TAG, "Camera " + cameraId + " 水印叠加着色器创建失败，四宫格模式将没有水印");
         }
 
+        // 行驶信息条的贴图（用同一个叠加程序画）
+        if (infoBar != null) {
+            if (watermarkOverlayProgram == 0) {
+                AppLog.w(TAG, "Camera " + cameraId + " 叠加着色器没建起来，信息条画不了，画面按整幅录");
+                infoBar = null;
+                barHeight = 0;
+                contentHeight = height;
+            } else {
+                int[] barTextures = new int[1];
+                GLES20.glGenTextures(1, barTextures, 0);
+                infoBarTextureId = barTextures[0];
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, infoBarTextureId);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+                AppLog.i(TAG, "Camera " + cameraId + " 行驶信息条 " + width + "x" + barHeight
+                        + "，" + infoBar.cellCount() + " 格；画面区 " + width + "x" + contentHeight);
+            }
+        }
+
         AppLog.d(TAG, "Camera " + cameraId + " OpenGL setup complete, textureId=" + textureId);
+    }
+
+    /**
+     * 信息条：画面下面那一条，自己的视口。快照版本变了才重画、重新上传。
+     */
+    private void drawInfoBar() {
+        com.kooo.evcam.telemetry.InfoBarRenderer bar = infoBar;
+        if (bar == null || infoBarTextureId == 0 || watermarkOverlayProgram == 0) {
+            return;
+        }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, infoBarTextureId);
+        if (bar.renderIfDue(com.kooo.evcam.telemetry.Telemetry.get().latest())) {
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bar.bitmap(), 0);
+        }
+        GLES20.glViewport(0, 0, width, barHeight);
+        GLES20.glUseProgram(watermarkOverlayProgram);
+
+        // 铺满这个视口；位图左上为原点，贴图上下翻
+        laneVertexScratch[0] = -1f; laneVertexScratch[1] = -1f;
+        laneVertexScratch[2] = 1f;  laneVertexScratch[3] = -1f;
+        laneVertexScratch[4] = -1f; laneVertexScratch[5] = 1f;
+        laneVertexScratch[6] = 1f;  laneVertexScratch[7] = 1f;
+        laneTexScratch[0] = 0f; laneTexScratch[1] = 1f;
+        laneTexScratch[2] = 1f; laneTexScratch[3] = 1f;
+        laneTexScratch[4] = 0f; laneTexScratch[5] = 0f;
+        laneTexScratch[6] = 1f; laneTexScratch[7] = 0f;
+        laneVertexBuffer.clear();
+        laneVertexBuffer.put(laneVertexScratch);
+        laneVertexBuffer.position(0);
+        laneTexCoordBuffer.clear();
+        laneTexCoordBuffer.put(laneTexScratch);
+        laneTexCoordBuffer.position(0);
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, infoBarTextureId);
+        GLES20.glUniform1i(overlayTextureHandle, 0);
+        GLES20.glEnableVertexAttribArray(overlayPositionHandle);
+        GLES20.glVertexAttribPointer(overlayPositionHandle, 2, GLES20.GL_FLOAT, false, 0, laneVertexBuffer);
+        GLES20.glEnableVertexAttribArray(overlayTexCoordHandle);
+        GLES20.glVertexAttribPointer(overlayTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, laneTexCoordBuffer);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDisableVertexAttribArray(overlayPositionHandle);
+        GLES20.glDisableVertexAttribArray(overlayTexCoordHandle);
     }
 
     /**
@@ -1176,7 +1267,7 @@ public class EglSurfaceEncoder {
             return;
         }
         float w = 2.0f * bitmapWidth / width;
-        float h = 2.0f * bitmapHeight / height;
+        float h = 2.0f * bitmapHeight / contentHeight;
         float margin = 0.02f;
         float left = alignRight ? (1.0f - margin - w) : (-1.0f + margin);
         float right = left + w;

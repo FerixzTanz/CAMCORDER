@@ -27,6 +27,11 @@
     <string name="set_watermark_off">Tiada tera pada fail yang disimpan</string>
     <string name="set_watermark_spec_title">Sertakan spesifikasi rakaman</string>
     <string name="set_watermark_spec_summary">Menambah resolusi dan kadar bingkai pada tera</string>
+    <string name="set_info_bar_title">Bar maklumat pemanduan</string>
+    <string name="set_info_bar_summary">Menambah jalur di bawah video dengan lampu isyarat, stereng, gear, kelajuan, lampu, pintu dan kedudukan. Percubaan; isyarat yang tidak dapat dibaca dipaparkan sebagai tiada data</string>
+    <string name="set_info_bar_speed_title">Kelajuan</string>
+    <string name="set_info_bar_pedals_title">Pedal minyak dan brek</string>
+    <string name="set_info_bar_steering_title">Stereng</string>
     <string name="set_storage_location_title">Lokasi storan</string>
     <string name="set_storage_sentry_note">Apabila Mod Sentry dihidupkan selepas anda keluar dari kereta, hanya port USB-A (tempat Mod Sentry menyimpan rakamannya) yang kekal berkuasa, jadi rakaman boleh diteruskan. Pemacu USB pada port Type-C juga boleh digunakan: apabila kuasanya terputus, rakaman beralih ke pemacu pada port USB-A dan diteruskan.</string>
     <string name="set_relay_title">Tulis melalui perantara</string>

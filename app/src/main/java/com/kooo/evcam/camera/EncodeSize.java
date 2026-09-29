@@ -32,10 +32,44 @@ public final class EncodeSize {
     /** 是否走了四宫格重排。 */
     public final boolean grid;
 
+    /** 画面下面那条行驶信息条的高（像素）；0 表示没有。总高 {@link #height} 已经包含它。 */
+    public final int infoBar;
+
     private EncodeSize(int width, int height, boolean grid) {
+        this(width, height, grid, 0);
+    }
+
+    private EncodeSize(int width, int height, boolean grid, int infoBar) {
         this.width = width;
         this.height = height;
         this.grid = grid;
+        this.infoBar = infoBar;
+    }
+
+    /**
+     * 在画面下面加一条行驶信息条（{@code InfoBar.HEIGHT} 高）。
+     *
+     * <p>总高超过编码器上限时，先把画面等比缩到装得下 —— 信息条的高不变，
+     * 它的字和图标是按 100 像素高画的。</p>
+     */
+    public EncodeSize withInfoBar(int barHeight) {
+        if (barHeight <= 0 || width <= 0 || height <= 0) {
+            return this;
+        }
+        int bar = even(barHeight);
+        int w = width;
+        int h = height;
+        if (h + bar > MAX_SIDE) {
+            float scale = (float) (MAX_SIDE - bar) / h;
+            w = even((int) (w * scale));
+            h = even((int) (h * scale));
+        }
+        return new EncodeSize(w, h + bar, grid, bar);
+    }
+
+    /** 画面（不含信息条）的高。 */
+    public int contentHeight() {
+        return height - infoBar;
     }
 
     /**

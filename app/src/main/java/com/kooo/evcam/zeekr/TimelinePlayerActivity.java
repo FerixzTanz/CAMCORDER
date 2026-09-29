@@ -614,8 +614,10 @@ public class TimelinePlayerActivity extends AppCompatActivity {
 
     /** 手指落在这一格画面的哪一路上；落在留出的黑边上、或者画面还没出来，返回 NO_CELL。 */
     private int cellUnderTouch(Lane lane) {
-        return PlaybackViewport.cellAtInPicture(lastTouchX, lastTouchY,
-                lane.player.getVideoWidth(), lane.player.getVideoHeight(),
+        int videoWidth = lane.player.getVideoWidth();
+        int videoHeight = lane.player.getVideoHeight();
+        return PlaybackViewport.cellAtInPicture(lastTouchX, lastTouchY, videoWidth, videoHeight,
+                PlaybackViewport.infoBarInset(videoWidth, videoHeight, gridColumns(lane) >= 2),
                 lane.view.getWidth(), lane.view.getHeight());
     }
 
@@ -732,8 +734,10 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                     gridColumns(lane) >= 2);
             return;
         }
-        float[] r = PlaybackViewport.transformRects(cell,
-                lane.player.getVideoWidth(), lane.player.getVideoHeight(),
+        int videoWidth = lane.player.getVideoWidth();
+        int videoHeight = lane.player.getVideoHeight();
+        float[] r = PlaybackViewport.transformRects(cell, videoWidth, videoHeight,
+                PlaybackViewport.infoBarInset(videoWidth, videoHeight, gridColumns(lane) >= 2),
                 lane.view.getWidth(), lane.view.getHeight());
         if (r == null) {
             // 视频尺寸还不知道（没准备好），等 onPrepared 再来一次

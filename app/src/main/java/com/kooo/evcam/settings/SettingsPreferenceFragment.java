@@ -165,6 +165,51 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
         bindSwitch("pref_watermark_spec", appConfig.isWatermarkSpecEnabled(),
                 value -> appConfig.setWatermarkSpecEnabled(value));
+
+        // 行驶信息条（试验项目）：打开时顺手要定位权限 —— 经纬度和 GPS 车速靠它
+        bindSwitch("pref_info_bar", appConfig.isInfoBarEnabled(), enabled -> {
+            appConfig.setInfoBarEnabled(enabled);
+            if (enabled) {
+                askLocationPermission();
+            }
+        });
+        bindSwitch("pref_info_bar_speed", appConfig.isInfoBarSpeed(),
+                value -> appConfig.setInfoBarSpeed(value));
+        bindSwitch("pref_info_bar_pedals", appConfig.isInfoBarPedals(),
+                value -> appConfig.setInfoBarPedals(value));
+        bindSwitch("pref_info_bar_steering", appConfig.isInfoBarSteering(),
+                value -> appConfig.setInfoBarSteering(value));
+    }
+
+    private static final int REQUEST_LOCATION = 41;
+
+    /** 信息条要经纬度和车速：向系统要定位权限。容器给不给、弹不弹框，看黑匣子。 */
+    private void askLocationPermission() {
+        android.content.Context context = getContext();
+        if (context == null) {
+            return;
+        }
+        boolean granted = androidx.core.content.ContextCompat.checkSelfPermission(context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        com.kooo.evcam.blackbox.BlackBox.note("行驶信息条打开，定位权限" + (granted ? "已有" : "没有，向系统申请"));
+        if (!granted) {
+            requestPermissions(new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @androidx.annotation.NonNull String[] permissions,
+                                           @androidx.annotation.NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_LOCATION) {
+            boolean granted = grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            com.kooo.evcam.blackbox.BlackBox.note("定位权限申请结果：" + (granted ? "已授予" : "被拒绝或没有弹框"));
+        }
     }
 
     /**

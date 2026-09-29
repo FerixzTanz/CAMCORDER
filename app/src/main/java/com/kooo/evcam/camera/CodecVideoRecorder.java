@@ -369,6 +369,17 @@ public class CodecVideoRecorder {
 
     private String brandLine = "";
 
+    /** 录像下方的行驶信息条；null 表示没有。要在 prepareRecording 之前设好。 */
+    private com.kooo.evcam.telemetry.InfoBarRenderer infoBar;
+
+    /**
+     * 录像下方的行驶信息条。编码尺寸（构造时给的 height）必须已经包含它的高
+     * （{@link EncodeSize#withInfoBar}）；渲染器在编码器建起来时交给 GL 那边。
+     */
+    public void setInfoBar(com.kooo.evcam.telemetry.InfoBarRenderer bar) {
+        this.infoBar = bar;
+    }
+
     private void applyWatermarkInfoLine() {
         if (eglEncoder == null) {
             return;  // 编码器还没建，createEncoder 结束时会再调一次
@@ -604,6 +615,8 @@ public class CodecVideoRecorder {
                     // 左上角的应用名与版本号。要在 initialize() 之前设好 ——
                     // 那块贴图在初始化时画一次，之后不再重画
                     eglEncoder.setBrandLine(brandLine);
+                    // 行驶信息条也要在 initialize() 之前：画面区域按它的高让出来
+                    eglEncoder.setInfoBar(infoBar);
                     // setFrameRate 通常在 prepareRecording 之前就调用了，这里补上
                     applyEncoderFrameRate();
                     resultTextureId[0] = eglEncoder.initialize(encoderInputSurface);
@@ -927,6 +940,10 @@ public class CodecVideoRecorder {
         if (eglEncoder != null) {
             eglEncoder.release();
             eglEncoder = null;
+        }
+        if (infoBar != null) {
+            infoBar.recycle();
+            infoBar = null;
         }
 
         // 释放缓存的录制 Surface（必须在 SurfaceTexture 之前释放）

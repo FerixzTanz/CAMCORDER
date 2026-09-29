@@ -78,6 +78,27 @@
             android:dependency="pref_watermark"
             android:title="@string/set_watermark_spec_title"
             android:summary="@string/set_watermark_spec_summary" />
+
+        <!-- 行驶信息条（试验项目）：录像下方一条车辆信号。子项只在总开关开着时可拨 -->
+        <SwitchPreferenceCompat
+            android:key="pref_info_bar"
+            android:title="@string/set_info_bar_title"
+            android:summary="@string/set_info_bar_summary" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_info_bar_speed"
+            android:dependency="pref_info_bar"
+            android:title="@string/set_info_bar_speed_title" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_info_bar_pedals"
+            android:dependency="pref_info_bar"
+            android:title="@string/set_info_bar_pedals_title" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_info_bar_steering"
+            android:dependency="pref_info_bar"
+            android:title="@string/set_info_bar_steering_title" />
     </PreferenceScreen>
 
     <!-- ==================== 存储 ==================== -->

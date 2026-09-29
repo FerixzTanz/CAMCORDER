@@ -7,6 +7,29 @@ Notable changes only, newest first. Each version's section becomes the body of i
 
 Nothing yet.
 
+## [1.68.0-alpha] - 2026-09-29
+
+- **Driving info bar under the recorded video (experimental, off by default).** Settings →
+  Recording → "Driving info bar" adds a 100-pixel strip below every recorded stream, in the
+  app's dark grey, showing vehicle state as icons, numbers and bars only: turn signals,
+  hazard lights (red triangle), steering wheel (rotates with the angle, degrees in the
+  middle), gear, throttle and brake (pedal icon plus a bar), speed, auto hold, ACC, lane
+  centering, doors, seat belts, daytime running, low beam, high beam and fog lights,
+  odometer, and latitude/longitude. Sub-switches turn speed, the pedals and the steering
+  wheel off individually. A signal that cannot be read is drawn dimmed with a slash, never
+  as "off". Narrower streams keep the higher-priority cells and drop the rest.
+- Where the signals come from: the vehicle property service (`android.car`, read by
+  reflection) and the location service (position, and GPS speed when the car gives none).
+  On this head unit the container is known to refuse vehicle properties, so most cells are
+  expected to show "no data" until another route exists; what each source could and could
+  not read is written to the black box when a recording starts. The app now declares the
+  location permission and asks for it when the bar is switched on.
+- Playback knows the strip: tap-to-enlarge and fisheye correction treat only the picture
+  above it as the 2×2 grid; the strip is shown as recorded. With the bar on, recording uses
+  the MediaCodec path (like the 2×2 grid, it needs GL to compose the frame).
+- Releases are drafts from now on: only the repository owner can see and download them,
+  and the in-app update check no longer sees new versions.
+
 ## [1.67.0-alpha] - 2026-09-29
 
 - **Taking a photo opens the cameras when they are closed, and says what actually happened.**
