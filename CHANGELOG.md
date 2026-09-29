@@ -1,7 +1,11 @@
 # Changelog
 
 Notable changes only, newest first. Each version's section becomes the body of its
-[GitHub release](../../releases).
+[GitHub release](../../releases) and the text of the in-app update dialog.
+
+Alpha sections: one line per change, what changed and nothing else. Beta and stable
+sections: written for users, reviewed before release. Why a change was made lives in the
+commit message, not here.
 
 ## [Unreleased]
 
