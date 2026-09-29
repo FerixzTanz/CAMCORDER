@@ -27,21 +27,22 @@ public final class InfoBarLayout {
         HANDS(80, 2),
         GEAR(70, 3),
         /** 刹车（上）和油门（下）两根横条，左边带深度数字。 */
-        PEDALS(160, 4),
-        SPEED(200, 0),
+        PEDALS(170, 4),
+        SPEED(210, 0),
         AUTO_HOLD(70, 8),
         ACC(80, 8),
         LCC(80, 8),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
         STOCK_360(80, 3),
         /** 俯视的车：四扇门 + 五个座位的安全带。 */
-        CABIN(150, 5),
-        DRL(80, 7),
+        CABIN(170, 5),
+        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。 */
+        DRL(130, 7),
         LOW_BEAM(80, 6),
         HIGH_BEAM(80, 6),
         FOG(80, 7),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
-        ASSIST(180, 6),
+        ASSIST(200, 6),
         ODOMETER(160, 9),
         POSITION(170, 9);
 
@@ -57,7 +58,7 @@ public final class InfoBarLayout {
     /** 左右留白。 */
     public static final int MARGIN = 16;
     /** 格与格之间。 */
-    public static final int GAP = 16;
+    public static final int GAP = 12;
 
     /** 放好的一格：哪一格、左边缘在哪。 */
     public static final class Placed {

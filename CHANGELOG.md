@@ -11,6 +11,16 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.72.0-alpha] - 2026-09-29
+
+- Info bar v3: icons redrawn to survive video compression (strokes 6 px and up, solid fills,
+  no translucency, no dashes; unknown = dark fill with a bright slash); larger numbers
+  (steering 32, pedals 30, odometer 28, position 26, badges 20); steering angle centred on
+  the digits with the degree sign to the right, yellow when turned left, white when right,
+  no sign; brake bar red, throttle bar green; daytime running lights drawn from the 7X front
+  (body outline, Stargate band, emblem, the two thin daytime lines below the band, lit with
+  a glow). Cell widths rebalanced, gap 12.
+
 ## [1.71.0-alpha] - 2026-09-29
 
 - Driving info bar, second pass on the design: seat belts moved into the cabin cell
