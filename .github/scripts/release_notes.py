@@ -8,8 +8,7 @@ safety / attribution text.
 
 A stable version (no suffix) is introduced by its changelog section as a whole: that
 section carries its own headings, written as ### in CHANGELOG.md and promoted to ## here.
-Test builds (-alpha, -beta) list the section under "What changed" and keep the warning
-that most of what is new has not been checked on a vehicle.
+Test builds (-alpha, -beta) list the section under "What changed".
 
 Usage:  python3 .github/scripts/release_notes.py 0.3.0-alpha > RELEASE_NOTES.md
 """
@@ -76,16 +75,6 @@ def main():
             out.append(section)
             out.append("")
 
-        out.append("## Verified on the vehicle")
-        out.append("")
-        out.append("Confirmed on a ZEEKR 7X: **the composite stream split into four views**, "
-                   "**recording**, and **saving to a USB drive**.")
-        out.append("")
-        out.append("> [!WARNING]")
-        out.append("> Everything else - new features in particular - is **unverified on a vehicle**,")
-        out.append("> and the automated tests cover the pure logic only.")
-        out.append("> **Try anything new in a stationary vehicle first.**")
-        out.append("")
 
     out.append("## Getting started")
     out.append("")
@@ -103,6 +92,7 @@ def main():
     out.append("Experimental, unofficial software. Not affiliated with, approved by, or endorsed "
                "by ZEEKR, and not certified for any vehicle safety function.")
     out.append("")
+    out.append("- Try anything new in a stationary vehicle first.")
     out.append("- It does not replace the factory dash cam, reversing camera or blind-spot monitor.")
     out.append("- Do not operate it while driving, and do not judge distances or obstacles from "
                "its picture.")
