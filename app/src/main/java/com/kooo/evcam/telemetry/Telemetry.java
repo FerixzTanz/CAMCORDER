@@ -1,26 +1,32 @@
 package com.kooo.evcam.telemetry;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.kooo.evcam.AppLog;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
- * 车辆信号的唯一入口：来源往这里写，画的人从这里读。
+ * 车辆信号的唯一入口：来源往这里写，用的人从这里读。
  *
  * <h3>框架</h3>
  *
  * <ul>
- *   <li>一份快照（{@link VehicleState}），不可变；来源改几项就发布新的一份，版本号 +1。</li>
- *   <li>来源各管一条路：{@link EcarxSource}（车机系统自带的 ECARX 车辆接口，反射只读；
- *       zeekr-shortcut-lab 在容器里验证过能用），{@link LocationSource}（定位：经纬度，车辆不给车速时用 GPS 车速）。
- *       安卓标准的 {@code android.car} 在这台车机的容器里结构性拿不到（平台笔记），不接。
- *       再有新的路（OBD 蓝牙盒子……）就是再加一个来源，快照和信息条都不用动。</li>
- *   <li>只在录制而且开着信息条时跑（{@link #start} / {@link #stop}，由录制的开停带着）；
- *       停了快照清空，下次不会把旧值画进新录像。</li>
+ *   <li>两份快照，都不可变、版本号只往上走：{@link Readings}（每个信号的读数，「系统信息」页看它）和
+ *       {@link VehicleState}（信息条要的那几项，由 {@link VehicleStateMapper} 从读数推出来，再加定位）。</li>
+ *   <li>来源各管一条路：{@link EcarxSource}（车机自带的 ECARX 接口，订阅），{@link LocationSource}（经纬度，
+ *       车不给车速时用 GPS 车速）。再有新的路就是再加一个来源。</li>
+ *   <li><b>谁要用就登记</b>（{@link #acquire} / {@link #release}，和相机的登记表一个道理）：录像开着信息条、
+ *       「系统信息」页开着，都算要用；没人要了来源全停、快照清空 —— 关掉页面就释放全部资源，
+ *       下次不会把旧值画进新录像。</li>
  * </ul>
  *
- * <p>每个来源连上（或连不上）都往黑匣子记一行「什么拿得到、什么拿不到」——
- * 这是试验项目，车上跑出来的答案就在那几行里。</p>
+ * <p>每个来源连上（或连不上）都往黑匣子记一行「什么拿得到、什么拿不到」。</p>
  */
 public final class Telemetry {
 
@@ -32,10 +38,19 @@ public final class Telemetry {
         void apply(VehicleState.Builder builder);
     }
 
+    /** 读数变了谁来看（在主线程上回调）。 */
+    public interface Listener {
+        void onReadingsChanged(Readings readings);
+    }
+
     private final Object lock = new Object();
+    private final Handler main = new Handler(Looper.getMainLooper());
+    private final Set<String> users = new LinkedHashSet<>();
+    private final List<Listener> listeners = new ArrayList<>();
     private volatile VehicleState state = VehicleState.empty();
+    private volatile Readings readings = Readings.empty();
     private boolean running;
-    /** 车速有没有从车辆属性来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
+    /** 车速有没有从车辆接口来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
     private volatile boolean carSpeedSeen;
     private EcarxSource car;
     private LocationSource location;
@@ -47,30 +62,33 @@ public final class Telemetry {
         return INSTANCE;
     }
 
-    /** 开始收信号。重复调无害。 */
-    public void start(Context context) {
+    /** 登记：我要用车辆信号。第一个登记的把来源拉起来；重复登记无害。 */
+    public void acquire(Context context, String who) {
         synchronized (lock) {
+            users.add(who);
             if (running) {
                 return;
             }
             running = true;
             carSpeedSeen = false;
             state = VehicleState.empty();
+            readings = Readings.empty();
             Context app = context.getApplicationContext();
             car = new EcarxSource(this);
             location = new LocationSource(this);
             car.start(app);
             location.start(app);
         }
-        AppLog.i(TAG, "车辆信号开始收集");
+        AppLog.i(TAG, "车辆信号开始收集（" + who + "）");
     }
 
-    /** 停止收信号，快照清空。 */
-    public void stop() {
+    /** 注销：我不用了。最后一个注销的把来源全停、快照清空；没登记过也无害。 */
+    public void release(String who) {
         EcarxSource c;
         LocationSource l;
         synchronized (lock) {
-            if (!running) {
+            users.remove(who);
+            if (!running || !users.isEmpty()) {
                 return;
             }
             running = false;
@@ -79,6 +97,7 @@ public final class Telemetry {
             car = null;
             location = null;
             state = VehicleState.empty();
+            readings = Readings.empty();
         }
         if (l != null) {
             l.stop();
@@ -86,16 +105,22 @@ public final class Telemetry {
         if (c != null) {
             c.stop();
         }
-        AppLog.i(TAG, "车辆信号停止收集");
+        AppLog.i(TAG, "车辆信号停止收集（" + who + " 是最后一个）");
+        notifyListeners(Readings.empty());
     }
 
     public boolean isRunning() {
         return running;
     }
 
-    /** 最新的一份快照，永远不为 null。 */
+    /** 信息条要的快照，永远不为 null。 */
     public VehicleState latest() {
         return state;
+    }
+
+    /** 每个信号的读数，永远不为 null。 */
+    public Readings readings() {
+        return readings;
     }
 
     /** 来源改几项并发布。停了之后的写入丢掉。 */
@@ -110,6 +135,50 @@ public final class Telemetry {
         }
     }
 
+    /** 来源发布一份读数。停了之后的丢掉。 */
+    void publishReadings(Readings snapshot) {
+        synchronized (lock) {
+            if (!running) {
+                return;
+            }
+            readings = snapshot;
+        }
+        notifyListeners(snapshot);
+    }
+
+    public void addListener(Listener listener) {
+        synchronized (listeners) {
+            if (!listeners.contains(listener)) {
+                listeners.add(listener);
+            }
+        }
+    }
+
+    public void removeListener(Listener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void notifyListeners(Readings snapshot) {
+        List<Listener> copy;
+        synchronized (listeners) {
+            if (listeners.isEmpty()) {
+                return;
+            }
+            copy = new ArrayList<>(listeners);
+        }
+        main.post(() -> {
+            for (Listener l : copy) {
+                try {
+                    l.onReadingsChanged(snapshot);
+                } catch (RuntimeException e) {
+                    AppLog.w(TAG, "listener failed: " + e);
+                }
+            }
+        });
+    }
+
     void noteCarSpeed() {
         carSpeedSeen = true;
     }
@@ -122,9 +191,11 @@ public final class Telemetry {
     void sourceReported(String source, String status) {
         AppLog.i(TAG, source + ": " + status);
         com.kooo.evcam.blackbox.BlackBox.note("行驶信息来源 " + source + ": " + status);
+        // 页面上的状态行跟着换
+        notifyListeners(readings);
     }
 
-    /** 诊断报告 / 日志用的一段。 */
+    /** 诊断报告 / 页面用的一段。 */
     public String describe() {
         EcarxSource c;
         LocationSource l;
@@ -134,7 +205,7 @@ public final class Telemetry {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(running ? "running" : "stopped");
-        sb.append(", known=").append(state.knownCount()).append("/27");
+        sb.append(", known ").append(readings.knownCount()).append('/').append(Signal.values().length);
         if (c != null) {
             sb.append("; ecarx: ").append(c.status());
         }

@@ -1568,9 +1568,9 @@ public class MultiCameraManager {
         firstDataWritten = false;
         firstDataWrittenAtMs = 0;
 
-        // 行驶信息条开着：录像期间收车辆信号，停录时停（Telemetry 只在这一对里跑）
+        // 行驶信息条开着：录像期间登记要用车辆信号，停录时注销（没别人在用就全停）
         if (com.kooo.evcam.telemetry.InfoBar.forRecording(context) != null) {
-            com.kooo.evcam.telemetry.Telemetry.get().start(context);
+            com.kooo.evcam.telemetry.Telemetry.get().acquire(context, "recording");
         }
 
         // 检查是否使用中转写入模式
@@ -1908,8 +1908,8 @@ public class MultiCameraManager {
         StorageHelper.noteRecordingFallback(null, null);
         // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
         com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
-        // 车辆信号也只在录像期间收
-        com.kooo.evcam.telemetry.Telemetry.get().stop();
+        // 车辆信号的登记也只在录像期间
+        com.kooo.evcam.telemetry.Telemetry.get().release("recording");
 
         // 在后台线程执行停止操作，避免阻塞主线程
         new Thread(() -> {

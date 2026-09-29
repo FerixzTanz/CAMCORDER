@@ -11,6 +11,19 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.73.0-alpha] - 2026-09-29
+
+- Vehicle signals now come by subscription from the head unit's vehicle interface (function
+  watcher plus sensor listeners, read once after registering, reconciled every 3 s); float
+  sensors still read every 200 ms.
+- Signal table (`telemetry.Signal`) is the single list of what is read and how it decodes;
+  the info bar is derived from it.
+- Info bar mapping updated: turn signal from the steady indicator status; driver door and
+  driver belt placed by the car's driver side; door zones corrected.
+- Settings › System › Vehicle info (experimental): every known signal with its current
+  state, grouped; reading starts when the page opens and everything is released when it
+  closes.
+
 ## [1.72.0-alpha] - 2026-09-29
 
 - Info bar v3: icons redrawn to survive video compression (strokes 6 px and up, solid fills,

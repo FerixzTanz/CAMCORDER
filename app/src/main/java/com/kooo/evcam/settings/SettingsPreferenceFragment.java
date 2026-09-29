@@ -887,6 +887,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         // 诊断信息放在系统里：它是给所有人导出报告用的
         onClick("pref_diagnostics", pref ->
                 startActivity(new Intent(getContext(), DiagnosticsActivity.class)));
+        // 系统信息（试验性）：车机能读到的车辆信号。只在这一页开着时收，离开就把资源放掉
+        onClick("pref_vehicle_info", pref ->
+                openFragment(new VehicleInfoFragment(), R.string.set_vehicle_info_title));
 
         bindSwitch("pref_auto_start", appConfig.isAutoStartOnBoot(),
                 value -> appConfig.setAutoStartOnBoot(value));

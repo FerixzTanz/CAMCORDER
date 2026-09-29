@@ -333,6 +333,11 @@
             android:title="@string/set_diagnostics_title"
             android:summary="@string/set_diagnostics_summary" />
 
+        <Preference
+            android:key="pref_vehicle_info"
+            android:title="@string/set_vehicle_info_title"
+            android:summary="@string/set_vehicle_info_summary" />
+
     </PreferenceScreen>
 
     <!--
