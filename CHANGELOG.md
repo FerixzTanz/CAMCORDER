@@ -9,7 +9,7 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- Vehicle info page: Sentry Mode on / off.
 
 ## [1.79.0-alpha] - 2026-09-30
 

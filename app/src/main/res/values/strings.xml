@@ -183,6 +183,7 @@
     <string name="vi_temp_inside">车内温度</string>
     <string name="vi_battery_temp">电池温度</string>
     <string name="vi_day_night">白天 / 夜晚</string>
+    <string name="vi_sentry_mode">哨兵模式</string>
     <string name="vi_aeb">自动紧急制动</string>
     <string name="vi_fcw">前碰预警</string>
     <string name="vi_ldw">车道偏离预警</string>

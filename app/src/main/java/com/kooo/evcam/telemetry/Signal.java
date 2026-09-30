@@ -92,6 +92,8 @@ public enum Signal {
     TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, Trust.CONFIRMED, Format.CELSIUS),
     BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, Trust.CONFIRMED, Format.CELSIUS),
     DAY_NIGHT(Group.VEHICLE, Kind.SENSOR_EVENT, 0x00201000, 0, R.string.vi_day_night, Trust.CONFIRMED, Format.DAY_NIGHT),
+    /** 哨兵模式开关状态（SETTING_FUNC_VSTD_MODE_STS）：0 关 / 1 开（Lab 0.13.0，用户下车前手动开关过一次）。 */
+    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 安全辅助（读的是开关）
     AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),

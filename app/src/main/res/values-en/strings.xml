@@ -165,6 +165,7 @@
     <string name="vi_temp_inside">Cabin temperature</string>
     <string name="vi_battery_temp">Battery temperature</string>
     <string name="vi_day_night">Day / night</string>
+    <string name="vi_sentry_mode">Sentry Mode</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Forward collision warning</string>
     <string name="vi_ldw">Lane departure warning</string>

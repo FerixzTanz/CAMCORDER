@@ -165,6 +165,7 @@
     <string name="vi_temp_inside">Suhu kabin</string>
     <string name="vi_battery_temp">Suhu bateri</string>
     <string name="vi_day_night">Siang / malam</string>
+    <string name="vi_sentry_mode">Mod Sentry</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Amaran perlanggaran hadapan</string>
     <string name="vi_ldw">Amaran keluar lorong</string>
