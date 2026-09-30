@@ -62,8 +62,9 @@ GPL-3.0 是传染性（copyleft）许可证。因此**本项目整体以 GPL-3.0
 | NanoHTTPD | BSD 3-Clause |
 | ZXing Core | Apache License 2.0 |
 
-`assets/douyin.jpg`、`assets/douyin2.png` 来自 EVCam，
+`docs/evcam-upstream-douyin.jpg`、`docs/evcam-upstream-douyin2.png` 来自 EVCam，
 是其补盲功能作者（抖音 @星星舰见）的反馈群二维码，随上游一同保留以维持署名。
+应用里没有用到它们，2.0 之后从 `assets/` 挪到 `docs/`，不再打进 APK。
 
 ---
 

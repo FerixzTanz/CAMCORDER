@@ -66,12 +66,6 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
-    sourceSets {
-        getByName("main") {
-            assets.srcDir("../assets")
-        }
-    }
-
 }
 
 dependencies {

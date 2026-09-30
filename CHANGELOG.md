@@ -9,7 +9,7 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- The app is about 0.8 MB smaller: two unused images from the upstream project no longer ship in it.
 
 ## [2.0.0] - 2026-09-30
 
