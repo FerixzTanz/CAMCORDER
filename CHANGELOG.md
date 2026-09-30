@@ -10,6 +10,8 @@ commit message, not here.
 ## [Unreleased]
 
 - The app is about 0.8 MB smaller: two unused images from the upstream project no longer ship in it.
+- Video playback no longer shows the status strip under the picture: it showed today's settings
+  and free space, not the clip's.
 
 ## [2.0.0] - 2026-09-30
 

@@ -304,14 +304,9 @@
                 </LinearLayout>
 
                 <!--
-                  ⑤ 状态条：和主界面同一条，也和主界面一样压在画面底边上，
-                  不去挤下面那排播放控制。
+                  这里不放 ⑤ 状态条：它写的是现在的设置和 U 盘余量，不是这段录像的，
+                  压在录像上会被当成这段录像的参数（项目拥有者 2026-10-01 定）。
                 -->
-                <include
-                    layout="@layout/layout_status_bar"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/status_bar_height"
-                    android:layout_gravity="bottom" />
             </FrameLayout>
 
             <!-- 进度条与控制 -->
