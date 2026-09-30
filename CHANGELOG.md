@@ -11,6 +11,47 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.0] - 2026-09-30
+
+Changes since 1.0.0.
+
+Small updates will follow often for a while. They only refine the driving info bar and leave
+the main features alone. Each one is a stable release, so there is no need to install every one.
+
+### Upgrade notes
+
+- When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise the head
+  unit's installer gets stuck and later installs or updates fail.
+- The "Custom" stream profile is gone. If you used it, the app switches to Zeekr 7X (surround
+  composite).
+- **Keep recording when the screen goes off** and **Timestamp overlay** are now on by default.
+  Recording with the screen off needs the car's Sentry Mode, which keeps the head unit awake;
+  without it the car sleeps and recording pauses until it wakes.
+
+### New and improved
+
+- Malay interface.
+- Fisheye correction (**Straighten**) on every screen: the main screen, photo playback and
+  video playback.
+- Recording can cover the surround view alone, or the surround view plus the cabin cameras,
+  with more detailed camera, quality and frame-rate options (Settings → Recording).
+- Video playback shows all cameras in sync. Tap one to enlarge it, tap again to go back.
+- Photo playback uses the same layout as the main screen. One tap enlarges a view.
+- Super mirror button mode: tap the top, bottom, left or right of the window to switch to the
+  front, rear, left or right camera.
+- The super mirror shows "tap to resume" when its picture stops, and reconnects by itself
+  after the car wakes.
+- An interrupted recording, for example when the USB drive drops out, resumes by itself.
+- Improved stability and smoother operation.
+
+### Experimental
+
+- Driving info bar (off by default, Settings → Recording): a strip under the recorded video
+  with vehicle state such as turn signals, steering, gear, pedals, speed, doors, lights,
+  odometer and position. Only items verified on the car are live; the rest are crossed out.
+- Vehicle info (Settings → System): the vehicle signals the head unit exposes and their
+  current state.
+
 ## [1.80.0-alpha] - 2026-09-30
 
 - Info bar: auto hold lights only while the car is standing still.
