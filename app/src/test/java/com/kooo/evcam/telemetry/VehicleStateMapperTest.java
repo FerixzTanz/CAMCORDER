@@ -86,6 +86,14 @@ public class VehicleStateMapperTest {
         assertEquals(Boolean.FALSE, map(readings(Signal.AUTO_HOLD, true, Signal.AUTO_HOLD_ACTIVE, false), true).autoHold);
     }
 
+    /** 车在走时「保持」不算正在驻车；停着（或读不到车速）就听车的。 */
+    @Test
+    public void autoHoldNeedsTheCarToStandStill() {
+        assertEquals(Boolean.FALSE, map(readings(Signal.AUTO_HOLD_ACTIVE, true, Signal.SPEED, 12f), true).autoHold);
+        assertEquals(Boolean.TRUE, map(readings(Signal.AUTO_HOLD_ACTIVE, true, Signal.SPEED, 0f), true).autoHold);
+        assertEquals(Boolean.TRUE, map(readings(Signal.AUTO_HOLD_ACTIVE, true), true).autoHold);
+    }
+
     /** 非开发者：不能用的信号在映射前滤掉 —— 副驾安全带不会被画成红的；先用着的（方向盘）留着。 */
     @Test
     public void unusableSignalsAreMaskedBeforeMapping() {

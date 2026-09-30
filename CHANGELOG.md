@@ -9,7 +9,14 @@ commit message, not here.
 
 ## [Unreleased]
 
-- Vehicle info page: Sentry Mode on / off.
+Nothing yet.
+
+## [1.80.0-alpha] - 2026-09-30
+
+- Info bar: auto hold lights only while the car is standing still.
+- Vehicle info page: dark labels now read "consistent in on-car tests (still
+  cross-checked)"; every signal is an experimental finding.
+- Vehicle info page: Sentry Mode on / off (seen once, shown as unverified).
 
 ## [1.79.0-alpha] - 2026-09-30
 

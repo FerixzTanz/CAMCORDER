@@ -126,7 +126,7 @@
     <!-- 系统信息（试验性）：分组、信号名、值 -->
     <string name="set_vehicle_info_title">系统信息（试验性）</string>
     <string name="set_vehicle_info_summary">车机能读到的车辆信号和此刻的状态；离开这一页即停止读取</string>
-    <string name="vi_legend">名字深色：实车确认；中灰：能用，细节待定；浅色：读得到但未验证</string>
+    <string name="vi_legend">名字深色：实车实验中观察一致（持续交叉验证）；中灰：能用，细节待定；浅色：读得到但未验证</string>
     <string name="vi_group_drive">行驶</string>
     <string name="vi_group_lamps">灯光</string>
     <string name="vi_group_body">车身</string>

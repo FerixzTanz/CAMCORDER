@@ -10,8 +10,12 @@ import com.kooo.evcam.R;
  * 号码和含义来自 zeekr-shortcut-lab 在 7X 上的实测：它的信号手册 {@code docs/signals.md} 是唯一依据
  * （分工：Lab 把信号找准，这里把找到的用准）。</p>
  *
- * <p>每条信号有一个可信程度（{@link Trust}）：确认了的、先用着的、没验证的。
+ * <p>每条信号有一个可信程度（{@link Trust}）：实验中观察一致的、先用着的、没验证的。
  * 信息条默认只启用信号都{@linkplain #usable() 能用}的栏目，其余划掉。</p>
+ *
+ * <p><b>全都是实验结论</b>：号码是在车外试出来的，一个操作常常让好几个号一起变（挂 R 一次动六七个），
+ * 联动车外无从得知。所以「确认」只是「实验中观察一致」，Lab 每次运行都在交叉验证，对不上的在手册里降级，
+ * 这里跟着改。用的时候只拿一个号当它本来的意思：踩没踩刹车看踏板不看刹车灯，倒没倒车看档位不看倒车灯。</p>
  *
  * <p>解码是纯函数（{@code SignalDecodeTest}）：占位值 255 / 254 / 253 / -1 / -65535，浮点 255 / -65535 和
  * 绝对值小于 1e-6 的非零数，都算「没数据」。</p>
@@ -92,8 +96,11 @@ public enum Signal {
     TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, Trust.CONFIRMED, Format.CELSIUS),
     BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, Trust.CONFIRMED, Format.CELSIUS),
     DAY_NIGHT(Group.VEHICLE, Kind.SENSOR_EVENT, 0x00201000, 0, R.string.vi_day_night, Trust.CONFIRMED, Format.DAY_NIGHT),
-    /** 哨兵模式开关状态（SETTING_FUNC_VSTD_MODE_STS）：0 关 / 1 开（Lab 0.13.0，用户下车前手动开关过一次）。 */
-    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.CONFIRMED, Format.ON_OFF),
+    /**
+     * 哨兵模式（SETTING_FUNC_VSTD_MODE_STS）：0 / 1，用户下车前手动开关过一次时跟着变（Lab 0.13.0）。
+     * 只见过一次，是「开关」还是「哨兵在工作」还没分开，Lab 标待定。
+     */
+    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.UNVERIFIED, Format.ON_OFF),
 
     // ---- 安全辅助（读的是开关）
     AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),
@@ -110,7 +117,7 @@ public enum Signal {
 
     /** 可信到什么程度。 */
     public enum Trust {
-        /** Lab 手册「确认了的」一节里有它，这里用到的含义、取值、量程都没挂着「待测」 */
+        /** Lab 手册「实验中观察一致的」一节里有它，这里用到的含义、取值、量程都没挂着「待测 / 待定」 */
         CONFIRMED,
         /** 车上跟着变、能用，但量程 / 比例 / 某个场景还等 Lab 测；用户点名先开放的（方向盘、油门刹车、日行灯） */
         PROVISIONAL,

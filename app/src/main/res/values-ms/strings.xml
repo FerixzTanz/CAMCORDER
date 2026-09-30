@@ -108,7 +108,7 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Maklumat kenderaan (percubaan)</string>
     <string name="set_vehicle_info_summary">Isyarat kenderaan yang didedahkan unit kepala dan keadaan semasanya; bacaan berhenti apabila anda keluar</string>
-    <string name="vi_legend">Label gelap: disahkan di kereta; kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan</string>
+    <string name="vi_legend">Label gelap: konsisten dalam ujian di kereta (masih disemak silang); kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan</string>
     <string name="vi_group_drive">Pemanduan</string>
     <string name="vi_group_lamps">Lampu</string>
     <string name="vi_group_body">Badan</string>

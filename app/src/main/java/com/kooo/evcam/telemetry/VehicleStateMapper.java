@@ -10,7 +10,8 @@ package com.kooo.evcam.telemetry;
  *   <li>车门和安全带按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾安全带在右前。</li>
  *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 后雾灯（前雾灯这台车多半没装）。车速在 {@link Signal#decode} 里已从 m/s 换成 km/h。</li>
  *   <li>自动驻车看「正在驻车」{@link Signal#AUTO_HOLD_ACTIVE}（停下被接管 1、起步回 0），
- *       不看 {@link Signal#AUTO_HOLD}：那是功能开关，开车全程都是 1。</li>
+ *       不看 {@link Signal#AUTO_HOLD}：那是功能开关，开车全程都是 1。「正在驻车」只在车停着时成立：
+ *       这个号原名是「车辆保持时的刹车灯请求」，别的保持也可能让它变，车在走就不算（{@link #holding}）。</li>
  *   <li>非开发者拿到的读数已经滤掉了没验证的信号（{@link Readings#usableOnly()}），这里不再分辨。</li>
  * </ul>
  */
@@ -37,7 +38,7 @@ public final class VehicleStateMapper {
         b.brake(percent(r.number(Signal.BRAKE_DEPTH)));
         b.throttle(percent(r.number(Signal.THROTTLE_DEPTH)));
         b.speedKmh(r.number(Signal.SPEED));
-        b.autoHold(r.bool(Signal.AUTO_HOLD_ACTIVE));
+        b.autoHold(holding(r.bool(Signal.AUTO_HOLD_ACTIVE), r.number(Signal.SPEED)));
         b.laneCentering(r.bool(Signal.LCC));
         b.stockSurroundShown(r.bool(Signal.STOCK_360));
         b.lowBeam(r.bool(Signal.LOW_BEAM));
@@ -65,6 +66,17 @@ public final class VehicleStateMapper {
                         not(r.bool(Signal.BELT_REAR_RIGHT))},
                 new int[]{driverBit, passengerBit, VehicleState.REAR_LEFT, VehicleState.REAR_CENTER,
                         VehicleState.REAR_RIGHT}));
+    }
+
+    /** 车停着的界限：0.1 m/s。 */
+    static final float STANDSTILL_KMH = 0.36f;
+
+    /** 正在驻车：车说在保持，而且车停着（车速读不到时只看车说的）。 */
+    static Boolean holding(Boolean active, Float kmh) {
+        if (Boolean.TRUE.equals(active) && kmh != null && kmh >= STANDSTILL_KMH) {
+            return Boolean.FALSE;
+        }
+        return active;
     }
 
     static Float percent(Float v) {

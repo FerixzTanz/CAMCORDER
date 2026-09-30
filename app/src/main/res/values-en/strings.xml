@@ -108,7 +108,7 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Vehicle info (experimental)</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; reading stops when you leave</string>
-    <string name="vi_legend">Dark label: confirmed on the car; grey: usable, details pending; light: readable but unverified</string>
+    <string name="vi_legend">Dark label: consistent in on-car tests (still cross-checked); grey: usable, details pending; light: readable but unverified</string>
     <string name="vi_group_drive">Driving</string>
     <string name="vi_group_lamps">Lamps</string>
     <string name="vi_group_body">Body</string>
