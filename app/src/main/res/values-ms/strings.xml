@@ -123,7 +123,9 @@
     <string name="vi_throttle_depth">Kedalaman pendikit</string>
     <string name="vi_steering">Sudut stereng</string>
     <string name="vi_auto_hold">Suis auto hold</string>
+    <string name="vi_auto_hold_active">Auto hold, sedang menahan</string>
     <string name="vi_indicator">Status penunjuk</string>
+    <string name="vi_indicator_display">Paparan penunjuk (berkelip)</string>
     <string name="vi_turn_left">Lampu isyarat kiri</string>
     <string name="vi_turn_right">Lampu isyarat kanan</string>
     <string name="vi_low_beam">Lampu rendah</string>
@@ -151,7 +153,10 @@
     <string name="vi_belt_rear_right">Tali pinggang belakang kanan</string>
     <string name="vi_seat_driver">Tempat duduk pemandu</string>
     <string name="vi_seat_passenger">Tempat duduk penumpang</string>
+    <string name="vi_mirror_dip_driver">Cermin pemandu, condong semasa undur</string>
+    <string name="vi_mirror_dip_passenger">Cermin penumpang, condong semasa undur</string>
     <string name="vi_stock_360">Paparan 360 kilang</string>
+    <string name="vi_stock_popup">Paparan kilang timbul</string>
     <string name="vi_park_assist">Paparan bantuan parkir</string>
     <string name="vi_odometer">Odometer</string>
     <string name="vi_battery">Bateri</string>
@@ -159,6 +164,7 @@
     <string name="vi_temp_outside">Suhu luar</string>
     <string name="vi_temp_inside">Suhu kabin</string>
     <string name="vi_battery_temp">Suhu bateri</string>
+    <string name="vi_day_night">Siang / malam</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Amaran perlanggaran hadapan</string>
     <string name="vi_ldw">Amaran keluar lorong</string>
@@ -184,7 +190,14 @@
     <string name="vi_v_right">Kanan</string>
     <string name="vi_v_hazard">Kecemasan</string>
     <string name="vi_v_light_position">Lampu kedudukan</string>
+    <string name="vi_v_light_low">Lampu rendah</string>
     <string name="vi_v_light_auto">Auto</string>
+    <string name="vi_v_mirror_normal">Biasa</string>
+    <string name="vi_v_mirror_tilting">Sedang condong</string>
+    <string name="vi_v_mirror_down">Condong</string>
+    <string name="vi_v_mirror_returning">Sedang kembali</string>
+    <string name="vi_v_day">Siang</string>
+    <string name="vi_v_night">Malam</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Memandu</string>

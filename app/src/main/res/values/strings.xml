@@ -141,7 +141,9 @@
     <string name="vi_throttle_depth">油门深度</string>
     <string name="vi_steering">方向盘转角</string>
     <string name="vi_auto_hold">自动驻车开关</string>
+    <string name="vi_auto_hold_active">自动驻车（正在驻车）</string>
     <string name="vi_indicator">转向指示状态</string>
+    <string name="vi_indicator_display">转向指示显示（跟着闪）</string>
     <string name="vi_turn_left">左转向灯</string>
     <string name="vi_turn_right">右转向灯</string>
     <string name="vi_low_beam">近光灯</string>
@@ -169,7 +171,10 @@
     <string name="vi_belt_rear_right">后排右安全带</string>
     <string name="vi_seat_driver">主驾座位</string>
     <string name="vi_seat_passenger">副驾座位</string>
+    <string name="vi_mirror_dip_driver">主驾后视镜倒车下翻</string>
+    <string name="vi_mirror_dip_passenger">副驾后视镜倒车下翻</string>
     <string name="vi_stock_360">原厂 360 画面</string>
+    <string name="vi_stock_popup">原厂画面弹出</string>
     <string name="vi_park_assist">泊车影像</string>
     <string name="vi_odometer">总里程</string>
     <string name="vi_battery">电量</string>
@@ -177,6 +182,7 @@
     <string name="vi_temp_outside">车外温度</string>
     <string name="vi_temp_inside">车内温度</string>
     <string name="vi_battery_temp">电池温度</string>
+    <string name="vi_day_night">白天 / 夜晚</string>
     <string name="vi_aeb">自动紧急制动</string>
     <string name="vi_fcw">前碰预警</string>
     <string name="vi_ldw">车道偏离预警</string>
@@ -202,7 +208,14 @@
     <string name="vi_v_right">右</string>
     <string name="vi_v_hazard">双闪</string>
     <string name="vi_v_light_position">位置灯</string>
+    <string name="vi_v_light_low">近光</string>
     <string name="vi_v_light_auto">自动</string>
+    <string name="vi_v_mirror_normal">平常</string>
+    <string name="vi_v_mirror_tilting">正在下翻</string>
+    <string name="vi_v_mirror_down">已下翻</string>
+    <string name="vi_v_mirror_returning">正在回位</string>
+    <string name="vi_v_day">白天</string>
+    <string name="vi_v_night">夜晚</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">行驶</string>

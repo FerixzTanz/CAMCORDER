@@ -67,7 +67,20 @@ public class SignalDecodeTest {
     public void stock360ShownIsOneHiddenIsTwo() {
         assertEquals(Boolean.TRUE, Signal.STOCK_360.decode(1));
         assertEquals(Boolean.FALSE, Signal.STOCK_360.decode(2));
-        assertNull(Signal.STOCK_360.decode(0));
+        // 0 是侧方小窗（推测），不是 360 画面
+        assertEquals(Boolean.FALSE, Signal.STOCK_360.decode(0));
+        assertNull(Signal.STOCK_360.decode(3));
+    }
+
+    @Test
+    public void mirrorDipAndDayNightKeepTheirCodes() {
+        assertEquals(Integer.valueOf(Signal.MIRROR_TILTING), Signal.MIRROR_DIP_DRIVER.decode(4));
+        assertEquals(Integer.valueOf(Signal.MIRROR_NORMAL), Signal.MIRROR_DIP_PASSENGER.decode(1));
+        assertNull(Signal.MIRROR_DIP_DRIVER.decode(5));
+        assertEquals(Integer.valueOf(Signal.NIGHT), Signal.DAY_NIGHT.decode(0x00201002));
+        assertNull(Signal.DAY_NIGHT.decode(0x00201003));
+        assertEquals(Boolean.TRUE, Signal.STOCK_POPUP.decode(1));
+        assertEquals(Boolean.FALSE, Signal.STOCK_POPUP.decode(0));
     }
 
     @Test

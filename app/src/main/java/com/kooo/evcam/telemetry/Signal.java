@@ -23,25 +23,34 @@ public enum Signal {
     SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, Trust.CONFIRMED, Format.MPS),
     IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, Trust.CONFIRMED, Format.IGNITION),
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, Trust.CONFIRMED, Format.ON_OFF),
-    /** 跟着变（停车踩下 11–15），踩到底是多少没测（Lab 0.13.0）；先按 0–100 画。用户定：保留。 */
+    /** 跟着变（停车踩下 11–15，开车最大见过 17.4），踩到底是多少没测；先按 0–100 画。用户定：保留。 */
     BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, Trust.PROVISIONAL, Format.PERCENT),
-    /** 行驶中跟着变，踩到底是多少没测（Lab 0.13.0）；先按 0–100 画。用户定：保留。 */
+    /** 行驶中跟着变（开车最大见过 64，像 %），踩到底是多少没测；先按 0–100 画。用户定：保留。 */
     THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.PROVISIONAL, Format.PERCENT),
-    /** 开车时跟着变；单位、正负、满舵读数和圈数没测（Lab 0.13.0），先按读数就是度数。用户定：能用，开放。 */
+    /**
+     * 开车时跟着变。倒车入库一段读到 -8.9 … 7.3，Lab 判断很可能是弧度（度 = 读数 × 57.3），但左右哪边为负、
+     * 满舵读数还没测（Lab 0.14.0），比例先不改（{@link #STEERING_DEGREES_PER_UNIT}）。用户定：能用，开放。
+     */
     STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.PROVISIONAL, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
     AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, Trust.CONFIRMED, Format.ON_OFF),
+    /** 自动驻车「正在驻车」（车辆保持时的灯光请求）：停下被接管时 1，起步回 0；中间踩放踏板不变（Lab 0.13.0）。 */
+    AUTO_HOLD_ACTIVE(Group.DRIVE, Kind.FUNCTION, 0x20320600, 0, R.string.vi_auto_hold_active, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 灯光
     INDICATOR(Group.LAMPS, Kind.FUNCTION, 0x2A091500, 0, R.string.vi_indicator, Trust.CONFIRMED, Format.INDICATOR),
+    /** 转向指示显示：跟着灯闪（左 0 / 1、右 0 / 2、双闪 0 / 3）。信息条用不闪的 {@link #INDICATOR}。 */
+    INDICATOR_DISPLAY(Group.LAMPS, Kind.FUNCTION, 0x2A091400, 0, R.string.vi_indicator_display, Trust.CONFIRMED, Format.INDICATOR),
     TURN_LEFT(Group.LAMPS, Kind.FUNCTION, 0x21051100, 0, R.string.vi_turn_left, Trust.CONFIRMED, Format.ON_OFF),
     TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, Trust.CONFIRMED, Format.ON_OFF),
     LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, Trust.CONFIRMED, Format.ON_OFF),
     HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, Trust.CONFIRMED, Format.ON_OFF),
-    /** 近光没亮时才是 1；晚上前灯带亮着时读 0（那时报的是前位置灯）。白天自动档待 Lab 复核，接法先不动。用户定：保留。 */
-    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, Trust.PROVISIONAL, Format.ON_OFF),
+    /** 近光没亮时才是 1：切到位置灯档 0 → 1，关灯或近光一亮回 0；晚上前灯带亮着时报的是前位置灯（Lab 0.13.0，用户确认）。 */
+    DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, Trust.CONFIRMED, Format.ON_OFF),
+    /** 一直 0，车机报 notavailable：这台车多半没装前雾灯。 */
     FRONT_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050400, 0, R.string.vi_front_fog, Trust.UNVERIFIED, Format.ON_OFF),
-    REAR_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050500, 0, R.string.vi_rear_fog, Trust.UNVERIFIED, Format.ON_OFF),
+    /** 0 关 / 1 开；要先开近光（Lab 0.13.0）。 */
+    REAR_FOG(Group.LAMPS, Kind.FUNCTION, 0x21050500, 0, R.string.vi_rear_fog, Trust.CONFIRMED, Format.ON_OFF),
     FRONT_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050800, 0, R.string.vi_front_position, Trust.CONFIRMED, Format.ON_OFF),
     REAR_POSITION_LAMP(Group.LAMPS, Kind.FUNCTION, 0x21050C00, 0, R.string.vi_rear_position, Trust.CONFIRMED, Format.ON_OFF),
     LIGHT_SWITCH(Group.LAMPS, Kind.FUNCTION, 0x20040E00, 0, R.string.vi_light_switch, Trust.CONFIRMED, Format.LIGHT_SWITCH),
@@ -65,9 +74,14 @@ public enum Signal {
     BELT_REAR_RIGHT(Group.BODY, Kind.SENSOR_EVENT, 0x00201900, 0, R.string.vi_belt_rear_right, Trust.UNVERIFIED, Format.BELT),
     SEAT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00203300, 0, R.string.vi_seat_driver, Trust.CONFIRMED, Format.SEAT),
     SEAT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00203400, 0, R.string.vi_seat_passenger, Trust.CONFIRMED, Format.SEAT),
+    /** 后视镜倒车下翻：1 平常，4 正在下翻，2 翻下去了，3 正在回位（挂 R 1 → 4 → 2，出 R 2 → 3 → 1）。 */
+    MIRROR_DIP_DRIVER(Group.BODY, Kind.FUNCTION_ZONE, 0x2031EF00, 0x1, R.string.vi_mirror_dip_driver, Trust.CONFIRMED, Format.MIRROR_DIP),
+    MIRROR_DIP_PASSENGER(Group.BODY, Kind.FUNCTION_ZONE, 0x2031EF00, 0x4, R.string.vi_mirror_dip_passenger, Trust.CONFIRMED, Format.MIRROR_DIP),
 
     // ---- 原厂界面
     STOCK_360(Group.STOCK, Kind.FUNCTION, 0x2031FE00, 0, R.string.vi_stock_360, Trust.CONFIRMED, Format.SHOWN),
+    /** 原厂画面弹出：原厂 360 或侧方小窗弹着时 1，都收起来回 0（Lab 0.13.0）。 */
+    STOCK_POPUP(Group.STOCK, Kind.FUNCTION, 0x2031B200, 0, R.string.vi_stock_popup, Trust.CONFIRMED, Format.POPUP),
     PARK_ASSIST(Group.STOCK, Kind.FUNCTION, 0x23030100, 0, R.string.vi_park_assist, Trust.CONFIRMED, Format.ON_OFF),
 
     // ---- 环境 / 车辆
@@ -77,6 +91,7 @@ public enum Signal {
     TEMP_OUTSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100B00, 0, R.string.vi_temp_outside, Trust.CONFIRMED, Format.CELSIUS),
     TEMP_INSIDE(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00100C00, 0, R.string.vi_temp_inside, Trust.CONFIRMED, Format.CELSIUS),
     BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, Trust.CONFIRMED, Format.CELSIUS),
+    DAY_NIGHT(Group.VEHICLE, Kind.SENSOR_EVENT, 0x00201000, 0, R.string.vi_day_night, Trust.CONFIRMED, Format.DAY_NIGHT),
 
     // ---- 安全辅助（读的是开关）
     AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),
@@ -145,6 +160,12 @@ public enum Signal {
         SEAT,
         /** 1 显示中 2 平时 → Boolean（显示中为 true） */
         SHOWN,
+        /** 0 收起 1 弹着 → Boolean（弹着为 true） */
+        POPUP,
+        /** 后视镜下翻的四个状态 → Integer（1 平常、4 正在下翻、2 翻下去了、3 正在回位） */
+        MIRROR_DIP,
+        /** 白天 / 夜晚的枚举码 → Integer（0x00201001 白天、0x00201002 夜晚） */
+        DAY_NIGHT,
         /** 0 关 1 左 2 右 3 双闪 → Integer */
         INDICATOR,
         /** 点火状态的枚举码 → Integer（0x00200104 ACC、05 ON、07 DRIVING） */
@@ -166,7 +187,16 @@ public enum Signal {
     public static final float STEERING_DEGREES_PER_UNIT = 1f;
 
     public static final int LIGHT_SWITCH_POSITION = 0x20040E01;
+    public static final int LIGHT_SWITCH_LOW_BEAM = 0x20040E02;
     public static final int LIGHT_SWITCH_AUTO = 0x20040E03;
+
+    public static final int MIRROR_NORMAL = 1;
+    public static final int MIRROR_DOWN = 2;
+    public static final int MIRROR_RETURNING = 3;
+    public static final int MIRROR_TILTING = 4;
+
+    public static final int DAY = 0x00201001;
+    public static final int NIGHT = 0x00201002;
 
     public static final int IGNITION_ACC = 0x00200104;
     public static final int IGNITION_ON = 0x00200105;
@@ -248,7 +278,14 @@ public enum Signal {
                     default: return null;
                 }
             case SHOWN:
-                return v == 1 ? Boolean.TRUE : (v == 2 ? Boolean.FALSE : null);
+                // 1 原厂 360 画面；2 没显示；0 推测是打转向灯弹的侧方小窗 —— 对「360 画面在不在」来说 0 和 2 都是不在
+                return v == 1 ? Boolean.TRUE : (v == 2 || v == 0 ? Boolean.FALSE : null);
+            case POPUP:
+                return onOff(v);
+            case MIRROR_DIP:
+                return v >= MIRROR_NORMAL && v <= MIRROR_TILTING ? v : null;
+            case DAY_NIGHT:
+                return v == DAY || v == NIGHT ? v : null;
             case INDICATOR:
                 return v >= 0 && v <= 3 ? v : null;
             case LEVEL:

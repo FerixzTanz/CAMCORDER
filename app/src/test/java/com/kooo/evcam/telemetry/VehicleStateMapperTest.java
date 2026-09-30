@@ -79,6 +79,13 @@ public class VehicleStateMapperTest {
         assertNull(map(readings(Signal.AUTO_HOLD, true), true).autoHold);
     }
 
+    /** 「正在驻车」0x20320600：停下被接管 1、起步 0。 */
+    @Test
+    public void autoHoldFollowsTheHoldingState() {
+        assertEquals(Boolean.TRUE, map(readings(Signal.AUTO_HOLD, true, Signal.AUTO_HOLD_ACTIVE, true), true).autoHold);
+        assertEquals(Boolean.FALSE, map(readings(Signal.AUTO_HOLD, true, Signal.AUTO_HOLD_ACTIVE, false), true).autoHold);
+    }
+
     /** 非开发者：不能用的信号在映射前滤掉 —— 副驾安全带不会被画成红的；先用着的（方向盘）留着。 */
     @Test
     public void unusableSignalsAreMaskedBeforeMapping() {
@@ -100,7 +107,7 @@ public class VehicleStateMapperTest {
     }
 
     @Test
-    public void depthsBecomeFractionsAndFogIsEitherLamp() {
+    public void depthsBecomeFractionsAndFogIsTheRearLamp() {
         VehicleState s = map(readings(Signal.BRAKE_DEPTH, 15f, Signal.THROTTLE_DEPTH, 50f,
                 Signal.FRONT_FOG, false, Signal.REAR_FOG, true, Signal.GEAR, "D"), true);
         assertEquals(0.15f, s.brake, 1e-6f);
@@ -109,5 +116,7 @@ public class VehicleStateMapperTest {
         assertEquals(Boolean.TRUE, s.fogLights);
         assertEquals("D", s.gear);
         assertNull(map(readings(), true).fogLights);
+        // 前雾灯这台车多半没装：它亮不亮都不算
+        assertNull(map(readings(Signal.FRONT_FOG, true), true).fogLights);
     }
 }

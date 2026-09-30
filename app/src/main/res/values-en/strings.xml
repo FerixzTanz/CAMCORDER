@@ -123,7 +123,9 @@
     <string name="vi_throttle_depth">Throttle depth</string>
     <string name="vi_steering">Steering angle</string>
     <string name="vi_auto_hold">Auto hold switch</string>
+    <string name="vi_auto_hold_active">Auto hold, holding</string>
     <string name="vi_indicator">Indicator status</string>
+    <string name="vi_indicator_display">Indicator display (blinks)</string>
     <string name="vi_turn_left">Left turn lamp</string>
     <string name="vi_turn_right">Right turn lamp</string>
     <string name="vi_low_beam">Low beam</string>
@@ -151,7 +153,10 @@
     <string name="vi_belt_rear_right">Rear right belt</string>
     <string name="vi_seat_driver">Driver seat</string>
     <string name="vi_seat_passenger">Passenger seat</string>
+    <string name="vi_mirror_dip_driver">Driver mirror, reverse tilt</string>
+    <string name="vi_mirror_dip_passenger">Passenger mirror, reverse tilt</string>
     <string name="vi_stock_360">Stock 360 view</string>
+    <string name="vi_stock_popup">Stock view pop-up</string>
     <string name="vi_park_assist">Park assist view</string>
     <string name="vi_odometer">Odometer</string>
     <string name="vi_battery">Battery</string>
@@ -159,6 +164,7 @@
     <string name="vi_temp_outside">Outside temperature</string>
     <string name="vi_temp_inside">Cabin temperature</string>
     <string name="vi_battery_temp">Battery temperature</string>
+    <string name="vi_day_night">Day / night</string>
     <string name="vi_aeb">AEB</string>
     <string name="vi_fcw">Forward collision warning</string>
     <string name="vi_ldw">Lane departure warning</string>
@@ -184,7 +190,14 @@
     <string name="vi_v_right">Right</string>
     <string name="vi_v_hazard">Hazard</string>
     <string name="vi_v_light_position">Position lamps</string>
+    <string name="vi_v_light_low">Low beam</string>
     <string name="vi_v_light_auto">Auto</string>
+    <string name="vi_v_mirror_normal">Normal</string>
+    <string name="vi_v_mirror_tilting">Tilting down</string>
+    <string name="vi_v_mirror_down">Tilted down</string>
+    <string name="vi_v_mirror_returning">Returning</string>
+    <string name="vi_v_day">Day</string>
+    <string name="vi_v_night">Night</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Driving</string>

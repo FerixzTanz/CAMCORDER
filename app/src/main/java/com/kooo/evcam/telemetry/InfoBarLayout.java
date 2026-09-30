@@ -45,8 +45,8 @@ public final class InfoBarLayout {
         /** 刹车（上）和油门（下）两根横条，左边带深度数字。先按 0–100 画，踩到底是多少等 Lab。 */
         PEDALS(170, 4, Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH),
         SPEED(210, 0, Signal.SPEED),
-        /** 自动驻车「正在驻车」：0x20060400 是它的开关不是状态（一直亮），真正的状态信号等 Lab。 */
-        AUTO_HOLD(70, 8, Verdict.NO),
+        /** 自动驻车「正在驻车」：停下被接管时亮，起步灭（不是功能开关 0x20060400，那个开车全程都亮）。 */
+        AUTO_HOLD(70, 8, Signal.AUTO_HOLD_ACTIVE),
         ACC(80, 8, Verdict.NO),
         LCC(80, 8, Signal.LCC),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
@@ -54,11 +54,12 @@ public final class InfoBarLayout {
         /** 俯视的车：四扇门 + 五个座位的安全带（看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
         CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
-        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。接法等 Lab 白天复核，先用着。 */
+        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。近光亮着时日行灯信号是 0，这一格就灭。 */
         DRL(130, 7, Signal.DRL),
         LOW_BEAM(80, 6, Signal.LOW_BEAM),
         HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
-        FOG(80, 7, Signal.FRONT_FOG, Signal.REAR_FOG),
+        /** 雾灯：只看后雾灯（前雾灯这台车多半没装）。 */
+        FOG(80, 7, Signal.REAR_FOG),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
         ASSIST(200, 6, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
         ODOMETER(160, 9, Signal.ODOMETER),

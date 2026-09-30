@@ -11,6 +11,14 @@ commit message, not here.
 
 Nothing yet.
 
+## [1.79.0-alpha] - 2026-09-30
+
+- Info bar: auto hold lights while the car is actually being held (lab-confirmed holding
+  state), and the fog cell follows the rear fog lamp; both cells are live for everyone.
+- Daytime running lights confirmed as read; the cell stays as it is.
+- Vehicle info page: auto hold holding, indicator display, stock view pop-up, mirror
+  reverse tilt (both sides) and day/night added; light switch shows the low-beam position.
+
 ## [1.78.0-alpha] - 2026-09-30
 
 - Signal table has three levels: confirmed, provisional (usable, details pending) and

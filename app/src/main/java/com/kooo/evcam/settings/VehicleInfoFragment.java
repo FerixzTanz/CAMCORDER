@@ -154,7 +154,17 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
             case SEAT:
                 return pick(ctx, v, R.string.vi_v_occupied, R.string.vi_v_empty);
             case SHOWN:
+            case POPUP:
                 return pick(ctx, v, R.string.vi_v_shown, R.string.vi_v_hidden);
+            case MIRROR_DIP: {
+                int code = v instanceof Integer ? (Integer) v : -1;
+                return ctx.getString(code == Signal.MIRROR_TILTING ? R.string.vi_v_mirror_tilting
+                        : code == Signal.MIRROR_DOWN ? R.string.vi_v_mirror_down
+                        : code == Signal.MIRROR_RETURNING ? R.string.vi_v_mirror_returning
+                        : R.string.vi_v_mirror_normal);
+            }
+            case DAY_NIGHT:
+                return ctx.getString(Integer.valueOf(Signal.NIGHT).equals(v) ? R.string.vi_v_night : R.string.vi_v_day);
             case INDICATOR: {
                 int code = v instanceof Integer ? (Integer) v : -1;
                 return ctx.getString(code == 1 ? R.string.vi_v_left : code == 2 ? R.string.vi_v_right
@@ -167,6 +177,9 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 }
                 if (code == Signal.LIGHT_SWITCH_POSITION) {
                     return ctx.getString(R.string.vi_v_light_position);
+                }
+                if (code == Signal.LIGHT_SWITCH_LOW_BEAM) {
+                    return ctx.getString(R.string.vi_v_light_low);
                 }
                 if (code == Signal.LIGHT_SWITCH_AUTO) {
                     return ctx.getString(R.string.vi_v_light_auto);
