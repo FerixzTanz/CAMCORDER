@@ -234,6 +234,11 @@
     <string name="info_reading">Reading…</string>
     <string name="info_read_failed">Could not read</string>
     <string name="msg_rearview_on">Super mirror on. Middle: swipe up or down to reframe, left or right to change camera. Sides: drag to move</string>
+    <string name="set_side_popup_title">Turn-signal side view</string>
+    <string name="set_side_popup_summary">While you signal, a pop-up shows the camera on that side: left signal, left camera. It closes when the signal goes off. The car\'s own views come first: no pop-up in reverse or while the stock 360 or side view is showing. Not shown while the Super mirror is on</string>
+    <string name="set_side_popup_speed_title">Show from speed (km/h)</string>
+    <string name="set_side_popup_speed_summary">Below this speed the car shows its own side view. 0 shows it at any speed</string>
+    <string name="msg_side_popup_on">Turn-signal side view on. Signal left or right to see that side</string>
     <string name="msg_rearview_reset">Super mirror framing and position reset</string>
     <string name="msg_floating_reset">Floating button reset</string>
     <string name="msg_adjust_opened">Adjustment window opened</string>

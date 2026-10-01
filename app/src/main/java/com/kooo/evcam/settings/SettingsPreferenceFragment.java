@@ -96,6 +96,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindRecording();
         bindStorage();
         bindRearView();
+        bindSidePopup();
         bindFloating();
         bindInterface();
         bindSystem();
@@ -550,6 +551,22 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 requireActivity().runOnUiThread(() -> pref.setSummary(result));
             }
         }, "storage-usage").start();
+    }
+
+    // ------------------------------------------------------------------ 打转向灯弹侧视
+
+    private void bindSidePopup() {
+        bindOverlaySwitch("pref_side_popup", appConfig.isSidePopupEnabled(),
+                OverlayCoordinator::setSidePopupEnabled, on -> {
+                    if (on) {
+                        toast(getString(R.string.msg_side_popup_on));
+                    }
+                });
+        bindSlider("pref_side_popup_min_speed", 0, AppConfig.SIDE_POPUP_MAX_MIN_SPEED,
+                appConfig.getSidePopupMinSpeed(), "km/h", value -> {
+                    appConfig.setSidePopupMinSpeed(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
     }
 
     // ------------------------------------------------------------------ 超级后视镜
