@@ -9,6 +9,8 @@ package com.kooo.evcam.telemetry;
  *       闪烁保持判定（双闪 = 两盏同时在闪；专用的双闪功能号一直读 255，不用）。</li>
  *   <li>车门和安全带按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾安全带在右前。</li>
  *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 后雾灯（前雾灯这台车多半没装）。车速在 {@link Signal#decode} 里已从 m/s 换成 km/h。</li>
+ *   <li>日行灯那一格画的是前灯带，按车外看到的亮灭：日行灯或前位置灯有一个亮就亮。灯带白天以日行灯身份亮；
+ *       一开灯（位置灯档、近光）日行灯信号就回 0，灯带改以前位置灯身份接着亮（Lab 0.13.0）。</li>
  *   <li>自动驻车看「正在驻车」{@link Signal#AUTO_HOLD_ACTIVE}（停下被接管 1、起步回 0），
  *       不看 {@link Signal#AUTO_HOLD}：那是功能开关，开车全程都是 1。「正在驻车」只在车停着时成立：
  *       这个号原名是「车辆保持时的刹车灯请求」，别的保持也可能让它变，车在走就不算（{@link #holding}）。</li>
@@ -44,7 +46,7 @@ public final class VehicleStateMapper {
         b.lowBeam(r.bool(Signal.LOW_BEAM));
         b.highBeam(r.bool(Signal.HIGH_BEAM));
         b.fogLights(r.bool(Signal.REAR_FOG));
-        b.daytimeRunningLights(r.bool(Signal.DRL));
+        b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));
         b.aeb(r.bool(Signal.AEB));
         b.forwardCollisionWarning(r.bool(Signal.FCW));
@@ -81,6 +83,14 @@ public final class VehicleStateMapper {
 
     static Float percent(Float v) {
         return v == null ? null : v / 100f;
+    }
+
+    /** 有一个亮就算亮；都不知道才是不知道。 */
+    static Boolean anyOn(Boolean a, Boolean b) {
+        if (a == null && b == null) {
+            return null;
+        }
+        return Boolean.TRUE.equals(a) || Boolean.TRUE.equals(b);
     }
 
     static Boolean not(Boolean v) {

@@ -105,6 +105,15 @@ public class VehicleStateMapperTest {
         assertEquals(Integer.valueOf(VehicleState.FRONT_RIGHT), map(r, true).beltsUnbuckled);
     }
 
+    /** 前灯带：白天日行灯亮；一开灯日行灯信号回 0，灯带以前位置灯身份接着亮 —— 这一格都要亮。 */
+    @Test
+    public void theLightBandCellFollowsWhatYouSee() {
+        assertEquals(Boolean.TRUE, map(readings(Signal.DRL, true, Signal.FRONT_POSITION_LAMP, false), true).daytimeRunningLights);
+        assertEquals(Boolean.TRUE, map(readings(Signal.DRL, false, Signal.FRONT_POSITION_LAMP, true), true).daytimeRunningLights);
+        assertEquals(Boolean.FALSE, map(readings(Signal.DRL, false, Signal.FRONT_POSITION_LAMP, false), true).daytimeRunningLights);
+        assertNull(map(readings(), true).daytimeRunningLights);
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

@@ -54,8 +54,8 @@ public final class InfoBarLayout {
         /** 俯视的车：四扇门 + 五个座位的安全带（看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
         CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
-        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。近光亮着时日行灯信号是 0，这一格就灭。 */
-        DRL(130, 7, Signal.DRL),
+        /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。画的是前灯带：日行灯或前位置灯亮就亮。 */
+        DRL(130, 7, Signal.DRL, Signal.FRONT_POSITION_LAMP),
         LOW_BEAM(80, 6, Signal.LOW_BEAM),
         HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
         /** 雾灯：只看后雾灯（前雾灯这台车多半没装）。 */

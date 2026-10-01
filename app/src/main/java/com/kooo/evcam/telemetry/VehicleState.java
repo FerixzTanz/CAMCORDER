@@ -59,6 +59,7 @@ public final class VehicleState {
     public final Integer doorsOpen;
     /** 没系安全带的座位（位掩码）。 */
     public final Integer beltsUnbuckled;
+    /** 前灯带亮着（日行灯，或者开着灯时以位置灯身份亮着）—— 和车外看到的一样。 */
     public final Boolean daytimeRunningLights;
     public final Boolean lowBeam;
     public final Boolean highBeam;
