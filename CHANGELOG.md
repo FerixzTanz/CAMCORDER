@@ -9,7 +9,8 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- About: thanks now name the Singapore Zeekr Group and add three members from the Malaysian
+  and Australian owner communities for their suggestions and support.
 
 ## [2.0.1-beta] - 2026-10-01
 
