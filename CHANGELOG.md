@@ -15,7 +15,9 @@ commit message, not here.
   other language shows English.
 - Driving info bar: the high beam cell also lights while you flash the high beams, for at least
   half a second so a quick flash still shows in the recording.
-- Driving info bar: the steering wheel turns by its real angle (up to about 510° each way).
+- Driving info bar: the steering wheel turns by its real angle and in the right direction (up to
+  about 510° each way, yellow to the left).
+- Driving info bar: the brake bar fills at a full press; it used to stop at about a fifth.
 - Vehicle info page: Sentry Mode shows on, armed or off.
 
 ## [2.0.1-beta] - 2026-10-01

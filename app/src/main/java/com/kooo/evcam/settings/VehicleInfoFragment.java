@@ -212,6 +212,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 return number(v, "%.0f km");
             case PERCENT:
             case PERCENT_RAW:
+            case BRAKE:
                 return number(v, "%.0f %%");
             case DEGREES:
                 return number(v, "%.0f°");

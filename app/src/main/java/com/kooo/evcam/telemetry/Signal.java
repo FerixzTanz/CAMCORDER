@@ -27,15 +27,15 @@ public enum Signal {
     SPEED(Group.DRIVE, Kind.SENSOR_VALUE, 0x00100100, 0, R.string.vi_speed, Trust.CONFIRMED, Format.MPS),
     IGNITION(Group.DRIVE, Kind.FUNCTION, 0x20259000, 0, R.string.vi_ignition, Trust.CONFIRMED, Format.IGNITION),
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, Trust.CONFIRMED, Format.ON_OFF),
-    /** 跟着变（停车踩下 11–15，开车最大见过 17.4），踩到底是多少没测；先按 0–100 画。用户定：保留。 */
-    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, Trust.PROVISIONAL, Format.PERCENT),
+    /** 停车踩到底 43.2–43.8，开车一般 10–20（Lab 0.19.0）；单位不明、不是 %，按踩到底 {@link #BRAKE_FULL} 换算成行程 %。 */
+    BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, Trust.CONFIRMED, Format.BRAKE),
     /** 量程 0–100，单位 %（Lab 0.16.0 开车读到过 100.000）。 */
     THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.CONFIRMED, Format.PERCENT),
     /**
-     * 单位是弧度：两边打满约 -8.945 / +8.885 ≈ ±510°，左满到右满约 2.84 圈，和公开资料的 2.7 圈对得上（Lab 0.18.0）。
-     * 左右哪边为负还没定，换算和方向都在 {@link #STEERING_DEGREES_PER_UNIT} 一处。用户定：能用，开放。
+     * 单位是弧度，<b>左正右负</b>（ISO 8855 的习惯）：先左后右打到底，停在 8.789、-8.746（Lab 0.19.0）；
+     * 打满约 ±8.75–8.95 ≈ ±501–513°，左满到右满约 2.8 圈，公开资料 2.7 圈。换算和方向在 {@link #STEERING_DEGREES_PER_UNIT}。
      */
-    STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.PROVISIONAL, Format.DEGREES),
+    STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.CONFIRMED, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
     AUTO_HOLD(Group.DRIVE, Kind.FUNCTION, 0x20060400, 0, R.string.vi_auto_hold, Trust.CONFIRMED, Format.ON_OFF),
     /** 自动驻车「正在驻车」（车辆保持时的灯光请求）：停下被接管时 1，起步回 0；中间踩放踏板不变（Lab 0.13.0）。 */
@@ -190,14 +190,19 @@ public enum Signal {
         /** 传感器给的是 m/s（0.2778 = 1 km/h）→ 乘 3.6 记成 km/h（Float） */
         MPS,
         /** 浮点 → Float */
-        KMH, KM, PERCENT, PERCENT_RAW, DEGREES, CELSIUS
+        KMH, KM, PERCENT, PERCENT_RAW, DEGREES, CELSIUS,
+        /** 刹车深度读数 → 行程 %（读数 / {@link #BRAKE_FULL} × 100，Float），和油门一样是 0–100 */
+        BRAKE
     }
 
     /**
      * 方向盘转角：读数（弧度）→ 方向盘转过的度数，正 = 向右（顺时针）。信息条上的数字、左黄右白、图标的转动都用它。
-     * 带符号：现在按「读数为负 = 向左」（用户最早的判断）；Lab 定了哪边为负，如果反了就把这里改成负数，别处不动。
+     * 车给的是左正右负（Lab 0.19.0），我们这边正 = 向右，所以带负号。
      */
-    public static final float STEERING_DEGREES_PER_UNIT = (float) (180.0 / Math.PI);
+    public static final float STEERING_DEGREES_PER_UNIT = (float) (-180.0 / Math.PI);
+
+    /** 刹车深度踩到底的读数（Lab 0.19.0：43.2–43.8 两次）；读数 / 它 = 行程。 */
+    public static final float BRAKE_FULL = 44f;
 
     public static final int LIGHT_SWITCH_POSITION = 0x20040E01;
     public static final int LIGHT_SWITCH_LOW_BEAM = 0x20040E02;
@@ -258,6 +263,10 @@ public enum Signal {
     public Object decode(Object raw) {
         if (raw == null) {
             return null;
+        }
+        if (format == Format.BRAKE) {
+            Float depth = raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;
+            return depth == null ? null : depth / BRAKE_FULL * 100f;
         }
         if (format == Format.DEGREES) {
             Float units = raw instanceof Number ? floatOrNull(((Number) raw).floatValue()) : null;

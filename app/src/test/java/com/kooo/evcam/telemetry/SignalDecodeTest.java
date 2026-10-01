@@ -112,8 +112,12 @@ public class SignalDecodeTest {
         assertEquals(Float.valueOf(11053f), Signal.ODOMETER.decode(11053f));
         assertEquals(Float.valueOf(0f), Signal.SPEED.decode(0f));
         assertNull(Signal.SPEED.decode(255f));
-        // 方向盘读数是弧度：右打满 8.885 ≈ 509°
-        assertEquals(509.1f, (Float) Signal.STEERING.decode(8.885f), 0.1f);
+        // 方向盘读数是弧度、左正右负；我们这边正 = 向右：左打满 8.789 ≈ -504°，右打满 -8.746 ≈ +501°
+        assertEquals(-503.6f, (Float) Signal.STEERING.decode(8.789f), 0.1f);
+        assertEquals(501.1f, (Float) Signal.STEERING.decode(-8.746f), 0.1f);
+        // 刹车踩到底约 44 = 100 % 行程，开车时的 22 是一半
+        assertEquals(100f, (Float) Signal.BRAKE_DEPTH.decode(44f), 0.01f);
+        assertEquals(50f, (Float) Signal.BRAKE_DEPTH.decode(22f), 0.01f);
         assertEquals(Integer.valueOf(2), Signal.SENTRY_MODE.decode(2));
         assertNull(Signal.SENTRY_MODE.decode(3));
     }
