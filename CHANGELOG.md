@@ -9,6 +9,11 @@ commit message, not here.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.0.2-alpha] - 2026-10-01
+
+- Driving info bar: the number in the steering wheel is the wheel's angle in degrees.
 - About: thanks now name the Singapore Zeekr Group and add members of the Malaysian, Australian
   and Chinese owner communities for their suggestions, insights and support.
 - The About page comes in Chinese and English only: the Chinese interface shows Chinese, every
