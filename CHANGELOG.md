@@ -11,6 +11,19 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.5-beta] - 2026-10-01
+
+Turn-signal side view, after the first drive:
+
+- The pop-up is fully solid. It was slightly see-through: Android limits pop-ups that let taps
+  through to 80% opacity, so while it shows it now takes taps itself (only for the second or two
+  it is up; while hidden it still lets them through).
+- **Aim back** and **Aim up** now turn the view (in degrees) instead of shifting a crop, so it can
+  look much further back, up to 80°. **View width** replaces Zoom. Defaults: 90° wide, 50° back,
+  15° up. Needs *Straighten picture* on. Earlier Zoom / Aim values are not carried over.
+- **Stay open after the signal** is set in milliseconds (0–3000, default 1000). The old slider
+  only had four positions and didn't move on the car's wide screen.
+
 ## [2.0.4-beta] - 2026-10-01
 
 - Turn-signal side view: stays open for 1 second after the signal goes off by default (was 0).
