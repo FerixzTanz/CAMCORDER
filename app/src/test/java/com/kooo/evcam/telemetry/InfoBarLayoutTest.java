@@ -63,8 +63,8 @@ public class InfoBarLayoutTest {
                 InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
                 InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS,
                 InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
-                InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.LOW_BEAM,
-                InfoBarLayout.Cell.HIGH_BEAM, InfoBarLayout.Cell.FOG, InfoBarLayout.Cell.ODOMETER,
+                InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS,
+                InfoBarLayout.Cell.REAR_LAMPS, InfoBarLayout.Cell.ODOMETER,
                 InfoBarLayout.Cell.POSITION}) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }

@@ -68,6 +68,9 @@ public final class VehicleStateMapper {
         // 闪一下最短只有 0.1 秒，至少显示 FLASH_HOLD_MS，录像里才看得见
         b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), flash.update(nowMs, r.bool(Signal.HIGH_BEAM_FLASH))));
         b.fogLights(r.bool(Signal.REAR_FOG));
+        b.rearPositionLamps(r.bool(Signal.REAR_POSITION_LAMP));
+        b.stopLamps(r.bool(Signal.STOP_LAMP));
+        b.reverseLamps(r.bool(Signal.REVERSE_LAMP));
         b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));
         b.aeb(r.bool(Signal.AEB));

@@ -56,11 +56,16 @@ public final class InfoBarLayout {
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
         /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。画的是前灯带：日行灯或前位置灯亮就亮。 */
         DRL(130, 7, Signal.DRL, Signal.FRONT_POSITION_LAMP),
-        LOW_BEAM(80, 6, Signal.LOW_BEAM),
-        /** 远光：开着远光或正在闪远光。 */
-        HIGH_BEAM(80, 6, Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
-        /** 雾灯：只看后雾灯（前雾灯这台车多半没装）。 */
-        FOG(80, 7, Signal.REAR_FOG),
+        /**
+         * 近光 + 远光一格：四道光线的方向说明开的是哪个 —— 都不亮灰色全斜向下，只近光全斜向下，
+         * 只远光（含闪远光）全平直，同时开上两道平直、下两道斜向下。前雾灯不画（这台车多半没装）。
+         */
+        BEAMS(90, 6, Signal.LOW_BEAM, Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
+        /**
+         * 后灯组：7X 车尾。贯穿尾灯暗红细条 = 后位置灯，亮红粗条 + 高位刹车灯 = 刹车灯；
+         * 保险杠两侧各一盏两色灯，外侧亮红 = 后雾灯，内侧白 = 倒车灯，紧挨着，可以同时亮。
+         */
+        REAR_LAMPS(150, 6, Signal.REAR_POSITION_LAMP, Signal.STOP_LAMP, Signal.REAR_FOG, Signal.REVERSE_LAMP),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
         ASSIST(200, 6, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
         ODOMETER(160, 9, Signal.ODOMETER),

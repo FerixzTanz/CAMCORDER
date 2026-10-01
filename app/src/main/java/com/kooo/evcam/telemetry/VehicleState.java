@@ -63,7 +63,12 @@ public final class VehicleState {
     public final Boolean daytimeRunningLights;
     public final Boolean lowBeam;
     public final Boolean highBeam;
+    /** 后雾灯（前雾灯这台车多半没装，不画）。 */
     public final Boolean fogLights;
+    /** 后位置灯、刹车灯、倒车灯：都按车外看到的亮灭（刹车灯也会被自动驻车、动能回收点亮）。 */
+    public final Boolean rearPositionLamps;
+    public final Boolean stopLamps;
+    public final Boolean reverseLamps;
     public final Float odometerKm;
     public final Double latitude;
     public final Double longitude;
@@ -94,6 +99,9 @@ public final class VehicleState {
         this.lowBeam = b.lowBeam;
         this.highBeam = b.highBeam;
         this.fogLights = b.fogLights;
+        this.rearPositionLamps = b.rearPositionLamps;
+        this.stopLamps = b.stopLamps;
+        this.reverseLamps = b.reverseLamps;
         this.odometerKm = b.odometerKm;
         this.latitude = b.latitude;
         this.longitude = b.longitude;
@@ -116,7 +124,8 @@ public final class VehicleState {
                 autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
-                daytimeRunningLights, lowBeam, highBeam, fogLights, odometerKm, latitude, longitude};
+                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps,
+                odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
                 n++;
@@ -151,6 +160,9 @@ public final class VehicleState {
         private Boolean lowBeam;
         private Boolean highBeam;
         private Boolean fogLights;
+        private Boolean rearPositionLamps;
+        private Boolean stopLamps;
+        private Boolean reverseLamps;
         private Float odometerKm;
         private Double latitude;
         private Double longitude;
@@ -184,6 +196,9 @@ public final class VehicleState {
             lowBeam = s.lowBeam;
             highBeam = s.highBeam;
             fogLights = s.fogLights;
+            rearPositionLamps = s.rearPositionLamps;
+            stopLamps = s.stopLamps;
+            reverseLamps = s.reverseLamps;
             odometerKm = s.odometerKm;
             latitude = s.latitude;
             longitude = s.longitude;
@@ -213,6 +228,9 @@ public final class VehicleState {
         public Builder lowBeam(Boolean v) { lowBeam = v; return this; }
         public Builder highBeam(Boolean v) { highBeam = v; return this; }
         public Builder fogLights(Boolean v) { fogLights = v; return this; }
+        public Builder rearPositionLamps(Boolean v) { rearPositionLamps = v; return this; }
+        public Builder stopLamps(Boolean v) { stopLamps = v; return this; }
+        public Builder reverseLamps(Boolean v) { reverseLamps = v; return this; }
         public Builder odometerKm(Float v) { odometerKm = v; return this; }
         public Builder position(Double lat, Double lon) { latitude = lat; longitude = lon; return this; }
 

@@ -142,6 +142,18 @@ public class VehicleStateMapperTest {
         assertEquals(VehicleStateMapper.FLASH_HOLD_MS, VehicleStateMapper.republishAfterMs(Signal.HIGH_BEAM_FLASH));
     }
 
+    /** 后灯组的四盏：按车外看到的直接带过去。 */
+    @Test
+    public void rearLampsComeThroughAsSeen() {
+        VehicleState s = map(readings(Signal.REAR_POSITION_LAMP, true, Signal.STOP_LAMP, false,
+                Signal.REAR_FOG, true, Signal.REVERSE_LAMP, true), true);
+        assertEquals(Boolean.TRUE, s.rearPositionLamps);
+        assertEquals(Boolean.FALSE, s.stopLamps);
+        assertEquals(Boolean.TRUE, s.fogLights);
+        assertEquals(Boolean.TRUE, s.reverseLamps);
+        assertNull(map(readings(), true).stopLamps);
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

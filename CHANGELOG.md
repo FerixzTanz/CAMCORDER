@@ -11,6 +11,14 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.3-alpha] - 2026-10-02
+
+- Driving info bar: lamp cells reworked as agreed on the mock-ups; more adjustments to follow.
+- Driving info bar: low and high beam share one cell; the direction of its four rays shows
+  which beams are on.
+- Driving info bar: a rear lamp group drawn from the 7X tail shows the rear position lamps,
+  stop lamps, rear fog lamps and reversing lamps; the separate fog cell is gone.
+
 ## [2.0.2-alpha] - 2026-10-01
 
 - Driving info bar: the number in the steering wheel is the wheel's angle in degrees.

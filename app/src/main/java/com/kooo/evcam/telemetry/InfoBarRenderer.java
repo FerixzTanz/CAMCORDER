@@ -23,8 +23,10 @@ import java.util.Locale;
  *       不用虚线、点阵和 1–3 px 的缝。</li>
  *   <li>亮是极氪橙；双闪、开着的门、没系的安全带用红；刹车条红、油门条绿（明度也分得开）；
  *       方向盘角度左偏黄、右偏白，不带正负号。</li>
- *   <li>日行灯那一格以 7X 正脸为底：车身轮廓、星门灯带、徽标、灯带下沿两条白色日行灯线，
- *       亮时带光晕 —— 整条里唯一带光晕、唯一有「画」的一格。</li>
+ *   <li>日行灯那一格以 7X 正脸为底：车身轮廓、星门灯带、徽标、灯带下沿两条白色日行灯线，亮时带光晕。
+ *       后灯组以 7X 车尾为底，同一套画法。</li>
+ *   <li>灯组靠「哪一块亮、光线朝哪」分状态，不靠颜色深浅：近远光看光线方向，刹车看高位刹车灯那一块，
+ *       后雾灯 / 倒车灯各占保险杠上的位置。</li>
  * </ul>
  *
  * <p>只在编码线程上用；快照版本没变就不重画（{@link #renderIfDue}）。</p>
@@ -56,6 +58,9 @@ public final class InfoBarRenderer {
     /** 日行灯的核心色（偏白）和亮着的星门灯带。 */
     private static final int LAMP_CORE = 0xFFFFF3EA;
     private static final int BAND_LIT = 0xFFD0602E;
+    /** 尾灯：位置灯暗红，刹车灯、后雾灯亮红。 */
+    private static final int TAIL_DIM = 0xFFA8323A;
+    private static final int TAIL_BRIGHT = 0xFFFF5A5F;
 
     private static final String[] ASSIST_LABELS = {"AEB", "FCW", "LDW", "LKA", "BSD", "RCW"};
 
@@ -185,14 +190,11 @@ public final class InfoBarRenderer {
             case DRL:
                 drawDaytimeLights(s.daytimeRunningLights);
                 break;
-            case LOW_BEAM:
-                drawLamp(cx, cy, 1, s.lowBeam);
+            case BEAMS:
+                drawBeams(s.lowBeam, s.highBeam);
                 break;
-            case HIGH_BEAM:
-                drawLamp(cx, cy, 2, s.highBeam);
-                break;
-            case FOG:
-                drawLamp(cx, cy, 3, s.fogLights);
+            case REAR_LAMPS:
+                drawRearLamps(s.rearPositionLamps, s.stopLamps, s.fogLights, s.reverseLamps);
                 break;
             case ASSIST:
                 drawAssist(new Boolean[]{s.aeb, s.forwardCollisionWarning,
@@ -610,51 +612,146 @@ public final class InfoBarRenderer {
     }
 
     /**
-     * 灯：右边一个灯罩（亮填实、灭画轮廓），左边射出去的光线，靠光线的样子分：
-     *
-     * @param kind 1 近光（三道平行、斜向下）、2 远光（三道平行、水平）、3 雾灯（斜向下 + 一道竖着的波浪）
+     * 近光 + 远光一格（90 宽）：右边一个大灯（亮填实、灭画轮廓），左边四道光线，光线的方向说明开的是哪个：
+     * 都不亮灰色全斜向下；只近光全斜向下；只远光（含闪远光）全平直；同时开上两道平直、下两道斜向下。
+     * 两个都读不到才算没数据；读到一个，另一个按灭画。
      */
-    private void drawLamp(float cx, float cy, int kind, Boolean on) {
-        int color = lineTone(on, false);
+    private void drawBeams(Boolean low, Boolean high) {
+        boolean unknown = low == null && high == null;
+        boolean lowOn = Boolean.TRUE.equals(low);
+        boolean highOn = Boolean.TRUE.equals(high);
+        boolean lit = lowOn || highOn;
         path.reset();
-        path.moveTo(cx, cy - 23);
-        rect.set(cx - 20, cy - 23, cx + 20, cy + 23);
+        path.moveTo(60, 20);
+        rect.set(34, 20, 86, 80);
         path.arcTo(rect, -90, 180, false);
         path.close();
-        if (Boolean.TRUE.equals(on)) {
-            fill.setColor(ON);
-            canvas.drawPath(path, fill);
-        } else if (on == null) {
+        if (unknown) {
             fill.setColor(UNKNOWN_FILL);
             canvas.drawPath(path, fill);
             stroke.setColor(UNKNOWN_LINE);
             stroke.setStrokeWidth(4f);
             canvas.drawPath(path, stroke);
+        } else if (lit) {
+            fill.setColor(ON);
+            canvas.drawPath(path, fill);
         } else {
             stroke.setColor(OFF);
             stroke.setStrokeWidth(6f);
             canvas.drawPath(path, stroke);
         }
-        float x1 = cx - 10;
-        float x0 = cx - 34;
-        for (int i = -1; i <= 1; i++) {
-            float y = cy + i * 14;
-            line(x1, y, x0, kind == 2 ? y : y + 8, 6f, color);
-        }
-        if (kind == 3) {
-            path.reset();
-            float wx = cx - 24;
-            path.moveTo(wx, cy - 26);
-            for (int i = 0; i < 4; i++) {
-                path.quadTo(wx + (i % 2 == 0 ? 8 : -8), cy - 26 + i * 14 + 7, wx, cy - 26 + (i + 1) * 14);
+        int color = unknown ? UNKNOWN_LINE : (lit ? LAMP_CORE : OFF);
+        for (int i = 0; i < 4; i++) {
+            float y = 28 + i * 14;
+            boolean straight = highOn && (!lowOn || i < 2);
+            float y1 = straight ? y : y + 10;
+            if (lit) {
+                glowLine(50, y, 12, y1);
             }
-            stroke.setColor(color);
-            stroke.setStrokeWidth(5f);
-            canvas.drawPath(path, stroke);
+            line(50, y, 12, y1, 6f, color);
         }
-        if (on == null) {
-            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        if (unknown) {
+            slash(14, 86, 84, 14);
         }
+    }
+
+    /**
+     * 后灯组（150 宽）：以 7X 车尾为底。贯穿尾灯暗红细条 = 后位置灯；亮红粗条 + 高位刹车灯 = 刹车灯；
+     * 保险杠两侧各一盏两色灯，外侧亮红 = 后雾灯、内侧白 = 倒车灯，紧挨着。四个都读不到才算没数据。
+     */
+    private void drawRearLamps(Boolean position, Boolean stop, Boolean fog, Boolean reverse) {
+        boolean unknown = position == null && stop == null && fog == null && reverse == null;
+        boolean braking = Boolean.TRUE.equals(stop);
+        boolean fogOn = Boolean.TRUE.equals(fog);
+        boolean reversing = Boolean.TRUE.equals(reverse);
+        // 车身轮廓、后窗、轮子
+        path.reset();
+        path.moveTo(30, 86);
+        path.lineTo(32, 50);
+        path.quadTo(34, 44, 40, 42);
+        path.lineTo(52, 22);
+        path.quadTo(54, 20, 58, 20);
+        path.lineTo(92, 20);
+        path.quadTo(96, 20, 98, 22);
+        path.lineTo(110, 42);
+        path.quadTo(116, 44, 118, 50);
+        path.lineTo(120, 86);
+        path.close();
+        stroke.setColor(unknown ? UNKNOWN_LINE : OUTLINE);
+        stroke.setStrokeWidth(5f);
+        canvas.drawPath(path, stroke);
+        path.reset();
+        path.moveTo(46, 42);
+        path.lineTo(56, 26);
+        path.lineTo(94, 26);
+        path.lineTo(104, 42);
+        path.close();
+        stroke.setColor(unknown ? UNKNOWN_LINE : OFF);
+        stroke.setStrokeWidth(4f);
+        canvas.drawPath(path, stroke);
+        fill.setColor(UNKNOWN_FILL);
+        rect.set(26, 84, 44, 92);
+        canvas.drawRoundRect(rect, 3, 3, fill);
+        rect.set(106, 84, 124, 92);
+        canvas.drawRoundRect(rect, 3, 3, fill);
+        // 高位刹车灯：只在刹车时亮 —— 刹车靠多出来的这一块认，不靠红的深浅
+        if (braking) {
+            glowRect(58, 27, 92, 35, 3, TAIL_BRIGHT);
+        }
+        lamp(60, 28, 90, 34, 2, braking ? TAIL_BRIGHT : UNKNOWN_FILL);
+        // 贯穿尾灯
+        if (braking) {
+            glowRect(32, 48, 118, 64, 6, TAIL_BRIGHT);
+            lamp(34, 50, 116, 62, 4, TAIL_BRIGHT);
+        } else {
+            lamp(34, 52, 116, 59, 3, Boolean.TRUE.equals(position) ? TAIL_DIM : UNKNOWN_FILL);
+        }
+        // 保险杠两侧：外侧后雾灯、内侧倒车灯
+        float[][] sides = {{38, 52}, {98, 84}};
+        for (float[] side : sides) {
+            float fx = side[0];
+            float rx = side[1];
+            if (fogOn) {
+                glowRect(fx - 2, 68, fx + 16, 82, 4, TAIL_BRIGHT);
+            }
+            lamp(fx, 70, fx + 14, 80, 3, fogOn ? TAIL_BRIGHT : UNKNOWN_FILL);
+            if (reversing) {
+                glowRect(rx - 2, 68, rx + 16, 82, 4, LAMP_CORE);
+            }
+            lamp(rx, 70, rx + 14, 80, 3, reversing ? LAMP_CORE : UNKNOWN_FILL);
+        }
+        if (unknown) {
+            slash(30, 88, 120, 14);
+        }
+    }
+
+    /** 一块实心的灯。 */
+    private void lamp(float l, float t, float r, float b, float radius, int color) {
+        rect.set(l, t, r, b);
+        fill.setColor(color);
+        canvas.drawRoundRect(rect, radius, radius, fill);
+    }
+
+    /** 亮着的灯先散一圈光（实心形状下面垫一层模糊）。 */
+    private void glowRect(float l, float t, float r, float b, float radius, int color) {
+        glow.setStyle(Paint.Style.FILL);
+        glow.setColor(color);
+        glow.setAlpha(170);
+        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        rect.set(l, t, r, b);
+        canvas.drawRoundRect(rect, radius, radius, glow);
+        glow.setMaskFilter(null);
+    }
+
+    /** 亮着的光线下面垫一道橙色光晕。 */
+    private void glowLine(float x0, float y0, float x1, float y1) {
+        glow.setStyle(Paint.Style.STROKE);
+        glow.setStrokeWidth(11f);
+        glow.setColor(ON);
+        glow.setAlpha(200);
+        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        canvas.drawLine(x0, y0, x1, y1, glow);
+        glow.setMaskFilter(null);
     }
 
     /** 六项安全辅助：两行三列的标牌，开着的亮，关着的暗，读不到的深灰底加斜杠。 */
