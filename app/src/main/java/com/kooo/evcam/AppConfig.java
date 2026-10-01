@@ -93,22 +93,22 @@ public class AppConfig {
     public static final int SIDE_POPUP_MAX_MIN_SPEED = 80;
     private static final String KEY_SIDE_POPUP_STRAIGHTEN = "side_popup_straighten";  // 侧视拉直鱼眼
     private static final String KEY_SIDE_POPUP_INSTANT = "side_popup_instant";  // D 档时备着相机，打灯即出画面
-    private static final String KEY_SIDE_POPUP_CLOSE_DELAY = "side_popup_close_delay";  // 灯灭后再留几秒
+    private static final String KEY_SIDE_POPUP_CLOSE_DELAY_MS = "side_popup_close_delay_ms";  // 灯灭后再留多少毫秒
     private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 边长，屏幕高度的百分比
     private static final String KEY_SIDE_POPUP_VERTICAL = "side_popup_vertical";  // 上下位置，0 顶 100 底
-    public static final int SIDE_POPUP_MAX_CLOSE_DELAY_S = 3;
-    public static final int SIDE_POPUP_DEFAULT_CLOSE_DELAY_S = 1;
+    /** 以毫秒存：按秒只有 0–3 四档，车机那条很宽的滑块拖一小段根本不动（用户 2026-10-01 实车）。 */
+    public static final int SIDE_POPUP_MAX_CLOSE_DELAY_MS = 3000;
+    public static final int SIDE_POPUP_DEFAULT_CLOSE_DELAY_MS = 1000;
     public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
     public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
     public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
-    private static final String KEY_SIDE_POPUP_ZOOM = "side_popup_zoom";  // 放大倍数 ×100
-    private static final String KEY_SIDE_POPUP_AIM_BACK = "side_popup_aim_back";  // −100 车头 .. 100 车尾
-    private static final String KEY_SIDE_POPUP_AIM_UP = "side_popup_aim_up";  // −100 朝下 .. 100 朝上
-    public static final int SIDE_POPUP_MAX_ZOOM_PERCENT = 250;
-    /** 默认值是猜的（见 SideViewAim）：放大 1.6 倍，大半往车尾、稍往上。 */
-    public static final int SIDE_POPUP_DEFAULT_ZOOM_PERCENT = 160;
-    public static final int SIDE_POPUP_DEFAULT_AIM_BACK = 60;
-    public static final int SIDE_POPUP_DEFAULT_AIM_UP = 40;
+    private static final String KEY_SIDE_POPUP_FOV = "side_popup_fov";  // 虚拟相机视野（度）
+    private static final String KEY_SIDE_POPUP_YAW = "side_popup_yaw";  // 往车尾转多少度，负数往车头
+    private static final String KEY_SIDE_POPUP_PITCH = "side_popup_pitch";  // 往上（车外）转多少度，负数往下
+    /** 默认值是猜的（见 SideViewProjection）：视野 90°，往车尾转 50°，稍往上 15°。 */
+    public static final int SIDE_POPUP_DEFAULT_FOV = 90;
+    public static final int SIDE_POPUP_DEFAULT_YAW = 50;
+    public static final int SIDE_POPUP_DEFAULT_PITCH = 15;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1409,7 +1409,7 @@ public class AppConfig {
                 Math.max(0, Math.min(SIDE_POPUP_MAX_MIN_SPEED, kmh))).apply();
     }
 
-    /** 侧视拉直鱼眼，默认开；视野跟主界面「拉直」那一项。 */
+    /** 侧视拉直鱼眼，默认开；视野和朝向见 getSidePopupFov / Yaw / Pitch。 */
     public boolean isSidePopupStraighten() {
         return prefs.getBoolean(KEY_SIDE_POPUP_STRAIGHTEN, true);
     }
@@ -1427,15 +1427,16 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_INSTANT, on).apply();
     }
 
-    /** 灯灭后再留几秒，0..3，默认 1（用户 2026-10-01 定：灯灭就收太急）。 */
-    public int getSidePopupCloseDelaySeconds() {
-        int v = prefs.getInt(KEY_SIDE_POPUP_CLOSE_DELAY, SIDE_POPUP_DEFAULT_CLOSE_DELAY_S);
-        return Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_S, v));
+    /** 灯灭后再留多少毫秒，0..3000，按 100 取整，默认 1000（用户 2026-10-01 定：灯灭就收太急）。 */
+    public int getSidePopupCloseDelayMs() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_CLOSE_DELAY_MS, SIDE_POPUP_DEFAULT_CLOSE_DELAY_MS);
+        return Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_MS, v));
     }
 
-    public void setSidePopupCloseDelaySeconds(int seconds) {
-        prefs.edit().putInt(KEY_SIDE_POPUP_CLOSE_DELAY,
-                Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_S, seconds))).apply();
+    public void setSidePopupCloseDelayMs(int ms) {
+        int rounded = Math.round(ms / 100f) * 100;
+        prefs.edit().putInt(KEY_SIDE_POPUP_CLOSE_DELAY_MS,
+                Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_MS, rounded))).apply();
     }
 
     /** 侧视窗边长，屏幕高度的百分比。 */
@@ -1459,33 +1460,35 @@ public class AppConfig {
         prefs.edit().putInt(KEY_SIDE_POPUP_VERTICAL, Math.max(0, Math.min(100, percent))).apply();
     }
 
-    /** 侧视放大倍数 ×100，100..250。放大了取景框才挪得动。 */
-    public int getSidePopupZoomPercent() {
-        int v = prefs.getInt(KEY_SIDE_POPUP_ZOOM, SIDE_POPUP_DEFAULT_ZOOM_PERCENT);
-        return Math.max(100, Math.min(SIDE_POPUP_MAX_ZOOM_PERCENT, v));
+    /** 侧视虚拟相机的视野（度）。 */
+    public int getSidePopupFov() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_FOV, SIDE_POPUP_DEFAULT_FOV);
+        return Math.round(Math.max(com.kooo.evcam.zeekr.SideViewProjection.MIN_FOV_DEGREES,
+                Math.min(com.kooo.evcam.zeekr.SideViewProjection.MAX_FOV_DEGREES, v)));
     }
 
-    public void setSidePopupZoomPercent(int percent) {
-        prefs.edit().putInt(KEY_SIDE_POPUP_ZOOM,
-                Math.max(100, Math.min(SIDE_POPUP_MAX_ZOOM_PERCENT, percent))).apply();
+    public void setSidePopupFov(int degrees) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_FOV, degrees).apply();
     }
 
-    /** 侧视取景往车尾（正）/ 车头（负）挪多少，−100..100。 */
-    public int getSidePopupAimBack() {
-        return Math.max(-100, Math.min(100, prefs.getInt(KEY_SIDE_POPUP_AIM_BACK, SIDE_POPUP_DEFAULT_AIM_BACK)));
+    /** 侧视往车尾转多少度（负数往车头）。 */
+    public int getSidePopupYaw() {
+        int max = Math.round(com.kooo.evcam.zeekr.SideViewProjection.MAX_YAW_DEGREES);
+        return Math.max(-max, Math.min(max, prefs.getInt(KEY_SIDE_POPUP_YAW, SIDE_POPUP_DEFAULT_YAW)));
     }
 
-    public void setSidePopupAimBack(int value) {
-        prefs.edit().putInt(KEY_SIDE_POPUP_AIM_BACK, Math.max(-100, Math.min(100, value))).apply();
+    public void setSidePopupYaw(int degrees) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_YAW, degrees).apply();
     }
 
-    /** 侧视取景往上（正，朝车外）/ 往下（负，朝车身）挪多少，−100..100。 */
-    public int getSidePopupAimUp() {
-        return Math.max(-100, Math.min(100, prefs.getInt(KEY_SIDE_POPUP_AIM_UP, SIDE_POPUP_DEFAULT_AIM_UP)));
+    /** 侧视往上（车外）转多少度（负数往下）。 */
+    public int getSidePopupPitch() {
+        int max = Math.round(com.kooo.evcam.zeekr.SideViewProjection.MAX_PITCH_DEGREES);
+        return Math.max(-max, Math.min(max, prefs.getInt(KEY_SIDE_POPUP_PITCH, SIDE_POPUP_DEFAULT_PITCH)));
     }
 
-    public void setSidePopupAimUp(int value) {
-        prefs.edit().putInt(KEY_SIDE_POPUP_AIM_UP, Math.max(-100, Math.min(100, value))).apply();
+    public void setSidePopupPitch(int degrees) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_PITCH, degrees).apply();
     }
 
     public boolean isLicensePlateEnabled() {

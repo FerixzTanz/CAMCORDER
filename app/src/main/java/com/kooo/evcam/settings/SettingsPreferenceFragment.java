@@ -571,28 +571,32 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setSidePopupStraighten(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
         });
-        bindSlider("pref_side_popup_zoom", 100, AppConfig.SIDE_POPUP_MAX_ZOOM_PERCENT,
-                appConfig.getSidePopupZoomPercent(), "%", value -> {
-                    appConfig.setSidePopupZoomPercent(value);
+        bindSlider("pref_side_popup_fov",
+                Math.round(com.kooo.evcam.zeekr.SideViewProjection.MIN_FOV_DEGREES),
+                Math.round(com.kooo.evcam.zeekr.SideViewProjection.MAX_FOV_DEGREES),
+                appConfig.getSidePopupFov(), "°", value -> {
+                    appConfig.setSidePopupFov(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
-        bindSlider("pref_side_popup_aim_back", -100, 100,
-                appConfig.getSidePopupAimBack(), "", value -> {
-                    appConfig.setSidePopupAimBack(value);
+        int maxYaw = Math.round(com.kooo.evcam.zeekr.SideViewProjection.MAX_YAW_DEGREES);
+        bindSlider("pref_side_popup_yaw", -maxYaw, maxYaw,
+                appConfig.getSidePopupYaw(), "°", value -> {
+                    appConfig.setSidePopupYaw(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
-        bindSlider("pref_side_popup_aim_up", -100, 100,
-                appConfig.getSidePopupAimUp(), "", value -> {
-                    appConfig.setSidePopupAimUp(value);
+        int maxPitch = Math.round(com.kooo.evcam.zeekr.SideViewProjection.MAX_PITCH_DEGREES);
+        bindSlider("pref_side_popup_pitch", -maxPitch, maxPitch,
+                appConfig.getSidePopupPitch(), "°", value -> {
+                    appConfig.setSidePopupPitch(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
         bindSwitch("pref_side_popup_instant", appConfig.isSidePopupInstant(), value -> {
             appConfig.setSidePopupInstant(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
         });
-        bindSlider("pref_side_popup_close_delay", 0, AppConfig.SIDE_POPUP_MAX_CLOSE_DELAY_S,
-                appConfig.getSidePopupCloseDelaySeconds(), "s", value -> {
-                    appConfig.setSidePopupCloseDelaySeconds(value);
+        bindSlider("pref_side_popup_close_delay_ms", 0, AppConfig.SIDE_POPUP_MAX_CLOSE_DELAY_MS,
+                appConfig.getSidePopupCloseDelayMs(), "ms", value -> {
+                    appConfig.setSidePopupCloseDelayMs(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
         bindSlider("pref_side_popup_size", AppConfig.SIDE_POPUP_MIN_SIZE_PERCENT,

@@ -215,24 +215,24 @@
                 android:summary="@string/set_side_popup_straighten_summary" />
 
             <SeekBarPreference
-                android:key="pref_side_popup_zoom"
+                android:key="pref_side_popup_fov"
                 android:dependency="pref_side_popup"
-                android:title="@string/set_side_popup_zoom_title"
-                android:summary="@string/set_side_popup_zoom_summary"
+                android:title="@string/set_side_popup_fov_title"
+                android:summary="@string/set_side_popup_fov_summary"
                 app:showSeekBarValue="true" />
 
             <SeekBarPreference
-                android:key="pref_side_popup_aim_back"
+                android:key="pref_side_popup_yaw"
                 android:dependency="pref_side_popup"
-                android:title="@string/set_side_popup_aim_back_title"
-                android:summary="@string/set_side_popup_aim_back_summary"
+                android:title="@string/set_side_popup_yaw_title"
+                android:summary="@string/set_side_popup_yaw_summary"
                 app:showSeekBarValue="true" />
 
             <SeekBarPreference
-                android:key="pref_side_popup_aim_up"
+                android:key="pref_side_popup_pitch"
                 android:dependency="pref_side_popup"
-                android:title="@string/set_side_popup_aim_up_title"
-                android:summary="@string/set_side_popup_aim_up_summary"
+                android:title="@string/set_side_popup_pitch_title"
+                android:summary="@string/set_side_popup_pitch_summary"
                 app:showSeekBarValue="true" />
 
             <SwitchPreferenceCompat
@@ -242,10 +242,10 @@
                 android:summary="@string/set_side_popup_instant_summary" />
 
             <SeekBarPreference
-                android:key="pref_side_popup_close_delay"
+                android:key="pref_side_popup_close_delay_ms"
                 android:dependency="pref_side_popup"
-                android:title="@string/set_side_popup_close_delay_title"
-                android:summary="@string/set_side_popup_close_delay_summary"
+                android:title="@string/set_side_popup_close_delay_ms_title"
+                android:summary="@string/set_side_popup_close_delay_ms_summary"
                 app:showSeekBarValue="true" />
 
             <SeekBarPreference

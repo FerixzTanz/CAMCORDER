@@ -211,13 +211,13 @@ public class SideViewPopupService extends Service {
 
         if (in.showing != SideViewDecision.NONE) {
             boolean factory = SideViewDecision.factoryViewActive(in);
-            int delayS = appConfig.getSidePopupCloseDelaySeconds();
-            if (factory || blocked || delayS <= 0) {
+            int delayMs = appConfig.getSidePopupCloseDelayMs();
+            if (factory || blocked || delayMs <= 0) {
                 AppLog.i(TAG, "侧视收起：" + (factory ? "原厂画面在" : blocked ? "超级后视镜开着或熄屏" : "转向灯灭"));
                 closeNow();
             } else if (!closePending) {
                 closePending = true;
-                handler.postDelayed(delayedClose, delayS * 1000L);
+                handler.postDelayed(delayedClose, delayMs);
             }
             return;
         }

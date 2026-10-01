@@ -20,7 +20,8 @@ import com.kooo.evcam.AutoFitTextureView;
  *
  * <p>画法和超级后视镜一样（见 {@link RearViewMirrorView} 的类说明）：子视图是普通 TextureView，
  * 本容器在 {@code dispatchDraw} 里按 {@link RearViewGeometry#combinedSourceRect} 把那一路放大重画，
- * 不新建 GL 管线；「拉直」开着时走同一套分片反投影（{@link FisheyeMesh}）。侧视不镜像。</p>
+ * 不新建 GL 管线；「拉直」开着时走同一套分片反投影（{@link FisheyeMesh}），
+ * 只是虚拟相机先转了个角度（{@link SideViewProjection}）。侧视不镜像。</p>
  *
  * <h3>三种状态</h3>
  *
@@ -54,10 +55,11 @@ public class SideViewPopupView extends ViewGroup {
     private CompositeStreamGeometry.Plan plan;
     private int lane = LaneCycle.LEFT;
     private boolean straighten;
-    private float fovDegrees;
-    private int zoomPercent;
-    private int aimBack;
-    private int aimUp;
+    private int viewFov;
+    private int yaw;
+    private int pitch;
+    private final FisheyeMesh.SourceMap turnedMap = (u, v, out) ->
+            SideViewProjection.sourcePoint(u, v, viewFov, yaw, pitch, lane, out, 0);
 
     public SideViewPopupView(Context context, AppConfig appConfig) {
         super(context);
@@ -125,7 +127,7 @@ public class SideViewPopupView extends ViewGroup {
             return;
         }
         visible = false;
-        params.alpha = 0f;
+        applyVisibility(false);
         update();
     }
 
@@ -155,10 +157,9 @@ public class SideViewPopupView extends ViewGroup {
 
     private void readConfig() {
         straighten = appConfig.isSidePopupStraighten();
-        fovDegrees = appConfig.getFisheyeFov();
-        zoomPercent = appConfig.getSidePopupZoomPercent();
-        aimBack = appConfig.getSidePopupAimBack();
-        aimUp = appConfig.getSidePopupAimUp();
+        viewFov = appConfig.getSidePopupFov();
+        yaw = appConfig.getSidePopupYaw();
+        pitch = appConfig.getSidePopupPitch();
     }
 
     private void attachAt(int side, boolean show) {
@@ -167,7 +168,7 @@ public class SideViewPopupView extends ViewGroup {
         if (attached) {
             boolean visibilityChanged = show != visible;
             visible = show;
-            params.alpha = show ? 1f : 0f;
+            applyVisibility(show);
             if (sideChanged) {
                 place(side);
             }
@@ -184,11 +185,10 @@ public class SideViewPopupView extends ViewGroup {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                         : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP | Gravity.START;
-        params.alpha = show ? 1f : 0f;
+        applyVisibility(show);
         place(side);
         try {
             windowManager.addView(this, params);
@@ -197,6 +197,30 @@ public class SideViewPopupView extends ViewGroup {
         } catch (Exception e) {
             AppLog.e(TAG, "侧视窗添加失败", e);
         }
+    }
+
+    /**
+     * 显示时不透明、接点击；备着时全透明、点击穿过去。
+     *
+     * <p><b>显示时不能带 FLAG_NOT_TOUCHABLE</b>：安卓 12 起，带这个标志的悬浮窗会被系统把不透明度
+     * 压到 0.8（为了让点击能穿过去，b/218777508）—— 用户实车上看就是「有点透明」（2026-10-01）。
+     * 代价是弹着的那一两秒里，窗口下面那块点不到。备着时 alpha 0，不受那条限制，照旧让点击穿过去，
+     * 不然 D 档时屏幕上会有一块看不见又点不动的区域。</p>
+     */
+    private void applyVisibility(boolean show) {
+        params.alpha = show ? 1f : 0f;
+        if (show) {
+            params.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        } else {
+            params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        }
+    }
+
+    /** 弹着时点在窗口上的手势吃掉，什么也不做：窗口不能拖、不能点。 */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent event) {
+        return true;
     }
 
     private void update() {
@@ -250,23 +274,24 @@ public class SideViewPopupView extends ViewGroup {
             canvas.drawColor(0xFF000000);
             return;
         }
-        // 窗口和每一路都是正方形，取景框也是正方形：放大、往后、往上（见 SideViewAim）
-        RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, aimBack, aimUp);
-
         int save = canvas.save();
         if (LaneCycle.isMirrored(lane)) {
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
         }
         if (straighten) {
-            // 同后视镜的 drawCorrected：先按取景落到校正后的画面，再反投影回鱼眼原图
-            RearViewGeometry.ShaderRects r = RearViewGeometry.toShaderRects(plan, lane, viewport);
-            mesh.setCorrection(fovDegrees, FisheyeProjection.PROJECTION_RECTILINEAR, 1f);
+            // 虚拟相机转过去（往后、往上）再拉直，见 SideViewProjection
+            RearViewGeometry.ShaderRects r = RearViewGeometry.toShaderRects(
+                    plan, lane, RearViewGeometry.Viewport.full());
             mesh.prepare(FisheyeProjection.MESH_DIVISIONS,
                     r.laneOffsetX * width, r.laneOffsetY * height,
-                    r.laneScaleX * width, r.laneScaleY * height,
-                    r.viewOffsetX, r.viewOffsetY, r.viewScaleX, r.viewScaleY);
+                    r.laneScaleX * width, r.laneScaleY * height, turnedMap);
             mesh.draw(canvas, 0f, 0f, width, height, paintTexture);
         } else {
+            // 不拉直：只能在原图里裁一块挪一挪（见 SideViewAim），角度折算成那边的百分比
+            int zoomPercent = Math.round(180f / viewFov * 100f);
+            int backPercent = Math.round(yaw / SideViewProjection.MAX_YAW_DEGREES * 100f);
+            int upPercent = Math.round(pitch / SideViewProjection.MAX_PITCH_DEGREES * 100f);
+            RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, backPercent, upPercent);
             float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
             sourceRect.set(rect[0] * width, rect[1] * height,
                     (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
