@@ -1,3 +1,48 @@
+# CAMCORDER
+
+**A personal, vibe-coded fork of [dts88's Zeekr Shortcut (Car Version)](https://github.com/dts88/zeekr-shortcut-car)**, a surround-view dash cam for the ZEEKR 7X head unit.
+
+> [!IMPORTANT]
+> **Please read this first.**
+> - This is a hobby project by an owner, **not a professional developer**. The changes in this
+>   fork were **vibe coded**: written with an AI coding assistant, reviewed by eye, and tested
+>   only by driving my own car. There is no proper QA.
+> - **All the real work is dts88's.** The dash cam, the Super mirror, the camera handling and the
+>   vehicle-signal research all come from [dts88/zeekr-shortcut-car](https://github.com/dts88/zeekr-shortcut-car).
+>   If you want the app without my additions, use theirs.
+> - Not affiliated with dts88 or ZEEKR, and not endorsed by either. Not a safety system. Use at
+>   your own risk.
+
+## What this fork adds
+
+**Turn-signal side view.** When you signal, a pop-up shows the camera on that side: left signal,
+left camera; right signal, right camera. It closes when the signal goes off.
+
+- The car's own views always win: in reverse, or while the stock 360 view, side pop-up or park
+  assist view is showing, the pop-up stays hidden (and closes if it is open).
+- Only opens above a set speed (default 30 km/h; below that the car shows its own side view).
+- The two pop-ups meet at the middle of the screen. Size, height and an optional "stay open for a
+  few seconds" are adjustable.
+- Optional straightening of the fisheye picture (display only; recordings are unchanged).
+- Optional instant pop-up: in D the picture is kept ready in the background, at the cost of the
+  camera staying on while driving.
+- Off by default: **Settings → Super mirror → Turn-signal side view**. It does not show while the
+  Super mirror itself is switched on.
+
+It relies on vehicle signals that dts88 found by experiment on one car. They may behave
+differently on yours.
+
+**Updates come from this repo.** The in-app update check looks at this repo's releases, not
+dts88's. Releases here are marked `-beta`, so turn on *Include beta releases* under
+**Settings → Check for updates** to get them.
+
+Install: download the `.apk` from this repo's [Releases](../../releases) and sideload it through App Lab.
+It installs over dts88's version and keeps your settings.
+
+---
+
+*Everything below is dts88's original README, unchanged apart from the credits.*
+
 # Zeekr Shortcut (Car Version)
 
 A surround-view dash cam for the ZEEKR 7X head unit.
@@ -115,6 +160,10 @@ Diagnostics**.
 ---
 
 ## Credits and license
+
+This fork: the turn-signal side view and small changes on top of
+[dts88/zeekr-shortcut-car](https://github.com/dts88/zeekr-shortcut-car), vibe coded by FerixzTanz
+with an AI assistant. Everything else is dts88's work and EVCam's before that.
 
 **GPL-3.0**, inherited from [EVCam](https://github.com/suyunkai/EVCam) by suyunkai — the code base
 this app is forked from. The first commit in this repository is EVCam's complete working tree, so

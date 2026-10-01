@@ -40,7 +40,7 @@ android {
         // 推给一台正在用的车机。
         versionCode = 243
         // 版本号从 0.1.0 重新起算；代码基座为 EVCam 1.6.6 (0876b97)
-        versionName = "2.0.3-alpha"
+        versionName = "2.0.3-beta"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

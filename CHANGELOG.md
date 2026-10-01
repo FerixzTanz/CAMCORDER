@@ -11,10 +11,27 @@ commit message, not here.
 
 Nothing yet.
 
-## [2.0.3-alpha] - 2026-10-01
+## [2.0.3-beta] - 2026-10-01
 
-- Turn-signal side view: the pop-up no longer stays black when the camera was not already running; the black box records when the picture arrives, or that it never did.
-- Turn-signal side view: the pop-ups meet at the middle of the screen; left signal just left of centre, right signal just right of centre.
+A hobby fork of dts88's app, vibe coded with an AI assistant; see the README. This version
+improves the turn-signal side view.
+
+### Turn-signal side view
+
+- Fixed: the pop-up could stay black when the camera wasn't already running.
+- The left and right pop-ups now meet at the middle of the screen.
+- **Straighten picture** (on by default): corrects the fisheye curve in the pop-up. Recordings are
+  not affected.
+- **Instant pop-up** (on by default): in D, the picture is kept ready in the background so it is
+  there as soon as you signal. The camera stays on while driving.
+- **Stay open after the signal**: 0–3 seconds, default 0.
+- Pop-up size and height on screen are adjustable.
+
+### This fork
+
+- Check for updates now looks at this repo's releases (FerixzTanz/CAMCORDER), so updating no
+  longer replaces this version with dts88's. Turn on *Include beta releases* to get them.
+- The About page links here and says this is a personal fork of dts88's app.
 
 ## [2.0.2-alpha] - 2026-10-01
 
