@@ -97,6 +97,7 @@ public class AppConfig {
     private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 边长，屏幕高度的百分比
     private static final String KEY_SIDE_POPUP_VERTICAL = "side_popup_vertical";  // 上下位置，0 顶 100 底
     public static final int SIDE_POPUP_MAX_CLOSE_DELAY_S = 3;
+    public static final int SIDE_POPUP_DEFAULT_CLOSE_DELAY_S = 1;
     public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
     public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
     public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
@@ -1426,9 +1427,9 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_INSTANT, on).apply();
     }
 
-    /** 灯灭后再留几秒，0..3，默认 0（灯灭就收）。 */
+    /** 灯灭后再留几秒，0..3，默认 1（用户 2026-10-01 定：灯灭就收太急）。 */
     public int getSidePopupCloseDelaySeconds() {
-        int v = prefs.getInt(KEY_SIDE_POPUP_CLOSE_DELAY, 0);
+        int v = prefs.getInt(KEY_SIDE_POPUP_CLOSE_DELAY, SIDE_POPUP_DEFAULT_CLOSE_DELAY_S);
         return Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_S, v));
     }
 

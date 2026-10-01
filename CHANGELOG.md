@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.4-beta] - 2026-10-01
+
+- Turn-signal side view: stays open for 1 second after the signal goes off by default (was 0).
+  If you already moved the *Stay open after the signal* slider, your setting is kept.
+
 ## [2.0.3-beta] - 2026-10-01
 
 A hobby fork of dts88's app, vibe coded with an AI assistant; see the README. This version
