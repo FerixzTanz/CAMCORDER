@@ -12,6 +12,7 @@ commit message, not here.
 - The app is about 0.8 MB smaller: two unused images from the upstream project no longer ship in it.
 - Video playback no longer shows the status strip under the picture: it showed today's settings
   and free space, not the clip's.
+- Settings: **Keep recording when the screen goes off** now says it needs the car's Sentry Mode.
 
 ## [2.0.0] - 2026-09-30
 

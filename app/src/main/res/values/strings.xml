@@ -110,7 +110,7 @@
     <string name="set_screen_off_wake_title">熄屏后不让车机睡，最多（小时）</string>
     <string name="unit_hours">%1$s 小时</string>
     <string name="set_screen_off_keep_title">熄屏持续录制</string>
-    <string name="set_screen_off_keep_summary">熄屏前在录像，熄屏后接着录。不会唤醒车机：车机睡了就停在那一刻，醒来接着录</string>
+    <string name="set_screen_off_keep_summary">熄屏前在录像，熄屏后接着录。需开启车辆的哨兵模式，车机才会保持唤醒；本应用不会唤醒车机，没开哨兵模式时车机睡了就暂停，醒来接着录</string>
     <string name="set_keep_alive_title">保活</string>
     <string name="set_keep_alive_summary">被杀了、车机重启了，尽量把自己拉回来。关掉就不回来了</string>
     <string name="set_recording_mode_title">录制模式</string>
