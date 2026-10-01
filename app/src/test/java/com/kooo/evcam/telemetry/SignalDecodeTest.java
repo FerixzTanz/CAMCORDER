@@ -112,7 +112,10 @@ public class SignalDecodeTest {
         assertEquals(Float.valueOf(11053f), Signal.ODOMETER.decode(11053f));
         assertEquals(Float.valueOf(0f), Signal.SPEED.decode(0f));
         assertNull(Signal.SPEED.decode(255f));
-        assertEquals(Float.valueOf(-12f), Signal.STEERING.decode(-12f));
+        // 方向盘读数是弧度：右打满 8.885 ≈ 509°
+        assertEquals(509.1f, (Float) Signal.STEERING.decode(8.885f), 0.1f);
+        assertEquals(Integer.valueOf(2), Signal.SENTRY_MODE.decode(2));
+        assertNull(Signal.SENTRY_MODE.decode(3));
     }
 
     /** 车速传感器给的是 m/s（Lab 0.10.0：15.833 = 57 km/h），表里直接换成 km/h。 */

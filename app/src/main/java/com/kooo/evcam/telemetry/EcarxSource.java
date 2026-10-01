@@ -479,9 +479,10 @@ final class EcarxSource {
             values.put(s, decoded);
         }
         schedulePublish(0);
-        if (s == Signal.TURN_LEFT || s == Signal.TURN_RIGHT) {
-            // 闪烁保持到点要再算一次，否则松手后双闪要等下一次变化才灭
-            schedulePublish(TurnSignalHold.HOLD_MS + 50);
+        long hold = VehicleStateMapper.republishAfterMs(s);
+        if (hold > 0) {
+            // 显示里有保持的信号（转向灯闪烁、闪远光）到点要再算一次，否则要等下一次变化才灭
+            schedulePublish(hold + 50);
         }
     }
 

@@ -218,6 +218,7 @@
     <string name="vi_v_mirror_returning">正在回位</string>
     <string name="vi_v_day">白天</string>
     <string name="vi_v_night">夜晚</string>
+    <string name="vi_v_armed">布防</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">行驶</string>

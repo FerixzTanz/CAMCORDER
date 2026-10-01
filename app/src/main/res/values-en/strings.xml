@@ -200,6 +200,7 @@
     <string name="vi_v_mirror_returning">Returning</string>
     <string name="vi_v_day">Day</string>
     <string name="vi_v_night">Night</string>
+    <string name="vi_v_armed">Armed</string>
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Driving</string>

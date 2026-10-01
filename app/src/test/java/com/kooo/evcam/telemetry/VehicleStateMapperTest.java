@@ -122,6 +122,26 @@ public class VehicleStateMapperTest {
         assertEquals(Boolean.FALSE, map(readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, false), true).highBeam);
     }
 
+    /** 闪一下只有 0.1 秒：至少显示半秒，过了才灭。 */
+    @Test
+    public void aShortFlashStaysVisibleForHalfASecond() {
+        VehicleStateMapper mapper = new VehicleStateMapper();
+        Boolean[] seen = new Boolean[3];
+        long[] at = {1000L, 1100L, 1000L + VehicleStateMapper.FLASH_HOLD_MS + 10};
+        Readings[] r = {readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, true),
+                readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, false),
+                readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, false)};
+        for (int i = 0; i < 3; i++) {
+            VehicleState.Builder b = VehicleState.empty().edit();
+            mapper.apply(b, r[i], at[i], true);
+            seen[i] = b.build().highBeam;
+        }
+        assertEquals(Boolean.TRUE, seen[0]);
+        assertEquals(Boolean.TRUE, seen[1]);
+        assertEquals(Boolean.FALSE, seen[2]);
+        assertEquals(VehicleStateMapper.FLASH_HOLD_MS, VehicleStateMapper.republishAfterMs(Signal.HIGH_BEAM_FLASH));
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

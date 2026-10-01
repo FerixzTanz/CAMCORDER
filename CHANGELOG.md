@@ -13,7 +13,10 @@ commit message, not here.
   and Chinese owner communities for their suggestions, insights and support.
 - The About page comes in Chinese and English only: the Chinese interface shows Chinese, every
   other language shows English.
-- Driving info bar: the high beam cell also lights while you flash the high beams.
+- Driving info bar: the high beam cell also lights while you flash the high beams, for at least
+  half a second so a quick flash still shows in the recording.
+- Driving info bar: the steering wheel turns by its real angle (up to about 510° each way).
+- Vehicle info page: Sentry Mode shows on, armed or off.
 
 ## [2.0.1-beta] - 2026-10-01
 

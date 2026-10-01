@@ -32,8 +32,8 @@ public enum Signal {
     /** 量程 0–100，单位 %（Lab 0.16.0 开车读到过 100.000）。 */
     THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.CONFIRMED, Format.PERCENT),
     /**
-     * 开车时跟着变。两边都到过约 8.9（Lab 0.16.0：-8.922 … 8.885），看起来就是满舵；很可能是弧度（8.9 弧度约 510°）。
-     * 左右哪边为负还没定（Lab 0.17.0 在打灯转弯时统计），比例和方向先不改（{@link #STEERING_DEGREES_PER_UNIT}）。用户定：能用，开放。
+     * 单位是弧度：两边打满约 -8.945 / +8.885 ≈ ±510°，左满到右满约 2.84 圈，和公开资料的 2.7 圈对得上（Lab 0.18.0）。
+     * 左右哪边为负还没定，换算和方向都在 {@link #STEERING_DEGREES_PER_UNIT} 一处。用户定：能用，开放。
      */
     STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.PROVISIONAL, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
@@ -99,10 +99,10 @@ public enum Signal {
     BATTERY_TEMP(Group.VEHICLE, Kind.SENSOR_VALUE, 0x00102A00, 0, R.string.vi_battery_temp, Trust.CONFIRMED, Format.CELSIUS),
     DAY_NIGHT(Group.VEHICLE, Kind.SENSOR_EVENT, 0x00201000, 0, R.string.vi_day_night, Trust.CONFIRMED, Format.DAY_NIGHT),
     /**
-     * 哨兵模式（SETTING_FUNC_VSTD_MODE_STS）：0 / 1，用户下车前手动开关过一次时跟着变（Lab 0.13.0）。
-     * 只见过一次，是「开关」还是「哨兵在工作」还没分开，Lab 标待定。
+     * 哨兵模式（SETTING_FUNC_VSTD_MODE_STS）：0 关，1 开，2 推测是锁车后布防（锁车一分半后 1 → 2，解锁回 1，挂 D 回 0；
+     * Lab 0.18.0）。1 和 2 都算开着。还在待定。
      */
-    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.UNVERIFIED, Format.ON_OFF),
+    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.UNVERIFIED, Format.SENTRY),
 
     // ---- 安全辅助（读的是开关）
     AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),
@@ -177,6 +177,8 @@ public enum Signal {
         MIRROR_DIP,
         /** 白天 / 夜晚的枚举码 → Integer（0x00201001 白天、0x00201002 夜晚） */
         DAY_NIGHT,
+        /** 哨兵模式 → Integer（0 关、1 开、2 布防） */
+        SENTRY,
         /** 0 关 1 左 2 右 3 双闪 → Integer */
         INDICATOR,
         /** 点火状态的枚举码 → Integer（0x00200104 ACC、05 ON、07 DRIVING） */
@@ -192,10 +194,10 @@ public enum Signal {
     }
 
     /**
-     * 方向盘转角：读数 → 方向盘转过的度数（信息条上的数字和图标的转动都用它）。
-     * 满舵几圈、满舵时读数多少还没测（等 Lab），先按读数就是度数（1:1）。
+     * 方向盘转角：读数（弧度）→ 方向盘转过的度数，正 = 向右（顺时针）。信息条上的数字、左黄右白、图标的转动都用它。
+     * 带符号：现在按「读数为负 = 向左」（用户最早的判断）；Lab 定了哪边为负，如果反了就把这里改成负数，别处不动。
      */
-    public static final float STEERING_DEGREES_PER_UNIT = 1f;
+    public static final float STEERING_DEGREES_PER_UNIT = (float) (180.0 / Math.PI);
 
     public static final int LIGHT_SWITCH_POSITION = 0x20040E01;
     public static final int LIGHT_SWITCH_LOW_BEAM = 0x20040E02;
@@ -298,6 +300,8 @@ public enum Signal {
                 return v >= MIRROR_NORMAL && v <= MIRROR_TILTING ? v : null;
             case DAY_NIGHT:
                 return v == DAY || v == NIGHT ? v : null;
+            case SENTRY:
+                return v >= 0 && v <= 2 ? v : null;
             case INDICATOR:
                 return v >= 0 && v <= 3 ? v : null;
             case LEVEL:

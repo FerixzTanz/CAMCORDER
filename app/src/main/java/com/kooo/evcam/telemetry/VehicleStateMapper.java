@@ -19,7 +19,27 @@ package com.kooo.evcam.telemetry;
  */
 public final class VehicleStateMapper {
 
+    /** 闪远光至少显示这么久（实际一下短的只有 0.1 秒，Lab 0.18.0）。 */
+    static final long FLASH_HOLD_MS = 500L;
+
     private final TurnSignalHold hold = new TurnSignalHold();
+    private final MinimumOn flash = new MinimumOn(FLASH_HOLD_MS);
+
+    /**
+     * 这个信号变了之后，过多久要再算一次（显示里有「保持」的信号，到点才会灭）；不用再算的是 0。
+     * 来源据此安排重算，规则只写在这一处。
+     */
+    static long republishAfterMs(Signal s) {
+        switch (s) {
+            case TURN_LEFT:
+            case TURN_RIGHT:
+                return TurnSignalHold.HOLD_MS;
+            case HIGH_BEAM_FLASH:
+                return FLASH_HOLD_MS;
+            default:
+                return 0L;
+        }
+    }
 
     /**
      * @param driverOnRight 主驾在右（右舵）；决定主驾门 / 主驾安全带画在哪一边
@@ -44,8 +64,9 @@ public final class VehicleStateMapper {
         b.laneCentering(r.bool(Signal.LCC));
         b.stockSurroundShown(r.bool(Signal.STOCK_360));
         b.lowBeam(r.bool(Signal.LOW_BEAM));
-        // 远光那一格也按车外看到的：开着远光，或者正在闪远光（闪的时候远光灯信号一直是 0）
-        b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), r.bool(Signal.HIGH_BEAM_FLASH)));
+        // 远光那一格也按车外看到的：开着远光，或者正在闪远光（闪的时候远光灯信号一直是 0）；
+        // 闪一下最短只有 0.1 秒，至少显示 FLASH_HOLD_MS，录像里才看得见
+        b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), flash.update(nowMs, r.bool(Signal.HIGH_BEAM_FLASH))));
         b.fogLights(r.bool(Signal.REAR_FOG));
         b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));
