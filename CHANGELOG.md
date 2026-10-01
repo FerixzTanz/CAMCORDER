@@ -13,6 +13,7 @@ commit message, not here.
   and Chinese owner communities for their suggestions, insights and support.
 - The About page comes in Chinese and English only: the Chinese interface shows Chinese, every
   other language shows English.
+- Driving info bar: the high beam cell also lights while you flash the high beams.
 
 ## [2.0.1-beta] - 2026-10-01
 

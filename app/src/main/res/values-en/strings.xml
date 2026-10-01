@@ -130,6 +130,7 @@
     <string name="vi_turn_right">Right turn lamp</string>
     <string name="vi_low_beam">Low beam</string>
     <string name="vi_high_beam">High beam</string>
+    <string name="vi_high_beam_flash">High beam flash</string>
     <string name="vi_drl">Daytime running lights</string>
     <string name="vi_front_fog">Front fog lamps</string>
     <string name="vi_rear_fog">Rear fog lamp</string>

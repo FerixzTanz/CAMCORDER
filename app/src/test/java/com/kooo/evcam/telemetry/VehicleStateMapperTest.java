@@ -114,6 +114,14 @@ public class VehicleStateMapperTest {
         assertNull(map(readings(), true).daytimeRunningLights);
     }
 
+    /** 闪远光时远光灯信号一直是 0，只有闪远光那个号变：这一格要跟着闪。 */
+    @Test
+    public void flashingTheHighBeamsLightsTheCell() {
+        assertEquals(Boolean.TRUE, map(readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, true), true).highBeam);
+        assertEquals(Boolean.TRUE, map(readings(Signal.HIGH_BEAM, true, Signal.HIGH_BEAM_FLASH, false), true).highBeam);
+        assertEquals(Boolean.FALSE, map(readings(Signal.HIGH_BEAM, false, Signal.HIGH_BEAM_FLASH, false), true).highBeam);
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

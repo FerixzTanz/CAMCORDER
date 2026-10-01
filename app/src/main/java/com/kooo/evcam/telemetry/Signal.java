@@ -29,11 +29,11 @@ public enum Signal {
     BRAKE_PEDAL(Group.DRIVE, Kind.FUNCTION, 0x20317A00, 0, R.string.vi_brake_pedal, Trust.CONFIRMED, Format.ON_OFF),
     /** 跟着变（停车踩下 11–15，开车最大见过 17.4），踩到底是多少没测；先按 0–100 画。用户定：保留。 */
     BRAKE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101300, 0, R.string.vi_brake_depth, Trust.PROVISIONAL, Format.PERCENT),
-    /** 行驶中跟着变（开车最大见过 64，像 %），踩到底是多少没测；先按 0–100 画。用户定：保留。 */
-    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.PROVISIONAL, Format.PERCENT),
+    /** 量程 0–100，单位 %（Lab 0.16.0 开车读到过 100.000）。 */
+    THROTTLE_DEPTH(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101400, 0, R.string.vi_throttle_depth, Trust.CONFIRMED, Format.PERCENT),
     /**
-     * 开车时跟着变。倒车入库一段读到 -8.9 … 7.3，Lab 判断很可能是弧度（度 = 读数 × 57.3），但左右哪边为负、
-     * 满舵读数还没测（Lab 0.14.0），比例先不改（{@link #STEERING_DEGREES_PER_UNIT}）。用户定：能用，开放。
+     * 开车时跟着变。两边都到过约 8.9（Lab 0.16.0：-8.922 … 8.885），看起来就是满舵；很可能是弧度（8.9 弧度约 510°）。
+     * 左右哪边为负还没定（Lab 0.17.0 在打灯转弯时统计），比例和方向先不改（{@link #STEERING_DEGREES_PER_UNIT}）。用户定：能用，开放。
      */
     STEERING(Group.DRIVE, Kind.SENSOR_VALUE, 0x00101000, 0, R.string.vi_steering, Trust.PROVISIONAL, Format.DEGREES),
     /** 自动驻车的功能开关（设置项），不是「正在驻车」——信息条不用它。 */
@@ -49,6 +49,8 @@ public enum Signal {
     TURN_RIGHT(Group.LAMPS, Kind.FUNCTION, 0x21051200, 0, R.string.vi_turn_right, Trust.CONFIRMED, Format.ON_OFF),
     LOW_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050100, 0, R.string.vi_low_beam, Trust.CONFIRMED, Format.ON_OFF),
     HIGH_BEAM(Group.LAMPS, Kind.FUNCTION, 0x21050200, 0, R.string.vi_high_beam, Trust.CONFIRMED, Format.ON_OFF),
+    /** 闪远光：往前拨着拨杆时 1，松手回 0（轻拨也有 0.5 秒）；这时远光灯 0x21050200 一直是 0（Lab 0.16.0）。 */
+    HIGH_BEAM_FLASH(Group.LAMPS, Kind.FUNCTION, 0x2A091300, 0, R.string.vi_high_beam_flash, Trust.CONFIRMED, Format.ON_OFF),
     /** 近光没亮时才是 1：切到位置灯档 0 → 1，关灯或近光一亮回 0；晚上前灯带亮着时报的是前位置灯（Lab 0.13.0，用户确认）。 */
     DRL(Group.LAMPS, Kind.FUNCTION, 0x21050900, 0, R.string.vi_drl, Trust.CONFIRMED, Format.ON_OFF),
     /** 一直 0，车机报 notavailable：这台车多半没装前雾灯。 */
@@ -287,7 +289,8 @@ public enum Signal {
                     default: return null;
                 }
             case SHOWN:
-                // 1 原厂 360 画面；2 没显示；0 推测是打转向灯弹的侧方小窗 —— 对「360 画面在不在」来说 0 和 2 都是不在
+                // 1 原厂 360 画面；2 没显示；0 多半是打转向灯弹的侧方小窗（挂 D 那一刻也闪过 60 ms 的 0，Lab 0.16.0）——
+                // 不拿 0 判断侧方画面，只认「1 = 360 在」，所以 0 和 2 都是不在
                 return v == 1 ? Boolean.TRUE : (v == 2 || v == 0 ? Boolean.FALSE : null);
             case POPUP:
                 return onOff(v);

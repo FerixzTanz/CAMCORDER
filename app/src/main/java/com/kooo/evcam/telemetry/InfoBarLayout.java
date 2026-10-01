@@ -57,7 +57,8 @@ public final class InfoBarLayout {
         /** 日行灯：以 7X 正脸为底的那一格，整条里唯一带光晕的图标，所以宽一些。画的是前灯带：日行灯或前位置灯亮就亮。 */
         DRL(130, 7, Signal.DRL, Signal.FRONT_POSITION_LAMP),
         LOW_BEAM(80, 6, Signal.LOW_BEAM),
-        HIGH_BEAM(80, 6, Signal.HIGH_BEAM),
+        /** 远光：开着远光或正在闪远光。 */
+        HIGH_BEAM(80, 6, Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
         /** 雾灯：只看后雾灯（前雾灯这台车多半没装）。 */
         FOG(80, 7, Signal.REAR_FOG),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */

@@ -44,7 +44,8 @@ public final class VehicleStateMapper {
         b.laneCentering(r.bool(Signal.LCC));
         b.stockSurroundShown(r.bool(Signal.STOCK_360));
         b.lowBeam(r.bool(Signal.LOW_BEAM));
-        b.highBeam(r.bool(Signal.HIGH_BEAM));
+        // 远光那一格也按车外看到的：开着远光，或者正在闪远光（闪的时候远光灯信号一直是 0）
+        b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), r.bool(Signal.HIGH_BEAM_FLASH)));
         b.fogLights(r.bool(Signal.REAR_FOG));
         b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));

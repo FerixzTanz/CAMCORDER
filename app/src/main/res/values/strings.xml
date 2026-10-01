@@ -148,6 +148,7 @@
     <string name="vi_turn_right">右转向灯</string>
     <string name="vi_low_beam">近光灯</string>
     <string name="vi_high_beam">远光灯</string>
+    <string name="vi_high_beam_flash">闪远光</string>
     <string name="vi_drl">日行灯</string>
     <string name="vi_front_fog">前雾灯</string>
     <string name="vi_rear_fog">后雾灯</string>

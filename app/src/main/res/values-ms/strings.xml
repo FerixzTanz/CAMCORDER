@@ -130,6 +130,7 @@
     <string name="vi_turn_right">Lampu isyarat kanan</string>
     <string name="vi_low_beam">Lampu rendah</string>
     <string name="vi_high_beam">Lampu tinggi</string>
+    <string name="vi_high_beam_flash">Kelip lampu tinggi</string>
     <string name="vi_drl">Lampu siang</string>
     <string name="vi_front_fog">Lampu kabus depan</string>
     <string name="vi_rear_fog">Lampu kabus belakang</string>
