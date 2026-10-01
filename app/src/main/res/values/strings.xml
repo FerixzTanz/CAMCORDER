@@ -432,7 +432,7 @@
     <string name="about_thanks_body">这个项目是从车友会的聊天记录里长出来的。下面这些人给了它起点：\n\n• Jon（极氪7X 新加坡车友会）—— 讲清了怎么把应用装进车机。没有这一步，后面什么都不会发生。\n\n• SW（同一个车友会）—— 分享了 AVM Recorder 这个项目的信息，让我知道这条路有人走通过。\n\n• Patrick（同一个车友会）—— 给出了项目起步最要紧的那几条信息。\n\n• Gabriel（同一个车友会）—— 帮忙测试软件，给了很多反馈。\n\n• 极氪7X 新加坡车友会 —— 专业的管理团队，热情有趣的成员。一个大家愿意分享的地方，本身就很难得。\n\n• 也谢谢我自己 —— 对生活的热情，和一直没丢的好奇心。\n\n• 谢谢每一位用它的人 —— 希望它让你用车省点事。\n\n• 最后谢谢极氪和吉利 —— 是你们把我们聚到一起，也是你们造出了这么好的车和这么好的团队。</string>
     <string name="about_privacy_title">隐私与联网</string>
     <string name="about_privacy_body">录像和照片只写在你自己的 U 盘上，应用不会把它们传到任何地方。\n\n⚠ U 盘上的录像不加密。盘随时能拔下来、在别的设备上直接读，请自行注意隐私。\n\n除了下面两件事，应用不主动联网，而且每一件都要你先动手：\n\n• 点「检查更新」时，向 GitHub 问一次有没有新版本 —— 不带设备信息，也不上传任何东西。\n\n• 用「发送到手机」时，在本地网络里临时开一个网页，手机连上来取那一个文件；关掉就没了。</string>
-    <string name="about_project_body">源码、问题反馈和新版本都在这里。碰到问题，带上「诊断」里导出的报告最省事。</string>
+    <string name="about_project_body">个人业余改版（AI 辅助写的，不是专业作品），基于 dts88 的 zeekr-shortcut-car，加了打转向灯弹侧视。源码、问题反馈和新版本都在这里。碰到问题，带上「诊断」里导出的报告最省事。</string>
     <string name="about_credits_evcam">本应用以 GNU GPL v3.0 发布，继承自 EVCam（作者 suyunkai）—— 相机、录制、悬浮窗这些基础部分来自它。按 GPL 的要求，本应用的源码同样公开。</string>
     <string name="about_safety_title">安全须知</string>
     <string name="about_safety_body">实验性非官方软件，与极氪（ZEEKR）无任何关联。行车时请以实际路况为准，不要依赖本应用的画面判断路况；录像也不保证一定完整可用。使用风险自负。</string>

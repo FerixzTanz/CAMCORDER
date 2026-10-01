@@ -94,7 +94,7 @@ jobs:
           files: ${{ steps.apk.outputs.path }}
           # 带后缀的（-alpha / -beta）是测试版；1.0.0 这种不带后缀的是正式版，显示为 Latest
           prerelease: ${{ contains(steps.apk.outputs.version, '-') }}
-          # 2026-09-29 起所有新版本一律不公开：建成草稿，只有仓库所有者能看到和下载
-          draft: true
+          # CAMCORDER：直接公开发布（原项目 2026-09-29 起一律建成草稿）
+          draft: false
           name: ${{ steps.apk.outputs.version }}
           body_path: RELEASE_NOTES.md
