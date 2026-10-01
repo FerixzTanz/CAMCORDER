@@ -11,6 +11,10 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.2-alpha] - 2026-10-01
+
+- Turn-signal side view (off by default, Settings → Super mirror): signalling pops up that side's camera and closes it when the signal goes off; stock views (reverse, 360, side pop-up, park assist) take precedence; minimum speed adjustable, default 30 km/h.
+
 ## [2.0.1-beta] - 2026-10-01
 
 Mainly bug fixes and driving info bar updates. Everything else is as in 2.0.0.

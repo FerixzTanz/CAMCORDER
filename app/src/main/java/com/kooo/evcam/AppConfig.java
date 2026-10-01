@@ -86,6 +86,11 @@ public class AppConfig {
     private static final String KEY_PHOTO_VIA_JPEG = "photo_via_jpeg";
     private static final String KEY_INFO_BAR = "info_bar_enabled";  // 录像下方的行驶信息条
     private static final String KEY_INFO_BAR_ALL = "info_bar_all";  // 开发者：连没验证的栏目一起启用
+    private static final String KEY_SIDE_POPUP = "side_popup_enabled";  // 打转向灯弹侧视
+    private static final String KEY_SIDE_POPUP_MIN_SPEED = "side_popup_min_speed";  // 侧视弹窗的车速门槛 km/h
+    /** 默认 30 km/h：再慢原厂自己会弹侧方小窗。 */
+    public static final int SIDE_POPUP_DEFAULT_MIN_SPEED = 30;
+    public static final int SIDE_POPUP_MAX_MIN_SPEED = 80;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1363,6 +1368,27 @@ public class AppConfig {
     public void setInfoBarAllActive(boolean enabled) {
         prefs.edit().putBoolean(KEY_INFO_BAR_ALL, enabled).apply();
         AppLog.i(TAG, "行驶信息条激活所有栏目: " + (enabled ? "开" : "关"));
+    }
+
+    /** 打转向灯弹侧视，默认关。 */
+    public boolean isSidePopupEnabled() {
+        return prefs.getBoolean(KEY_SIDE_POPUP, false);
+    }
+
+    public void setSidePopupEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_SIDE_POPUP, enabled).apply();
+        AppLog.i(TAG, "打转向灯弹侧视: " + (enabled ? "开" : "关"));
+    }
+
+    /** 低于这个车速（km/h）不弹；0 表示不看车速。 */
+    public int getSidePopupMinSpeed() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_MIN_SPEED, SIDE_POPUP_DEFAULT_MIN_SPEED);
+        return Math.max(0, Math.min(SIDE_POPUP_MAX_MIN_SPEED, v));
+    }
+
+    public void setSidePopupMinSpeed(int kmh) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_MIN_SPEED,
+                Math.max(0, Math.min(SIDE_POPUP_MAX_MIN_SPEED, kmh))).apply();
     }
 
     public boolean isLicensePlateEnabled() {
