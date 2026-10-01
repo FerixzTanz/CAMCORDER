@@ -91,6 +91,15 @@ public class AppConfig {
     /** 默认 30 km/h：再慢原厂自己会弹侧方小窗。 */
     public static final int SIDE_POPUP_DEFAULT_MIN_SPEED = 30;
     public static final int SIDE_POPUP_MAX_MIN_SPEED = 80;
+    private static final String KEY_SIDE_POPUP_STRAIGHTEN = "side_popup_straighten";  // 侧视拉直鱼眼
+    private static final String KEY_SIDE_POPUP_INSTANT = "side_popup_instant";  // D 档时备着相机，打灯即出画面
+    private static final String KEY_SIDE_POPUP_CLOSE_DELAY = "side_popup_close_delay";  // 灯灭后再留几秒
+    private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 边长，屏幕高度的百分比
+    private static final String KEY_SIDE_POPUP_VERTICAL = "side_popup_vertical";  // 上下位置，0 顶 100 底
+    public static final int SIDE_POPUP_MAX_CLOSE_DELAY_S = 3;
+    public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
+    public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
+    public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1389,6 +1398,56 @@ public class AppConfig {
     public void setSidePopupMinSpeed(int kmh) {
         prefs.edit().putInt(KEY_SIDE_POPUP_MIN_SPEED,
                 Math.max(0, Math.min(SIDE_POPUP_MAX_MIN_SPEED, kmh))).apply();
+    }
+
+    /** 侧视拉直鱼眼，默认开；视野跟主界面「拉直」那一项。 */
+    public boolean isSidePopupStraighten() {
+        return prefs.getBoolean(KEY_SIDE_POPUP_STRAIGHTEN, true);
+    }
+
+    public void setSidePopupStraighten(boolean on) {
+        prefs.edit().putBoolean(KEY_SIDE_POPUP_STRAIGHTEN, on).apply();
+    }
+
+    /** D 档时把侧视窗备着（透明、相机照推），打灯即出画面；代价是开车时相机一直开着。默认开。 */
+    public boolean isSidePopupInstant() {
+        return prefs.getBoolean(KEY_SIDE_POPUP_INSTANT, true);
+    }
+
+    public void setSidePopupInstant(boolean on) {
+        prefs.edit().putBoolean(KEY_SIDE_POPUP_INSTANT, on).apply();
+    }
+
+    /** 灯灭后再留几秒，0..3，默认 0（灯灭就收）。 */
+    public int getSidePopupCloseDelaySeconds() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_CLOSE_DELAY, 0);
+        return Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_S, v));
+    }
+
+    public void setSidePopupCloseDelaySeconds(int seconds) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_CLOSE_DELAY,
+                Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_S, seconds))).apply();
+    }
+
+    /** 侧视窗边长，屏幕高度的百分比。 */
+    public int getSidePopupSizePercent() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_SIZE, SIDE_POPUP_DEFAULT_SIZE_PERCENT);
+        return Math.max(SIDE_POPUP_MIN_SIZE_PERCENT, Math.min(SIDE_POPUP_MAX_SIZE_PERCENT, v));
+    }
+
+    public void setSidePopupSizePercent(int percent) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_SIZE,
+                Math.max(SIDE_POPUP_MIN_SIZE_PERCENT, Math.min(SIDE_POPUP_MAX_SIZE_PERCENT, percent))).apply();
+    }
+
+    /** 侧视窗上下位置：剩余高度里的百分比，0 贴顶、100 贴底，默认 0。 */
+    public int getSidePopupVerticalPercent() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_VERTICAL, 0);
+        return Math.max(0, Math.min(100, v));
+    }
+
+    public void setSidePopupVerticalPercent(int percent) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_VERTICAL, Math.max(0, Math.min(100, percent))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

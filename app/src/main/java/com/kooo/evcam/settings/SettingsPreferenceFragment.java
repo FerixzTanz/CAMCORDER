@@ -567,6 +567,29 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     appConfig.setSidePopupMinSpeed(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
+        bindSwitch("pref_side_popup_straighten", appConfig.isSidePopupStraighten(), value -> {
+            appConfig.setSidePopupStraighten(value);
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+        });
+        bindSwitch("pref_side_popup_instant", appConfig.isSidePopupInstant(), value -> {
+            appConfig.setSidePopupInstant(value);
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+        });
+        bindSlider("pref_side_popup_close_delay", 0, AppConfig.SIDE_POPUP_MAX_CLOSE_DELAY_S,
+                appConfig.getSidePopupCloseDelaySeconds(), "s", value -> {
+                    appConfig.setSidePopupCloseDelaySeconds(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_side_popup_size", AppConfig.SIDE_POPUP_MIN_SIZE_PERCENT,
+                AppConfig.SIDE_POPUP_MAX_SIZE_PERCENT, appConfig.getSidePopupSizePercent(), "%", value -> {
+                    appConfig.setSidePopupSizePercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_side_popup_vertical", 0, 100,
+                appConfig.getSidePopupVerticalPercent(), "%", value -> {
+                    appConfig.setSidePopupVerticalPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
     }
 
     // ------------------------------------------------------------------ 超级后视镜

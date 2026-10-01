@@ -11,45 +11,59 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
+import com.kooo.evcam.AppConfig;
 import com.kooo.evcam.AppLog;
 import com.kooo.evcam.AutoFitTextureView;
 
 /**
- * 打转向灯弹出的侧视窗：只显示左或右那一路，不能拖、不能点，灯灭就收。
+ * 打转向灯弹出的侧视窗：只显示左或右那一路，不能拖、不能点。
  *
  * <p>画法和超级后视镜一样（见 {@link RearViewMirrorView} 的类说明）：子视图是普通 TextureView，
  * 本容器在 {@code dispatchDraw} 里按 {@link RearViewGeometry#combinedSourceRect} 把那一路放大重画，
- * 不新建 GL 管线。侧视不镜像（{@link LaneCycle#isMirrored}）。</p>
+ * 不新建 GL 管线；「拉直」开着时走同一套分片反投影（{@link FisheyeMesh}）。侧视不镜像。</p>
  *
- * <p>窗口是正方形（每一路本来就是正方形，整幅都看得到），左灯在中线左边、右灯在中线右边。
- * {@code FLAG_NOT_TOUCHABLE}：点击穿过去，不挡底下的导航。</p>
+ * <h3>三种状态</h3>
+ *
+ * <ul>
+ *   <li>没挂：没有窗口，不占相机。</li>
+ *   <li><b>备着</b>（{@link #attachHidden}）：窗口挂着但完全透明（窗口 alpha 0），相机照常往里推帧 ——
+ *       打灯时只要把 alpha 拨回 1，不用重建会话。<b>不用 INVISIBLE</b>：TextureView 不画就不取帧，
+ *       共享流上一个不取帧的消费者可能把整条流（包括录像）拖住。</li>
+ *   <li>显示：alpha 1，在对应那一边。</li>
+ * </ul>
+ *
+ * <p>位置：屏幕中线是两边的分界，左侧那一路的右边缘贴中线，右侧那一路的左边缘贴中线；
+ * 大小和上下位置在设置里调。{@code FLAG_NOT_TOUCHABLE}：点击穿过去，不挡底下的导航。</p>
  */
 public class SideViewPopupView extends ViewGroup {
 
     private static final String TAG = "SideViewPopup";
 
-    /** 边长：屏幕高度的这么多，但不超过屏幕宽度的这么多。 */
-    private static final float SIZE_OF_HEIGHT = 0.55f;
-    private static final float MAX_OF_WIDTH = 0.4f;
-    private static final int MARGIN_PX = 40;
-
     private final WindowManager windowManager;
+    private final AppConfig appConfig;
     private final AutoFitTextureView textureView;
     private final Matrix drawMatrix = new Matrix();
     private final RectF sourceRect = new RectF();
     private final RectF destRect = new RectF();
+    private final FisheyeMesh mesh = new FisheyeMesh();
+    private final FisheyeMesh.Painter paintTexture = this::drawTextureOnce;
 
     private WindowManager.LayoutParams params;
     private boolean attached;
+    private boolean visible;
     private CompositeStreamGeometry.Plan plan;
     private int lane = LaneCycle.LEFT;
+    private boolean straighten;
+    private float fovDegrees;
 
-    public SideViewPopupView(Context context) {
+    public SideViewPopupView(Context context, AppConfig appConfig) {
         super(context);
+        this.appConfig = appConfig;
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         setBackgroundColor(0xFF000000);
         textureView = new AutoFitTextureView(context);
         addView(textureView);
+        readConfig();
     }
 
     public AutoFitTextureView getTextureView() {
@@ -76,48 +90,44 @@ public class SideViewPopupView extends ViewGroup {
         return plan != null && plan.isComposite();
     }
 
-    public boolean isShowing() {
+    /** 窗口挂着（备着或显示中）。 */
+    public boolean isAttached() {
         return attached;
+    }
+
+    /** 正显示在屏幕上。 */
+    public boolean isShowing() {
+        return attached && visible;
     }
 
     public int lane() {
         return lane;
     }
 
-    /** 弹出来，显示 {@code side} 那一路；已经弹着就只换边。 */
-    public void show(int side) {
-        lane = side;
-        int size = sideLength();
-        if (attached) {
-            params.x = xFor(side, size);
-            try {
-                windowManager.updateViewLayout(this, params);
-            } catch (Exception e) {
-                AppLog.w(TAG, "侧视窗换边失败: " + e);
-            }
-            invalidate();
-            return;
-        }
-        params = new WindowManager.LayoutParams(
-                size, size,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                        : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-                PixelFormat.TRANSLUCENT);
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = xFor(side, size);
-        params.y = MARGIN_PX;
-        try {
-            windowManager.addView(this, params);
-            attached = true;
-        } catch (Exception e) {
-            AppLog.e(TAG, "侧视窗添加失败", e);
-        }
+    // ------------------------------------------------------------------ 窗口
+
+    /** 挂上但不显示：给相机一个推帧的地方，打灯时马上能出画面。 */
+    public void attachHidden(int side) {
+        attachAt(side, false);
     }
 
-    public void hide() {
+    /** 显示 {@code side} 那一路；没挂就挂上，备着就拨亮，显示着就换边。 */
+    public void show(int side) {
+        attachAt(side, true);
+    }
+
+    /** 收起来但窗口留着、相机照推（备着）。 */
+    public void conceal() {
+        if (!attached || !visible) {
+            return;
+        }
+        visible = false;
+        params.alpha = 0f;
+        update();
+    }
+
+    /** 整个拿掉。 */
+    public void detach() {
         if (!attached) {
             return;
         }
@@ -127,22 +137,87 @@ public class SideViewPopupView extends ViewGroup {
             AppLog.w(TAG, "侧视窗移除失败: " + e);
         }
         attached = false;
+        visible = false;
     }
 
-    private int sideLength() {
-        int w = getResources().getDisplayMetrics().widthPixels;
-        int h = getResources().getDisplayMetrics().heightPixels;
-        return Math.round(Math.min(h * SIZE_OF_HEIGHT, w * MAX_OF_WIDTH));
+    /** 设置页改了大小 / 位置 / 拉直：套用到挂着的窗口上。 */
+    public void applyConfig() {
+        readConfig();
+        if (attached) {
+            place(lane);
+            update();
+        }
+        invalidate();
+    }
+
+    private void readConfig() {
+        straighten = appConfig.isSidePopupStraighten();
+        fovDegrees = appConfig.getFisheyeFov();
+    }
+
+    private void attachAt(int side, boolean show) {
+        boolean sideChanged = side != lane;
+        lane = side;
+        if (attached) {
+            boolean visibilityChanged = show != visible;
+            visible = show;
+            params.alpha = show ? 1f : 0f;
+            if (sideChanged) {
+                place(side);
+            }
+            if (sideChanged || visibilityChanged) {
+                update();
+            }
+            if (sideChanged) {
+                invalidate();
+            }
+            return;
+        }
+        params = new WindowManager.LayoutParams(
+                1, 1,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                        : WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT);
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.alpha = show ? 1f : 0f;
+        place(side);
+        try {
+            windowManager.addView(this, params);
+            attached = true;
+            visible = show;
+        } catch (Exception e) {
+            AppLog.e(TAG, "侧视窗添加失败", e);
+        }
+    }
+
+    private void update() {
+        try {
+            windowManager.updateViewLayout(this, params);
+        } catch (Exception e) {
+            AppLog.w(TAG, "侧视窗更新失败: " + e);
+        }
     }
 
     /**
-     * 屏幕中线是两边的分界：左侧那一路的右边缘贴中线，右侧那一路的左边缘贴中线。
-     * 贴屏幕边上太偏（用户 2026-10-01 实车上看）。
+     * 大小和位置。边长按屏幕高度的百分比，最多半个屏幕宽（两边在中线相接，不能超过一半）；
+     * 上下位置是剩余高度里的百分比，0 贴顶、100 贴底。
      */
-    private int xFor(int side, int size) {
-        int center = getResources().getDisplayMetrics().widthPixels / 2;
-        return side == LaneCycle.LEFT ? center - size : center;
+    private void place(int side) {
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
+        int size = Math.round(Math.min(h * appConfig.getSidePopupSizePercent() / 100f, w / 2f));
+        size = Math.max(AppConfig.REARVIEW_MIN_SIZE, size);
+        int center = w / 2;
+        params.width = size;
+        params.height = size;
+        params.x = side == LaneCycle.LEFT ? center - size : center;
+        params.y = Math.round(Math.max(0, h - size) * appConfig.getSidePopupVerticalPercent() / 100f);
     }
+
+    // ------------------------------------------------------------------ 布局与绘制
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -171,19 +246,34 @@ public class SideViewPopupView extends ViewGroup {
         }
         RearViewGeometry.Viewport viewport = RearViewGeometry.Viewport.forWindow(
                 width, height, RearViewGeometry.DEFAULT_PAN);
-        float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
-        sourceRect.set(rect[0] * width, rect[1] * height,
-                (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
-        destRect.set(0, 0, width, height);
-        drawMatrix.setRectToRect(sourceRect, destRect, Matrix.ScaleToFit.FILL);
 
         int save = canvas.save();
         if (LaneCycle.isMirrored(lane)) {
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
         }
-        canvas.clipRect(destRect);
-        canvas.concat(drawMatrix);
-        drawChild(canvas, textureView, getDrawingTime());
+        if (straighten) {
+            // 同后视镜的 drawCorrected：先按取景落到校正后的画面，再反投影回鱼眼原图
+            RearViewGeometry.ShaderRects r = RearViewGeometry.toShaderRects(plan, lane, viewport);
+            mesh.setCorrection(fovDegrees, FisheyeProjection.PROJECTION_RECTILINEAR, 1f);
+            mesh.prepare(FisheyeProjection.MESH_DIVISIONS,
+                    r.laneOffsetX * width, r.laneOffsetY * height,
+                    r.laneScaleX * width, r.laneScaleY * height,
+                    r.viewOffsetX, r.viewOffsetY, r.viewScaleX, r.viewScaleY);
+            mesh.draw(canvas, 0f, 0f, width, height, paintTexture);
+        } else {
+            float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
+            sourceRect.set(rect[0] * width, rect[1] * height,
+                    (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
+            destRect.set(0, 0, width, height);
+            drawMatrix.setRectToRect(sourceRect, destRect, Matrix.ScaleToFit.FILL);
+            canvas.clipRect(destRect);
+            canvas.concat(drawMatrix);
+            drawChild(canvas, textureView, getDrawingTime());
+        }
         canvas.restoreToCount(save);
+    }
+
+    private void drawTextureOnce(Canvas canvas) {
+        drawChild(canvas, textureView, getDrawingTime());
     }
 }

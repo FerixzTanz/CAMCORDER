@@ -68,6 +68,16 @@ public final class SideViewDecision {
         return lane;
     }
 
+    /**
+     * 「即时弹出」开着时，该不该把窗口备着（透明、相机照推）。
+     *
+     * <p>只看 D 档：开车时才会打灯变道，P / N / R 都不必为它开着相机。
+     * 档位读不到就不备（退回打灯时再接相机，慢一点而已）。</p>
+     */
+    public static boolean shouldStayReady(Input in) {
+        return "D".equals(in.gear);
+    }
+
     /** 原厂有画面在屏幕上（或马上要有）：倒车、360、原厂弹窗、泊车辅助。 */
     public static boolean factoryViewActive(Input in) {
         return "R".equals(in.gear)
