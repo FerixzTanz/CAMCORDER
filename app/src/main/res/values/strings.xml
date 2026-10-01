@@ -260,6 +260,12 @@
     <string name="msg_side_popup_on">打转向灯弹侧视已开启：打左灯看左侧、打右灯看右侧</string>
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，视野跟主界面「拉直」那一项。只影响弹窗的显示，录像照旧</string>
+    <string name="set_side_popup_zoom_title">放大（%）</string>
+    <string name="set_side_popup_zoom_summary">放大了下面两项才挪得动。100 是整幅</string>
+    <string name="set_side_popup_aim_back_title">往后看</string>
+    <string name="set_side_popup_aim_back_summary">正数往车尾（盲区），负数往车头。方向是猜的：反了就往另一头拉</string>
+    <string name="set_side_popup_aim_up_title">往上看</string>
+    <string name="set_side_popup_aim_up_summary">正数朝车外、远处的路，负数朝车身和地面。方向是猜的：反了就往另一头拉</string>
     <string name="set_side_popup_instant_title">即时弹出</string>
     <string name="set_side_popup_instant_summary">挂 D 档时让侧视窗在后台备着，打灯马上有画面。代价是开车时相机一直开着，多用一点电</string>
     <string name="set_side_popup_close_delay_title">灯灭后再留（秒）</string>

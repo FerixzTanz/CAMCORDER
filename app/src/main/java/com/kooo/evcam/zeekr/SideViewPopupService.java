@@ -77,7 +77,10 @@ public class SideViewPopupService extends Service {
     private boolean firstFrameSeen;
 
     /** 灯灭后再留几秒：到点收起。 */
-    private final Runnable delayedClose = () -> closeNow("灯灭后多留的时间到了");
+    private final Runnable delayedClose = () -> {
+        AppLog.i(TAG, "侧视收起：灯灭后多留的时间到了");
+        closeNow();
+    };
     private boolean closePending;
     /** 离开 D 档宽限期满：拿掉备着的窗口。 */
     private final Runnable readyExpired = () -> {
@@ -210,7 +213,8 @@ public class SideViewPopupService extends Service {
             boolean factory = SideViewDecision.factoryViewActive(in);
             int delayS = appConfig.getSidePopupCloseDelaySeconds();
             if (factory || blocked || delayS <= 0) {
-                closeNow(factory ? "原厂画面在" : blocked ? "超级后视镜开着或熄屏" : "转向灯灭");
+                AppLog.i(TAG, "侧视收起：" + (factory ? "原厂画面在" : blocked ? "超级后视镜开着或熄屏" : "转向灯灭"));
+                closeNow();
             } else if (!closePending) {
                 closePending = true;
                 handler.postDelayed(delayedClose, delayS * 1000L);
@@ -241,12 +245,11 @@ public class SideViewPopupService extends Service {
     }
 
     /** 收起：该备着就只拨暗（相机照推），不该就整个拿掉。 */
-    private void closeNow(String why) {
+    private void closeNow() {
         cancelDelayedClose();
         if (popup == null || !popup.isShowing()) {
             return;
         }
-        AppLog.i(TAG, "侧视收起：" + why);
         noteIfNoFrame();
         if (lastReady) {
             popup.conceal();

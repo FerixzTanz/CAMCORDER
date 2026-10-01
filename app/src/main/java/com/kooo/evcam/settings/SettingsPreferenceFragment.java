@@ -571,6 +571,21 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setSidePopupStraighten(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
         });
+        bindSlider("pref_side_popup_zoom", 100, AppConfig.SIDE_POPUP_MAX_ZOOM_PERCENT,
+                appConfig.getSidePopupZoomPercent(), "%", value -> {
+                    appConfig.setSidePopupZoomPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_side_popup_aim_back", -100, 100,
+                appConfig.getSidePopupAimBack(), "", value -> {
+                    appConfig.setSidePopupAimBack(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_side_popup_aim_up", -100, 100,
+                appConfig.getSidePopupAimUp(), "", value -> {
+                    appConfig.setSidePopupAimUp(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
         bindSwitch("pref_side_popup_instant", appConfig.isSidePopupInstant(), value -> {
             appConfig.setSidePopupInstant(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();

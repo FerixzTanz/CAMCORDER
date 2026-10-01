@@ -100,6 +100,14 @@ public class AppConfig {
     public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
     public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
     public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
+    private static final String KEY_SIDE_POPUP_ZOOM = "side_popup_zoom";  // 放大倍数 ×100
+    private static final String KEY_SIDE_POPUP_AIM_BACK = "side_popup_aim_back";  // −100 车头 .. 100 车尾
+    private static final String KEY_SIDE_POPUP_AIM_UP = "side_popup_aim_up";  // −100 朝下 .. 100 朝上
+    public static final int SIDE_POPUP_MAX_ZOOM_PERCENT = 250;
+    /** 默认值是猜的（见 SideViewAim）：放大 1.6 倍，大半往车尾、稍往上。 */
+    public static final int SIDE_POPUP_DEFAULT_ZOOM_PERCENT = 160;
+    public static final int SIDE_POPUP_DEFAULT_AIM_BACK = 60;
+    public static final int SIDE_POPUP_DEFAULT_AIM_UP = 40;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1448,6 +1456,35 @@ public class AppConfig {
 
     public void setSidePopupVerticalPercent(int percent) {
         prefs.edit().putInt(KEY_SIDE_POPUP_VERTICAL, Math.max(0, Math.min(100, percent))).apply();
+    }
+
+    /** 侧视放大倍数 ×100，100..250。放大了取景框才挪得动。 */
+    public int getSidePopupZoomPercent() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_ZOOM, SIDE_POPUP_DEFAULT_ZOOM_PERCENT);
+        return Math.max(100, Math.min(SIDE_POPUP_MAX_ZOOM_PERCENT, v));
+    }
+
+    public void setSidePopupZoomPercent(int percent) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_ZOOM,
+                Math.max(100, Math.min(SIDE_POPUP_MAX_ZOOM_PERCENT, percent))).apply();
+    }
+
+    /** 侧视取景往车尾（正）/ 车头（负）挪多少，−100..100。 */
+    public int getSidePopupAimBack() {
+        return Math.max(-100, Math.min(100, prefs.getInt(KEY_SIDE_POPUP_AIM_BACK, SIDE_POPUP_DEFAULT_AIM_BACK)));
+    }
+
+    public void setSidePopupAimBack(int value) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_AIM_BACK, Math.max(-100, Math.min(100, value))).apply();
+    }
+
+    /** 侧视取景往上（正，朝车外）/ 往下（负，朝车身）挪多少，−100..100。 */
+    public int getSidePopupAimUp() {
+        return Math.max(-100, Math.min(100, prefs.getInt(KEY_SIDE_POPUP_AIM_UP, SIDE_POPUP_DEFAULT_AIM_UP)));
+    }
+
+    public void setSidePopupAimUp(int value) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_AIM_UP, Math.max(-100, Math.min(100, value))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

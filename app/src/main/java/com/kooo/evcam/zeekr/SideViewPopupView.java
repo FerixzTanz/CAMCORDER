@@ -55,6 +55,9 @@ public class SideViewPopupView extends ViewGroup {
     private int lane = LaneCycle.LEFT;
     private boolean straighten;
     private float fovDegrees;
+    private int zoomPercent;
+    private int aimBack;
+    private int aimUp;
 
     public SideViewPopupView(Context context, AppConfig appConfig) {
         super(context);
@@ -153,6 +156,9 @@ public class SideViewPopupView extends ViewGroup {
     private void readConfig() {
         straighten = appConfig.isSidePopupStraighten();
         fovDegrees = appConfig.getFisheyeFov();
+        zoomPercent = appConfig.getSidePopupZoomPercent();
+        aimBack = appConfig.getSidePopupAimBack();
+        aimUp = appConfig.getSidePopupAimUp();
     }
 
     private void attachAt(int side, boolean show) {
@@ -244,8 +250,8 @@ public class SideViewPopupView extends ViewGroup {
             canvas.drawColor(0xFF000000);
             return;
         }
-        RearViewGeometry.Viewport viewport = RearViewGeometry.Viewport.forWindow(
-                width, height, RearViewGeometry.DEFAULT_PAN);
+        // 窗口和每一路都是正方形，取景框也是正方形：放大、往后、往上（见 SideViewAim）
+        RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, aimBack, aimUp);
 
         int save = canvas.save();
         if (LaneCycle.isMirrored(lane)) {
