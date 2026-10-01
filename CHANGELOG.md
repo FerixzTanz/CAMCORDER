@@ -9,8 +9,10 @@ commit message, not here.
 
 ## [Unreleased]
 
-- About: thanks now name the Singapore Zeekr Group and add three members from the Malaysian
-  and Australian owner communities for their suggestions and support.
+- About: thanks now name the Singapore Zeekr Group and add members of the Malaysian, Australian
+  and Chinese owner communities for their suggestions, insights and support.
+- The About page comes in Chinese and English only: the Chinese interface shows Chinese, every
+  other language shows English.
 
 ## [2.0.1-beta] - 2026-10-01
 

@@ -29,6 +29,12 @@ import java.util.regex.Pattern;
  * <p>更严重的是<b>占位符对不上</b>：中文写 {@code %1$s} 而英文漏了，
  * {@code getString(id, arg)} 在运行期直接抛异常，界面当场崩。
  * 这类错误编译期完全看不出来。</p>
+ *
+ * <h3>只做中英两份的文字</h3>
+ *
+ * <p>关于页这类长文字只做中文和英文：中文在 {@code values-zh/<文件>}，英文在 {@code values/<文件>}（默认，
+ * 其他所有语言都落到它），文件名列在 {@link #ZH_EN_ONLY}。这两份要条目一一对得上、占位符一致；
+ * 这些条目不能再出现在任何一份 strings.xml 里，否则谁覆盖谁就说不清了。</p>
  */
 public class StringResourceParityTest {
 
@@ -38,6 +44,9 @@ public class StringResourceParityTest {
 
     /** 翻译目录。新增一种语言时，这里和 xml/locales_config.xml 一起改。 */
     private static final String[] TRANSLATIONS = {"values-en", "values-ms"};
+
+    /** 只有中文（values-zh）和英文（values，默认）两份的文件。 */
+    private static final String[] ZH_EN_ONLY = {"strings_about.xml"};
 
     @Test
     public void everyChineseStringHasATranslationWithMatchingPlaceholders() throws IOException {
@@ -71,6 +80,30 @@ public class StringResourceParityTest {
             }
             assertTrue("这些条目和 " + dir + " 的占位符不一致，运行期格式化会抛异常: "
                     + mismatched, mismatched.isEmpty());
+        }
+    }
+
+    @Test
+    public void zhEnOnlyFilesMatchAndStayOutOfTheTranslations() throws IOException {
+        File module = findModuleRoot();
+        assumeTrue("定位不到模块根目录，跳过", module != null);
+
+        for (String name : ZH_EN_ONLY) {
+            Map<String, String> en = parse(new File(module, "src/main/res/values/" + name));
+            Map<String, String> zh = parse(new File(module, "src/main/res/values-zh/" + name));
+            assertTrue("读不到 values/" + name, !en.isEmpty());
+            assertTrue("读不到 values-zh/" + name, !zh.isEmpty());
+            assertTrue(name + " 的中英两份条目对不上: 英文 " + new TreeSet<>(en.keySet())
+                    + " / 中文 " + new TreeSet<>(zh.keySet()), en.keySet().equals(zh.keySet()));
+            for (Map.Entry<String, String> entry : zh.entrySet()) {
+                assertTrue(name + " 里 " + entry.getKey() + " 的中英占位符不一致",
+                        placeholders(entry.getValue()).equals(placeholders(en.get(entry.getKey()))));
+            }
+            for (String dir : new String[]{"values", "values-en", "values-ms"}) {
+                TreeSet<String> twice = new TreeSet<>(en.keySet());
+                twice.retainAll(parse(new File(module, "src/main/res/" + dir + "/strings.xml")).keySet());
+                assertTrue(dir + "/strings.xml 里又出现了只做中英两份的条目: " + twice, twice.isEmpty());
+            }
         }
     }
 
@@ -124,11 +157,16 @@ public class StringResourceParityTest {
         assumeTrue("定位不到模块根目录，跳过", module != null);
 
         List<String> offenders = new ArrayList<>();
-        for (String dir : new String[]{"values", "values-en", "values-ms"}) {
-            File file = new File(module, "src/main/res/" + dir + "/strings.xml");
-            if (!file.isFile()) {
-                continue;
+        List<File> files = new ArrayList<>();
+        for (String dir : new String[]{"values", "values-en", "values-ms", "values-zh"}) {
+            File[] inDir = new File(module, "src/main/res/" + dir).listFiles(
+                    (d, n) -> n.startsWith("strings") && n.endsWith(".xml"));
+            if (inDir != null) {
+                files.addAll(java.util.Arrays.asList(inDir));
             }
+        }
+        for (File file : files) {
+            String dir = file.getParentFile().getName() + "/" + file.getName();
             String text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
             Matcher matcher = STRING.matcher(text);
             while (matcher.find()) {
@@ -136,7 +174,7 @@ public class StringResourceParityTest {
                 for (int i = 0; i < body.length(); i++) {
                     if (body.charAt(i) == '\''
                             && (i == 0 || body.charAt(i - 1) != '\\')) {
-                        offenders.add(dir + "/" + matcher.group(1));
+                        offenders.add(dir + ":" + matcher.group(1));
                         break;
                     }
                 }

@@ -407,21 +407,6 @@
     <string name="msg_refuse_no_external">Tiada pemacu USB dikesan. Rakaman disimpan ke pemacu USB sahaja.</string>
 
     <!-- Skrin perihal -->
-    <string name="about_tagline">Kamera pemandu pandangan keliling untuk unit kepala Zeekr: ia merakam strim komposit 360°, dengan main balik dan cermin super.</string>
-    <string name="about_storage_title">Tentang pemacu USB</string>
-    <string name="about_storage_body">Rakaman disimpan ke pemacu USB sahaja, tidak pernah ke memori dalaman unit kepala, yang tidak boleh diganti setelah haus.\n\n• Pemacu USB yang disertakan dengan kereta sudah memadai untuk rakaman asas.\n\n• Untuk kadar bit lebih tinggi atau simpanan lebih lama, pasang pemacu pada port Type-C sebelah kiri. Ia dikesan secara automatik dan boleh dicabut bila-bila masa.\n\n• Telah diuji: pemacu USB 128 GB, dan SSD NVMe (jauh lebih pantas, sedikit lebih panas).\n\n• Pemacu Optane M10 berbaloi tetapi kecil: kira-kira 20 jam terakhir sahaja.</string>
-    <string name="about_project_title">Projek</string>
-    <string name="about_coffee_title">Belanja penulis secawan kopi</string>
-    <string name="about_coffee_body">PayNow ke 9271 6786. Ia pilihan; semua ciri berfungsi tanpanya.</string>
-    <string name="about_credits_title">Sumber terbuka dan asal usul</string>
-    <string name="about_thanks_title">Penghargaan</string>
-    <string name="about_thanks_body">Projek ini lahir daripada sembang kumpulan Singapore Zeekr Group. Mereka inilah yang memulakannya:\n\n• Jon (Singapore Zeekr Group) — menerangkan cara memasang apl pada unit kepala. Tanpa itu, tiada apa-apa yang akan berlaku.\n\n• SW (kumpulan yang sama) — berkongsi projek AVM Recorder, yang menunjukkan ia boleh dilakukan.\n\n• Patrick (kumpulan yang sama) — memberikan maklumat penting untuk bermula.\n\n• Gabriel (kumpulan yang sama) — membantu menguji apl dan memberi maklum balas.\n\n• Penghargaan khas kepada Singapore Zeekr Group — pasukan pentadbir yang cekap dan ahli yang mesra. Tempat orang berkongsi secara terbuka memang jarang.\n\nDi luar Singapura, rakan-rakan ini turut membantu:\n\n• R. Manochvarma (Zeekr Owners Community Malaysia, ZOCM) — mencadangkan mod butang untuk cermin super.\n\n• Storm Oshyer (Zeekr 7X Australia, komuniti Facebook) — mencadangkan paparan titik buta, isyarat membelok dan pengesanan tukar lorong pintar, serta terus memberi galakan dan mempromosikan apl ini.\n\n• 理查 Richard (kumpulan WeChat pemilik Zeekr 7X Australia) — mencadangkan rakaman dicetuskan oleh hon dan isyarat lain.\n\n• Diri saya sendiri — kerana semangat dan rasa ingin tahu.\n\n• Semua yang menggunakan apl ini — semoga ia memudahkan pemanduan anda sedikit.\n\n• ZEEKR dan Geely — kerana mempertemukan kami, dan kerana kereta serta pasukan yang hebat.</string>
-    <string name="about_privacy_title">Privasi dan penggunaan rangkaian</string>
-    <string name="about_privacy_body">Rakaman dan foto kekal pada pemacu USB anda. Apl ini tidak menghantarnya ke mana-mana.\n\n⚠ Rakaman pada pemacu tidak disulitkan. Sesiapa yang memegang pemacu boleh membacanya.\n\nApl hanya menyambung ke internet apabila anda memulakan salah satu daripada ini:\n\n• Semak kemas kini: bertanya kepada GitHub tentang versi terbaharu. Tiada data peranti dihantar.\n\n• Hantar ke telefon: menyajikan satu fail pada rangkaian tempatan anda sehingga anda menutupnya.</string>
-    <string name="about_project_body">Kod sumber, isu dan keluaran. Semasa melaporkan masalah, lampirkan laporan daripada Maklumat diagnostik.</string>
-    <string name="about_credits_evcam">Dikeluarkan di bawah GNU GPL v3.0 dan berasaskan EVCam oleh suyunkai, yang menyediakan asas kamera, rakaman dan tetingkap terapung. Seperti yang dikehendaki GPL, kod sumbernya terbuka.</string>
-    <string name="about_safety_title">Notis keselamatan</string>
-    <string name="about_safety_body">Perisian eksperimen tidak rasmi, tiada kaitan dengan ZEEKR. Semasa memandu, perhatikan jalan, bukan apl ini. Rakaman tidak dijamin lengkap. Guna atas risiko sendiri.</string>
     <string name="date_group_count">%1$d kumpulan</string>
 
     <!-- Main balik foto -->
