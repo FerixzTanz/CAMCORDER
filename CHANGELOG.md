@@ -11,6 +11,30 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.3-beta] - 2026-10-01
+
+A hobby fork of dts88's app, vibe coded with an AI assistant; see the README. This version
+improves the turn-signal side view.
+
+### Turn-signal side view
+
+- Fixed: the pop-up could stay black when the camera wasn't already running.
+- The left and right pop-ups now meet at the middle of the screen.
+- **Straighten picture** (on by default): corrects the fisheye curve in the pop-up. Recordings are
+  not affected.
+- **Instant pop-up** (on by default): in D, the picture is kept ready in the background so it is
+  there as soon as you signal. The camera stays on while driving.
+- **Stay open after the signal**: 0–3 seconds, default 0.
+- **Zoom, Aim back, Aim up**: point the pop-up at the blind spot. The default (1.6× zoom, mostly back,
+  a little up) is a best guess at which way each camera faces; drag the other way if it is wrong.
+- Pop-up size and height on screen are adjustable.
+
+### This fork
+
+- Check for updates now looks at this repo's releases (FerixzTanz/CAMCORDER), so updating no
+  longer replaces this version with dts88's. Turn on *Include beta releases* to get them.
+- The About page links here and says this is a personal fork of dts88's app.
+
 ## [2.0.2-alpha] - 2026-10-01
 
 - Turn-signal side view (off by default, Settings → Super mirror): signalling pops up that side's camera and closes it when the signal goes off; stock views (reverse, 360, side pop-up, park assist) take precedence; minimum speed adjustable, default 30 km/h.

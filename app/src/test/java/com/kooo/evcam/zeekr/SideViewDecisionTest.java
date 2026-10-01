@@ -99,6 +99,16 @@ public class SideViewDecisionTest {
     }
 
     @Test
+    public void staysReadyOnlyInDrive() {
+        org.junit.Assert.assertTrue(SideViewDecision.shouldStayReady(driving(0)));
+        for (String gear : new String[]{"P", "N", "R", null}) {
+            SideViewDecision.Input in = driving(0);
+            in.gear = gear;
+            org.junit.Assert.assertFalse("gear " + gear, SideViewDecision.shouldStayReady(in));
+        }
+    }
+
+    @Test
     public void zeroThresholdOrUnknownSpeedDoesNotBlock() {
         SideViewDecision.Input a = driving(1);
         a.speedKmh = 5f;

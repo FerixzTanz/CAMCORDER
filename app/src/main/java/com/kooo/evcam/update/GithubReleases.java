@@ -64,8 +64,8 @@ public final class GithubReleases {
 
     private static final String TAG = "GithubReleases";
 
-    private static final String OWNER = "dts88";
-    private static final String REPO = "zeekr-shortcut-car";
+    private static final String OWNER = "FerixzTanz";
+    private static final String REPO = "CAMCORDER";
     private static final String LIST_URL =
             "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases?per_page=20";
 

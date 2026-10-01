@@ -161,7 +161,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:padding="4dp"
-                android:text="github.com/dts88/zeekr-shortcut-car"
+                android:text="github.com/FerixzTanz/CAMCORDER"
                 android:textColor="@color/energy_text"
                 android:textAppearance="@style/TextAppearance.Cam.Body" />
 
