@@ -21,7 +21,7 @@ import com.kooo.evcam.AutoFitTextureView;
  * 本容器在 {@code dispatchDraw} 里按 {@link RearViewGeometry#combinedSourceRect} 把那一路放大重画，
  * 不新建 GL 管线。侧视不镜像（{@link LaneCycle#isMirrored}）。</p>
  *
- * <p>窗口是正方形（每一路本来就是正方形，整幅都看得到），左灯靠屏幕左边、右灯靠右边。
+ * <p>窗口是正方形（每一路本来就是正方形，整幅都看得到），左灯在中线左边、右灯在中线右边。
  * {@code FLAG_NOT_TOUCHABLE}：点击穿过去，不挡底下的导航。</p>
  */
 public class SideViewPopupView extends ViewGroup {
@@ -135,9 +135,13 @@ public class SideViewPopupView extends ViewGroup {
         return Math.round(Math.min(h * SIZE_OF_HEIGHT, w * MAX_OF_WIDTH));
     }
 
+    /**
+     * 屏幕中线是两边的分界：左侧那一路的右边缘贴中线，右侧那一路的左边缘贴中线。
+     * 贴屏幕边上太偏（用户 2026-10-01 实车上看）。
+     */
     private int xFor(int side, int size) {
-        int w = getResources().getDisplayMetrics().widthPixels;
-        return side == LaneCycle.LEFT ? MARGIN_PX : w - size - MARGIN_PX;
+        int center = getResources().getDisplayMetrics().widthPixels / 2;
+        return side == LaneCycle.LEFT ? center - size : center;
     }
 
     @Override

@@ -14,6 +14,7 @@ Nothing yet.
 ## [2.0.3-alpha] - 2026-10-01
 
 - Turn-signal side view: the pop-up no longer stays black when the camera was not already running; the black box records when the picture arrives, or that it never did.
+- Turn-signal side view: the pop-ups meet at the middle of the screen; left signal just left of centre, right signal just right of centre.
 
 ## [2.0.2-alpha] - 2026-10-01
 
