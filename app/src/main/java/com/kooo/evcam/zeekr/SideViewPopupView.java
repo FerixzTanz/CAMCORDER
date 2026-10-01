@@ -63,10 +63,17 @@ public class SideViewPopupView extends ViewGroup {
         }
         String id = StreamLayoutTable.compositeCameraId();
         if (!CompositeStreamGeometry.looksLikeComposite(id, size.getWidth(), size.getHeight())) {
+            AppLog.d(TAG, "忽略非合成流尺寸 " + size);
             return;
         }
         plan = CompositeStreamGeometry.analyse(id, size.getWidth(), size.getHeight());
+        AppLog.i(TAG, "侧视取景: " + plan + " 第 " + lane + " 路");
         invalidate();
+    }
+
+    /** 知不知道合成流的几何；不知道时画面是黑的。 */
+    public boolean hasGeometry() {
+        return plan != null && plan.isComposite();
     }
 
     public boolean isShowing() {
@@ -151,8 +158,11 @@ public class SideViewPopupView extends ViewGroup {
         if (width <= 0 || height <= 0) {
             return;
         }
-        if (plan == null || !plan.isComposite()) {
-            // 还不知道几何：不画整条合成流（那是四路挤在一起的怪图），黑着等第一帧
+        if (!hasGeometry()) {
+            // 还不知道几何：子视图照画（TextureView 不画就不取帧，onSurfaceTextureUpdated 也不来，
+            // 服务就没机会补上尺寸 —— 窗口会一直黑），再盖成黑的，不露出四路挤在一起的整条合成流
+            super.dispatchDraw(canvas);
+            canvas.drawColor(0xFF000000);
             return;
         }
         RearViewGeometry.Viewport viewport = RearViewGeometry.Viewport.forWindow(

@@ -58,6 +58,9 @@ public class SideViewPopupService extends Service {
     private boolean listening;
     private int retryCount;
     private Runnable retryRunnable;
+    /** 这一次弹出的时刻和第一帧来没来：黑匣子里看「弹了多久才有画面」。 */
+    private long shownAtMs;
+    private boolean firstFrameSeen;
 
     public static void start(Context context) {
         context.startService(new Intent(context, SideViewPopupService.class));
@@ -185,6 +188,8 @@ public class SideViewPopupService extends Service {
             return;
         }
         popup = new SideViewPopupView(this);
+        shownAtMs = android.os.SystemClock.uptimeMillis();
+        firstFrameSeen = false;
         popup.getTextureView().setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture st, int w, int h) {
@@ -204,13 +209,45 @@ public class SideViewPopupService extends Service {
 
             @Override
             public void onSurfaceTextureUpdated(SurfaceTexture st) {
+                onFrame();
             }
         });
         popup.show(lane);
     }
 
+    /**
+     * 每来一帧响一次。弹出时相机要是还没开过，那一刻它的预览尺寸是 null（开相机时才选），
+     * 窗口就不知道该裁哪一块；帧来了说明相机已经开好，这时补上。
+     */
+    private void onFrame() {
+        SideViewPopupView view = popup;
+        SingleCamera camera = boundCamera;
+        if (view == null) {
+            return;
+        }
+        if (!firstFrameSeen) {
+            firstFrameSeen = true;
+            com.kooo.evcam.blackbox.BlackBox.note("侧视弹窗第一帧：弹出后 "
+                    + (android.os.SystemClock.uptimeMillis() - shownAtMs) + "ms，几何"
+                    + (view.hasGeometry() ? "已知" : "未知"));
+        }
+        if (!view.hasGeometry() && camera != null) {
+            view.setSourceSize(camera.getPreviewSize());
+            if (view.hasGeometry()) {
+                AppLog.i(TAG, "侧视弹窗：相机开好后补上了预览尺寸 " + camera.getPreviewSize());
+            }
+        }
+    }
+
     private void hidePopup() {
         cancelRetry();
+        if (popup != null && popup.isShowing() && !firstFrameSeen) {
+            SingleCamera camera = boundCamera;
+            com.kooo.evcam.blackbox.BlackBox.note("侧视弹窗收起：弹了 "
+                    + (android.os.SystemClock.uptimeMillis() - shownAtMs) + "ms 一帧都没来；"
+                    + (camera == null ? "没接上相机" : "相机" + (camera.isCameraOpened() ? "开着" : "没开")
+                    + "，最近错误 " + camera.lastErrorName()));
+        }
         unbindCamera();
         if (popup != null) {
             popup.hide();
@@ -245,6 +282,9 @@ public class SideViewPopupService extends Service {
         }
         retryCount = 0;
         CameraNeeds.current().claim(CameraNeeds.Holder.SIDE_POPUP);
+        com.kooo.evcam.blackbox.BlackBox.note("侧视弹窗接相机：「" + LaneCycle.labelOf(popup.lane())
+                + "」路，相机" + (camera.isCameraOpened() ? "已开" : "未开，现在开")
+                + "，预览尺寸 " + previewSize + "，几何" + (popup.hasGeometry() ? "已知" : "未知（等第一帧补）"));
     }
 
     /** 窗口尺寸一变 TextureView 会改缓冲区尺寸，拨回会话用的那个（同后视镜）。 */
