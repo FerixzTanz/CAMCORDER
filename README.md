@@ -54,20 +54,16 @@ to turn on the phone's hotspot and connect the car to it.
 
 ## Install
 
-- **Recommended — the [latest stable release](../../releases/latest).** The first stable release
-  was [1.0.0](../../releases/tag/v1.0.0).
+**Before you start:** you need to know how to sideload an app onto the head unit through App Lab.
+This page does not cover that.
+
+- **Recommended — the [latest stable release](../../releases/latest).**
 - **Happy to try things early — the newest `-beta` on the [Releases](../../releases) page.** Or
   turn on *Include beta releases* under Settings → Check for updates and let the app fetch it.
-- Builds tagged `-alpha` are **not recommended**: they are test builds, often unverified on a
-  vehicle. The in-app update check never offers them. They are on the same
-  [Releases](../../releases) page if you want one anyway.
 
 Download the `ZeekrShortcut-*.apk` asset from the release page and sideload it through App Lab.
-
-Then open **Settings → Recording → Stream profile** and choose *Zeekr 7X (surround
-composite)*, or *surround + front and rear cabin* to add the cabin cameras. Restart the app to
-apply. If it reports that no composite stream was detected, this head unit or firmware does not
-provide one and the app will not work on it.
+When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise the head unit's
+installer gets stuck and later installs or updates fail.
 
 Building it yourself needs JDK 17+ and the Android SDK (compileSdk 36):
 
