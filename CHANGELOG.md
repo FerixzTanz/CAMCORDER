@@ -11,6 +11,14 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.4-alpha] - 2026-10-02
+
+- Main screen: vehicle status panel (experimental, off by default).
+- Settings → Interface → Vehicle status (experimental): a panel below Straighten on the main screen
+  shows doors and seat belts, brake and throttle, driver assistance switches and the horn, with the
+  info bar icons. The horn stays crossed out until its signal is found.
+- Driving info bar: the hands-on-wheel cell moves next to the driver assistance badges.
+
 ## [2.0.3-alpha] - 2026-10-02
 
 - Driving info bar: lamp cells reworked as agreed on the mock-ups; more adjustments to follow.

@@ -274,6 +274,11 @@
             android:title="@string/set_reduce_motion_title"
             android:summary="@string/set_reduce_motion_summary" />
 
+        <SwitchPreferenceCompat
+            android:key="pref_vehicle_status"
+            android:title="@string/set_vehicle_status_title"
+            android:summary="@string/set_vehicle_status_summary" />
+
         <!--
           鱼眼校正的两项：开关在图片回看的右上角，这里只管「怎么校正」。
           两种投影的视野上限不同，所以换投影时滑块要重新绑一次。

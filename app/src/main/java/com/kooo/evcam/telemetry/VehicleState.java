@@ -69,6 +69,8 @@ public final class VehicleState {
     public final Boolean rearPositionLamps;
     public final Boolean stopLamps;
     public final Boolean reverseLamps;
+    /** 正在按喇叭（Lab 还没找到读数，现在总是 null）。 */
+    public final Boolean horn;
     public final Float odometerKm;
     public final Double latitude;
     public final Double longitude;
@@ -102,6 +104,7 @@ public final class VehicleState {
         this.rearPositionLamps = b.rearPositionLamps;
         this.stopLamps = b.stopLamps;
         this.reverseLamps = b.reverseLamps;
+        this.horn = b.horn;
         this.odometerKm = b.odometerKm;
         this.latitude = b.latitude;
         this.longitude = b.longitude;
@@ -124,7 +127,7 @@ public final class VehicleState {
                 autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
-                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps,
+                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn,
                 odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
@@ -163,6 +166,7 @@ public final class VehicleState {
         private Boolean rearPositionLamps;
         private Boolean stopLamps;
         private Boolean reverseLamps;
+        private Boolean horn;
         private Float odometerKm;
         private Double latitude;
         private Double longitude;
@@ -199,6 +203,7 @@ public final class VehicleState {
             rearPositionLamps = s.rearPositionLamps;
             stopLamps = s.stopLamps;
             reverseLamps = s.reverseLamps;
+            horn = s.horn;
             odometerKm = s.odometerKm;
             latitude = s.latitude;
             longitude = s.longitude;
@@ -231,6 +236,7 @@ public final class VehicleState {
         public Builder rearPositionLamps(Boolean v) { rearPositionLamps = v; return this; }
         public Builder stopLamps(Boolean v) { stopLamps = v; return this; }
         public Builder reverseLamps(Boolean v) { reverseLamps = v; return this; }
+        public Builder horn(Boolean v) { horn = v; return this; }
         public Builder odometerKm(Float v) { odometerKm = v; return this; }
         public Builder position(Double lat, Double lon) { latitude = lat; longitude = lon; return this; }
 

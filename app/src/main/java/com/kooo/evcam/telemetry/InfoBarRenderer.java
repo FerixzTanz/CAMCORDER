@@ -64,7 +64,13 @@ public final class InfoBarRenderer {
 
     private static final String[] ASSIST_LABELS = {"AEB", "FCW", "LDW", "LKA", "BSD", "RCW"};
 
+    /** 位图的像素宽（信息条上就是视频宽）。 */
     private final int width;
+    /** 逻辑宽度：格子坐标量的是它（信息条上等于 width）。 */
+    private final int logicalWidth;
+    private final float scale;
+    /** 信息条（顶上有一道分隔线）还是车辆状态面板。 */
+    private final boolean strip;
     private final List<InfoBarLayout.Placed> cells;
     private final InfoBar.Options options;
     private final Bitmap bitmap;
@@ -79,11 +85,26 @@ public final class InfoBarRenderer {
     private long lastVersion = -1;
     private boolean drawnOnce;
 
+    /** 录像下面那一条：宽 = 视频宽，高 {@link #HEIGHT}。 */
     public InfoBarRenderer(int width, InfoBar.Options options) {
-        this.width = Math.max(2, width);
-        this.cells = InfoBarLayout.fit(this.width);
+        this(InfoBarLayout.fit(Math.max(2, width)), Math.max(2, width), HEIGHT, 1f, true, options);
+    }
+
+    /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。 */
+    public InfoBarRenderer(InfoBarLayout.Arrangement arrangement, float scale, InfoBar.Options options) {
+        this(arrangement.cells, arrangement.width, arrangement.height, scale, false, options);
+    }
+
+    private InfoBarRenderer(List<InfoBarLayout.Placed> cells, int logicalWidth, int logicalHeight, float scale,
+                            boolean strip, InfoBar.Options options) {
+        this.cells = cells;
+        this.logicalWidth = logicalWidth;
+        this.scale = scale;
+        this.strip = strip;
+        this.width = Math.max(2, Math.round(logicalWidth * scale));
         this.options = options;
-        this.bitmap = Bitmap.createBitmap(this.width, HEIGHT, Bitmap.Config.ARGB_8888);
+        this.bitmap = Bitmap.createBitmap(this.width, Math.max(2, Math.round(logicalHeight * scale)),
+                Bitmap.Config.ARGB_8888);
         this.canvas = new Canvas(bitmap);
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeCap(Paint.Cap.ROUND);
@@ -133,15 +154,20 @@ public final class InfoBarRenderer {
 
     private void draw(VehicleState s) {
         canvas.drawColor(BG);
-        fill.setColor(DIVIDER);
-        canvas.drawRect(0, 0, width, 2, fill);
+        canvas.save();
+        canvas.scale(scale, scale);
+        if (strip) {
+            fill.setColor(DIVIDER);
+            canvas.drawRect(0, 0, logicalWidth, 2, fill);
+        }
         for (InfoBarLayout.Placed placed : cells) {
             canvas.save();
-            canvas.translate(placed.x, 0);
+            canvas.translate(placed.x, placed.y);
             // 没启用的格（没验证过、开发者也没激活）按没数据画：斜杠划掉
             drawCell(placed.cell, InfoBarLayout.live(placed.cell, options) ? s : VehicleState.empty());
             canvas.restore();
         }
+        canvas.restore();
     }
 
     private void drawCell(InfoBarLayout.Cell cell, VehicleState s) {
@@ -199,6 +225,9 @@ public final class InfoBarRenderer {
             case ASSIST:
                 drawAssist(new Boolean[]{s.aeb, s.forwardCollisionWarning,
                         s.laneDepartureWarning, s.laneKeepingAid, s.blindSpotAssist, s.rearCollisionWarning});
+                break;
+            case HORN:
+                drawHorn(cx, cy, s.horn);
                 break;
             case ODOMETER:
                 drawOdometer(cx, cy, s.odometerKm);
@@ -338,6 +367,41 @@ public final class InfoBarRenderer {
         text.setTextSize(20f);
         text.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("°", cx + half + 2, cy, text);
+    }
+
+    /** 喇叭：一只号角，右边两道声波。亮填实，灭画轮廓，没数据深灰加斜杠。 */
+    private void drawHorn(float cx, float cy, Boolean on) {
+        int color = lineTone(on, false);
+        path.reset();
+        path.moveTo(cx - 30, cy - 9);
+        path.lineTo(cx - 14, cy - 9);
+        path.lineTo(cx + 4, cy - 22);
+        path.lineTo(cx + 4, cy + 22);
+        path.lineTo(cx - 14, cy + 9);
+        path.lineTo(cx - 30, cy + 9);
+        path.close();
+        if (Boolean.TRUE.equals(on)) {
+            fill.setColor(ON);
+            canvas.drawPath(path, fill);
+        } else {
+            if (on == null) {
+                fill.setColor(UNKNOWN_FILL);
+                canvas.drawPath(path, fill);
+            }
+            stroke.setColor(color);
+            stroke.setStrokeWidth(on == null ? 4f : 6f);
+            canvas.drawPath(path, stroke);
+        }
+        stroke.setColor(color);
+        stroke.setStrokeWidth(6f);
+        for (int i = 0; i < 2; i++) {
+            float r = 14 + i * 12;
+            rect.set(cx + 4 - r, cy - r, cx + 4 + r, cy + r);
+            canvas.drawArc(rect, -40, 80, false, stroke);
+        }
+        if (on == null) {
+            slash(cx - 30, cy + 30, cx + 30, cy - 30);
+        }
     }
 
     /** 手扶方向盘：小方向盘，两侧各一只手。 */

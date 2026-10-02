@@ -30,7 +30,7 @@ public class InfoBarLayoutTest {
     @Test
     public void aSurroundWideBarHoldsEveryCellInDisplayOrder() {
         List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND);
-        assertEquals(InfoBarLayout.Cell.values().length, placed.size());
+        assertEquals(stripCells(), placed.size());
         assertEquals(InfoBarLayout.Cell.TURN_LEFT, placed.get(0).cell);
         assertEquals(InfoBarLayout.MARGIN, placed.get(0).x);
         InfoBarLayout.Placed last = placed.get(placed.size() - 1);
@@ -42,7 +42,7 @@ public class InfoBarLayoutTest {
     @Test
     public void aNarrowBarDropsLowPriorityCellsFirst() {
         List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(CABIN);
-        assertTrue(placed.size() < InfoBarLayout.Cell.values().length);
+        assertTrue(placed.size() < stripCells());
         assertTrue(has(placed, InfoBarLayout.Cell.SPEED));
         assertTrue(has(placed, InfoBarLayout.Cell.TURN_LEFT));
         assertTrue(has(placed, InfoBarLayout.Cell.HAZARD));
@@ -57,7 +57,7 @@ public class InfoBarLayoutTest {
      */
     @Test
     public void everyCellIsPlacedButOnlyVerifiedOnesAreLiveByDefault() {
-        assertEquals(InfoBarLayout.Cell.values().length, InfoBarLayout.fit(SURROUND).size());
+        assertEquals(stripCells(), InfoBarLayout.fit(SURROUND).size());
         InfoBar.Options byDefault = InfoBar.Options.usable();
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
@@ -70,11 +70,58 @@ public class InfoBarLayoutTest {
         }
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC,
-                InfoBarLayout.Cell.ASSIST}) {
+                InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.HORN}) {
             assertFalse(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, InfoBar.Options.all()));
+        }
+    }
+
+    private static int stripCells() {
+        int n = 0;
+        for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {
+            if (cell.onStrip) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** 手扶方向盘挨着驾驶辅助；喇叭不上信息条。 */
+    @Test
+    public void handsSitsNextToTheAssistBadgesAndTheHornStaysOffTheStrip() {
+        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND);
+        int hands = -1;
+        int assist = -1;
+        for (int i = 0; i < placed.size(); i++) {
+            if (placed.get(i).cell == InfoBarLayout.Cell.HANDS) {
+                hands = i;
+            }
+            if (placed.get(i).cell == InfoBarLayout.Cell.ASSIST) {
+                assist = i;
+            }
+        }
+        assertEquals(assist - 1, hands);
+        assertFalse(has(placed, InfoBarLayout.Cell.HORN));
+    }
+
+    /** 车辆状态面板：点名的那几格都在，互不重叠，都在面板里面。 */
+    @Test
+    public void thePanelHoldsTheRequestedCellsWithoutOverlap() {
+        InfoBarLayout.Arrangement panel = InfoBarLayout.panel();
+        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.PEDALS,
+                InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.HORN}) {
+            assertTrue(cell.name(), has(panel.cells, cell));
+        }
+        for (InfoBarLayout.Placed a : panel.cells) {
+            assertTrue(a.x >= 0 && a.x + a.cell.width <= panel.width);
+            assertTrue(a.y >= 0 && a.y + InfoBar.HEIGHT <= panel.height);
+            for (InfoBarLayout.Placed b : panel.cells) {
+                if (a != b && a.y == b.y) {
+                    assertTrue(a.x + a.cell.width <= b.x || b.x + b.cell.width <= a.x);
+                }
+            }
         }
     }
 

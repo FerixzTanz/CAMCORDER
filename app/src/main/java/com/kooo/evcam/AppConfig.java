@@ -85,6 +85,7 @@ public class AppConfig {
     private static final String KEY_WATERMARK_SPEC_ENABLED = "watermark_spec_enabled";  // 角标附带录制规格
     private static final String KEY_PHOTO_VIA_JPEG = "photo_via_jpeg";
     private static final String KEY_INFO_BAR = "info_bar_enabled";  // 录像下方的行驶信息条
+    private static final String KEY_VEHICLE_STATUS = "vehicle_status_panel";  // 主界面的车辆状态面板（试验性）
     private static final String KEY_INFO_BAR_ALL = "info_bar_all";  // 开发者：连没验证的栏目一起启用
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
@@ -696,10 +697,24 @@ public class AppConfig {
      * SharedPreferences 只弱引用监听器，不拿住会被回收，之后就再也收不到了。</p>
      */
     public SharedPreferences.OnSharedPreferenceChangeListener onFisheyeChanged(Runnable action) {
+        return onChanged(action, KEY_PHOTO_FISHEYE, KEY_PHOTO_FISHEYE_FOV, KEY_FISHEYE_STRENGTH,
+                SettingsRegistry.FISHEYE_PROJECTION.key);
+    }
+
+    public void removeFisheyeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
+        removeChangeListener(listener);
+    }
+
+    /** 车辆状态面板的开关、「激活所有栏目信息」一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
+    public SharedPreferences.OnSharedPreferenceChangeListener onVehicleStatusChanged(Runnable action) {
+        return onChanged(action, KEY_VEHICLE_STATUS, KEY_INFO_BAR_ALL);
+    }
+
+    /** 这几项里有一项变了就叫 {@code action}。返回的监听器调用方要拿住，用完交给 {@link #removeChangeListener}。 */
+    public SharedPreferences.OnSharedPreferenceChangeListener onChanged(Runnable action, String... keys) {
+        java.util.List<String> watched = java.util.Arrays.asList(keys);
         SharedPreferences.OnSharedPreferenceChangeListener listener = (changed, key) -> {
-            if (KEY_PHOTO_FISHEYE.equals(key) || KEY_PHOTO_FISHEYE_FOV.equals(key)
-                    || KEY_FISHEYE_STRENGTH.equals(key)
-                    || SettingsRegistry.FISHEYE_PROJECTION.key.equals(key)) {
+            if (watched.contains(key)) {
                 action.run();
             }
         };
@@ -707,7 +722,7 @@ public class AppConfig {
         return listener;
     }
 
-    public void removeFisheyeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
+    public void removeChangeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
         if (listener != null) {
             prefs.unregisterOnSharedPreferenceChangeListener(listener);
         }
@@ -1355,6 +1370,15 @@ public class AppConfig {
      * 锁在开发者模式后面：没解锁时一律当关着，存着的值不动 ——
      * 设置里那个开关没解锁时是灰的、关着的，这里必须和它说同一句话。
      */
+    /** 主界面动作栏里的车辆状态面板（试验性）。默认关。 */
+    public boolean isVehicleStatusEnabled() {
+        return prefs.getBoolean(KEY_VEHICLE_STATUS, false);
+    }
+
+    public void setVehicleStatusEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_VEHICLE_STATUS, enabled).apply();
+    }
+
     public boolean isInfoBarAllActive() {
         return com.kooo.evcam.settings.DeveloperMode.isUnlocked()
                 && prefs.getBoolean(KEY_INFO_BAR_ALL, false);

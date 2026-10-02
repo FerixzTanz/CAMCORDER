@@ -848,6 +848,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
         bindSwitch("pref_reduce_motion", appConfig.isReduceMotionWhileRecording(),
                 value -> appConfig.setReduceMotionWhileRecording(value));
+        // 车辆状态面板：主界面那个控件自己听这个开关
+        bindSwitch("pref_vehicle_status", appConfig.isVehicleStatusEnabled(),
+                value -> appConfig.setVehicleStatusEnabled(value));
 
         bindEnum("pref_fisheye_projection", SettingsRegistry.FISHEYE_PROJECTION,
                 appConfig.getFisheyeProjection(), value -> {
