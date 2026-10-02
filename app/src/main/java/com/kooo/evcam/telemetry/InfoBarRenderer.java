@@ -229,6 +229,9 @@ public final class InfoBarRenderer {
             case HORN:
                 drawHorn(cx, cy, s.horn);
                 break;
+            case SENTRY:
+                drawSentry(cx, cy, s.sentry);
+                break;
             case ODOMETER:
                 drawOdometer(cx, cy, s.odometerKm);
                 break;
@@ -367,6 +370,50 @@ public final class InfoBarRenderer {
         text.setTextSize(20f);
         text.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("°", cx + half + 2, cy, text);
+    }
+
+    /**
+     * 哨兵模式：一面盾牌。关 = 灰色轮廓；开 = 填实；布防（锁车后）= 填实，中间多一只睁开的眼睛。
+     * 开和布防靠「有没有眼睛」分，不靠颜色深浅。没数据深灰加斜杠。
+     */
+    private void drawSentry(float cx, float cy, Integer code) {
+        path.reset();
+        path.moveTo(cx, cy - 30);
+        path.lineTo(cx + 24, cy - 21);
+        path.lineTo(cx + 24, cy + 1);
+        path.quadTo(cx + 24, cy + 21, cx, cy + 31);
+        path.quadTo(cx - 24, cy + 21, cx - 24, cy + 1);
+        path.lineTo(cx - 24, cy - 21);
+        path.close();
+        boolean on = code != null && code > 0;
+        if (code == null) {
+            fill.setColor(UNKNOWN_FILL);
+            canvas.drawPath(path, fill);
+            stroke.setColor(UNKNOWN_LINE);
+            stroke.setStrokeWidth(4f);
+            canvas.drawPath(path, stroke);
+            slash(cx - 30, cy + 30, cx + 30, cy - 30);
+            return;
+        }
+        if (!on) {
+            stroke.setColor(OFF);
+            stroke.setStrokeWidth(6f);
+            canvas.drawPath(path, stroke);
+            return;
+        }
+        fill.setColor(ON);
+        canvas.drawPath(path, fill);
+        if (code == 2) {
+            path.reset();
+            path.moveTo(cx - 15, cy);
+            path.quadTo(cx, cy - 13, cx + 15, cy);
+            path.quadTo(cx, cy + 13, cx - 15, cy);
+            path.close();
+            fill.setColor(LAMP_CORE);
+            canvas.drawPath(path, fill);
+            fill.setColor(BG);
+            canvas.drawCircle(cx, cy, 5, fill);
+        }
     }
 
     /** 喇叭：一只号角，右边两道声波。亮填实，灭画轮廓，没数据深灰加斜杠。 */

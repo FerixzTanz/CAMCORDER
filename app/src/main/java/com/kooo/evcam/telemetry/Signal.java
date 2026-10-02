@@ -100,9 +100,9 @@ public enum Signal {
     DAY_NIGHT(Group.VEHICLE, Kind.SENSOR_EVENT, 0x00201000, 0, R.string.vi_day_night, Trust.CONFIRMED, Format.DAY_NIGHT),
     /**
      * 哨兵模式（SETTING_FUNC_VSTD_MODE_STS）：0 关，1 开，2 推测是锁车后布防（锁车一分半后 1 → 2，解锁回 1，挂 D 回 0；
-     * Lab 0.18.0）。1 和 2 都算开着。还在待定。
+     * Lab 0.18.0）。1 和 2 都算开着。Lab 还在对；用户 2026-10-02 点名先开放：熄屏后还能不能录，看的就是它。
      */
-    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.UNVERIFIED, Format.SENTRY),
+    SENTRY_MODE(Group.VEHICLE, Kind.FUNCTION, 0x20240100, 0, R.string.vi_sentry_mode, Trust.PROVISIONAL, Format.SENTRY),
 
     // ---- 安全辅助（读的是开关）
     AEB(Group.ASSIST, Kind.FUNCTION, 0x20070E00, 0, R.string.vi_aeb, Trust.CONFIRMED, Format.ON_OFF),
@@ -121,7 +121,7 @@ public enum Signal {
     public enum Trust {
         /** Lab 手册「实验中观察一致的」一节里有它，这里用到的含义、取值、量程都没挂着「待测 / 待定」 */
         CONFIRMED,
-        /** 车上跟着变、能用，但量程 / 比例 / 某个场景还等 Lab 测；用户点名先开放的（方向盘、油门刹车、日行灯） */
+        /** 车上跟着变、能用，但含义 / 量程 / 某个场景还等 Lab 测；用户点名先开放的（现在是哨兵模式） */
         PROVISIONAL,
         /** 读得到，含义没对上，或者还没专门测过 */
         UNVERIFIED

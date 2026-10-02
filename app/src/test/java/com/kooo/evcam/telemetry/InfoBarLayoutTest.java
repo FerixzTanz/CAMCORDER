@@ -104,13 +104,16 @@ public class InfoBarLayoutTest {
         }
         assertEquals(assist - 1, hands);
         assertFalse(has(placed, InfoBarLayout.Cell.HORN));
+        assertFalse(has(placed, InfoBarLayout.Cell.SENTRY));
     }
 
     /** 车辆状态面板：点名的那几格都在，互不重叠，都在面板里面。 */
     @Test
     public void thePanelHoldsTheRequestedCellsWithoutOverlap() {
         InfoBarLayout.Arrangement panel = InfoBarLayout.panel();
-        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{InfoBarLayout.Cell.CABIN, InfoBarLayout.Cell.PEDALS,
+        assertFalse(has(panel.cells, InfoBarLayout.Cell.CABIN));
+        assertTrue(InfoBarLayout.live(InfoBarLayout.Cell.SENTRY, InfoBar.Options.usable()));
+        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{InfoBarLayout.Cell.SENTRY, InfoBarLayout.Cell.PEDALS,
                 InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.HORN}) {
             assertTrue(cell.name(), has(panel.cells, cell));
         }

@@ -71,6 +71,8 @@ public final class VehicleState {
     public final Boolean reverseLamps;
     /** 正在按喇叭（Lab 还没找到读数，现在总是 null）。 */
     public final Boolean horn;
+    /** 哨兵模式：0 关、1 开、2 布防（锁车后）。熄屏后还能不能录，看的就是它。 */
+    public final Integer sentry;
     public final Float odometerKm;
     public final Double latitude;
     public final Double longitude;
@@ -105,6 +107,7 @@ public final class VehicleState {
         this.stopLamps = b.stopLamps;
         this.reverseLamps = b.reverseLamps;
         this.horn = b.horn;
+        this.sentry = b.sentry;
         this.odometerKm = b.odometerKm;
         this.latitude = b.latitude;
         this.longitude = b.longitude;
@@ -127,7 +130,7 @@ public final class VehicleState {
                 autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
-                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn,
+                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn, sentry,
                 odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
@@ -167,6 +170,7 @@ public final class VehicleState {
         private Boolean stopLamps;
         private Boolean reverseLamps;
         private Boolean horn;
+        private Integer sentry;
         private Float odometerKm;
         private Double latitude;
         private Double longitude;
@@ -204,6 +208,7 @@ public final class VehicleState {
             stopLamps = s.stopLamps;
             reverseLamps = s.reverseLamps;
             horn = s.horn;
+            sentry = s.sentry;
             odometerKm = s.odometerKm;
             latitude = s.latitude;
             longitude = s.longitude;
@@ -237,6 +242,7 @@ public final class VehicleState {
         public Builder stopLamps(Boolean v) { stopLamps = v; return this; }
         public Builder reverseLamps(Boolean v) { reverseLamps = v; return this; }
         public Builder horn(Boolean v) { horn = v; return this; }
+        public Builder sentry(Integer v) { sentry = v; return this; }
         public Builder odometerKm(Float v) { odometerKm = v; return this; }
         public Builder position(Double lat, Double lon) { latitude = lat; longitude = lon; return this; }
 

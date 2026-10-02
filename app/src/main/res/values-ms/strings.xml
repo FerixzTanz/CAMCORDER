@@ -487,7 +487,7 @@
     <string name="set_reduce_motion_title">Kurangkan animasi semasa merakam</string>
     <string name="set_reduce_motion_summary">Tiada peralihan skrin semasa merakam, GPU dibiarkan untuk pengekod</string>
     <string name="set_vehicle_status_title">Status kenderaan (percubaan)</string>
-    <string name="set_vehicle_status_summary">Di bawah Luruskan pada skrin utama: pintu dan tali pinggang, brek dan pendikit, suis bantuan pemandu dan hon, dilukis dengan ikon bar maklumat</string>
+    <string name="set_vehicle_status_summary">Di bawah Luruskan pada skrin utama: Mod Sentry, brek dan pendikit, suis bantuan pemandu dan hon, dilukis dengan ikon bar maklumat</string>
     <string name="set_fisheye_projection_title">Unjuran mata ikan</string>
     <string name="set_fisheye_projection_summary">%1$s · untuk pratonton langsung, foto dan video</string>
     <string name="opt_projection_rectilinear">Garisan lurus</string>

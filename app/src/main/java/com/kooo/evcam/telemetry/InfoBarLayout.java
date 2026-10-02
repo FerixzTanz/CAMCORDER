@@ -69,6 +69,8 @@ public final class InfoBarLayout {
         ASSIST(200, 6, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
         /** 按喇叭（Lab 还没找到读数）。只在车辆状态面板上，信息条不放。 */
         HORN(80, 6, Verdict.NO, false),
+        /** 哨兵模式：关 / 开 / 布防。只在车辆状态面板上（以后也会用在别处：熄屏后能不能接着录看它）。 */
+        SENTRY(80, 6, false, Signal.SENTRY_MODE),
         ODOMETER(160, 9, Signal.ODOMETER),
         /** 经纬度来自系统定位，1.72.0 车上看到过。 */
         POSITION(170, 9, Verdict.YES);
@@ -81,9 +83,13 @@ public final class InfoBarLayout {
         private final Verdict verdict;
 
         Cell(int width, int priority, Signal... signals) {
+            this(width, priority, true, signals);
+        }
+
+        Cell(int width, int priority, boolean onStrip, Signal... signals) {
             this.width = width;
             this.priority = priority;
-            this.onStrip = true;
+            this.onStrip = onStrip;
             this.signals = signals;
             this.verdict = null;
         }
@@ -146,11 +152,11 @@ public final class InfoBarLayout {
     }
 
     /**
-     * 车辆状态面板放哪几格，一行一组：车门和安全带、刹车和油门；驾驶辅助、喇叭。
-     * 用户 2026-10-02 点名要看的：开关门、安全带、驾驶辅助开关、刹车油门开度、鸣笛。
+     * 车辆状态面板放哪几格，一行一组：哨兵模式、刹车和油门；驾驶辅助、喇叭。
+     * 用户 2026-10-02 点名要看的：哨兵模式、驾驶辅助开关、刹车油门开度、鸣笛（车门和安全带后来拿掉了）。
      */
     static final Cell[][] PANEL_ROWS = {
-            {Cell.CABIN, Cell.PEDALS},
+            {Cell.SENTRY, Cell.PEDALS},
             {Cell.ASSIST, Cell.HORN},
     };
 

@@ -154,6 +154,13 @@ public class VehicleStateMapperTest {
         assertNull(map(readings(), true).stopLamps);
     }
 
+    /** 哨兵模式原样带过去：0 关、1 开、2 布防；用户先开放了，非开发者也看得到。 */
+    @Test
+    public void sentryComesThroughEvenWhenOnlyUsableSignalsAreKept() {
+        assertEquals(Integer.valueOf(2), map(readings(Signal.SENTRY_MODE, 2).usableOnly(), true).sentry);
+        assertEquals(Integer.valueOf(0), map(readings(Signal.SENTRY_MODE, 0), true).sentry);
+    }
+
     @Test
     public void nothingKnownLeavesTheMasksNull() {
         VehicleState s = map(readings(), true);

@@ -487,7 +487,7 @@
     <string name="set_reduce_motion_title">Less motion while recording</string>
     <string name="set_reduce_motion_summary">No screen transitions while recording, leaving the GPU to the encoder</string>
     <string name="set_vehicle_status_title">Vehicle status (experimental)</string>
-    <string name="set_vehicle_status_summary">Below Straighten on the main screen: doors and seat belts, brake and throttle, driver assistance switches and the horn, drawn with the info bar icons</string>
+    <string name="set_vehicle_status_summary">Below Straighten on the main screen: Sentry Mode, brake and throttle, driver assistance switches and the horn, drawn with the info bar icons</string>
     <string name="set_fisheye_projection_title">Fisheye projection</string>
     <string name="set_fisheye_projection_summary">%1$s · applies to the live preview, photos and videos</string>
     <string name="opt_projection_rectilinear">Straight lines</string>

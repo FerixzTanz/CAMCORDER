@@ -11,6 +11,12 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.5-alpha] - 2026-10-02
+
+- Sentry Mode status is read for everyone (it decides whether recording can carry on with the screen off).
+- Vehicle status panel: Sentry Mode (off, on, armed) takes the first cell; doors and seat belts
+  are no longer on it.
+
 ## [2.0.4-alpha] - 2026-10-02
 
 - Main screen: vehicle status panel (experimental, off by default).

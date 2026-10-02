@@ -71,6 +71,7 @@ public final class VehicleStateMapper {
         b.rearPositionLamps(r.bool(Signal.REAR_POSITION_LAMP));
         b.stopLamps(r.bool(Signal.STOP_LAMP));
         b.reverseLamps(r.bool(Signal.REVERSE_LAMP));
+        b.sentry(r.code(Signal.SENTRY_MODE));
         b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));
         b.aeb(r.bool(Signal.AEB));
