@@ -242,7 +242,7 @@
     <string name="set_side_popup_straighten_title">Luruskan gambar</string>
     <string name="set_side_popup_straighten_summary">Membetulkan lengkungan fisheye sebelum dipaparkan; tiga tetapan di bawah menetapkan lebar dan arah pandangan. Hanya mengubah tetingkap timbul; rakaman tidak terjejas</string>
     <string name="set_side_popup_fov_title">Lebar pandangan (°)</string>
-    <string name="set_side_popup_fov_summary">Selebar mana pandangan dari sisi ke sisi, sehingga 180°. Lebih lebar, lebih melengkung garisan mendatar (garisan menegak kekal lurus). Hanya berfungsi apabila Luruskan gambar dihidupkan</string>
+    <string name="set_side_popup_fov_summary">Selebar mana pandangan dari sisi ke sisi. Lalai 80°, lebih kurang seperti Honda LaneWatch (cermin biasa kira-kira 20°); sehingga 180°. Lebih lebar menunjukkan lebih banyak, tetapi kereta kelihatan lebih kecil dan jauh, dan garisan mendatar lebih melengkung. Hanya berfungsi apabila Luruskan gambar dihidupkan</string>
     <string name="set_side_popup_yaw_title">Hala ke belakang (°)</string>
     <string name="set_side_popup_yaw_summary">Positif memusingkan pandangan ke belakang (titik buta), negatif ke hadapan. Arah ini hanya tekaan: jika berpusing ke arah salah, seret ke arah lain</string>
     <string name="set_side_popup_pitch_title">Hala ke atas (°)</string>

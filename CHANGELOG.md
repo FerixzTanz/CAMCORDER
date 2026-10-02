@@ -11,6 +11,12 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.7-beta] - 2026-10-02
+
+- Turn-signal side view: **View width** now defaults to 80°, about what Honda LaneWatch shows (a
+  normal mirror is about 20°), so cars stay large enough to judge distance. This resets any value
+  you set before; you can still widen it up to 180°.
+
 ## [2.0.6-beta] - 2026-10-02
 
 Turn-signal side view:

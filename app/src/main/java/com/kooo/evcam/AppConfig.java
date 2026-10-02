@@ -107,11 +107,15 @@ public class AppConfig {
     public static final int SIDE_POPUP_MIN_SHAPE_PERCENT = 100;
     public static final int SIDE_POPUP_MAX_SHAPE_PERCENT = 300;
     public static final int SIDE_POPUP_DEFAULT_SHAPE_PERCENT = 180;
-    private static final String KEY_SIDE_POPUP_FOV = "side_popup_fov";  // 虚拟相机视野（度）
+    // 换了键名：用户 2026-10-02 要求改用业内的宽度（本田 LaneWatch 约 80°），旧键里存的 90 / 120 一并作废
+    private static final String KEY_SIDE_POPUP_FOV = "side_popup_fov_v2";  // 虚拟相机横向视野（度）
     private static final String KEY_SIDE_POPUP_YAW = "side_popup_yaw";  // 往车尾转多少度，负数往车头
     private static final String KEY_SIDE_POPUP_PITCH = "side_popup_pitch";  // 往上（车外）转多少度，负数往下
-    /** 默认值是猜的（见 SideViewProjection）：横向 120°（弹窗变宽后从 90° 放宽），往车尾转 50°，稍往上 15°。 */
-    public static final int SIDE_POPUP_DEFAULT_FOV = 120;
+    /**
+     * 横向 80°：本田 LaneWatch 公开的数（普通后视镜 18–22°），够看两条车道又不至于把车缩得太小、判断不了距离。
+     * 往车尾转 50°、稍往上 15° 是猜的（见 SideViewProjection）。
+     */
+    public static final int SIDE_POPUP_DEFAULT_FOV = 80;
     public static final int SIDE_POPUP_DEFAULT_YAW = 50;
     public static final int SIDE_POPUP_DEFAULT_PITCH = 15;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
