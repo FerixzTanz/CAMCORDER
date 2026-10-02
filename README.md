@@ -16,7 +16,7 @@ A surround-view dash cam for the ZEEKR 7X head unit.
 
 App Lab gives a third-party app the four surround cameras as **one pre-stitched stream**: four
 square views packed into a single frame, which previews as a distorted vertical strip. This app
-splits it back into a 2×2 grid and builds on that.
+splits it back into a 2×2 grid and builds on that. Chinese, English and Malay interface.
 
 ### Dash cam
 
@@ -29,17 +29,26 @@ splits it back into a 2×2 grid and builds on that.
 - Photos use each camera's largest size.
 - Records to a **USB drive only**. Writing to the head unit's built-in flash sits behind developer
   options, because that storage cannot be replaced once worn out.
+- *Driving info bar* (experimental, off by default): turn signals, steering, gear, pedals, speed,
+  lamps and more, recorded in a strip under the video.
 
-On the main screen, tap any view to fill the preview with it and tap again to go back. A floating
+On the main screen, tap any view to fill the preview with it and tap again to go back. The
+**Straighten** button removes the fisheye bend, on the main screen and in playback. A floating
 button shows whether recording is running and opens the app from anywhere.
 
 ### Super mirror
 
 An electronic rear-view mirror: a floating, dockable window showing any one camera enlarged. Pinch
 to zoom; swipe left or right to change camera; swipe up or down in the middle third to raise or
-lower the framing. Push it half off-screen to hide it at the edge, and tap to bring it back. The
+lower the framing. Or turn on *Button mode* and tap the top, bottom, left or right of the window to
+switch camera. Push it half off-screen to hide it at the edge, and tap to bring it back. The
 rear camera is mirrored, like a real mirror. Fisheye correction with an adjustable field of view is
 optional.
+
+### Playback
+
+Video playback shows every camera together, in sync; tap one to enlarge it, tap again to go back.
+Photo playback uses the same layout.
 
 ### Send to your phone
 
@@ -102,8 +111,8 @@ Diagnostics**.
   that does not provide one gets nothing split.
 - Factory features come first: the built-in 360° view, reversing camera and parking cameras can
   reclaim a camera at any time.
-- Starting on boot, recording on launch and preventing sleep are off by default. Recording with
-  the screen off is only available with developer options on.
+- Starting on boot and recording on launch are off by default. Recording carries on with the
+  screen off only while the car's Sentry Mode keeps the head unit awake.
 - Cropping a surround view is switched off for now.
 - On-vehicle validation is ongoing. Automated tests cover the pure logic only; test in a stationary
   vehicle first.
