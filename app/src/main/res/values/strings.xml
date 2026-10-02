@@ -261,7 +261,7 @@
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，下面三项调视野和朝向。只影响弹窗的显示，录像照旧</string>
     <string name="set_side_popup_fov_title">视野（°）</string>
-    <string name="set_side_popup_fov_summary">越小越放大。只在「拉直画面」开着时起作用</string>
+    <string name="set_side_popup_fov_summary">左右看多宽，最大 180°。越宽横线越弯（竖线保持直）。只在「拉直画面」开着时起作用</string>
     <string name="set_side_popup_yaw_title">往后看（°）</string>
     <string name="set_side_popup_yaw_summary">正数朝车尾（盲区）转，负数朝车头。方向是猜的：反了就往另一头拉</string>
     <string name="set_side_popup_pitch_title">往上看（°）</string>
@@ -270,8 +270,10 @@
     <string name="set_side_popup_close_delay_ms_summary">1000 毫秒 = 1 秒。0 表示灯一灭就收。原厂画面出来时照样立刻收</string>
     <string name="set_side_popup_instant_title">即时弹出</string>
     <string name="set_side_popup_instant_summary">挂 D 档时让侧视窗在后台备着，打灯马上有画面。代价是开车时相机一直开着，多用一点电</string>
-    <string name="set_side_popup_size_title">弹窗大小（屏幕高度的 %）</string>
-    <string name="set_side_popup_size_summary">最大到半个屏幕宽：左右两个弹窗在屏幕中线相接</string>
+    <string name="set_side_popup_size_title">弹窗高度（屏幕高度的 %）</string>
+    <string name="set_side_popup_size_summary">宽度按下面的形状跟着变</string>
+    <string name="set_side_popup_shape_summary">100 是正方形，越大越宽。最宽到半个屏幕：左右两个弹窗在屏幕中线相接</string>
+    <string name="set_side_popup_shape_title">弹窗形状（宽 ÷ 高，%）</string>
     <string name="set_side_popup_vertical_title">上下位置（%）</string>
     <string name="set_side_popup_vertical_summary">0 贴顶，100 贴底</string>
     <string name="msg_rearview_reset">超级后视镜取景与位置已重置</string>

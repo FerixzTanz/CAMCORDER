@@ -9,6 +9,12 @@ package com.kooo.evcam.zeekr;
  * 裁不到 70° 以外。这里先把虚拟相机<b>转一个角度</b>，再按同一个模型反投影：
  * 等距鱼眼，原图半径 0.5（这一路的边）对应偏离光轴 90°。转 80° 之后画面中心就落在鱼眼边上。</p>
  *
+ * <h3>横向用柱面投影（2026-10-02，弹窗改成长方形之后）</h3>
+ *
+ * <p>弹窗变宽是为了左右看得更多。直线投影横向放在 tan(方位角) 上，过了 120° 边上拉得没法看；
+ * 柱面投影横向<b>正比于方位角</b>，180° 也装得下，竖线照样直，只是横线略弯（同
+ * {@link FisheyeProjection#cylindricalSourcePoint} 的取舍）。纵向按窗口宽高比缩，画面不被拉扁。</p>
+ *
  * <h3>方向是猜的（2026-10-01，用户实车反馈「往后不够」后改）</h3>
  *
  * <p>同 {@link SideViewAim}：每一路<b>上边朝车外</b>，左侧那一路<b>左边是车尾</b>、右侧那一路<b>右边是车尾</b>。
@@ -19,7 +25,7 @@ package com.kooo.evcam.zeekr;
 public final class SideViewProjection {
 
     public static final float MIN_FOV_DEGREES = 60f;
-    public static final float MAX_FOV_DEGREES = 130f;
+    public static final float MAX_FOV_DEGREES = 180f;
     public static final float MAX_YAW_DEGREES = 80f;
     public static final float MAX_PITCH_DEGREES = 60f;
 
@@ -33,19 +39,21 @@ public final class SideViewProjection {
      *
      * @param u          输出画面横向 0..1
      * @param v          输出画面纵向 0..1
-     * @param fovDegrees 虚拟相机的视野（左右边缘之间的角度）
+     * @param fovDegrees 虚拟相机的横向视野（左右边缘之间的角度）
+     * @param aspect     输出画面的宽 ÷ 高；纵向视野按它缩
      * @param backDegrees 往车尾转多少度，负数往车头
      * @param upDegrees  往上（车外）转多少度，负数往下
      * @param lane       {@link LaneCycle#LEFT} / {@link LaneCycle#RIGHT}：决定车尾在画面哪一边
      */
-    public static void sourcePoint(float u, float v, float fovDegrees, float backDegrees, float upDegrees,
+    public static void sourcePoint(float u, float v, float fovDegrees, float aspect,
+                                   float backDegrees, float upDegrees,
                                    int lane, float[] out, int offset) {
-        double fov = Math.toRadians(clamp(fovDegrees, MIN_FOV_DEGREES, MAX_FOV_DEGREES));
-        double t = Math.tan(fov / 2.0);
-        // 虚拟相机里的射线：x 右、y 下、z 朝前
-        double x = (u * 2.0 - 1.0) * t;
-        double y = (v * 2.0 - 1.0) * t;
-        double z = 1.0;
+        double halfFov = Math.toRadians(clamp(fovDegrees, MIN_FOV_DEGREES, MAX_FOV_DEGREES)) / 2.0;
+        // 虚拟相机里的射线（柱面）：横向是方位角，纵向是像平面上的高度；x 右、y 下、z 朝前
+        double azimuth = (u * 2.0 - 1.0) * halfFov;
+        double x = Math.sin(azimuth);
+        double y = (v * 2.0 - 1.0) * halfFov / Math.max(0.1f, aspect);
+        double z = Math.cos(azimuth);
 
         // 先往上（绕 x 轴，朝 −y 转），再往后（绕 y 轴，朝车尾那一边转）
         double pitch = Math.toRadians(clamp(upDegrees, -MAX_PITCH_DEGREES, MAX_PITCH_DEGREES));

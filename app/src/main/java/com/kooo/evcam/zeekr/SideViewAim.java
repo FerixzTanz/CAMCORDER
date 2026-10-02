@@ -26,19 +26,23 @@ public final class SideViewAim {
      * @param zoomPercent   放大倍数 ×100，100 = 不放大
      * @param backPercent   −100..100，正 = 往车尾，负 = 往车头
      * @param upPercent     −100..100，正 = 往上（朝车外），负 = 往下（朝车身、地面）
+     * @param aspect        窗口的宽 ÷ 高（≥ 1）；取景框跟它同形状，横向占满放大后的宽度
      * @return 这一路里要看的那一块，归一化
      */
-    public static RearViewGeometry.Viewport viewport(int lane, int zoomPercent, int backPercent, int upPercent) {
-        float size = 100f / Math.max(100, zoomPercent);
-        float half = (1f - size) / 2f;
+    public static RearViewGeometry.Viewport viewport(int lane, int zoomPercent, int backPercent, int upPercent,
+                                                     float aspect) {
+        float width = 100f / Math.max(100, zoomPercent);
+        float height = width / Math.max(1f, aspect);
+        float half = (1f - width) / 2f;
+        float halfY = (1f - height) / 2f;
         float back = clamp(backPercent / 100f);
         float up = clamp(upPercent / 100f);
         // 左侧那一路车尾在左边：往后 = x 变小；右侧那一路车尾在右边：往后 = x 变大
         float towardRear = lane == LaneCycle.RIGHT ? back : -back;
         float x = half + towardRear * half;
         // 上边朝车外：往上 = y 变小
-        float y = half - up * half;
-        return new RearViewGeometry.Viewport(x, y, size, size);
+        float y = halfY - up * halfY;
+        return new RearViewGeometry.Viewport(x, y, width, height);
     }
 
     private static float clamp(float v) {

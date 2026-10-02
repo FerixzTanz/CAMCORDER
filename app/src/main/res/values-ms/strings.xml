@@ -242,7 +242,7 @@
     <string name="set_side_popup_straighten_title">Luruskan gambar</string>
     <string name="set_side_popup_straighten_summary">Membetulkan lengkungan fisheye sebelum dipaparkan; tiga tetapan di bawah menetapkan lebar dan arah pandangan. Hanya mengubah tetingkap timbul; rakaman tidak terjejas</string>
     <string name="set_side_popup_fov_title">Lebar pandangan (°)</string>
-    <string name="set_side_popup_fov_summary">Lebih kecil untuk zum masuk. Hanya berfungsi apabila Luruskan gambar dihidupkan</string>
+    <string name="set_side_popup_fov_summary">Selebar mana pandangan dari sisi ke sisi, sehingga 180°. Lebih lebar, lebih melengkung garisan mendatar (garisan menegak kekal lurus). Hanya berfungsi apabila Luruskan gambar dihidupkan</string>
     <string name="set_side_popup_yaw_title">Hala ke belakang (°)</string>
     <string name="set_side_popup_yaw_summary">Positif memusingkan pandangan ke belakang (titik buta), negatif ke hadapan. Arah ini hanya tekaan: jika berpusing ke arah salah, seret ke arah lain</string>
     <string name="set_side_popup_pitch_title">Hala ke atas (°)</string>
@@ -251,8 +251,10 @@
     <string name="set_side_popup_close_delay_ms_summary">1000 ms = 1 saat. 0 menutupnya sebaik sahaja isyarat dimatikan. Paparan asal kereta tetap menutupnya serta-merta</string>
     <string name="set_side_popup_instant_title">Tetingkap timbul segera</string>
     <string name="set_side_popup_instant_summary">Dalam gear D, pandangan sisi disediakan di latar belakang supaya gambar muncul sebaik sahaja anda memberi isyarat. Kamera kekal hidup semasa memandu dan menggunakan sedikit lagi kuasa</string>
-    <string name="set_side_popup_size_title">Saiz tetingkap timbul (% ketinggian skrin)</string>
-    <string name="set_side_popup_size_summary">Sehingga separuh lebar skrin: tetingkap kiri dan kanan bertemu di tengah</string>
+    <string name="set_side_popup_size_title">Ketinggian tetingkap timbul (% ketinggian skrin)</string>
+    <string name="set_side_popup_size_summary">Lebarnya mengikut bentuk di bawah</string>
+    <string name="set_side_popup_shape_summary">100 ialah segi empat sama; lebih tinggi lebih lebar. Sehingga separuh lebar skrin: tetingkap kiri dan kanan bertemu di tengah</string>
+    <string name="set_side_popup_shape_title">Bentuk tetingkap timbul (lebar ÷ tinggi, %)</string>
     <string name="set_side_popup_vertical_title">Ketinggian pada skrin (%)</string>
     <string name="set_side_popup_vertical_summary">0 ialah atas, 100 ialah bawah</string>
     <string name="msg_rearview_reset">Bingkai dan kedudukan cermin super ditetapkan semula</string>

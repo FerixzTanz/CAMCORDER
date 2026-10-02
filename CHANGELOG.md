@@ -11,6 +11,19 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.6-beta] - 2026-10-02
+
+Turn-signal side view:
+
+- The pop-up is a wide rectangle instead of a square, so it shows more to the left and right.
+  New **Pop-up shape** slider (width ÷ height, 100 = square, default 180). The size slider now
+  sets the height; the width is capped at half the screen so the two pop-ups still meet in the
+  middle.
+- **View width** goes up to 180°. The straightening now spreads the view evenly from side to
+  side (like a phone panorama), so wide settings don't smear the edges; vertical lines stay
+  straight and horizontal lines curve a little. Default 120° (was 90°); a value you already set
+  is kept.
+
 ## [2.0.5-beta] - 2026-10-01
 
 Turn-signal side view, after the first drive:

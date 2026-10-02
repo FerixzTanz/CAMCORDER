@@ -242,7 +242,7 @@
     <string name="set_side_popup_straighten_title">Straighten picture</string>
     <string name="set_side_popup_straighten_summary">Corrects the fisheye curve before showing it; the three settings below set how wide it looks and where it points. Only changes the pop-up; recordings are not affected</string>
     <string name="set_side_popup_fov_title">View width (°)</string>
-    <string name="set_side_popup_fov_summary">Smaller zooms in. Only applies with Straighten picture on</string>
+    <string name="set_side_popup_fov_summary">How wide it sees from side to side, up to 180°. The wider it is, the more horizontal lines curve (vertical lines stay straight). Only applies with Straighten picture on</string>
     <string name="set_side_popup_yaw_title">Aim back (°)</string>
     <string name="set_side_popup_yaw_summary">Positive turns the view towards the rear (the blind spot), negative towards the front. The direction is a guess: if it turns the wrong way, drag the other way</string>
     <string name="set_side_popup_pitch_title">Aim up (°)</string>
@@ -251,8 +251,10 @@
     <string name="set_side_popup_close_delay_ms_summary">1000 ms = 1 second. 0 closes it as soon as the signal goes off. A stock view still closes it straight away</string>
     <string name="set_side_popup_instant_title">Instant pop-up</string>
     <string name="set_side_popup_instant_summary">In D, keeps the side view ready in the background so the picture is there as soon as you signal. The camera stays on while driving, which uses a little more power</string>
-    <string name="set_side_popup_size_title">Pop-up size (% of screen height)</string>
-    <string name="set_side_popup_size_summary">Up to half the screen width: the left and right pop-ups meet at the middle</string>
+    <string name="set_side_popup_size_title">Pop-up height (% of screen height)</string>
+    <string name="set_side_popup_size_summary">The width follows from the shape below</string>
+    <string name="set_side_popup_shape_summary">100 is square; higher is wider. Up to half the screen width: the left and right pop-ups meet at the middle</string>
+    <string name="set_side_popup_shape_title">Pop-up shape (width ÷ height, %)</string>
     <string name="set_side_popup_vertical_title">Height on screen (%)</string>
     <string name="set_side_popup_vertical_summary">0 is the top, 100 the bottom</string>
     <string name="msg_rearview_reset">Super mirror framing and position reset</string>

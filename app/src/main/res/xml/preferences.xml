@@ -256,6 +256,13 @@
                 app:showSeekBarValue="true" />
 
             <SeekBarPreference
+                android:key="pref_side_popup_shape"
+                android:dependency="pref_side_popup"
+                android:title="@string/set_side_popup_shape_title"
+                android:summary="@string/set_side_popup_shape_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
                 android:key="pref_side_popup_vertical"
                 android:dependency="pref_side_popup"
                 android:title="@string/set_side_popup_vertical_title"
