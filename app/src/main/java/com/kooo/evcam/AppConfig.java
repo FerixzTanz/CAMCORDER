@@ -94,7 +94,8 @@ public class AppConfig {
     private static final String KEY_SIDE_POPUP_STRAIGHTEN = "side_popup_straighten";  // 侧视拉直鱼眼
     private static final String KEY_SIDE_POPUP_INSTANT = "side_popup_instant";  // D 档时备着相机，打灯即出画面
     private static final String KEY_SIDE_POPUP_CLOSE_DELAY_MS = "side_popup_close_delay_ms";  // 灯灭后再留多少毫秒
-    private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 边长，屏幕高度的百分比
+    private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 高度，屏幕高度的百分比（键名是正方形时代的「边长」）
+    private static final String KEY_SIDE_POPUP_SHAPE = "side_popup_shape";  // 宽 ÷ 高 ×100
     private static final String KEY_SIDE_POPUP_VERTICAL = "side_popup_vertical";  // 上下位置，0 顶 100 底
     /** 以毫秒存：按秒只有 0–3 四档，车机那条很宽的滑块拖一小段根本不动（用户 2026-10-01 实车）。 */
     public static final int SIDE_POPUP_MAX_CLOSE_DELAY_MS = 3000;
@@ -102,11 +103,15 @@ public class AppConfig {
     public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
     public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
     public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
+    /** 默认偏宽：左右看得多比上下看得多有用（用户 2026-10-02）。 */
+    public static final int SIDE_POPUP_MIN_SHAPE_PERCENT = 100;
+    public static final int SIDE_POPUP_MAX_SHAPE_PERCENT = 300;
+    public static final int SIDE_POPUP_DEFAULT_SHAPE_PERCENT = 180;
     private static final String KEY_SIDE_POPUP_FOV = "side_popup_fov";  // 虚拟相机视野（度）
     private static final String KEY_SIDE_POPUP_YAW = "side_popup_yaw";  // 往车尾转多少度，负数往车头
     private static final String KEY_SIDE_POPUP_PITCH = "side_popup_pitch";  // 往上（车外）转多少度，负数往下
-    /** 默认值是猜的（见 SideViewProjection）：视野 90°，往车尾转 50°，稍往上 15°。 */
-    public static final int SIDE_POPUP_DEFAULT_FOV = 90;
+    /** 默认值是猜的（见 SideViewProjection）：横向 120°（弹窗变宽后从 90° 放宽），往车尾转 50°，稍往上 15°。 */
+    public static final int SIDE_POPUP_DEFAULT_FOV = 120;
     public static final int SIDE_POPUP_DEFAULT_YAW = 50;
     public static final int SIDE_POPUP_DEFAULT_PITCH = 15;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
@@ -1439,7 +1444,18 @@ public class AppConfig {
                 Math.max(0, Math.min(SIDE_POPUP_MAX_CLOSE_DELAY_MS, rounded))).apply();
     }
 
-    /** 侧视窗边长，屏幕高度的百分比。 */
+    /** 侧视窗宽 ÷ 高 ×100，100 是正方形。宽度另外封顶在半个屏幕宽。 */
+    public int getSidePopupShapePercent() {
+        int v = prefs.getInt(KEY_SIDE_POPUP_SHAPE, SIDE_POPUP_DEFAULT_SHAPE_PERCENT);
+        return Math.max(SIDE_POPUP_MIN_SHAPE_PERCENT, Math.min(SIDE_POPUP_MAX_SHAPE_PERCENT, v));
+    }
+
+    public void setSidePopupShapePercent(int percent) {
+        prefs.edit().putInt(KEY_SIDE_POPUP_SHAPE,
+                Math.max(SIDE_POPUP_MIN_SHAPE_PERCENT, Math.min(SIDE_POPUP_MAX_SHAPE_PERCENT, percent))).apply();
+    }
+
+    /** 侧视窗高度，屏幕高度的百分比。 */
     public int getSidePopupSizePercent() {
         int v = prefs.getInt(KEY_SIDE_POPUP_SIZE, SIDE_POPUP_DEFAULT_SIZE_PERCENT);
         return Math.max(SIDE_POPUP_MIN_SIZE_PERCENT, Math.min(SIDE_POPUP_MAX_SIZE_PERCENT, v));

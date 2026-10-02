@@ -604,6 +604,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     appConfig.setSidePopupSizePercent(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
+        bindSlider("pref_side_popup_shape", AppConfig.SIDE_POPUP_MIN_SHAPE_PERCENT,
+                AppConfig.SIDE_POPUP_MAX_SHAPE_PERCENT, appConfig.getSidePopupShapePercent(), "%", value -> {
+                    appConfig.setSidePopupShapePercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
         bindSlider("pref_side_popup_vertical", 0, 100,
                 appConfig.getSidePopupVerticalPercent(), "%", value -> {
                     appConfig.setSidePopupVerticalPercent(value);

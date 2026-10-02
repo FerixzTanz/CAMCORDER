@@ -34,7 +34,8 @@ import com.kooo.evcam.AutoFitTextureView;
  * </ul>
  *
  * <p>位置：屏幕中线是两边的分界，左侧那一路的右边缘贴中线，右侧那一路的左边缘贴中线；
- * 大小和上下位置在设置里调。{@code FLAG_NOT_TOUCHABLE}：点击穿过去，不挡底下的导航。</p>
+ * 默认偏宽的长方形，高度、形状（宽 ÷ 高）和上下位置在设置里调。显示时接点击（为什么见 {@link #applyVisibility}），
+ * 备着时点击穿过去。</p>
  */
 public class SideViewPopupView extends ViewGroup {
 
@@ -56,10 +57,12 @@ public class SideViewPopupView extends ViewGroup {
     private int lane = LaneCycle.LEFT;
     private boolean straighten;
     private int viewFov;
+    /** 这一帧窗口的宽 ÷ 高，画之前更新。 */
+    private float aspect = 1f;
     private int yaw;
     private int pitch;
     private final FisheyeMesh.SourceMap turnedMap = (u, v, out) ->
-            SideViewProjection.sourcePoint(u, v, viewFov, yaw, pitch, lane, out, 0);
+            SideViewProjection.sourcePoint(u, v, viewFov, aspect, yaw, pitch, lane, out, 0);
 
     public SideViewPopupView(Context context, AppConfig appConfig) {
         super(context);
@@ -232,19 +235,23 @@ public class SideViewPopupView extends ViewGroup {
     }
 
     /**
-     * 大小和位置。边长按屏幕高度的百分比，最多半个屏幕宽（两边在中线相接，不能超过一半）；
+     * 大小和位置。高度按屏幕高度的百分比，宽度 = 高度 × 形状，最多半个屏幕宽（两边在中线相接，不能超过一半）；
      * 上下位置是剩余高度里的百分比，0 贴顶、100 贴底。
+     *
+     * <p>长方形（用户 2026-10-02）：正方形只能靠缩小视野、转来转去看两边，横着拉宽才是要的。</p>
      */
     private void place(int side) {
         int w = getResources().getDisplayMetrics().widthPixels;
         int h = getResources().getDisplayMetrics().heightPixels;
-        int size = Math.round(Math.min(h * appConfig.getSidePopupSizePercent() / 100f, w / 2f));
-        size = Math.max(AppConfig.REARVIEW_MIN_SIZE, size);
+        int height = Math.round(Math.min(h * appConfig.getSidePopupSizePercent() / 100f, h));
+        height = Math.max(AppConfig.REARVIEW_MIN_SIZE, height);
+        int width = Math.round(Math.min(height * appConfig.getSidePopupShapePercent() / 100f, w / 2f));
+        width = Math.max(AppConfig.REARVIEW_MIN_SIZE, width);
         int center = w / 2;
-        params.width = size;
-        params.height = size;
-        params.x = side == LaneCycle.LEFT ? center - size : center;
-        params.y = Math.round(Math.max(0, h - size) * appConfig.getSidePopupVerticalPercent() / 100f);
+        params.width = width;
+        params.height = height;
+        params.x = side == LaneCycle.LEFT ? center - width : center;
+        params.y = Math.round(Math.max(0, h - height) * appConfig.getSidePopupVerticalPercent() / 100f);
     }
 
     // ------------------------------------------------------------------ 布局与绘制
@@ -274,6 +281,7 @@ public class SideViewPopupView extends ViewGroup {
             canvas.drawColor(0xFF000000);
             return;
         }
+        aspect = (float) width / height;
         int save = canvas.save();
         if (LaneCycle.isMirrored(lane)) {
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
@@ -288,10 +296,10 @@ public class SideViewPopupView extends ViewGroup {
             mesh.draw(canvas, 0f, 0f, width, height, paintTexture);
         } else {
             // 不拉直：只能在原图里裁一块挪一挪（见 SideViewAim），角度折算成那边的百分比
-            int zoomPercent = Math.round(180f / viewFov * 100f);
+            int zoomPercent = Math.round(180f / Math.min(viewFov, 180) * 100f);
             int backPercent = Math.round(yaw / SideViewProjection.MAX_YAW_DEGREES * 100f);
             int upPercent = Math.round(pitch / SideViewProjection.MAX_PITCH_DEGREES * 100f);
-            RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, backPercent, upPercent);
+            RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, backPercent, upPercent, aspect);
             float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
             sourceRect.set(rect[0] * width, rect[1] * height,
                     (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
