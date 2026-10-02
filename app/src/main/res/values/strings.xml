@@ -261,7 +261,7 @@
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，下面三项调视野和朝向。只影响弹窗的显示，录像照旧</string>
     <string name="set_side_popup_fov_title">视野（°）</string>
-    <string name="set_side_popup_fov_summary">左右看多宽，最大 180°。越宽横线越弯（竖线保持直）。只在「拉直画面」开着时起作用</string>
+    <string name="set_side_popup_fov_summary">左右看多宽，默认 80°（和本田 LaneWatch 差不多；普通后视镜约 20°），最大 180°。越宽看得越多，但车显得越小越远，横线也越弯。只在「拉直画面」开着时起作用</string>
     <string name="set_side_popup_yaw_title">往后看（°）</string>
     <string name="set_side_popup_yaw_summary">正数朝车尾（盲区）转，负数朝车头。方向是猜的：反了就往另一头拉</string>
     <string name="set_side_popup_pitch_title">往上看（°）</string>
