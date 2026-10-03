@@ -42,8 +42,6 @@ public final class VehicleState {
     public final Float brake;
     public final Float speedKmh;
     public final Boolean autoHold;
-    public final Boolean adaptiveCruise;
-    public final Boolean laneCentering;
     /** 原厂 360 画面此刻显示着（倒车时车机自己的环视；它开着时占着相机）。 */
     public final Boolean stockSurroundShown;
     /** 驾驶员手在方向盘上（车上还没找到读数，先留着位置）。 */
@@ -89,8 +87,6 @@ public final class VehicleState {
         this.brake = b.brake;
         this.speedKmh = b.speedKmh;
         this.autoHold = b.autoHold;
-        this.adaptiveCruise = b.adaptiveCruise;
-        this.laneCentering = b.laneCentering;
         this.stockSurroundShown = b.stockSurroundShown;
         this.handsOnWheel = b.handsOnWheel;
         this.aeb = b.aeb;
@@ -130,7 +126,7 @@ public final class VehicleState {
     public int knownCount() {
         int n = 0;
         Object[] all = {turnSignal, hazard, steeringDegrees, gear, throttle, brake, speedKmh,
-                autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
+                autoHold, stockSurroundShown, handsOnWheel,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
                 daytimeRunningLights, lowBeam, highBeam, flashToPass, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn, sentry,
@@ -153,8 +149,6 @@ public final class VehicleState {
         private Float brake;
         private Float speedKmh;
         private Boolean autoHold;
-        private Boolean adaptiveCruise;
-        private Boolean laneCentering;
         private Boolean stockSurroundShown;
         private Boolean handsOnWheel;
         private Boolean aeb;
@@ -192,8 +186,6 @@ public final class VehicleState {
             brake = s.brake;
             speedKmh = s.speedKmh;
             autoHold = s.autoHold;
-            adaptiveCruise = s.adaptiveCruise;
-            laneCentering = s.laneCentering;
             stockSurroundShown = s.stockSurroundShown;
             handsOnWheel = s.handsOnWheel;
             aeb = s.aeb;
@@ -227,8 +219,6 @@ public final class VehicleState {
         public Builder brake(Float v) { brake = clamp01(v); return this; }
         public Builder speedKmh(Float v) { speedKmh = v; return this; }
         public Builder autoHold(Boolean v) { autoHold = v; return this; }
-        public Builder adaptiveCruise(Boolean v) { adaptiveCruise = v; return this; }
-        public Builder laneCentering(Boolean v) { laneCentering = v; return this; }
         public Builder stockSurroundShown(Boolean v) { stockSurroundShown = v; return this; }
         public Builder handsOnWheel(Boolean v) { handsOnWheel = v; return this; }
         public Builder aeb(Boolean v) { aeb = v; return this; }

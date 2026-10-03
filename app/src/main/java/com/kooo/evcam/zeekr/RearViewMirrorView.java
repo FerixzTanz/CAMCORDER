@@ -1068,7 +1068,7 @@ public class RearViewMirrorView extends ViewGroup {
                                RearViewGeometry.Viewport viewport) {
         RearViewGeometry.ShaderRects r =
                 RearViewGeometry.toShaderRects(plan, laneIndex, viewport);
-        mesh.setCorrection(fovDegrees, FisheyeProjection.PROJECTION_RECTILINEAR, 1f);
+        mesh.setCorrection(fovDegrees, FisheyeProjection.PROJECTION_RECTILINEAR);
         mesh.prepare(FisheyeProjection.MESH_DIVISIONS,
                 r.laneOffsetX * width, r.laneOffsetY * height,
                 r.laneScaleX * width, r.laneScaleY * height,

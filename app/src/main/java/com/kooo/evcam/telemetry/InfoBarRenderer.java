@@ -201,14 +201,11 @@ public final class InfoBarRenderer {
             case AUTO_HOLD:
                 drawAutoHold(cx, cy, s.autoHold);
                 break;
-            case ACC:
-                drawAcc(cx, cy, s.adaptiveCruise);
-                break;
-            case LCC:
-                drawLcc(cx, cy, s.laneCentering);
-                break;
             case STOCK_360:
                 drawStock360(cx, cy, s.stockSurroundShown);
+                break;
+            case SENTRY:
+                drawSentry(cx, cy, s.sentry);
                 break;
             case CABIN:
                 drawCabin(cx, cy, s.doorsOpen, s.beltsUnbuckled);
@@ -496,30 +493,47 @@ public final class InfoBarRenderer {
         }
     }
 
-    /** ACC：前面一辆车 + 两道雷达弧。 */
-    private void drawAcc(float cx, float cy, Boolean on) {
-        int color = lineTone(on, false);
-        solidRect(cx - 34, cy - 12, cx - 6, cy + 12, 6, on, false);
-        stroke.setColor(color);
-        stroke.setStrokeWidth(6f);
-        for (int i = 0; i < 2; i++) {
-            float r = 14 + i * 13;
-            rect.set(cx - 10 - r, cy - r, cx - 10 + r, cy + r);
-            canvas.drawArc(rect, -40, 80, false, stroke);
+    /**
+     * 哨兵模式：一面盾牌。关 = 灰色轮廓；开 = 填实；布防（锁车后）= 填实，中间多一只睁开的眼睛。
+     * 开和布防靠「有没有眼睛」分，不靠颜色深浅。没数据深灰加斜杠。
+     */
+    private void drawSentry(float cx, float cy, Integer code) {
+        path.reset();
+        path.moveTo(cx, cy - 30);
+        path.lineTo(cx + 24, cy - 21);
+        path.lineTo(cx + 24, cy + 1);
+        path.quadTo(cx + 24, cy + 21, cx, cy + 31);
+        path.quadTo(cx - 24, cy + 21, cx - 24, cy + 1);
+        path.lineTo(cx - 24, cy - 21);
+        path.close();
+        boolean on = code != null && code > 0;
+        if (code == null) {
+            fill.setColor(UNKNOWN_FILL);
+            canvas.drawPath(path, fill);
+            stroke.setColor(UNKNOWN_LINE);
+            stroke.setStrokeWidth(4f);
+            canvas.drawPath(path, stroke);
+            slash(cx - 30, cy + 30, cx + 30, cy - 30);
+            return;
         }
-        if (on == null) {
-            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        if (!on) {
+            stroke.setColor(OFF);
+            stroke.setStrokeWidth(6f);
+            canvas.drawPath(path, stroke);
+            return;
         }
-    }
-
-    /** 车道居中：两条实线车道线之间一辆车。 */
-    private void drawLcc(float cx, float cy, Boolean on) {
-        int color = lineTone(on, false);
-        line(cx - 29, cy + 28, cx - 17, cy - 28, 7f, color);
-        line(cx + 29, cy + 28, cx + 17, cy - 28, 7f, color);
-        solidRect(cx - 10, cy - 16, cx + 10, cy + 16, 6, on, false);
-        if (on == null) {
-            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        fill.setColor(ON);
+        canvas.drawPath(path, fill);
+        if (code == 2) {
+            path.reset();
+            path.moveTo(cx - 15, cy);
+            path.quadTo(cx, cy - 13, cx + 15, cy);
+            path.quadTo(cx, cy + 13, cx - 15, cy);
+            path.close();
+            fill.setColor(LAMP_CORE);
+            canvas.drawPath(path, fill);
+            fill.setColor(BG);
+            canvas.drawCircle(cx, cy, 5, fill);
         }
     }
 

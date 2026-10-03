@@ -633,8 +633,7 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         if (lanes > 1) {
             AppConfig config = new AppConfig(PhotoPlaybackActivity.this);
             options = options.transform(new FisheyeTransformation(lanes, lanes,
-                    config.getFisheyeFov(), config.getFisheyeProjection(),
-                    config.getFisheyeStrength() / 100f));
+                    config.getFisheyeFov(), config.getFisheyeProjection()));
         }
         options = options.placeholder(keepShowing(imageView));
 

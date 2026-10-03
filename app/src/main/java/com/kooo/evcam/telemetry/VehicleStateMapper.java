@@ -61,7 +61,6 @@ public final class VehicleStateMapper {
         b.throttle(percent(r.number(Signal.THROTTLE_DEPTH)));
         b.speedKmh(r.number(Signal.SPEED));
         b.autoHold(holding(r.bool(Signal.AUTO_HOLD_ACTIVE), r.number(Signal.SPEED)));
-        b.laneCentering(r.bool(Signal.LCC));
         b.stockSurroundShown(r.bool(Signal.STOCK_360));
         b.lowBeam(r.bool(Signal.LOW_BEAM));
         // 远光那一格也按车外看到的：开着远光，或者正在闪远光（闪的时候远光灯信号一直是 0）；

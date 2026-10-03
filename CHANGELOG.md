@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.10-alpha] - 2026-10-03
+
+- Info bar: Sentry Mode cell added right of the stock 360 cell; the ACC and lane centering cells are gone.
+- Settings → Interface: Correction strength removed; fisheye correction is always full strength.
+
 ## [2.0.9-alpha] - 2026-10-03
 
 - Lock footage (Settings → Storage, on by default): lock videos and photos in playback; locked files are never removed by automatic cleanup or plain delete.

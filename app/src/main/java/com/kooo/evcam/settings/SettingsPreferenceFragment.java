@@ -945,9 +945,6 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     bindFisheyeFov();
                 }, this::showProjectionSummary);
         bindFisheyeFov();
-
-        bindSlider("pref_fisheye_strength", 10, 100, appConfig.getFisheyeStrength(), "%",
-                value -> appConfig.setFisheyeStrength(value));
     }
 
     /** 校正视野。范围随投影方式变，所以单独一个方法，换投影时再叫一次。 */

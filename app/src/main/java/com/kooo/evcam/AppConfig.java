@@ -64,7 +64,6 @@ public class AppConfig {
     private static final String KEY_GPU_FISHEYE_PREVIEW = "gpu_fisheye_preview";  // 预览鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_GPU_FISHEYE_VIDEO = "gpu_fisheye_video";      // 视频回看鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_PHOTO_FISHEYE_FOV = "photo_fisheye_fov";      // 图片回看的校正视野
-    private static final String KEY_FISHEYE_STRENGTH = "fisheye_strength";        // 校正强度（百分比）
     private static final String KEY_REARVIEW_FOV = "rearview_fov";                // 目标视野（度）
     private static final String KEY_REARVIEW_WIDTH = "rearview_width";            // 窗口宽度（px）
     private static final String KEY_REARVIEW_HEIGHT = "rearview_height";          // 窗口高度（px）
@@ -710,7 +709,7 @@ public class AppConfig {
      * SharedPreferences 只弱引用监听器，不拿住会被回收，之后就再也收不到了。</p>
      */
     public SharedPreferences.OnSharedPreferenceChangeListener onFisheyeChanged(Runnable action) {
-        return onChanged(action, KEY_PHOTO_FISHEYE, KEY_PHOTO_FISHEYE_FOV, KEY_FISHEYE_STRENGTH,
+        return onChanged(action, KEY_PHOTO_FISHEYE, KEY_PHOTO_FISHEYE_FOV,
                 SettingsRegistry.FISHEYE_PROJECTION.key);
     }
 
@@ -815,18 +814,6 @@ public class AppConfig {
                 FisheyeProjection.clampFov(degrees, getFisheyeProjection())).apply();
     }
 
-    /**
-     * 校正强度，百分比。100 就是这种投影本来的样子，小于 100 是往原图那边插值。
-     *
-     * <p>下限 10 而不是 0：0 等于没校正，那是开关该管的事，不该在滑块上再来一个关。</p>
-     */
-    public int getFisheyeStrength() {
-        return Math.max(10, Math.min(100, prefs.getInt(KEY_FISHEYE_STRENGTH, 100)));
-    }
-
-    public void setFisheyeStrength(int percent) {
-        prefs.edit().putInt(KEY_FISHEYE_STRENGTH, Math.max(10, Math.min(100, percent))).apply();
-    }
 
     /** 校正的目标视野角度（度）。 */
     public float getRearViewFov() {

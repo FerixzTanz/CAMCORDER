@@ -62,14 +62,15 @@ public class InfoBarLayoutTest {
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
                 InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT,
                 InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS,
-                InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
+                InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.SENTRY,
+                InfoBarLayout.Cell.CABIN,
                 InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS,
                 InfoBarLayout.Cell.REAR_LAMPS, InfoBarLayout.Cell.FLASH, InfoBarLayout.Cell.ODOMETER,
                 InfoBarLayout.Cell.POSITION}) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
         for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{
-                InfoBarLayout.Cell.HANDS, InfoBarLayout.Cell.ACC, InfoBarLayout.Cell.LCC,
+                InfoBarLayout.Cell.HANDS,
                 InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.HORN}) {
             assertFalse(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
@@ -105,6 +106,23 @@ public class InfoBarLayoutTest {
         assertEquals(assist - 1, hands);
         assertFalse(has(placed, InfoBarLayout.Cell.HORN));
         assertFalse(has(placed, InfoBarLayout.Cell.FLASH));
+    }
+
+    /** 哨兵模式紧挨在原厂 360 右边（项目所有者 2026-10-03）。 */
+    @Test
+    public void sentrySitsRightOfTheStock360() {
+        List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND);
+        int stock = -1;
+        int sentry = -1;
+        for (int i = 0; i < placed.size(); i++) {
+            if (placed.get(i).cell == InfoBarLayout.Cell.STOCK_360) {
+                stock = i;
+            }
+            if (placed.get(i).cell == InfoBarLayout.Cell.SENTRY) {
+                sentry = i;
+            }
+        }
+        assertEquals(stock + 1, sentry);
     }
 
     /** 车辆状态面板：点名的那几格都在，互不重叠，都在面板里面。 */

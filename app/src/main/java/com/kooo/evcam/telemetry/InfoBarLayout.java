@@ -44,10 +44,10 @@ public final class InfoBarLayout {
         SPEED(210, 0, Signal.SPEED),
         /** 自动驻车「正在驻车」：停下被接管时亮，起步灭（不是功能开关 0x20060400，那个开车全程都亮）。 */
         AUTO_HOLD(70, 8, Signal.AUTO_HOLD_ACTIVE),
-        ACC(80, 8, Verdict.NO),
-        LCC(80, 8, Signal.LCC),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断，所以优先级高。 */
         STOCK_360(80, 3, Signal.STOCK_360),
+        /** 哨兵模式：关 / 开 / 布防。放在原厂 360 右边（项目所有者 2026-10-03）；熄屏后能不能接着录看的就是它。 */
+        SENTRY(80, 6, Signal.SENTRY_MODE),
         /** 俯视的车：四扇门 + 五个座位的安全带（看四扇门和主驾安全带；其余安全带没验证前滤掉）。 */
         CABIN(170, 5, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER),
