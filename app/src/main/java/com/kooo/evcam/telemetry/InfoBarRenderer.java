@@ -229,8 +229,8 @@ public final class InfoBarRenderer {
             case HORN:
                 drawHorn(cx, cy, s.horn);
                 break;
-            case SENTRY:
-                drawSentry(cx, cy, s.sentry);
+            case FLASH:
+                drawFlash(s.flashToPass);
                 break;
             case ODOMETER:
                 drawOdometer(cx, cy, s.odometerKm);
@@ -370,50 +370,6 @@ public final class InfoBarRenderer {
         text.setTextSize(20f);
         text.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("°", cx + half + 2, cy, text);
-    }
-
-    /**
-     * 哨兵模式：一面盾牌。关 = 灰色轮廓；开 = 填实；布防（锁车后）= 填实，中间多一只睁开的眼睛。
-     * 开和布防靠「有没有眼睛」分，不靠颜色深浅。没数据深灰加斜杠。
-     */
-    private void drawSentry(float cx, float cy, Integer code) {
-        path.reset();
-        path.moveTo(cx, cy - 30);
-        path.lineTo(cx + 24, cy - 21);
-        path.lineTo(cx + 24, cy + 1);
-        path.quadTo(cx + 24, cy + 21, cx, cy + 31);
-        path.quadTo(cx - 24, cy + 21, cx - 24, cy + 1);
-        path.lineTo(cx - 24, cy - 21);
-        path.close();
-        boolean on = code != null && code > 0;
-        if (code == null) {
-            fill.setColor(UNKNOWN_FILL);
-            canvas.drawPath(path, fill);
-            stroke.setColor(UNKNOWN_LINE);
-            stroke.setStrokeWidth(4f);
-            canvas.drawPath(path, stroke);
-            slash(cx - 30, cy + 30, cx + 30, cy - 30);
-            return;
-        }
-        if (!on) {
-            stroke.setColor(OFF);
-            stroke.setStrokeWidth(6f);
-            canvas.drawPath(path, stroke);
-            return;
-        }
-        fill.setColor(ON);
-        canvas.drawPath(path, fill);
-        if (code == 2) {
-            path.reset();
-            path.moveTo(cx - 15, cy);
-            path.quadTo(cx, cy - 13, cx + 15, cy);
-            path.quadTo(cx, cy + 13, cx - 15, cy);
-            path.close();
-            fill.setColor(LAMP_CORE);
-            canvas.drawPath(path, fill);
-            fill.setColor(BG);
-            canvas.drawCircle(cx, cy, 5, fill);
-        }
     }
 
     /** 喇叭：一只号角，右边两道声波。亮填实，灭画轮廓，没数据深灰加斜杠。 */
@@ -728,10 +684,19 @@ public final class InfoBarRenderer {
      * 两个都读不到才算没数据；读到一个，另一个按灭画。
      */
     private void drawBeams(Boolean low, Boolean high) {
-        boolean unknown = low == null && high == null;
         boolean lowOn = Boolean.TRUE.equals(low);
         boolean highOn = Boolean.TRUE.equals(high);
-        boolean lit = lowOn || highOn;
+        // 平直的光线：只远光四道全平直，近光远光同时开上两道，只近光 / 都不亮没有
+        drawHeadlamp(low == null && high == null, lowOn || highOn, highOn ? (lowOn ? 2 : 4) : 0);
+    }
+
+    /** 闪远光（车辆状态面板上单独一格，90 宽）：远光的样子，四道光线全平直，闪的时候亮。 */
+    private void drawFlash(Boolean flashing) {
+        drawHeadlamp(flashing == null, Boolean.TRUE.equals(flashing), 4);
+    }
+
+    /** 前灯（90 宽）：半圆灯体 + 四道光线，上面 {@code straight} 道平直、其余斜向下。 */
+    private void drawHeadlamp(boolean unknown, boolean lit, int straight) {
         path.reset();
         path.moveTo(60, 20);
         rect.set(34, 20, 86, 80);
@@ -754,8 +719,7 @@ public final class InfoBarRenderer {
         int color = unknown ? UNKNOWN_LINE : (lit ? LAMP_CORE : OFF);
         for (int i = 0; i < 4; i++) {
             float y = 28 + i * 14;
-            boolean straight = highOn && (!lowOn || i < 2);
-            float y1 = straight ? y : y + 10;
+            float y1 = i < straight ? y : y + 10;
             if (lit) {
                 glowLine(50, y, 12, y1);
             }

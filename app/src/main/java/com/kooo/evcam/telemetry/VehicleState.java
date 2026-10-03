@@ -63,6 +63,8 @@ public final class VehicleState {
     public final Boolean daytimeRunningLights;
     public final Boolean lowBeam;
     public final Boolean highBeam;
+    /** 正在闪远光（一下最短 0.1 秒，至少算 500 毫秒）。{@link #highBeam} 里也算上了；车辆状态面板单独一格。 */
+    public final Boolean flashToPass;
     /** 后雾灯（前雾灯这台车多半没装，不画）。 */
     public final Boolean fogLights;
     /** 后位置灯、刹车灯、倒车灯：都按车外看到的亮灭（刹车灯也会被自动驻车、动能回收点亮）。 */
@@ -102,6 +104,7 @@ public final class VehicleState {
         this.daytimeRunningLights = b.daytimeRunningLights;
         this.lowBeam = b.lowBeam;
         this.highBeam = b.highBeam;
+        this.flashToPass = b.flashToPass;
         this.fogLights = b.fogLights;
         this.rearPositionLamps = b.rearPositionLamps;
         this.stopLamps = b.stopLamps;
@@ -130,7 +133,7 @@ public final class VehicleState {
                 autoHold, adaptiveCruise, laneCentering, stockSurroundShown, handsOnWheel,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
-                daytimeRunningLights, lowBeam, highBeam, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn, sentry,
+                daytimeRunningLights, lowBeam, highBeam, flashToPass, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn, sentry,
                 odometerKm, latitude, longitude};
         for (Object o : all) {
             if (o != null) {
@@ -165,6 +168,7 @@ public final class VehicleState {
         private Boolean daytimeRunningLights;
         private Boolean lowBeam;
         private Boolean highBeam;
+        private Boolean flashToPass;
         private Boolean fogLights;
         private Boolean rearPositionLamps;
         private Boolean stopLamps;
@@ -203,6 +207,7 @@ public final class VehicleState {
             daytimeRunningLights = s.daytimeRunningLights;
             lowBeam = s.lowBeam;
             highBeam = s.highBeam;
+            flashToPass = s.flashToPass;
             fogLights = s.fogLights;
             rearPositionLamps = s.rearPositionLamps;
             stopLamps = s.stopLamps;
@@ -237,6 +242,7 @@ public final class VehicleState {
         public Builder daytimeRunningLights(Boolean v) { daytimeRunningLights = v; return this; }
         public Builder lowBeam(Boolean v) { lowBeam = v; return this; }
         public Builder highBeam(Boolean v) { highBeam = v; return this; }
+        public Builder flashToPass(Boolean v) { flashToPass = v; return this; }
         public Builder fogLights(Boolean v) { fogLights = v; return this; }
         public Builder rearPositionLamps(Boolean v) { rearPositionLamps = v; return this; }
         public Builder stopLamps(Boolean v) { stopLamps = v; return this; }

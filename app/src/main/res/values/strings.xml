@@ -505,7 +505,7 @@
     <string name="set_reduce_motion_title">录制时减少动效</string>
     <string name="set_reduce_motion_summary">录制时不做界面过渡，把 GPU 留给编码器；录制键和进度环照常动</string>
     <string name="set_vehicle_status_title">车辆状态（试验性）</string>
-    <string name="set_vehicle_status_summary">在主界面「鱼眼校正」下方，用信息条的图标显示哨兵模式、刹车与油门、驾驶辅助开关和喇叭</string>
+    <string name="set_vehicle_status_summary">在主界面「鱼眼校正」下方，用信息条的图标显示喇叭、闪远光和双闪</string>
     <string name="set_fisheye_projection_title">鱼眼校正方式</string>
     <string name="set_fisheye_projection_summary">%1$s · 作用于主界面预览、图片回看和视频回看</string>
     <string name="opt_projection_rectilinear">横平竖直</string>

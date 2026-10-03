@@ -67,10 +67,10 @@ public final class InfoBarLayout {
         HANDS(80, 6, Verdict.NO),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警。 */
         ASSIST(200, 6, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
-        /** 按喇叭（Lab 还没找到读数）。只在车辆状态面板上，信息条不放。 */
+        /** 按喇叭（Lab 0.23.0：多半拿不到，五次测试都没有号跟着变）。只在车辆状态面板上，信息条不放。 */
         HORN(80, 6, Verdict.NO, false),
-        /** 哨兵模式：关 / 开 / 布防。只在车辆状态面板上（以后也会用在别处：熄屏后能不能接着录看它）。 */
-        SENTRY(80, 6, false, Signal.SENTRY_MODE),
+        /** 闪远光：远光的样子，闪的时候亮。只在车辆状态面板上（信息条上它算进近光远光那一格）。 */
+        FLASH(90, 6, false, Signal.HIGH_BEAM_FLASH),
         ODOMETER(160, 9, Signal.ODOMETER),
         /** 经纬度来自系统定位，1.72.0 车上看到过。 */
         POSITION(170, 9, Verdict.YES);
@@ -152,12 +152,11 @@ public final class InfoBarLayout {
     }
 
     /**
-     * 车辆状态面板放哪几格，一行一组：哨兵模式、刹车和油门；驾驶辅助、喇叭。
-     * 用户 2026-10-02 点名要看的：哨兵模式、驾驶辅助开关、刹车油门开度、鸣笛（车门和安全带后来拿掉了）。
+     * 车辆状态面板放哪几格，一行一组：喇叭、闪远光、双闪。
+     * 用户 2026-10-03 定：只留这三项（之前的哨兵模式、刹车油门、驾驶辅助拿掉了；哨兵模式在「熄屏持续录制」那一行和录制键上）。
      */
     static final Cell[][] PANEL_ROWS = {
-            {Cell.SENTRY, Cell.PEDALS},
-            {Cell.ASSIST, Cell.HORN},
+            {Cell.HORN, Cell.FLASH, Cell.HAZARD},
     };
 
     /** 车辆状态面板的摆法：每行居中，行与行之间、格与格之间都隔 {@link #GAP}。 */

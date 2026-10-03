@@ -64,7 +64,7 @@ public class InfoBarLayoutTest {
                 InfoBarLayout.Cell.STEERING, InfoBarLayout.Cell.GEAR, InfoBarLayout.Cell.PEDALS,
                 InfoBarLayout.Cell.SPEED, InfoBarLayout.Cell.STOCK_360, InfoBarLayout.Cell.CABIN,
                 InfoBarLayout.Cell.AUTO_HOLD, InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS,
-                InfoBarLayout.Cell.REAR_LAMPS, InfoBarLayout.Cell.ODOMETER,
+                InfoBarLayout.Cell.REAR_LAMPS, InfoBarLayout.Cell.FLASH, InfoBarLayout.Cell.ODOMETER,
                 InfoBarLayout.Cell.POSITION}) {
             assertTrue(cell.name(), InfoBarLayout.live(cell, byDefault));
         }
@@ -88,7 +88,7 @@ public class InfoBarLayoutTest {
         return n;
     }
 
-    /** 手扶方向盘挨着驾驶辅助；喇叭不上信息条。 */
+    /** 手扶方向盘挨着驾驶辅助；喇叭、闪远光不上信息条。 */
     @Test
     public void handsSitsNextToTheAssistBadgesAndTheHornStaysOffTheStrip() {
         List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND);
@@ -104,17 +104,16 @@ public class InfoBarLayoutTest {
         }
         assertEquals(assist - 1, hands);
         assertFalse(has(placed, InfoBarLayout.Cell.HORN));
-        assertFalse(has(placed, InfoBarLayout.Cell.SENTRY));
+        assertFalse(has(placed, InfoBarLayout.Cell.FLASH));
     }
 
     /** 车辆状态面板：点名的那几格都在，互不重叠，都在面板里面。 */
     @Test
     public void thePanelHoldsTheRequestedCellsWithoutOverlap() {
         InfoBarLayout.Arrangement panel = InfoBarLayout.panel();
-        assertFalse(has(panel.cells, InfoBarLayout.Cell.CABIN));
-        assertTrue(InfoBarLayout.live(InfoBarLayout.Cell.SENTRY, InfoBar.Options.usable()));
-        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{InfoBarLayout.Cell.SENTRY, InfoBarLayout.Cell.PEDALS,
-                InfoBarLayout.Cell.ASSIST, InfoBarLayout.Cell.HORN}) {
+        assertEquals("用户 2026-10-03 定：只留喇叭、闪远光、双闪", 3, panel.cells.size());
+        for (InfoBarLayout.Cell cell : new InfoBarLayout.Cell[]{InfoBarLayout.Cell.HORN, InfoBarLayout.Cell.FLASH,
+                InfoBarLayout.Cell.HAZARD}) {
             assertTrue(cell.name(), has(panel.cells, cell));
         }
         for (InfoBarLayout.Placed a : panel.cells) {

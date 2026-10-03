@@ -14,8 +14,6 @@ package com.kooo.evcam.telemetry;
  *   <li>自动驻车看「正在驻车」{@link Signal#AUTO_HOLD_ACTIVE}（停下被接管 1、起步回 0），
  *       不看 {@link Signal#AUTO_HOLD}：那是功能开关，开车全程都是 1。「正在驻车」只在车停着时成立：
  *       这个号原名是「车辆保持时的刹车灯请求」，别的保持也可能让它变，车在走就不算（{@link #holding}）。</li>
- *   <li>哨兵模式变了要稳住 {@link #SENTRY_SETTLE_MS} 才算（{@link Settled}）：P 挡就绪时它会自己闪 1 秒左右
- *       （0 → 1 → 0，用户没动哨兵，Lab 0.23.0）。熄屏提示、哨兵状态都看它，闪一下不该跟着跳。</li>
  *   <li>非开发者拿到的读数已经滤掉了没验证的信号（{@link Readings#usableOnly()}），这里不再分辨。</li>
  * </ul>
  */
@@ -24,15 +22,11 @@ public final class VehicleStateMapper {
     /** 闪远光至少显示这么久（实际一下短的只有 0.1 秒，Lab 0.18.0）。 */
     static final long FLASH_HOLD_MS = 500L;
 
-    /** 哨兵模式变了要稳住这么久才算（见过的假的一闪最长 1.18 秒，Lab 0.23.0）。 */
-    static final long SENTRY_SETTLE_MS = 2000L;
-
     private final TurnSignalHold hold = new TurnSignalHold();
     private final MinimumOn flash = new MinimumOn(FLASH_HOLD_MS);
-    private final Settled<Integer> sentry = new Settled<>(SENTRY_SETTLE_MS);
 
     /**
-     * 这个信号变了之后，过多久要再算一次（「保持」的到点才灭、「稳住」的到点才换）；不用再算的是 0。
+     * 这个信号变了之后，过多久要再算一次（显示里有「保持」的信号，到点才会灭）；不用再算的是 0。
      * 来源据此安排重算，规则只写在这一处。
      */
     static long republishAfterMs(Signal s) {
@@ -42,8 +36,6 @@ public final class VehicleStateMapper {
                 return TurnSignalHold.HOLD_MS;
             case HIGH_BEAM_FLASH:
                 return FLASH_HOLD_MS;
-            case SENTRY_MODE:
-                return SENTRY_SETTLE_MS;
             default:
                 return 0L;
         }
@@ -74,12 +66,14 @@ public final class VehicleStateMapper {
         b.lowBeam(r.bool(Signal.LOW_BEAM));
         // 远光那一格也按车外看到的：开着远光，或者正在闪远光（闪的时候远光灯信号一直是 0）；
         // 闪一下最短只有 0.1 秒，至少显示 FLASH_HOLD_MS，录像里才看得见
-        b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), flash.update(nowMs, r.bool(Signal.HIGH_BEAM_FLASH))));
+        Boolean flashing = flash.update(nowMs, r.bool(Signal.HIGH_BEAM_FLASH));
+        b.highBeam(anyOn(r.bool(Signal.HIGH_BEAM), flashing));
+        b.flashToPass(flashing);
         b.fogLights(r.bool(Signal.REAR_FOG));
         b.rearPositionLamps(r.bool(Signal.REAR_POSITION_LAMP));
         b.stopLamps(r.bool(Signal.STOP_LAMP));
         b.reverseLamps(r.bool(Signal.REVERSE_LAMP));
-        b.sentry(sentry.update(nowMs, r.code(Signal.SENTRY_MODE)));
+        b.sentry(r.code(Signal.SENTRY_MODE));
         b.daytimeRunningLights(anyOn(r.bool(Signal.DRL), r.bool(Signal.FRONT_POSITION_LAMP)));
         b.odometerKm(r.number(Signal.ODOMETER));
         b.aeb(r.bool(Signal.AEB));

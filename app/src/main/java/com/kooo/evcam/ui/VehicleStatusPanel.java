@@ -18,7 +18,7 @@ import com.kooo.evcam.telemetry.Telemetry;
 
 /**
  * 车辆状态面板（设置 → 界面 → 车辆状态，试验性）：主界面动作栏里、鱼眼校正下面那块，
- * 用信息条的图标显示几项想随时看到的状态 —— 现在是哨兵模式、刹车油门、驾驶辅助、喇叭
+ * 用信息条的图标显示几项想随时看到的状态 —— 现在是喇叭、闪远光、双闪（用户 2026-10-03 定）
  * （{@link InfoBarLayout#panel()} 定放哪几格）。
  *
  * <p>和信息条是同一套：同一个画法（{@link InfoBarRenderer}）、同一份车辆快照（{@link Telemetry#latest()}）、
