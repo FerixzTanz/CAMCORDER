@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.12-alpha] - 2026-10-04
+
+- Info bar: left turn, hazard and right turn are one cell; off is a grey outline, lit arrows are white with green light, hazard lights both arrows and a red nested double triangle (same mark on the vehicle status panel).
+- Info bar: narrower steering (78), speed (172), cabin (110); rear view keeps its drawing at 106 wide and the front view matches it.
+
 ## [2.0.11-alpha] - 2026-10-03
 
 - Info bar: choose what it shows by ticking items in Settings → System → System info. A ticked signal with an icon brings its whole icon; signals without an icon appear as text (name + value); what doesn't fit is left out. Defaults match 2.0.10.

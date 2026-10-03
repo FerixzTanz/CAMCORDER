@@ -33,16 +33,21 @@ public final class InfoBarLayout {
      * 有图标的格：宽度（逻辑像素）、靠哪几个信号。声明的顺序就是从左到右的顺序。
      */
     public enum Cell {
-        /** 转向灯、双闪三格是一组：勾转向指示状态或左 / 右转向灯任意一个，三格一起上。 */
-        TURN_LEFT(70, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT),
-        HAZARD(80, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT),
-        TURN_RIGHT(70, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT),
-        /** 方向盘随读数转；先用着，满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。 */
-        STEERING(130, Signal.STEERING),
+        /**
+         * 转向灯和双闪合成一格（项目所有者 2026-10-04，原来是左转、双闪、右转三格）：左箭头 | 双层嵌套三角 | 右箭头。
+         * 勾转向指示状态或左 / 右转向灯任意一个就上。
+         */
+        TURN(184, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT),
+        /**
+         * 方向盘随读数转；先用着，满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。
+         * 78 宽，比自动驻车宽一点：三位数的角度数字要放在圈里（项目所有者 2026-10-04）；度数符号三位数时落在圈上，待定。
+         */
+        STEERING(78, Signal.STEERING),
         GEAR(70, Signal.GEAR),
         /** 刹车（上）和油门（下）两根横条，左边带深度数字。 */
         PEDALS(170, Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH),
-        SPEED(210, Signal.SPEED),
+        /** 车速：数字靠右贴着 km/h，两位数时左边空着（项目所有者 2026-10-04 同意）。 */
+        SPEED(172, Signal.SPEED),
         /** 自动驻车「正在驻车」：停下被接管时亮，起步灭（不是功能开关 0x20060400，那个开车全程都亮）。 */
         AUTO_HOLD(70, Signal.AUTO_HOLD_ACTIVE),
         /** 原厂 360 画面显示中：它占着相机，我们的录像会断。 */
@@ -50,11 +55,14 @@ public final class InfoBarLayout {
         /** 哨兵模式：关 / 开 / 布防。放在原厂 360 右边（项目所有者 2026-10-03）；熄屏后能不能接着录看的就是它。 */
         SENTRY(80, Signal.SENTRY_MODE),
         /** 俯视的车：四扇门 + 五个座位的安全带（除主驾外都没验证：非开发者拿不到，画成没数据）。 */
-        CABIN(170, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
+        CABIN(110, Signal.DOOR_DRIVER, Signal.DOOR_PASSENGER, Signal.DOOR_REAR_LEFT,
                 Signal.DOOR_REAR_RIGHT, Signal.BELT_DRIVER, Signal.BELT_PASSENGER,
                 Signal.BELT_REAR_LEFT, Signal.BELT_REAR_CENTER, Signal.BELT_REAR_RIGHT),
-        /** 日行灯：以 7X 正脸为底，整条里唯一带光晕的图标。画的是前灯带：日行灯或前位置灯亮就亮。 */
-        DRL(130, Signal.DRL, Signal.FRONT_POSITION_LAMP),
+        /**
+         * 日行灯：以 7X 正脸为底。画的是前灯带：日行灯或前位置灯亮就亮。
+         * 和后灯组一样宽（项目所有者 2026-10-04）；图按原来的比例，只去掉两边的空白（正脸之后另画）。
+         */
+        DRL(106, Signal.DRL, Signal.FRONT_POSITION_LAMP),
         /**
          * 近光 + 远光一格：四道光线的方向说明开的是哪个 —— 都不亮灰色全斜向下，只近光全斜向下，
          * 只远光（含闪远光）全平直，同时开上两道平直、下两道斜向下。
@@ -63,8 +71,9 @@ public final class InfoBarLayout {
         /**
          * 后灯组：7X 车尾。贯穿尾灯暗红细条 = 后位置灯，亮红粗条 + 高位刹车灯 = 刹车灯；
          * 保险杠两侧各一盏两色灯，外侧亮红 = 后雾灯，内侧白 = 倒车灯，紧挨着，可以同时亮。
+         * 车尾原来的比例不变，只去掉两边的空白（项目所有者 2026-10-04：压窄了就不像实车了）。
          */
-        REAR_LAMPS(150, Signal.REAR_POSITION_LAMP, Signal.STOP_LAMP, Signal.REAR_FOG, Signal.REVERSE_LAMP),
+        REAR_LAMPS(106, Signal.REAR_POSITION_LAMP, Signal.STOP_LAMP, Signal.REAR_FOG, Signal.REVERSE_LAMP),
         /** 六项安全辅助的开关：AEB、前碰预警、车道偏离、车道保持、盲区、后碰预警，各自一块，没数据的各自划掉。 */
         ASSIST(200, Signal.AEB, Signal.FCW, Signal.LDW, Signal.LKA, Signal.BSD, Signal.RCW),
         ODOMETER(160, Signal.ODOMETER),
@@ -73,7 +82,12 @@ public final class InfoBarLayout {
         /** 按喇叭（Lab 0.23.0：多半拿不到，五次测试都没有号跟着变）。只在车辆状态面板上。 */
         HORN(80, false),
         /** 闪远光：只在车辆状态面板上（信息条上它算进近光远光那一格）。 */
-        FLASH(90, false, Signal.HIGH_BEAM_FLASH);
+        FLASH(90, false, Signal.HIGH_BEAM_FLASH),
+        /**
+         * 双闪：只在车辆状态面板上（信息条上它算进转向灯那一格），和那一格中间的双层三角同一个画法。
+         * 90 宽：亮时的光晕不出格。
+         */
+        HAZARD(90, false, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT);
 
         public final int width;
         /** 信息条上放不放（不放的只在车辆状态面板上用）。 */

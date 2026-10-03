@@ -22,10 +22,13 @@ import java.util.Locale;
  *       灭的用实心中灰，不用半透明；没数据的、没启用的（没验证过）都是深灰加一道亮斜杠；
  *       数字加粗、不小于 26 px；
  *       不用虚线、点阵和 1–3 px 的缝。</li>
- *   <li>亮是极氪橙；双闪、开着的门、没系的安全带用红；刹车条红、油门条绿（明度也分得开）；
+ *   <li>亮是极氪橙；开着的门、没系的安全带用红；刹车条红、油门条绿（明度也分得开）；
  *       方向盘角度左偏黄、右偏白，不带正负号。</li>
+ *   <li>转向灯、双闪一格（项目所有者 2026-10-04）：左箭头 | 双层嵌套三角（同实车双闪键）| 右箭头。
+ *       灭 = 灰色空心描边（和自动驻车、哨兵的「灭」同一个画法）；亮 = 近白实心 + 绿色光晕（像实车的转向指示，
+ *       和日行灯、远近光的「亮」同一个路数）—— 亮灭靠明度分，去掉颜色也分得开；双闪 = 两只箭头都亮、三角填红。</li>
  *   <li>日行灯那一格以 7X 正脸为底：车身轮廓、星门灯带、徽标、灯带下沿两条白色日行灯线，亮时带光晕。
- *       后灯组以 7X 车尾为底，同一套画法。</li>
+ *       后灯组以 7X 车尾为底，同一套画法。两格一样宽，图按原来的比例只是居中，不缩不压（项目所有者 2026-10-04）。</li>
  *   <li>灯组靠「哪一块亮、光线朝哪」分状态，不靠颜色深浅：近远光看光线方向，刹车看高位刹车灯那一块，
  *       后雾灯 / 倒车灯各占保险杠上的位置。</li>
  * </ul>
@@ -62,8 +65,21 @@ public final class InfoBarRenderer {
     /** 尾灯：位置灯暗红，刹车灯、后雾灯亮红。 */
     private static final int TAIL_DIM = 0xFFA8323A;
     private static final int TAIL_BRIGHT = 0xFFFF5A5F;
+    /**
+     * 转向灯亮时的绿：箭头外沿 3 px 的绿边和向外溢的光晕，芯是 {@link #LAMP_CORE}（项目所有者 2026-10-04：
+     * 像实车的转向指示，不用橙）。取明度高的绿（BT.601 亮度 156；芯 246、灭的灰 128、底 44），
+     * 压缩、去色之后亮灭照样分得开。
+     */
+    private static final int INDICATOR = 0xFF22E36B;
 
     private static final String[] ASSIST_LABELS = {"AEB", "FCW", "LDW", "LKA", "BSD", "RCW"};
+
+    /**
+     * 方向盘数字最多多宽（measureText 量的宽，含字两边的留白）：圈的内沿半径 34 - 7/2 = 30.5，
+     * 在数字顶上那一高（cy + 11 - 0.711 × 32 = cy - 11.75）宽 2 × √(30.5² - 11.75²) = 56.3。
+     * Roboto Bold 的「513」量出来 55.08、实际墨迹约 52，不缩。
+     */
+    private static final float STEER_DIGIT_ROOM = 56f;
 
     /** 位图的像素宽（信息条上就是视频宽）。 */
     private final int width;
@@ -85,6 +101,8 @@ public final class InfoBarRenderer {
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mono = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
+    /** 双闪里面那只三角（外面那只用 {@link #path}）。 */
+    private final Path innerPath = new Path();
     private final RectF rect = new RectF();
     private long lastVersion = -1;
     private boolean drawnOnce;
@@ -196,11 +214,8 @@ public final class InfoBarRenderer {
         float cx = cell.width / 2f;
         float cy = HEIGHT / 2f;
         switch (cell) {
-            case TURN_LEFT:
-                drawTurn(cx, cy, true, s.turnSignal);
-                break;
-            case TURN_RIGHT:
-                drawTurn(cx, cy, false, s.turnSignal);
+            case TURN:
+                drawIndicators(cell.width, s.turnSignal, s.hazard);
                 break;
             case HAZARD:
                 drawHazard(cx, cy, s.hazard);
@@ -230,13 +245,13 @@ public final class InfoBarRenderer {
                 drawCabin(cx, cy, s.doorsOpen, s.beltsUnbuckled);
                 break;
             case DRL:
-                drawDaytimeLights(s.daytimeRunningLights);
+                drawDaytimeLights(cx, s.daytimeRunningLights);
                 break;
             case BEAMS:
                 drawBeams(s.lowBeam, s.highBeam);
                 break;
             case REAR_LAMPS:
-                drawRearLamps(s.rearPositionLamps, s.stopLamps, s.fogLights, s.reverseLamps);
+                drawRearLamps(cx, s.rearPositionLamps, s.stopLamps, s.fogLights, s.reverseLamps);
                 break;
             case ASSIST:
                 drawAssist(new Boolean[]{s.aeb, s.forwardCollisionWarning,
@@ -262,14 +277,11 @@ public final class InfoBarRenderer {
     // ================================================================= 通用
 
     /** 线条的颜色：亮 / 灭 / 没数据。 */
-    private static int lineTone(Boolean on, boolean warn) {
+    private static int lineTone(Boolean on) {
         if (on == null) {
             return UNKNOWN_LINE;
         }
-        if (!on) {
-            return OFF;
-        }
-        return warn ? WARN : ON;
+        return on ? ON : OFF;
     }
 
     /** 实心形状：亮填橙（或红），灭填中灰，没数据深灰底加浅灰边。 */
@@ -315,49 +327,126 @@ public final class InfoBarRenderer {
 
     // ================================================================= 各格
 
-    private void drawTurn(float cx, float cy, boolean left, Integer signal) {
-        Boolean on = signal == null ? null
-                : signal == (left ? VehicleState.TURN_LEFT : VehicleState.TURN_RIGHT);
-        float d = left ? -1f : 1f;
-        path.reset();
-        path.moveTo(cx + d * 27, cy);
-        path.lineTo(cx + d * 3, cy - 21);
-        path.lineTo(cx + d * 3, cy - 10);
-        path.lineTo(cx - d * 23, cy - 10);
-        path.lineTo(cx - d * 23, cy + 10);
-        path.lineTo(cx + d * 3, cy + 10);
-        path.lineTo(cx + d * 3, cy + 21);
-        path.close();
-        solid(path, on, false);
-        if (on == null) {
-            slash(cx - 26, cy + 26, cx + 26, cy - 26);
+    /**
+     * 转向灯、双闪一格（184 宽）：左箭头 | 双闪三角 | 右箭头。转向和双闪读的是同一个转向指示状态。
+     * 左转 / 右转：那一边的箭头亮绿，三角灰；双闪：两只箭头都亮绿、三角亮红；都不亮：全是灰色空心描边；
+     * 两个都读不到才算没数据：箭头、三角都按没数据画，中间一道斜杠。
+     */
+    private void drawIndicators(int cellWidth, Integer signal, Boolean hazard) {
+        boolean unknown = signal == null && hazard == null;
+        boolean haz = Boolean.TRUE.equals(hazard);
+        Boolean leftOn = unknown ? null : (haz || (signal != null && signal == VehicleState.TURN_LEFT));
+        Boolean rightOn = unknown ? null : (haz || (signal != null && signal == VehicleState.TURN_RIGHT));
+        float cx = cellWidth / 2f;
+        indicatorArrow(cellWidth, true, leftOn);
+        indicatorArrow(cellWidth, false, rightOn);
+        hazardMark(cx, HEIGHT / 2f, unknown ? null : haz);
+        if (unknown) {
+            slash(cx - 60, 88, cx + 60, 12);
         }
     }
 
-    private void drawHazard(float cx, float cy, Boolean on) {
-        int color = lineTone(on, true);
-        stroke.setColor(color);
-        stroke.setStrokeWidth(8f);
-        triangle(cx, cy - 27, cy + 20);
-        canvas.drawPath(path, stroke);
+    /**
+     * 一只转向箭头，尖离格边 10：箭头 24 长 46 高，杆 19 长 20 高。
+     * 亮 = 绿色光晕 + 6 px 绿边 + 近白的芯（芯盖住绿边的里半，外面露 3 px 绿）；灭 = 灰色空心描边；没数据 = 深灰底浅灰边。
+     */
+    private void indicatorArrow(int cellWidth, boolean left, Boolean on) {
+        float cy = HEIGHT / 2f;
+        float tip = left ? 10f : cellWidth - 10f;
+        float d = left ? 1f : -1f;  // 从尖往杆的方向
+        path.reset();
+        path.moveTo(tip, cy);
+        path.lineTo(tip + d * 24, cy - 23);
+        path.lineTo(tip + d * 24, cy - 10);
+        path.lineTo(tip + d * 43, cy - 10);
+        path.lineTo(tip + d * 43, cy + 10);
+        path.lineTo(tip + d * 24, cy + 10);
+        path.lineTo(tip + d * 24, cy + 23);
+        path.close();
+        if (on == null) {
+            fill.setColor(UNKNOWN_FILL);
+            canvas.drawPath(path, fill);
+            stroke.setColor(UNKNOWN_LINE);
+            stroke.setStrokeWidth(4f);
+            canvas.drawPath(path, stroke);
+        } else if (!on) {
+            stroke.setColor(OFF);
+            stroke.setStrokeWidth(6f);
+            canvas.drawPath(path, stroke);
+        } else {
+            lampGlow(path, INDICATOR, 8f);
+            stroke.setColor(INDICATOR);
+            stroke.setStrokeWidth(6f);
+            canvas.drawPath(path, stroke);
+            fill.setColor(LAMP_CORE);
+            canvas.drawPath(path, fill);
+        }
+    }
+
+    /**
+     * 双闪的标志（信息条转向灯那一格和车辆状态面板的双闪格共用），像实车的双闪键：两只同心的正三角，尖朝上，
+     * 都是 6 px 的线，线与线之间空 6 px。外面那只：尖 (cx, cy-31)、底边 y cy+29、半宽 34.64（内心 cy+9，内切圆半径 20）；
+     * 里面那只是外面那只以内心为中心缩到 0.4。灭 = 两只都是灰色线；亮 = 红色光晕、外面那只填红、两只的线近白；
+     * 没数据 = 深灰底浅灰线（斜杠由调用的画）。
+     */
+    private void hazardMark(float cx, float cy, Boolean on) {
+        triangle(path, cx, cy - 31, cy + 29, 34.64f);
+        triangle(innerPath, cx, cy - 7, cy + 17, 13.86f);
+        if (on == null) {
+            fill.setColor(UNKNOWN_FILL);
+            canvas.drawPath(path, fill);
+            stroke.setColor(UNKNOWN_LINE);
+        } else if (!on) {
+            stroke.setColor(OFF);
+        } else {
+            lampGlow(path, WARN, 12f);
+            fill.setColor(WARN);
+            canvas.drawPath(path, fill);
+            stroke.setColor(LAMP_CORE);
+        }
         stroke.setStrokeWidth(6f);
-        triangle(cx, cy - 11, cy + 12);
         canvas.drawPath(path, stroke);
+        canvas.drawPath(innerPath, stroke);
+    }
+
+    /** 尖朝上的三角：尖在 (cx, top)，底边在 bottom，半宽 half。 */
+    private static void triangle(Path p, float cx, float top, float bottom, float half) {
+        p.reset();
+        p.moveTo(cx, top);
+        p.lineTo(cx + half, bottom);
+        p.lineTo(cx - half, bottom);
+        p.close();
+    }
+
+    /** 车辆状态面板的双闪格（90 宽）：和信息条转向灯那一格中间的三角同一个画法；没数据加一道斜杠。 */
+    private void drawHazard(float cx, float cy, Boolean on) {
+        hazardMark(cx, cy, on);
         if (on == null) {
-            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+            slash(cx - 30, cy + 30, cx + 30, cy - 30);
         }
     }
 
-    private void triangle(float cx, float top, float bottom) {
-        float half = (bottom - top) * 0.53f;
-        path.reset();
-        path.moveTo(cx, top);
-        path.lineTo(cx + half, bottom);
-        path.lineTo(cx - half, bottom);
-        path.close();
+    /**
+     * 亮着的灯向外溢一圈光（和光线、灯块的光晕同一个强度）：形状连同 width 宽的边一起模糊一次 ——
+     * 填和描在同一次里画，共用一层模糊。
+     */
+    private void lampGlow(Path p, int color, float width) {
+        glow.setStyle(Paint.Style.FILL_AND_STROKE);
+        glow.setStrokeWidth(width);
+        glow.setColor(color);
+        glow.setAlpha(200);
+        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        canvas.drawPath(p, glow);
+        glow.setMaskFilter(null);
     }
 
-    /** 方向盘：整只随转角转；数字居中、度数符号挂在右边；左偏黄、右偏白，不带正负号。 */
+    /**
+     * 方向盘：整只随转角转；数字居中、度数符号挂在右边；左偏黄、右偏白，不带正负号。
+     * 格子 78 宽（宽度是按设计机上的字定的），车机字体更宽时和车速一样缩字：数字的宽超过
+     * {@link #STEER_DIGIT_ROOM} 就缩到刚好，数字不压圈；度数符号超出格子右边也缩，不出格。
+     * 注意：三位数时度数符号落在圈上（以前 130 宽时也一样），缩半压缩后几乎看不见 —— 怎么改等项目所有者定；
+     * 0 / 180 / 360 / 540° 时横辐条和两边的数字有重叠（一直如此）。
+     */
     private void drawSteering(float cx, float cy, Float degrees) {
         int ring = degrees == null ? UNKNOWN_LINE : ON;
         float r = 34f;
@@ -380,17 +469,28 @@ public final class InfoBarRenderer {
         }
         int color = degrees < 0 ? LEFT_YELLOW : TEXT;
         String digits = String.format(Locale.US, "%d", Math.abs(Math.round(degrees)));
+        float cellWidth = cx * 2f;
         text.setTextSize(32f);
+        float tw = text.measureText(digits);
+        float size = tw > STEER_DIGIT_ROOM ? 32f * STEER_DIGIT_ROOM / tw : 32f;
+        text.setTextSize(size);
         float half = text.measureText(digits) / 2f;
-        centeredText(digits, cx, cy + 11, 32f, color, text);
+        // 顺带把颜色设好，度数符号用同一个颜色
+        centeredText(digits, cx, cy + 11, size, color, text);
+        float degX = cx + half + 2f;
         text.setTextSize(20f);
+        float dw = text.measureText("°");
+        float degRoom = cellWidth - degX;
+        if (dw > degRoom) {
+            text.setTextSize(20f * degRoom / dw);
+        }
         text.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("°", cx + half + 2, cy, text);
+        canvas.drawText("°", degX, cy, text);
     }
 
     /** 喇叭：一只号角，右边两道声波。亮填实，灭画轮廓，没数据深灰加斜杠。 */
     private void drawHorn(float cx, float cy, Boolean on) {
-        int color = lineTone(on, false);
+        int color = lineTone(on);
         path.reset();
         path.moveTo(cx - 30, cy - 9);
         path.lineTo(cx - 14, cy - 9);
@@ -467,14 +567,28 @@ public final class InfoBarRenderer {
         }
     }
 
+    /**
+     * 车速（172 宽）：数字靠右对齐在 w-60、「km/h」靠左在 w-52，同一条基线 72。
+     * 格宽是按设计机上的字定的，车机字体更宽时缩字：数字只能用 x 0..w-60、「km/h」只能用 x w-52..w，
+     * 按原字号量出来超了就按比例缩到刚好 —— 不出格。
+     */
     private void drawSpeed(float cx, float cy, Float kmh) {
         float cellWidth = cx * 2f;
         String number = kmh == null ? "--" : String.format(Locale.US, "%d", Math.round(kmh));
         text.setTextSize(64f);
+        float room = cellWidth - 60f;
+        float tw = text.measureText(number);
+        if (tw > room) {
+            text.setTextSize(64f * room / tw);
+        }
         text.setColor(kmh == null ? TEXT_DIM : TEXT);
         text.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText(number, cellWidth - 60f, 72f, text);
         text.setTextSize(22f);
+        float uw = text.measureText("km/h");
+        if (uw > 52f) {
+            text.setTextSize(22f * 52f / uw);
+        }
         text.setColor(TEXT_DIM);
         text.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("km/h", cellWidth - 52f, 72f, text);
@@ -484,7 +598,7 @@ public final class InfoBarRenderer {
     }
 
     private void drawAutoHold(float cx, float cy, Boolean on) {
-        int color = lineTone(on, false);
+        int color = lineTone(on);
         stroke.setColor(color);
         stroke.setStrokeWidth(6f);
         canvas.drawCircle(cx, cy, 25, stroke);
@@ -540,7 +654,7 @@ public final class InfoBarRenderer {
 
     /** 原厂 360 画面：俯视的车，四周四段弧（环视）；显示中就亮。 */
     private void drawStock360(float cx, float cy, Boolean shown) {
-        int color = lineTone(shown, false);
+        int color = lineTone(shown);
         solidRect(cx - 9, cy - 15, cx + 9, cy + 15, 5, shown, false);
         stroke.setColor(color);
         stroke.setStrokeWidth(6f);
@@ -613,9 +727,13 @@ public final class InfoBarRenderer {
     /**
      * 日行灯：以 7X 正脸为底 —— 车身轮廓（车顶、A 柱、肩线、轮子）、星门灯带、正中的徽标、
      * 车牌，以及灯带下沿左右两条白色日行灯线（向外端上挑收进转角灯组）。
-     * 亮时两条线带橙色光晕、灯带亮起并向四周散光；灭时整组灰、轮廓还在。格子 130 宽。
+     * 亮时两条线带橙色光晕、灯带亮起并向四周散光；灭时整组灰、轮廓还在。
+     * 格子 106 宽，和后灯组一样（项目所有者 2026-10-04）：图还是原来为 130 宽的格子画的那张（对称于 x 65，
+     * 实际占 x 16..114，两只轮子），整张平移到格子正中，不缩不压 —— 只去掉两边的空白。
      */
-    private void drawDaytimeLights(Boolean on) {
+    private void drawDaytimeLights(float cx, Boolean on) {
+        canvas.save();
+        canvas.translate(cx - 65f, 0f);
         boolean lit = Boolean.TRUE.equals(on);
         int lineColor = on == null ? UNKNOWN_LINE : OUTLINE;
         // 车身轮廓
@@ -691,6 +809,7 @@ public final class InfoBarRenderer {
         if (on == null) {
             slash(20, 84, 110, 16);
         }
+        canvas.restore();
     }
 
     /**
@@ -746,10 +865,14 @@ public final class InfoBarRenderer {
     }
 
     /**
-     * 后灯组（150 宽）：以 7X 车尾为底。贯穿尾灯暗红细条 = 后位置灯；亮红粗条 + 高位刹车灯 = 刹车灯；
+     * 后灯组（106 宽）：以 7X 车尾为底。贯穿尾灯暗红细条 = 后位置灯；亮红粗条 + 高位刹车灯 = 刹车灯；
      * 保险杠两侧各一盏两色灯，外侧亮红 = 后雾灯、内侧白 = 倒车灯，紧挨着。四个都读不到才算没数据。
+     * 图还是原来为 150 宽的格子画的那张（对称于 x 75，实际占 x 26..124，两只轮子），整张平移到格子正中，
+     * 不缩不压 —— 只去掉两边的空白（项目所有者 2026-10-04：压窄了就不像实车了）。
      */
-    private void drawRearLamps(Boolean position, Boolean stop, Boolean fog, Boolean reverse) {
+    private void drawRearLamps(float cx, Boolean position, Boolean stop, Boolean fog, Boolean reverse) {
+        canvas.save();
+        canvas.translate(cx - 75f, 0f);
         boolean unknown = position == null && stop == null && fog == null && reverse == null;
         boolean braking = Boolean.TRUE.equals(stop);
         boolean fogOn = Boolean.TRUE.equals(fog);
@@ -813,6 +936,7 @@ public final class InfoBarRenderer {
         if (unknown) {
             slash(30, 88, 120, 14);
         }
+        canvas.restore();
     }
 
     /** 一块实心的灯。 */

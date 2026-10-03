@@ -22,7 +22,7 @@ import com.kooo.evcam.telemetry.Telemetry;
  * （{@link InfoBarLayout#panel()} 定放哪几格）。
  *
  * <p>和信息条是同一套：同一个画法（{@link InfoBarRenderer}）、同一份车辆快照（{@link Telemetry#latest()}）、
- * 同一条「没验证的划掉，开发者可以激活全部」的规则。不同的只是摆法和在哪显示。</p>
+ * 同一条规则：没验证的信号不画进来（只有开发者能在系统信息里勾上），没数据的各自划掉。不同的只是摆法和在哪显示。</p>
  *
  * <p>自己管自己，所在的界面不用接线（同 {@link FisheyeToggleButton}）：开关关着就不占地方；
  * 开着、而且窗口看得见时才向 {@link Telemetry} 登记（"vehicle-status"），看不见或关掉就注销 ——
@@ -89,7 +89,7 @@ public class VehicleStatusPanel extends View implements Telemetry.Listener {
         } else if (!shouldRun && active) {
             stop();
         }
-        // 「激活所有栏目信息」可能变了：下次画的时候按新规矩重建
+        // 开关、窗口可见性变了（或者开发者模式开关过）：下次画的时候重建
         renderer = null;
         invalidate();
     }

@@ -67,7 +67,7 @@ public class InfoBarLayoutTest {
     @Test
     public void theDefaultSelectionIsWhatWasInUseAndFitsTheSurround() {
         List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, InfoBarLayout.defaultSelection());
-        assertEquals(InfoBarLayout.Cell.TURN_LEFT, placed.get(0).cell);
+        assertEquals(InfoBarLayout.Cell.TURN, placed.get(0).cell);
         assertEquals(InfoBarLayout.MARGIN, placed.get(0).x);
         InfoBarLayout.Placed last = placed.get(placed.size() - 1);
         assertEquals(InfoBarLayout.Cell.POSITION, last.cell);
@@ -89,13 +89,30 @@ public class InfoBarLayoutTest {
         assertEquals("闪远光在信息条上算近光远光那一格（单独那格只在面板上）",
                 Collections.singletonList(InfoBarLayout.Cell.BEAMS),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.HIGH_BEAM_FLASH))));
-        assertEquals("转向灯三格是一组",
-                Arrays.asList(InfoBarLayout.Cell.TURN_LEFT, InfoBarLayout.Cell.HAZARD, InfoBarLayout.Cell.TURN_RIGHT),
+        assertEquals("转向灯、双闪合成一格（双闪单独那格只在面板上）",
+                Collections.singletonList(InfoBarLayout.Cell.TURN),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.TURN_RIGHT))));
+        assertEquals(Collections.singletonList(InfoBarLayout.Cell.TURN),
+                cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.INDICATOR))));
         assertEquals(Collections.singletonList(InfoBarLayout.Cell.ASSIST),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.AEB))));
         assertEquals(Collections.singletonList(InfoBarLayout.Cell.POSITION),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(InfoBarLayout.POSITION_ITEM))));
+    }
+
+    /** 转向灯、双闪合成一格（项目所有者 2026-10-04）：默认照样勾着三个转向信号；双闪那格只在面板上。 */
+    @Test
+    public void theTurnCellCarriesTheTurnSignalsAndTheHazardCellStaysOnThePanel() {
+        List<Signal> turn = Arrays.asList(Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT);
+        assertEquals(turn, InfoBarLayout.Cell.TURN.signals());
+        assertEquals(turn, InfoBarLayout.Cell.HAZARD.signals());
+        assertTrue(InfoBarLayout.Cell.TURN.onStrip);
+        assertFalse(InfoBarLayout.Cell.HAZARD.onStrip);
+        Set<String> defaults = InfoBarLayout.defaultSelection();
+        for (Signal s : turn) {
+            assertTrue(s.name(), defaults.contains(s.name()));
+            assertTrue(s.name(), InfoBarLayout.hasIcon(s));
+        }
     }
 
     /** 没有图标的信号画成文字格，排在图标格后面，按信号表的顺序。 */
