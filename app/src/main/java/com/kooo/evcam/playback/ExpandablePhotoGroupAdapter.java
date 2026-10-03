@@ -43,6 +43,13 @@ public class ExpandablePhotoGroupAdapter extends RecyclerView.Adapter<RecyclerVi
     
     private int selectedPosition = -1;
     private boolean isMultiSelectMode = false;
+    /** 锁定的文件名（锁定影像关着时是空的）：锁定的组在张数后面多写一句。 */
+    private Set<String> lockedNames = new HashSet<>();
+
+    public void setLockedNames(Set<String> names) {
+        lockedNames = names != null ? names : new HashSet<String>();
+        notifyDataSetChanged();
+    }
 
     private OnItemClickListener itemClickListener;
     private OnItemSelectedListener itemSelectedListener;
@@ -230,7 +237,8 @@ public class ExpandablePhotoGroupAdapter extends RecyclerView.Adapter<RecyclerVi
 
         // 图片数量标签
         int count = group.getPhotoCount();
-        holder.videoCountBadge.setText(context.getString(R.string.photo_count_badge, count));
+        holder.videoCountBadge.setText(context.getString(R.string.photo_count_badge, count)
+                + (group.isLocked(lockedNames) ? " · " + context.getString(R.string.photo_group_locked) : ""));
 
         // 加载四个位置的缩略图
         loadThumbnail(group.getFrontPhoto(), holder.thumbFront);

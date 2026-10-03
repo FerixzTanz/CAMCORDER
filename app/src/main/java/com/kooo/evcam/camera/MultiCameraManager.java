@@ -104,8 +104,8 @@ public class MultiCameraManager {
      * <p>由 RecordingCoordinator 去停：它同步按钮、前台服务、提示，主界面在不在都一样。</p>
      */
     public interface StorageFullCallback {
-        /** @param capless true：没设上限（不删录像）；false：设了上限但删光旧录像也腾不出空间 */
-        void onStorageFull(boolean capless);
+        /** @param decision FULL 的那个决定：看 capless（没设上限）、lockedFull（剩下的都锁着） */
+        void onStorageFull(StoragePlan.Decision decision);
     }
 
     /**
@@ -1131,9 +1131,9 @@ public class MultiCameraManager {
                         return;
                     }
                     AppLog.w(TAG, "存储检查（" + why + "）：录不下去了，停止录制 capless="
-                            + decision.capless);
+                            + decision.capless + " locked=" + decision.lockedFull);
                     if (storageFullCallback != null) {
-                        storageFullCallback.onStorageFull(decision.capless);
+                        storageFullCallback.onStorageFull(decision);
                     } else {
                         stopRecording();
                     }

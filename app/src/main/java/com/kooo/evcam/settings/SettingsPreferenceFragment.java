@@ -281,7 +281,92 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindGigabyteLimit("pref_photo_limit", appConfig.getPhotoStorageLimitGb(),
                 value -> appConfig.setPhotoStorageLimitGb(value));
 
+        bindFootageLock();
         updateStorageUsage();
+    }
+
+    /**
+     * 锁定影像。打开直接生效；关掉时如果锁着东西，先说清楚代价（项目所有者 2026-10-03）：
+     * 关掉后它们不再受保护，空间不够时和别的录像一样从旧到新删，删掉的找不回来。
+     */
+    private void bindFootageLock() {
+        SwitchPreferenceCompat pref = findPreference("pref_footage_lock");
+        if (pref == null) {
+            return;
+        }
+        pref.setPersistent(false);
+        pref.setChecked(appConfig.isFootageLockEnabled());
+        pref.setOnPreferenceChangeListener((preference, newValue) -> {
+            if (Boolean.TRUE.equals(newValue)) {
+                applyFootageLock(pref, true);
+                return true;
+            }
+            // 先不拨：量完锁了多少再决定要不要问
+            final Context context = getContext() != null ? getContext().getApplicationContext() : null;
+            if (context == null) {
+                return false;
+            }
+            new Thread(() -> {
+                com.kooo.evcam.storage.FootageLocks.Usage videos =
+                        com.kooo.evcam.storage.FootageLocks.usage(StorageHelper.getVideoDir(context));
+                com.kooo.evcam.storage.FootageLocks.Usage photos =
+                        com.kooo.evcam.storage.FootageLocks.usage(StorageHelper.getPhotoDir(context));
+                if (!isAdded()) {
+                    return;
+                }
+                requireActivity().runOnUiThread(() -> confirmFootageLockOff(pref,
+                        videos.files + photos.files, videos.bytes + photos.bytes));
+            }, "footage-lock-off").start();
+            return false;
+        });
+        updateFootageLocked();
+    }
+
+    private void confirmFootageLockOff(SwitchPreferenceCompat pref, int files, long bytes) {
+        if (files == 0 || getContext() == null) {
+            applyFootageLock(pref, false);
+            return;
+        }
+        com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(getContext(), R.style.Theme_Cam_MaterialAlertDialog)
+                .setTitle(R.string.dlg_footage_lock_off_title)
+                .setMessage(getString(R.string.dlg_footage_lock_off_msg, files, StorageHelper.formatSize(bytes)))
+                .setPositiveButton(R.string.dlg_footage_lock_off_ok, (dialog, which) -> applyFootageLock(pref, false))
+                .setNegativeButton(R.string.action_cancel, null));
+    }
+
+    private void applyFootageLock(SwitchPreferenceCompat pref, boolean on) {
+        appConfig.setFootageLockEnabled(on);
+        pref.setChecked(on);
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("开关变更: pref_footage_lock → " + (on ? "开" : "关"));
+        updateFootageLocked();
+    }
+
+    /** 「已锁定」那一行：录像几个文件多大、照片几张多大；开关关着时注明不受保护。 */
+    private void updateFootageLocked() {
+        Preference pref = findPreference("pref_footage_locked");
+        if (pref == null || getContext() == null) {
+            return;
+        }
+        pref.setSummary(getString(R.string.info_reading));
+        final Context context = getContext().getApplicationContext();
+        final boolean on = appConfig.isFootageLockEnabled();
+        new Thread(() -> {
+            com.kooo.evcam.storage.FootageLocks.Usage videos =
+                    com.kooo.evcam.storage.FootageLocks.usage(StorageHelper.getVideoDir(context));
+            com.kooo.evcam.storage.FootageLocks.Usage photos =
+                    com.kooo.evcam.storage.FootageLocks.usage(StorageHelper.getPhotoDir(context));
+            if (!isAdded()) {
+                return;
+            }
+            String text = videos.files + photos.files == 0
+                    ? getString(R.string.set_footage_locked_none)
+                    : getString(R.string.set_footage_locked_summary,
+                            videos.files, StorageHelper.formatSize(videos.bytes),
+                            photos.files, StorageHelper.formatSize(photos.bytes));
+            final String result = on || videos.files + photos.files == 0 ? text
+                    : getString(R.string.set_footage_locked_unprotected, text);
+            requireActivity().runOnUiThread(() -> pref.setSummary(result));
+        }, "footage-locked").start();
     }
 
     /**

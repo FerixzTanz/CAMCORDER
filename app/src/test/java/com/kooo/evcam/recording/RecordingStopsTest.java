@@ -33,6 +33,7 @@ public class RecordingStopsTest {
     public void storageProblemsDoNotWaitForTheSurround() {
         assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_FULL));
         assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_CANNOT_FREE));
+        assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_LOCKED));
     }
 
     /** 熄屏录制不在这一次的范围里，维持原来的做法。 */

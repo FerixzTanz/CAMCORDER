@@ -7,7 +7,6 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -178,6 +177,12 @@ public class StorageCleanupManager {
      * @return 清理结果
      */
     private CleanupResult cleanupByPercentage(File directory, double deleteRatio, String typeName) {
+        synchronized (com.kooo.evcam.storage.FootageLocks.guard()) {
+            return cleanupByPercentageLocked(directory, deleteRatio, typeName);
+        }
+    }
+
+    private CleanupResult cleanupByPercentageLocked(File directory, double deleteRatio, String typeName) {
         CleanupResult result = new CleanupResult();
         
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
@@ -211,13 +216,16 @@ public class StorageCleanupManager {
         AppLog.d(TAG, typeName + "强制清理：当前占用 " + StorageHelper.formatSize(totalSize) + 
                 "，将删除 " + StorageHelper.formatSize(needToDelete) + " (20%)");
         
-        // 按修改时间排序（最旧的在前）
-        List<File> sortedFiles = new ArrayList<>(Arrays.asList(files));
-        sortedFiles.sort(Comparator.comparingLong(File::lastModified));
+        // 按修改时间排序（最旧的在前）；锁定的不删（但算在占用里）
+        List<File> sortedFiles = deletableOldestFirst(directory, files);
+        if (sortedFiles == null) {
+            return result;
+        }
         
         // 删除最旧的文件直到达到目标大小
         long deletedSize = 0;
         int deletedCount = 0;
+        List<String> gone = new ArrayList<>();
         
         for (File file : sortedFiles) {
             if (totalSize - deletedSize <= targetSize) {
@@ -226,12 +234,14 @@ public class StorageCleanupManager {
             
             long fileSize = file.length();
             if (file.delete()) {
+                gone.add(file.getName());
                 deletedSize += fileSize;
                 deletedCount++;
                 AppLog.d(TAG, "强制删除旧文件: " + file.getName() + " (" + StorageHelper.formatSize(fileSize) + ")");
             }
         }
         
+        com.kooo.evcam.storage.FootageLocks.forget(directory, gone);
         result.deletedSize = deletedSize;
         result.deletedCount = deletedCount;
         result.finalSize = totalSize - deletedSize;
@@ -260,6 +270,12 @@ public class StorageCleanupManager {
      * @return 清理结果
      */
     private CleanupResult cleanupDirectory(File directory, long limitBytes, String typeName) {
+        synchronized (com.kooo.evcam.storage.FootageLocks.guard()) {
+            return cleanupDirectoryLocked(directory, limitBytes, typeName);
+        }
+    }
+
+    private CleanupResult cleanupDirectoryLocked(File directory, long limitBytes, String typeName) {
         CleanupResult result = new CleanupResult();
         
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
@@ -302,13 +318,16 @@ public class StorageCleanupManager {
         AppLog.d(TAG, typeName + "超过限制，需要删除: " + StorageHelper.formatSize(needToDelete) + 
                 "，目标大小: " + StorageHelper.formatSize(targetSize));
         
-        // 按修改时间排序（最旧的在前）
-        List<File> sortedFiles = new ArrayList<>(Arrays.asList(files));
-        sortedFiles.sort(Comparator.comparingLong(File::lastModified));
+        // 按修改时间排序（最旧的在前）；锁定的不删（但算在占用里）
+        List<File> sortedFiles = deletableOldestFirst(directory, files);
+        if (sortedFiles == null) {
+            return result;
+        }
         
         // 删除最旧的文件直到达到目标大小
         long deletedSize = 0;
         int deletedCount = 0;
+        List<String> gone = new ArrayList<>();
         
         for (File file : sortedFiles) {
             if (totalSize - deletedSize <= targetSize) {
@@ -319,6 +338,7 @@ public class StorageCleanupManager {
             String fileName = file.getName();
             
             if (file.delete()) {
+                gone.add(fileName);
                 deletedSize += fileSize;
                 deletedCount++;
                 AppLog.d(TAG, "已删除" + typeName + ": " + fileName + " (" + StorageHelper.formatSize(fileSize) + ")");
@@ -327,6 +347,7 @@ public class StorageCleanupManager {
             }
         }
         
+        com.kooo.evcam.storage.FootageLocks.forget(directory, gone);
         result.deletedCount = deletedCount;
         result.deletedSize = deletedSize;
         result.finalSize = totalSize - deletedSize;
@@ -337,6 +358,27 @@ public class StorageCleanupManager {
         return result;
     }
     
+    /**
+     * 能删的文件，最旧的在前：锁定的拿掉（{@link com.kooo.evcam.storage.FootageLocks}）。
+     * 锁定清单读不出来返回 null —— 这一轮不删。调用方拿着清单的锁。
+     */
+    private List<File> deletableOldestFirst(File directory, File[] files) {
+        java.util.Set<String> locked =
+                com.kooo.evcam.storage.FootageLocks.protectedNames(context, directory);
+        if (locked == null) {
+            AppLog.w(TAG, "锁定清单读不出来，这一轮不清理: " + directory);
+            return null;
+        }
+        List<File> sorted = new ArrayList<>();
+        for (File file : files) {
+            if (!locked.contains(file.getName())) {
+                sorted.add(file);
+            }
+        }
+        sorted.sort(Comparator.comparingLong(File::lastModified));
+        return sorted;
+    }
+
     /**
      * 显示清理通知
      */

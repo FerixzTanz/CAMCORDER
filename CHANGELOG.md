@@ -11,6 +11,13 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.9-alpha] - 2026-10-03
+
+- Lock footage (Settings → Storage, on by default): lock videos and photos in playback; locked files are never removed by automatic cleanup or plain delete.
+- Video playback: Lock / Unlock for the files playing at this moment (all cameras), locked parts marked under the progress bar, sessions with locked files marked in the list.
+- Photo playback: Lock / Unlock a whole photo group; locked groups marked in the list.
+- If locked footage fills the space, recording stops and says so.
+
 ## [2.0.8-alpha] - 2026-10-03
 
 - Vehicle status panel: now only the horn, flash-to-pass and hazard lights.

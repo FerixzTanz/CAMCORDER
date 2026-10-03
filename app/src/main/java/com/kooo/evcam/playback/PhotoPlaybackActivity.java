@@ -97,6 +97,12 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
     private TextView placeholderFront;
     private Button btnViewMode;
     private Button btnSendToPhone;
+    /** 锁定 / 解锁这一组（锁定影像开着时才有）。 */
+    private Button btnLock;
+    /** 「锁定影像」开着没有：扫描时读一次，回到前台时再看一眼。 */
+    private boolean lockEnabled;
+    /** 照片目录里锁定的文件名（开关关着时是空的）。 */
+    private Set<String> lockedPhotos = new HashSet<>();
     private View controlsLayout;
 
     // 数据
@@ -141,6 +147,15 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         setupTapToExpand();
         updatePhotoList();
         applyStatusBarInsets();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (com.kooo.evcam.storage.FootageLocks.enabled(this) != lockEnabled) {
+            // 设置里刚拨过「锁定影像」：重新扫一遍，按钮、标记都跟着
+            updatePhotoList();
+        }
     }
 
     @Override
@@ -213,6 +228,7 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         // 摄像头切换按钮和控制栏
         btnViewMode = findViewById(R.id.btn_view_mode);
         btnSendToPhone = findViewById(R.id.btn_send_to_phone);
+        btnLock = findViewById(R.id.btn_lock);
         controlsLayout = findViewById(R.id.controls_layout);
 
         // 设置列表（竖屏2列，横屏1列，日期头部跨越所有列）
@@ -289,6 +305,9 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
         if (btnSendToPhone != null) {
             btnSendToPhone.setOnClickListener(v -> sendCurrentPhotoToPhone());
+        }
+        if (btnLock != null) {
+            btnLock.setOnClickListener(v -> toggleLockGroup());
         }
     }
 
@@ -506,6 +525,50 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
         currentDatetime.setText(group.getFormattedDateTime());
         updatePhotoDisplay(group);
+        updateLockButton();
+    }
+
+    // ------------------------------------------------------------------ 锁定影像
+
+    /** 按钮说的是这一组：整组都锁着写「解锁」，否则写「锁定」。 */
+    private void updateLockButton() {
+        if (btnLock == null) {
+            return;
+        }
+        btnLock.setVisibility(lockEnabled && currentGroup != null ? View.VISIBLE : View.GONE);
+        if (lockEnabled && currentGroup != null) {
+            boolean locked = lockedPhotos.containsAll(currentGroup.fileNames());
+            btnLock.setText(locked ? R.string.action_unlock_footage : R.string.action_lock_footage);
+        }
+    }
+
+    /** 锁定 / 解锁这一组（项目所有者 2026-10-03：照片直接锁一整组）。 */
+    private void toggleLockGroup() {
+        if (currentGroup == null || currentGroup.getPhotoCount() == 0) {
+            return;
+        }
+        final List<String> names = currentGroup.fileNames();
+        final boolean unlock = lockedPhotos.containsAll(names);
+        btnLock.setEnabled(false);
+        com.kooo.evcam.storage.FootageLocks.set(StorageHelper.getPhotoDir(this), names, !unlock, ok -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+            btnLock.setEnabled(true);
+            if (!ok) {
+                Toast.makeText(this, R.string.msg_footage_lock_failed, Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (unlock) {
+                lockedPhotos.removeAll(names);
+            } else {
+                lockedPhotos.addAll(names);
+            }
+            Toast.makeText(this, getString(unlock ? R.string.msg_footage_unlocked : R.string.msg_footage_locked,
+                    names.size()), Toast.LENGTH_SHORT).show();
+            adapter.setLockedNames(lockedPhotos);
+            updateLockButton();
+        });
     }
 
     /**
@@ -664,6 +727,10 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         dateSections.clear();
 
         File saveDir = StorageHelper.getPhotoDir(PhotoPlaybackActivity.this);
+        lockEnabled = com.kooo.evcam.storage.FootageLocks.enabled(PhotoPlaybackActivity.this);
+        lockedPhotos = com.kooo.evcam.storage.FootageLocks.shown(PhotoPlaybackActivity.this, saveDir);
+        adapter.setLockedNames(lockedPhotos);
+        updateLockButton();
         if (!saveDir.exists() || !saveDir.isDirectory()) {
             showEmptyState();
             showNoSelection();
@@ -823,10 +890,16 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                     // 先留一份 —— 删完还要拿它对一下预览区放的是不是其中之一
                     Set<PhotoGroup> deleted = new HashSet<>(selectedGroups);
                     int deletedCount = 0;
+                    int keptCount = 0;
                     
-                    // 删除选中的图片组
-                    for (PhotoGroup group : deleted) {
-                        deletedCount += group.deleteAll();
+                    // 删除选中的图片组：锁定的留下（锁定影像关着时不算），留下的那几组还在列表里
+                    Set<String> keep = lockEnabled ? lockedPhotos : new HashSet<String>();
+                    for (PhotoGroup group : new HashSet<>(deleted)) {
+                        deletedCount += group.deleteAllExcept(keep);
+                        if (group.getPhotoCount() > 0) {
+                            keptCount += group.getPhotoCount();
+                            deleted.remove(group);
+                        }
                     }
                     
                     // 从日期分组中移除已删除的组
@@ -849,7 +922,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                     updateSelectedCount();
 
                     android.widget.Toast.makeText(PhotoPlaybackActivity.this,
-                            getString(R.string.msg_photos_deleted, deletedCount),
+                            getString(R.string.msg_photos_deleted, deletedCount)
+                                    + (keptCount > 0 ? getString(R.string.msg_kept_locked, keptCount) : ""),
                             android.widget.Toast.LENGTH_SHORT).show();
 
                     if (dateSections.isEmpty()) {

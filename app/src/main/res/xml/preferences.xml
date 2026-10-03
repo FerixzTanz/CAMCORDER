@@ -125,6 +125,17 @@
             android:dialogTitle="@string/set_photo_limit_dialog"
             android:dialogMessage="@string/set_limit_message" />
 
+        <!-- 锁定影像：锁定的不被自动清理删掉（FootageLocks）；下面一行是锁了多少 -->
+        <SwitchPreferenceCompat
+            android:key="pref_footage_lock"
+            android:title="@string/set_footage_lock_title"
+            android:summary="@string/set_footage_lock_summary" />
+
+        <Preference
+            android:key="pref_footage_locked"
+            android:title="@string/set_footage_locked_title"
+            android:selectable="false" />
+
         <Preference
             android:key="pref_storage_usage"
             android:title="@string/set_storage_usage_title"

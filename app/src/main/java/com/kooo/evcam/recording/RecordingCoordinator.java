@@ -132,8 +132,9 @@ public final class RecordingCoordinator {
         if (manager == null) {
             return;
         }
-        manager.setStorageFullCallback(capless -> main.post(() -> stop(capless
-                ? RecordingStops.Reason.STORAGE_FULL : RecordingStops.Reason.STORAGE_CANNOT_FREE)));
+        manager.setStorageFullCallback(decision -> main.post(() -> stop(decision.capless
+                ? RecordingStops.Reason.STORAGE_FULL : decision.lockedFull
+                ? RecordingStops.Reason.STORAGE_LOCKED : RecordingStops.Reason.STORAGE_CANNOT_FREE)));
         // 录制器判的：写出过数据又断了是「写不进」，一个字节都没写出过是「没收到画面」
         manager.setWriteStallCallback((stalledMs, everWrote) -> main.post(() -> stop(everWrote
                 ? RecordingStops.Reason.WRITE_STALLED : RecordingStops.Reason.NO_DATA)));
@@ -394,7 +395,8 @@ public final class RecordingCoordinator {
         notifyRefused(context.getString(R.string.msg_storage_cleaning));
         com.kooo.evcam.camera.StorageGuard.enforceAsync(context, dir, decision -> {
             if (decision.verdict == com.kooo.evcam.camera.StoragePlan.Verdict.FULL) {
-                refused(why, counts, context.getString(R.string.msg_storage_cannot_free));
+                refused(why, counts, context.getString(decision.lockedFull
+                        ? R.string.msg_storage_locked_refuse : R.string.msg_storage_cannot_free));
             } else {
                 startWith(storage, cameras, why, counts, false);
             }

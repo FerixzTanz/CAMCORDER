@@ -20,8 +20,10 @@ public final class RecordingStops {
         SCREEN_OFF,
         /** U 盘满了。存储那边会自己从最老的清，走到这一步说明清不动。 */
         STORAGE_FULL,
-        /** U 盘满了而且清不出空间（没设上限、或者全是锁定的）。 */
+        /** U 盘满了而且清不出空间：删光本应用的旧录像也不够（盘被别的东西占了）。 */
         STORAGE_CANNOT_FREE,
+        /** 锁定的影像占满了空间：没锁的删光也不够，解锁一些就能接着录（FootageLocks）。 */
+        STORAGE_LOCKED,
         /** 开始录之后 15 秒一个字节都没写进文件（录制器判的，和 WRITE_STALLED 是同一个裁判）。 */
         NO_DATA,
         /**

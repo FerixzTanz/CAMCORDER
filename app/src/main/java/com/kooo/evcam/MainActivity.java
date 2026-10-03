@@ -2493,6 +2493,9 @@ public class MainActivity extends AppCompatActivity {
                 case STORAGE_CANNOT_FREE:
                     text = getString(R.string.msg_storage_cannot_free);
                     break;
+                case STORAGE_LOCKED:
+                    text = getString(R.string.msg_storage_locked_stopped);
+                    break;
                 case SCREEN_OFF:
                     text = getString(R.string.msg_screen_off_stopped);
                     length = Toast.LENGTH_SHORT;

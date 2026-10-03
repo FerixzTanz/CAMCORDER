@@ -27,6 +27,7 @@ public class AppConfig {
     private static final String KEY_AUTO_START_RECORDING = "auto_start_recording";  // 启动自动录制
     private static final String KEY_SCREEN_OFF_RECORDING = "screen_off_recording";  // 息屏录制（锁车录制）
     private static final String KEY_SCREEN_OFF_KEEP_RECORDING = "screen_off_keep_recording";  // 熄屏持续录制
+    private static final String KEY_FOOTAGE_LOCK = "footage_lock";  // 锁定影像
     private static final String KEY_UI_LEFT_FOR_SCREEN_OFF = "ui_left_for_screen_off";  // 主界面是因为熄屏才退下去的
     private static final String KEY_KEEP_ALIVE_ENABLED = "keep_alive_enabled";  // 保活服务
     
@@ -323,6 +324,18 @@ public class AppConfig {
 
     public void setScreenOffKeepRecording(boolean enabled) {
         prefs.edit().putBoolean(KEY_SCREEN_OFF_KEEP_RECORDING, enabled).apply();
+    }
+
+    /**
+     * 锁定影像（存储页，默认开）：回放里能锁录像和照片，锁定的不会被自动清理删掉、也不能直接删。
+     * 关掉时锁定按钮收起、清理不再跳过锁定的；清单留在 U 盘上，重新打开恢复保护。见 {@code FootageLocks}。
+     */
+    public boolean isFootageLockEnabled() {
+        return prefs.getBoolean(KEY_FOOTAGE_LOCK, true);
+    }
+
+    public void setFootageLockEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_FOOTAGE_LOCK, enabled).apply();
     }
 
     /**
