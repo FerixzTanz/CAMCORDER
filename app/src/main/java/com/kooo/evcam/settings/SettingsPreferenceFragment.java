@@ -173,14 +173,6 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 askLocationPermission();
             }
         });
-        // 「激活所有栏目信息」锁在开发者模式后面：没解锁时灰掉、关着、写明为什么（值那边 AppConfig 同样锁着）
-        bindSwitch("pref_info_bar_all", appConfig.isInfoBarAllActive(),
-                value -> appConfig.setInfoBarAllActive(value));
-        SwitchPreferenceCompat infoBarAll = findPreference("pref_info_bar_all");
-        if (infoBarAll != null && !DeveloperMode.isUnlocked()) {
-            infoBarAll.setEnabled(false);
-            infoBarAll.setSummary(getString(R.string.set_info_bar_all_dev_only));
-        }
     }
 
     private static final int REQUEST_LOCATION = 41;

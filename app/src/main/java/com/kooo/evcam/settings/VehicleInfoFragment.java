@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +18,9 @@ import com.kooo.evcam.R;
 import com.kooo.evcam.telemetry.Readings;
 import com.kooo.evcam.telemetry.Signal;
 import com.kooo.evcam.telemetry.Telemetry;
+import com.kooo.evcam.telemetry.VehicleState;
+import com.kooo.evcam.telemetry.SignalText;
+import com.kooo.evcam.telemetry.InfoBar;
 
 import java.util.EnumMap;
 import java.util.Locale;
@@ -24,6 +28,9 @@ import java.util.Map;
 
 /**
  * 系统信息（试验性）：车机能读到的车辆信号和此刻的状态。
+ *
+ * <p>每一行最前面一个勾：勾上的显示在行驶信息条上（{@link InfoBar}，项目所有者 2026-10-03）。
+ * 有图标的带出它那一格，没图标的画成文字格；没验证的只有开发者勾得了。</p>
  *
  * <p>行按信号表（{@link Signal}）生成，表里加一行这里就多一行；分组、名字、验证程度都从表里来，
  * 这里只管排版和把值写成人话。名字深色的是实验中观察一致的，中灰是先用着的（细节待定），浅色的没验证；
@@ -37,6 +44,17 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
     private static final String USER = "vehicle-info";
 
     private final Map<Signal, TextView> valueViews = new EnumMap<>(Signal.class);
+    /** 经纬度那一行的值（不是车辆信号，从快照里取）。 */
+    private TextView positionView;
+    /** 经纬度那一行每秒刷一次：定位来了不通知监听，车停着时车辆读数又不变。 */
+    private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable positionTick = new Runnable() {
+        @Override
+        public void run() {
+            showPosition();
+            main.postDelayed(this, 1000L);
+        }
+    };
     private TextView statusView;
 
     @Nullable
@@ -66,8 +84,38 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 label.setTextColor(ContextCompat.getColor(ctx, tone(s.trust)));
                 ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(address(s));
                 valueViews.put(s, row.findViewById(R.id.vehicle_info_value));
+                bindCheck(row, s.name(), InfoBar.selectable(s));
                 list.addView(row);
             }
+            if (group == Signal.Group.VEHICLE) {
+                // 经纬度不是车辆信号（系统定位），放在车辆这一组最后
+                View row = inflater.inflate(R.layout.item_vehicle_info_row, list, false);
+                ((TextView) row.findViewById(R.id.vehicle_info_label)).setText(R.string.vi_position);
+                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(R.string.vi_position_source);
+                positionView = row.findViewById(R.id.vehicle_info_value);
+                bindCheck(row, InfoBar.POSITION, true);
+                list.addView(row);
+            }
+        }
+    }
+
+    /**
+     * 那一行的勾：勾上就上信息条，马上生效。勾不了的（没验证、又不是开发者）灰着，显示的是实际生效的 ——
+     * 开发者模式关掉后，之前勾的没验证的项在这里也是不勾的样子。点整行等于点勾。
+     */
+    private void bindCheck(View row, String item, boolean selectable) {
+        CheckBox check = row.findViewById(R.id.vehicle_info_check);
+        // 每一行的勾 id 都一样：界面重建时系统会把最后一行的勾状态恢复到每一行上，再触发监听写回 ——
+        // 勾选全被冲掉。勾的状态每次都从 InfoBar 重新取，不要系统替我们存
+        check.setSaveEnabled(false);
+        Context ctx = row.getContext();
+        check.setChecked(selectable && InfoBar.selection(ctx).contains(item));
+        check.setEnabled(selectable);
+        check.setOnCheckedChangeListener((button, checked) ->
+                InfoBar.setSelected(button.getContext(), item, checked));
+        if (selectable) {
+            row.setBackgroundResource(R.drawable.bg_pref_row);
+            row.setOnClickListener(v -> check.toggle());
         }
     }
 
@@ -78,10 +126,13 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         t.addListener(this);
         t.acquire(requireContext(), USER);
         render(t.readings());
+        main.removeCallbacks(positionTick);
+        main.post(positionTick);
     }
 
     @Override
     public void onStop() {
+        main.removeCallbacks(positionTick);
         Telemetry t = Telemetry.get();
         t.removeListener(this);
         t.release(USER);
@@ -105,10 +156,23 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         for (Map.Entry<Signal, TextView> e : valueViews.entrySet()) {
             Object v = r.get(e.getKey());
             TextView tv = e.getValue();
-            tv.setText(text(ctx, e.getKey(), v));
+            tv.setText(SignalText.text(ctx, e.getKey(), v));
             tv.setTextColor(v == null ? unknown : known);
         }
+        showPosition();
         statusView.setText(Telemetry.get().describe());
+    }
+
+    private void showPosition() {
+        Context ctx = getContext();
+        if (ctx == null || positionView == null) {
+            return;
+        }
+        VehicleState state = Telemetry.get().latest();
+        boolean located = state.latitude != null && state.longitude != null;
+        positionView.setText(SignalText.position(ctx, state.latitude, state.longitude));
+        positionView.setTextColor(ContextCompat.getColor(ctx,
+                located ? R.color.text_primary : R.color.text_tertiary));
     }
 
     /** 名字的深浅：确认了的最深，先用着的中灰，没验证的最浅。 */
@@ -138,96 +202,4 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         }
     }
 
-    /** 归一后的值 → 页面上的字。 */
-    private static String text(Context ctx, Signal s, Object v) {
-        if (v == null) {
-            return ctx.getString(R.string.vi_v_none);
-        }
-        switch (s.format) {
-            case ON_OFF:
-            case LEVEL:
-                return pick(ctx, v, R.string.vi_v_on, R.string.vi_v_off);
-            case DOOR:
-                return pick(ctx, v, R.string.vi_v_open, R.string.vi_v_closed);
-            case BELT:
-                return pick(ctx, v, R.string.vi_v_buckled, R.string.vi_v_unbuckled);
-            case SEAT:
-                return pick(ctx, v, R.string.vi_v_occupied, R.string.vi_v_empty);
-            case SHOWN:
-            case POPUP:
-                return pick(ctx, v, R.string.vi_v_shown, R.string.vi_v_hidden);
-            case MIRROR_DIP: {
-                int code = v instanceof Integer ? (Integer) v : -1;
-                return ctx.getString(code == Signal.MIRROR_TILTING ? R.string.vi_v_mirror_tilting
-                        : code == Signal.MIRROR_DOWN ? R.string.vi_v_mirror_down
-                        : code == Signal.MIRROR_RETURNING ? R.string.vi_v_mirror_returning
-                        : R.string.vi_v_mirror_normal);
-            }
-            case SENTRY: {
-                int code = v instanceof Integer ? (Integer) v : -1;
-                return ctx.getString(code == 2 ? R.string.vi_v_armed : code == 1 ? R.string.vi_v_on : R.string.vi_v_off);
-            }
-            case DAY_NIGHT:
-                return ctx.getString(Integer.valueOf(Signal.NIGHT).equals(v) ? R.string.vi_v_night : R.string.vi_v_day);
-            case INDICATOR: {
-                int code = v instanceof Integer ? (Integer) v : -1;
-                return ctx.getString(code == 1 ? R.string.vi_v_left : code == 2 ? R.string.vi_v_right
-                        : code == 3 ? R.string.vi_v_hazard : R.string.vi_v_off);
-            }
-            case LIGHT_SWITCH: {
-                int code = v instanceof Integer ? (Integer) v : -1;
-                if (code == 0) {
-                    return ctx.getString(R.string.vi_v_off);
-                }
-                if (code == Signal.LIGHT_SWITCH_POSITION) {
-                    return ctx.getString(R.string.vi_v_light_position);
-                }
-                if (code == Signal.LIGHT_SWITCH_LOW_BEAM) {
-                    return ctx.getString(R.string.vi_v_light_low);
-                }
-                if (code == Signal.LIGHT_SWITCH_AUTO) {
-                    return ctx.getString(R.string.vi_v_light_auto);
-                }
-                return String.format(Locale.US, "0x%08X", code);
-            }
-            case IGNITION: {
-                int code = v instanceof Integer ? (Integer) v : -1;
-                if (code == Signal.IGNITION_ACC) {
-                    return ctx.getString(R.string.vi_v_ign_acc);
-                }
-                if (code == Signal.IGNITION_ON) {
-                    return ctx.getString(R.string.vi_v_ign_on);
-                }
-                if (code == Signal.IGNITION_DRIVING) {
-                    return ctx.getString(R.string.vi_v_ign_driving);
-                }
-                return String.format(Locale.US, "0x%08X", code);
-            }
-            case GEAR:
-                return String.valueOf(v);
-            case KMH:
-            case MPS:
-                return number(v, "%.0f km/h");
-            case KM:
-                return number(v, "%.0f km");
-            case PERCENT:
-            case PERCENT_RAW:
-            case BRAKE:
-                return number(v, "%.0f %%");
-            case DEGREES:
-                return number(v, "%.0f°");
-            case CELSIUS:
-                return number(v, "%.1f °C");
-            default:
-                return String.valueOf(v);
-        }
-    }
-
-    private static String pick(Context ctx, Object v, int whenTrue, int whenFalse) {
-        return ctx.getString(Boolean.TRUE.equals(v) ? whenTrue : whenFalse);
-    }
-
-    private static String number(Object v, String pattern) {
-        return v instanceof Float ? String.format(Locale.US, pattern, (Float) v) : String.valueOf(v);
-    }
 }

@@ -11,6 +11,13 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.11-alpha] - 2026-10-03
+
+- Info bar: choose what it shows by ticking items in Settings → System → System info. A ticked signal with an icon brings its whole icon; signals without an icon appear as text (name + value); what doesn't fit is left out. Defaults match 2.0.10.
+- Unverified signals can only be ticked by developers; the "Activate all items" switch is removed.
+- Hands-on-wheel cell removed (no data source).
+- Driver assistance: the four verified badges now show; lane departure and blind spot are crossed out on their own.
+
 ## [2.0.10-alpha] - 2026-10-03
 
 - Info bar: Sentry Mode cell added right of the stock 360 cell; the ACC and lane centering cells are gone.

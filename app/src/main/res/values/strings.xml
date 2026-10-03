@@ -42,10 +42,7 @@
     <string name="set_watermark_spec_title">角标附带录制规格</string>
     <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
     <string name="set_info_bar_title">行驶信息条</string>
-    <string name="set_info_bar_summary">录像下方加一条车辆状态：转向灯、方向盘、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能，默认只有实车验证过的栏目可用，其余用斜线划掉</string>
-    <string name="set_info_bar_all_title">激活所有栏目信息</string>
-    <string name="set_info_bar_all_summary">连还没在实车验证过的栏目一起启用，用来验证各栏图标的真实性和可用性</string>
-    <string name="set_info_bar_all_dev_only">未验证的栏目用斜线划掉；全部激活仅限开发者模式</string>
+    <string name="set_info_bar_summary">录像下方加一条车辆状态。显示哪几项在「设置 → 系统 → 系统信息」里勾选，默认是转向灯、方向盘、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>
@@ -131,7 +128,9 @@
     <!-- 系统信息（试验性）：分组、信号名、值 -->
     <string name="set_vehicle_info_title">系统信息（试验性）</string>
     <string name="set_vehicle_info_summary">车机能读到的车辆信号和此刻的状态；离开这一页即停止读取</string>
-    <string name="vi_legend">名字深色：实车实验中观察一致（持续交叉验证）；中灰：能用，细节待定；浅色：读得到但未验证</string>
+    <string name="vi_legend">勾上的显示在行驶信息条上：有图标的带出图标，没有的显示文字；放不下的不显示。名字深色：实车实验中观察一致（持续交叉验证）；中灰：能用，细节待定；浅色：读得到但未验证，只有开发者能勾</string>
+    <string name="vi_position">位置（经纬度）</string>
+    <string name="vi_position_source">系统定位</string>
     <string name="vi_group_drive">行驶</string>
     <string name="vi_group_lamps">灯光</string>
     <string name="vi_group_body">车身</string>

@@ -141,7 +141,7 @@ public class VehicleStatusPanel extends View implements Telemetry.Listener {
             }
             // 按控件的实际像素画，不把小图拉大：图标在主界面上和录像里一样清楚
             float scale = getWidth() / (float) arrangement.width;
-            renderer = new InfoBarRenderer(arrangement, scale, new InfoBar.Options(config.isInfoBarAllActive()));
+            renderer = new InfoBarRenderer(arrangement, scale);
         }
         renderer.renderIfDue(Telemetry.get().latest());
         canvas.drawBitmap(renderer.bitmap(), 0, 0, null);

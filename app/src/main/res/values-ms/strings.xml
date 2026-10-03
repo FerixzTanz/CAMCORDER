@@ -28,10 +28,7 @@
     <string name="set_watermark_spec_title">Sertakan spesifikasi rakaman</string>
     <string name="set_watermark_spec_summary">Menambah resolusi dan kadar bingkai pada tera</string>
     <string name="set_info_bar_title">Bar maklumat pemanduan</string>
-    <string name="set_info_bar_summary">Menambah jalur di bawah video dengan lampu isyarat, stereng, gear, kelajuan, pedal, pintu, lampu dan kedudukan. Percubaan; secara lalai hanya item yang disahkan di kereta aktif, yang lain dipangkah</string>
-    <string name="set_info_bar_all_title">Aktifkan semua item</string>
-    <string name="set_info_bar_all_summary">Turut mengaktifkan item yang belum disahkan di kereta, untuk menguji sama ada setiap satu benar dan boleh digunakan</string>
-    <string name="set_info_bar_all_dev_only">Item belum disahkan kekal dipangkah; mengaktifkan semua hanya untuk mod pembangun</string>
+    <string name="set_info_bar_summary">Menambah jalur di bawah video dengan status kereta. Pilih apa yang dipaparkan dalam Tetapan → Sistem → Maklumat kenderaan; secara lalai lampu isyarat, stereng, gear, kelajuan, pedal, pintu, lampu, kedudukan dan lain-lain. Percubaan</string>
     <string name="set_storage_location_title">Lokasi storan</string>
     <string name="set_storage_sentry_note">Apabila Mod Sentry dihidupkan selepas anda keluar dari kereta, hanya port USB-A (tempat Mod Sentry menyimpan rakamannya) yang kekal berkuasa, jadi rakaman boleh diteruskan. Pemacu USB pada port Type-C juga boleh digunakan: apabila kuasanya terputus, rakaman beralih ke pemacu pada port USB-A dan diteruskan.</string>
     <string name="set_relay_title">Tulis melalui perantara</string>
@@ -113,7 +110,9 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Maklumat kenderaan (percubaan)</string>
     <string name="set_vehicle_info_summary">Isyarat kenderaan yang didedahkan unit kepala dan keadaan semasanya; bacaan berhenti apabila anda keluar</string>
-    <string name="vi_legend">Label gelap: konsisten dalam ujian di kereta (masih disemak silang); kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan</string>
+    <string name="vi_legend">Item yang ditanda dipaparkan dalam bar maklumat pemanduan: sebagai ikon jika ada, jika tidak sebagai teks; yang tidak muat tidak dipaparkan. Label gelap: konsisten dalam ujian di kereta (masih disemak silang); kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan, hanya pembangun boleh menandanya</string>
+    <string name="vi_position">Kedudukan (lat/long)</string>
+    <string name="vi_position_source">Lokasi sistem</string>
     <string name="vi_group_drive">Pemanduan</string>
     <string name="vi_group_lamps">Lampu</string>
     <string name="vi_group_body">Badan</string>

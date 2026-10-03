@@ -53,8 +53,6 @@ public final class Telemetry {
     private boolean running;
     /** 车速有没有从车辆接口来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
     private volatile boolean carSpeedSeen;
-    /** 信息条那份快照用全部读数（开发者的「激活所有栏目信息」）还是只用验证过的。 */
-    private volatile boolean infoBarAll;
     private EcarxSource car;
     private LocationSource location;
 
@@ -63,6 +61,17 @@ public final class Telemetry {
 
     public static Telemetry get() {
         return INSTANCE;
+    }
+
+    /** 信息条的勾选或开发者模式变了（{@link InfoBar}）：读数不变也按新的勾选重新映射一次。 */
+    public void selectionChanged() {
+        EcarxSource c;
+        synchronized (lock) {
+            c = car;
+        }
+        if (c != null) {
+            c.republish();
+        }
     }
 
     /** 登记：我要用车辆信号。第一个登记的把来源拉起来；重复登记无害。 */
@@ -77,7 +86,6 @@ public final class Telemetry {
             state = VehicleState.empty();
             readings = Readings.empty();
             Context app = context.getApplicationContext();
-            infoBarAll = new AppConfig(app).isInfoBarAllActive();
             car = new EcarxSource(this);
             location = new LocationSource(this);
             car.start(app);
@@ -183,10 +191,6 @@ public final class Telemetry {
         });
     }
 
-    /** 信息条快照要不要没验证过的信号。 */
-    boolean infoBarAllActive() {
-        return infoBarAll;
-    }
 
     void noteCarSpeed() {
         carSpeedSeen = true;

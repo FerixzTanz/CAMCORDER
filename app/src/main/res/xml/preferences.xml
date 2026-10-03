@@ -79,17 +79,11 @@
             android:title="@string/set_watermark_spec_title"
             android:summary="@string/set_watermark_spec_summary" />
 
-        <!-- 行驶信息条（试验项目）：录像下方一条车辆信号。子项只在总开关开着时可拨 -->
+        <!-- 行驶信息条（试验项目）：录像下方一条车辆信号。显示哪几项在「系统 → 系统信息」里勾 -->
         <SwitchPreferenceCompat
             android:key="pref_info_bar"
             android:title="@string/set_info_bar_title"
             android:summary="@string/set_info_bar_summary" />
-
-        <SwitchPreferenceCompat
-            android:key="pref_info_bar_all"
-            android:dependency="pref_info_bar"
-            android:title="@string/set_info_bar_all_title"
-            android:summary="@string/set_info_bar_all_summary" />
     </PreferenceScreen>
 
     <!-- ==================== 存储 ==================== -->

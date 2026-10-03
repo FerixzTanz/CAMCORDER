@@ -14,7 +14,7 @@ package com.kooo.evcam.telemetry;
  *   <li>自动驻车看「正在驻车」{@link Signal#AUTO_HOLD_ACTIVE}（停下被接管 1、起步回 0），
  *       不看 {@link Signal#AUTO_HOLD}：那是功能开关，开车全程都是 1。「正在驻车」只在车停着时成立：
  *       这个号原名是「车辆保持时的刹车灯请求」，别的保持也可能让它变，车在走就不算（{@link #holding}）。</li>
- *   <li>非开发者拿到的读数已经滤掉了没验证的信号（{@link Readings#usableOnly()}），这里不再分辨。</li>
+ *   <li>拿到的读数已经滤过：只有能用的和勾了的（{@link Readings#usableOr}），这里不再分辨。</li>
  * </ul>
  */
 public final class VehicleStateMapper {
@@ -45,6 +45,7 @@ public final class VehicleStateMapper {
      * @param driverOnRight 主驾在右（右舵）；决定主驾门 / 主驾安全带画在哪一边
      */
     public void apply(VehicleState.Builder b, Readings r, long nowMs, boolean driverOnRight) {
+        b.readings(r);
         TurnSignalHold.Result blink = hold.update(nowMs, r.bool(Signal.TURN_LEFT), r.bool(Signal.TURN_RIGHT));
         Integer indicator = r.code(Signal.INDICATOR);
         if (indicator != null) {

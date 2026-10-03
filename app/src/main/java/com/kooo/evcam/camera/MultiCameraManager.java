@@ -1502,9 +1502,8 @@ public class MultiCameraManager {
         EncodeSize encodeSize = EncodeSize.forSource(
                 camera.getCameraId(), sourceWidth, sourceHeight, spec.grid);
         // 行驶信息条：开着就在画面下面加一条。一条规则，每一路都一样；窄的路少放几格
-        com.kooo.evcam.telemetry.InfoBar.Options infoBar =
-                com.kooo.evcam.telemetry.InfoBar.forRecording(context);
-        if (infoBar != null) {
+        boolean infoBar = com.kooo.evcam.telemetry.InfoBar.isOnForRecording(context);
+        if (infoBar) {
             encodeSize = encodeSize.withInfoBar(com.kooo.evcam.telemetry.InfoBar.HEIGHT);
         }
 
@@ -1535,9 +1534,9 @@ public class MultiCameraManager {
         CodecVideoRecorder codecRecorder = new CodecVideoRecorder(
                 camera.getCameraId(), encodeSize.width, encodeSize.height);
         codecRecorder.setBrandLine(buildBrandLine());
-        if (infoBar != null) {
+        if (infoBar) {
             codecRecorder.setInfoBar(
-                    new com.kooo.evcam.telemetry.InfoBarRenderer(encodeSize.width, infoBar));
+                    new com.kooo.evcam.telemetry.InfoBarRenderer(context, encodeSize.width));
         }
         if (fourLanePlan != null) {
             codecRecorder.setFourLaneSource(sourceWidth, sourceHeight, fourLanePlan, null);
@@ -1569,7 +1568,7 @@ public class MultiCameraManager {
         firstDataWrittenAtMs = 0;
 
         // 行驶信息条开着：录像期间登记要用车辆信号，停录时注销（没别人在用就全停）
-        if (com.kooo.evcam.telemetry.InfoBar.forRecording(context) != null) {
+        if (com.kooo.evcam.telemetry.InfoBar.isOnForRecording(context)) {
             com.kooo.evcam.telemetry.Telemetry.get().acquire(context, "recording");
         }
 

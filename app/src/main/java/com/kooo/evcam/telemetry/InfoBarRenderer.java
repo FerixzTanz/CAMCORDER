@@ -1,5 +1,6 @@
 package com.kooo.evcam.telemetry;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
@@ -71,8 +72,11 @@ public final class InfoBarRenderer {
     private final float scale;
     /** 信息条（顶上有一道分隔线）还是车辆状态面板。 */
     private final boolean strip;
-    private final List<InfoBarLayout.Placed> cells;
-    private final InfoBar.Options options;
+    private List<InfoBarLayout.Placed> cells;
+    /** 文字格要用字串；车辆状态面板没有文字格，是 null。 */
+    private final Context context;
+    /** 摆的时候用的勾选版本（{@link InfoBar#selectionVersion}）：变了就重新摆，正在录的下一帧就换。 */
+    private int fittedSelection;
     private final Bitmap bitmap;
     private final Canvas canvas;
     private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -85,24 +89,28 @@ public final class InfoBarRenderer {
     private long lastVersion = -1;
     private boolean drawnOnce;
 
-    /** 录像下面那一条：宽 = 视频宽，高 {@link #HEIGHT}。 */
-    public InfoBarRenderer(int width, InfoBar.Options options) {
-        this(InfoBarLayout.fit(Math.max(2, width)), Math.max(2, width), HEIGHT, 1f, true, options);
+    /** 录像下面那一条：宽 = 视频宽，高 {@link #HEIGHT}；放哪几格看系统信息里勾的（{@link InfoBar#selection}）。 */
+    public InfoBarRenderer(Context context, int width) {
+        // 文字格的字按应用语言取（Application 的 Context 在 Android 13 以下是系统语言）
+        this(com.kooo.evcam.settings.Languages.localized(context),
+                InfoBarLayout.fit(Math.max(2, width), InfoBar.selection(context)),
+                Math.max(2, width), HEIGHT, 1f, true);
+        fittedSelection = InfoBar.selectionVersion();
     }
 
     /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。 */
-    public InfoBarRenderer(InfoBarLayout.Arrangement arrangement, float scale, InfoBar.Options options) {
-        this(arrangement.cells, arrangement.width, arrangement.height, scale, false, options);
+    public InfoBarRenderer(InfoBarLayout.Arrangement arrangement, float scale) {
+        this(null, arrangement.cells, arrangement.width, arrangement.height, scale, false);
     }
 
-    private InfoBarRenderer(List<InfoBarLayout.Placed> cells, int logicalWidth, int logicalHeight, float scale,
-                            boolean strip, InfoBar.Options options) {
+    private InfoBarRenderer(Context context, List<InfoBarLayout.Placed> cells, int logicalWidth,
+                            int logicalHeight, float scale, boolean strip) {
+        this.context = context;
         this.cells = cells;
         this.logicalWidth = logicalWidth;
         this.scale = scale;
         this.strip = strip;
         this.width = Math.max(2, Math.round(logicalWidth * scale));
-        this.options = options;
         this.bitmap = Bitmap.createBitmap(this.width, Math.max(2, Math.round(logicalHeight * scale)),
                 Bitmap.Config.ARGB_8888);
         this.canvas = new Canvas(bitmap);
@@ -135,7 +143,17 @@ public final class InfoBarRenderer {
      * @return true 表示位图变了，要重新上传
      */
     public boolean renderIfDue(VehicleState state) {
-        if (drawnOnce && state.version == lastVersion) {
+        boolean refit = false;
+        if (strip && context != null) {
+            int selection = InfoBar.selectionVersion();
+            if (selection != fittedSelection) {
+                // 系统信息里改了勾选（或者开发者模式开关了）：重新摆，下一帧就是新的
+                cells = InfoBarLayout.fit(logicalWidth, InfoBar.selection(context));
+                fittedSelection = selection;
+                refit = true;
+            }
+        }
+        if (drawnOnce && !refit && state.version == lastVersion) {
             return false;
         }
         draw(state);
@@ -163,8 +181,12 @@ public final class InfoBarRenderer {
         for (InfoBarLayout.Placed placed : cells) {
             canvas.save();
             canvas.translate(placed.x, placed.y);
-            // 没启用的格（没验证过、开发者也没激活）按没数据画：斜杠划掉
-            drawCell(placed.cell, InfoBarLayout.live(placed.cell, options) ? s : VehicleState.empty());
+            // 没数据的（包括非开发者拿不到的没验证信号）各自按没数据画：斜杠划掉
+            if (placed.cell != null) {
+                drawCell(placed.cell, s);
+            } else {
+                drawText(placed.text, placed.width, s.readings);
+            }
             canvas.restore();
         }
         canvas.restore();
@@ -185,9 +207,6 @@ public final class InfoBarRenderer {
                 break;
             case STEERING:
                 drawSteering(cx, cy, s.steeringDegrees);
-                break;
-            case HANDS:
-                drawHands(cx, cy, s.handsOnWheel);
                 break;
             case GEAR:
                 drawGear(cx, cy, s.gear);
@@ -398,24 +417,6 @@ public final class InfoBarRenderer {
             float r = 14 + i * 12;
             rect.set(cx + 4 - r, cy - r, cx + 4 + r, cy + r);
             canvas.drawArc(rect, -40, 80, false, stroke);
-        }
-        if (on == null) {
-            slash(cx - 30, cy + 30, cx + 30, cy - 30);
-        }
-    }
-
-    /** 手扶方向盘：小方向盘，两侧各一只手。 */
-    private void drawHands(float cx, float cy, Boolean on) {
-        int color = lineTone(on, false);
-        stroke.setColor(color);
-        stroke.setStrokeWidth(6f);
-        canvas.drawCircle(cx, cy, 22, stroke);
-        canvas.drawLine(cx - 22, cy, cx - 9, cy, stroke);
-        canvas.drawLine(cx + 22, cy, cx + 9, cy, stroke);
-        canvas.drawLine(cx, cy + 22, cx, cy + 9, stroke);
-        for (int side = -1; side <= 1; side += 2) {
-            float hx = cx + side * 27;
-            solidRect(hx - 8, cy - 13, hx + 8, cy + 13, 7, on, false);
         }
         if (on == null) {
             slash(cx - 30, cy + 30, cx + 30, cy - 30);
@@ -881,6 +882,44 @@ public final class InfoBarRenderer {
         if (km == null) {
             slash(cx - 28, cy + 28, cx + 28, cy - 28);
         }
+    }
+
+    /**
+     * 文字格：没有图标的信号（项目所有者 2026-10-03：先用文字，要的话之后再画）。
+     * 上面一行名称（小、灰），下面一行值（大、白），写法和系统信息页一样（{@link SignalText}）；
+     * 没数据是「--」加斜杠，和别的格一个规矩。放不下的截掉，末尾一个省略号。
+     */
+    private void drawText(Signal signal, int cellWidth, Readings readings) {
+        if (context == null) {
+            return;
+        }
+        Object value = readings == null ? null : readings.get(signal);
+        float room = cellWidth - 8;
+        text.setTextAlign(Paint.Align.LEFT);
+        text.setTextSize(22f);
+        text.setColor(TEXT_DIM);
+        canvas.drawText(fit(context.getString(signal.labelRes), room, text), 4, 36, text);
+        text.setTextSize(30f);
+        text.setColor(value == null ? TEXT_DIM : TEXT);
+        canvas.drawText(fit(value == null ? "--" : SignalText.text(context, signal, value), room, text),
+                4, 76, text);
+        if (value == null) {
+            float cx = cellWidth / 2f;
+            float cy = HEIGHT / 2f;
+            slash(cx - 28, cy + 28, cx + 28, cy - 28);
+        }
+    }
+
+    /** 放得下就原样，放不下截短，末尾一个省略号。 */
+    private static String fit(String s, float room, Paint paint) {
+        if (paint.measureText(s) <= room) {
+            return s;
+        }
+        int end = s.length();
+        while (end > 1 && paint.measureText(s, 0, end) + paint.measureText("…") > room) {
+            end--;
+        }
+        return s.substring(0, end) + "…";
     }
 
     /** 经纬度：两行，纬度在上。 */

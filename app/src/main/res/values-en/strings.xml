@@ -28,10 +28,7 @@
     <string name="set_watermark_spec_title">Include recording specs</string>
     <string name="set_watermark_spec_summary">Adds resolution and frame rate to the stamp</string>
     <string name="set_info_bar_title">Driving info bar</string>
-    <string name="set_info_bar_summary">Adds a strip under the video with turn signals, steering, gear, speed, pedals, doors, lights and position. Experimental; by default only items verified on the car are live, the rest are crossed out</string>
-    <string name="set_info_bar_all_title">Activate all items</string>
-    <string name="set_info_bar_all_summary">Also activates items not yet verified on the car, to check that each one is real and usable</string>
-    <string name="set_info_bar_all_dev_only">Unverified items stay crossed out; activating all is for developer mode only</string>
+    <string name="set_info_bar_summary">Adds a strip under the video with car status. Choose what it shows in Settings → System → Vehicle info; by default turn signals, steering, gear, speed, pedals, doors, lights, position and more. Experimental</string>
     <string name="set_storage_location_title">Storage location</string>
     <string name="set_storage_sentry_note">With Sentry Mode on after you leave the car, only the USB-A port (where Sentry Mode saves its footage) stays powered, so recording can go on. A USB drive on the Type-C port works too: when it loses power, recording moves to the drive on the USB-A port and carries on.</string>
     <string name="set_relay_title">Relay write</string>
@@ -113,7 +110,9 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Vehicle info (experimental)</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; reading stops when you leave</string>
-    <string name="vi_legend">Dark label: consistent in on-car tests (still cross-checked); grey: usable, details pending; light: readable but unverified</string>
+    <string name="vi_legend">Ticked items appear in the driving info bar: as an icon where there is one, otherwise as text; what does not fit is left out. Dark label: consistent in on-car tests (still cross-checked); grey: usable, details pending; light: readable but unverified, only developers can tick it</string>
+    <string name="vi_position">Position (lat/long)</string>
+    <string name="vi_position_source">System location</string>
     <string name="vi_group_drive">Driving</string>
     <string name="vi_group_lamps">Lamps</string>
     <string name="vi_group_body">Body</string>

@@ -86,7 +86,7 @@ public class AppConfig {
     private static final String KEY_PHOTO_VIA_JPEG = "photo_via_jpeg";
     private static final String KEY_INFO_BAR = "info_bar_enabled";  // 录像下方的行驶信息条
     private static final String KEY_VEHICLE_STATUS = "vehicle_status_panel";  // 主界面的车辆状态面板（试验性）
-    private static final String KEY_INFO_BAR_ALL = "info_bar_all";  // 开发者：连没验证的栏目一起启用
+    private static final String KEY_INFO_BAR_ITEMS = "info_bar_items";  // 信息条上放哪几项（系统信息里勾的）
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -717,9 +717,9 @@ public class AppConfig {
         removeChangeListener(listener);
     }
 
-    /** 车辆状态面板的开关、「激活所有栏目信息」一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
+    /** 车辆状态面板的开关一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
     public SharedPreferences.OnSharedPreferenceChangeListener onVehicleStatusChanged(Runnable action) {
-        return onChanged(action, KEY_VEHICLE_STATUS, KEY_INFO_BAR_ALL);
+        return onChanged(action, KEY_VEHICLE_STATUS);
     }
 
     /** 熄屏后录像会怎样（{@code ScreenOffPlan}）看的这几项，一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
@@ -1359,7 +1359,7 @@ public class AppConfig {
      * 录像下方的行驶信息条（试验项目，1.68.0）。默认关。
      *
      * <p>开着时录制走 MediaCodec（{@link #shouldUseCodecRecording}），画面比视频高 100 像素。
-     * 默认只有实车验证过的栏目启用，其余画斜杠；{@link #isInfoBarAllActive()} 才全部启用（{@code telemetry.InfoBar}）。</p>
+     * 显示哪几项在系统信息里勾选（{@link #getInfoBarItems}，{@code telemetry.InfoBar}）。</p>
      */
     public boolean isInfoBarEnabled() {
         return prefs.getBoolean(KEY_INFO_BAR, false);
@@ -1370,11 +1370,6 @@ public class AppConfig {
         AppLog.i(TAG, "行驶信息条: " + (enabled ? "开" : "关"));
     }
 
-    /**
-     * 信息条激活所有栏目：连没在实车验证过的一起启用，给开发者验证图标真不真、能不能用。
-     * 锁在开发者模式后面：没解锁时一律当关着，存着的值不动 ——
-     * 设置里那个开关没解锁时是灰的、关着的，这里必须和它说同一句话。
-     */
     /** 主界面动作栏里的车辆状态面板（试验性）。默认关。 */
     public boolean isVehicleStatusEnabled() {
         return prefs.getBoolean(KEY_VEHICLE_STATUS, false);
@@ -1384,14 +1379,19 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_VEHICLE_STATUS, enabled).apply();
     }
 
-    public boolean isInfoBarAllActive() {
-        return com.kooo.evcam.settings.DeveloperMode.isUnlocked()
-                && prefs.getBoolean(KEY_INFO_BAR_ALL, false);
+    /**
+     * 信息条上放哪几项：信号名（{@code telemetry.Signal}），加上经纬度那一项。系统信息里勾选；
+     * 没存过时是 2.0.10 信息条上在用的那些（{@code InfoBarLayout.defaultSelection}）。读写走 {@code telemetry.InfoBar}。
+     */
+    public java.util.Set<String> getInfoBarItems() {
+        java.util.Set<String> saved = prefs.getStringSet(KEY_INFO_BAR_ITEMS, null);
+        return saved == null ? com.kooo.evcam.telemetry.InfoBarLayout.defaultSelection()
+                : new java.util.LinkedHashSet<>(saved);
     }
 
-    public void setInfoBarAllActive(boolean enabled) {
-        prefs.edit().putBoolean(KEY_INFO_BAR_ALL, enabled).apply();
-        AppLog.i(TAG, "行驶信息条激活所有栏目: " + (enabled ? "开" : "关"));
+    public void setInfoBarItems(java.util.Set<String> items) {
+        prefs.edit().putStringSet(KEY_INFO_BAR_ITEMS, new java.util.HashSet<>(items)).apply();
+        AppLog.i(TAG, "信息条显示项: " + items);
     }
 
     public boolean isLicensePlateEnabled() {

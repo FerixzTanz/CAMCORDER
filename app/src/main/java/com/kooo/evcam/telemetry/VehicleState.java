@@ -44,8 +44,6 @@ public final class VehicleState {
     public final Boolean autoHold;
     /** 原厂 360 画面此刻显示着（倒车时车机自己的环视；它开着时占着相机）。 */
     public final Boolean stockSurroundShown;
-    /** 驾驶员手在方向盘上（车上还没找到读数，先留着位置）。 */
-    public final Boolean handsOnWheel;
     /** 六项安全辅助的开关：自动紧急制动、前碰预警、车道偏离预警、车道保持、盲区辅助、后碰预警。 */
     public final Boolean aeb;
     public final Boolean forwardCollisionWarning;
@@ -76,6 +74,8 @@ public final class VehicleState {
     public final Float odometerKm;
     public final Double latitude;
     public final Double longitude;
+    /** 这份快照用的读数（非开发者已滤掉没验证的）：信息条的文字格从这里取值。 */
+    public final Readings readings;
 
     private VehicleState(Builder b) {
         this.version = b.version;
@@ -88,7 +88,6 @@ public final class VehicleState {
         this.speedKmh = b.speedKmh;
         this.autoHold = b.autoHold;
         this.stockSurroundShown = b.stockSurroundShown;
-        this.handsOnWheel = b.handsOnWheel;
         this.aeb = b.aeb;
         this.forwardCollisionWarning = b.forwardCollisionWarning;
         this.laneDepartureWarning = b.laneDepartureWarning;
@@ -110,6 +109,7 @@ public final class VehicleState {
         this.odometerKm = b.odometerKm;
         this.latitude = b.latitude;
         this.longitude = b.longitude;
+        this.readings = b.readings;
     }
 
     /** 什么都不知道。 */
@@ -126,7 +126,7 @@ public final class VehicleState {
     public int knownCount() {
         int n = 0;
         Object[] all = {turnSignal, hazard, steeringDegrees, gear, throttle, brake, speedKmh,
-                autoHold, stockSurroundShown, handsOnWheel,
+                autoHold, stockSurroundShown,
                 aeb, forwardCollisionWarning, laneDepartureWarning, laneKeepingAid, blindSpotAssist,
                 rearCollisionWarning, doorsOpen, beltsUnbuckled,
                 daytimeRunningLights, lowBeam, highBeam, flashToPass, fogLights, rearPositionLamps, stopLamps, reverseLamps, horn, sentry,
@@ -150,7 +150,6 @@ public final class VehicleState {
         private Float speedKmh;
         private Boolean autoHold;
         private Boolean stockSurroundShown;
-        private Boolean handsOnWheel;
         private Boolean aeb;
         private Boolean forwardCollisionWarning;
         private Boolean laneDepartureWarning;
@@ -172,6 +171,7 @@ public final class VehicleState {
         private Float odometerKm;
         private Double latitude;
         private Double longitude;
+        private Readings readings;
 
         public Builder() {
         }
@@ -187,7 +187,6 @@ public final class VehicleState {
             speedKmh = s.speedKmh;
             autoHold = s.autoHold;
             stockSurroundShown = s.stockSurroundShown;
-            handsOnWheel = s.handsOnWheel;
             aeb = s.aeb;
             forwardCollisionWarning = s.forwardCollisionWarning;
             laneDepartureWarning = s.laneDepartureWarning;
@@ -209,6 +208,7 @@ public final class VehicleState {
             odometerKm = s.odometerKm;
             latitude = s.latitude;
             longitude = s.longitude;
+            readings = s.readings;
         }
 
         public Builder turnSignal(Integer v) { turnSignal = v; return this; }
@@ -220,7 +220,6 @@ public final class VehicleState {
         public Builder speedKmh(Float v) { speedKmh = v; return this; }
         public Builder autoHold(Boolean v) { autoHold = v; return this; }
         public Builder stockSurroundShown(Boolean v) { stockSurroundShown = v; return this; }
-        public Builder handsOnWheel(Boolean v) { handsOnWheel = v; return this; }
         public Builder aeb(Boolean v) { aeb = v; return this; }
         public Builder forwardCollisionWarning(Boolean v) { forwardCollisionWarning = v; return this; }
         public Builder laneDepartureWarning(Boolean v) { laneDepartureWarning = v; return this; }
@@ -238,6 +237,7 @@ public final class VehicleState {
         public Builder stopLamps(Boolean v) { stopLamps = v; return this; }
         public Builder reverseLamps(Boolean v) { reverseLamps = v; return this; }
         public Builder horn(Boolean v) { horn = v; return this; }
+        public Builder readings(Readings v) { readings = v; return this; }
         public Builder sentry(Integer v) { sentry = v; return this; }
         public Builder odometerKm(Float v) { odometerKm = v; return this; }
         public Builder position(Double lat, Double lon) { latitude = lat; longitude = lon; return this; }

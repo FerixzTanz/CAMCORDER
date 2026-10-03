@@ -84,6 +84,8 @@ final class EcarxSource {
     private boolean publishPending;
     private boolean firstRoundReported;
     private boolean driverOnRight = true;
+    /** 取勾选用（{@link InfoBar#selection}）。 */
+    private volatile Context appContext;
 
     private Object function;
     private Object sensor;
@@ -118,6 +120,7 @@ final class EcarxSource {
 
     void start(Context context) {
         final Context app = context.getApplicationContext();
+        appContext = app;
         thread = new HandlerThread("Telemetry-Ecarx");
         thread.start();
         handler = new Handler(thread.getLooper());
@@ -487,6 +490,14 @@ final class EcarxSource {
         }
     }
 
+    /** 勾选或开发者模式变了：读数不变也重新映射一次，信息条那份快照按新的勾选滤。 */
+    void republish() {
+        Handler h = handler;
+        if (h != null && !stopped) {
+            h.post(() -> schedulePublish(0));
+        }
+    }
+
     private void schedulePublish(long delayMs) {
         Handler h = handler;
         if (h == null || stopped) {
@@ -512,8 +523,10 @@ final class EcarxSource {
         if (snapshot.number(Signal.SPEED) != null) {
             telemetry.noteCarSpeed();
         }
-        // 非开发者：不能用的信号先滤掉再映射，信息条上不出现猜的东西
-        final Readings forBar = telemetry.infoBarAllActive() ? snapshot : snapshot.usableOnly();
+        // 不能用的信号先滤掉再映射，信息条上不出现猜的东西；开发者勾了的没验证信号才放进来（InfoBar）
+        Context app = appContext;
+        final Readings forBar = app == null ? snapshot.usableOnly()
+                : snapshot.usableOr(InfoBar.selection(app));
         telemetry.edit(b -> mapper.apply(b, forBar, now, driverOnRight));
         telemetry.publishReadings(snapshot);
         if (!firstRoundReported) {
