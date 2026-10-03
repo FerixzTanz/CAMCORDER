@@ -11,6 +11,12 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.6-alpha] - 2026-10-03
+
+- Sentry Mode status can now be shown anywhere it matters (SentryStatusView).
+- Settings → System → Keep recording when the screen goes off: clearer description of how it works
+  with Sentry Mode, and the row shows whether Sentry Mode is on right now.
+
 ## [2.0.5-alpha] - 2026-10-02
 
 - Sentry Mode status is read for everyone (it decides whether recording can carry on with the screen off).

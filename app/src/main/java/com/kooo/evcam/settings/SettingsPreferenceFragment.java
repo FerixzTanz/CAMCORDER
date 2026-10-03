@@ -908,6 +908,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                         com.kooo.evcam.KeepAliveManager.stopKeepAliveWork(requireContext());
                     }
                 });
+        // 熄屏持续录制能不能起作用看哨兵模式：行尾写着哨兵模式此刻开没开（行样式在 apply 之前标上）
+        androidx.preference.Preference keepRecording = findPreference("pref_screen_off_keep_recording");
+        if (keepRecording != null) {
+            PreferenceRows.markSentryStatus(keepRecording);
+        }
         bindSwitch("pref_screen_off_keep_recording", appConfig.isScreenOffKeepRecording(),
                 value -> appConfig.setScreenOffKeepRecording(value));
     }

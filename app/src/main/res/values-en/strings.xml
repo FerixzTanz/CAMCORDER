@@ -92,7 +92,12 @@
     <string name="set_screen_off_wake_title">Keep the car awake for up to (hours)</string>
     <string name="unit_hours">%1$s h</string>
     <string name="set_screen_off_keep_title">Keep recording when the screen goes off</string>
-    <string name="set_screen_off_keep_summary">If recording when the screen goes off, keep going. Needs the car\'s Sentry Mode to keep the head unit awake; the app never wakes the car, so without Sentry Mode recording pauses while the car sleeps and carries on when it wakes</string>
+    <string name="set_screen_off_keep_summary">Works with the car\'s Sentry Mode: with this on and Sentry Mode on, recording carries on after the screen goes off; without Sentry Mode the car sleeps and recording pauses until it wakes. With this off, recording stops when the screen goes off, whether Sentry Mode is on or not</string>
+    <string name="sentry_status_on">Sentry Mode: on</string>
+    <string name="sentry_status_armed">Sentry Mode: armed</string>
+    <string name="sentry_status_off">Sentry Mode: off</string>
+    <string name="sentry_status_reading">Sentry Mode: reading…</string>
+    <string name="sentry_status_unknown">Sentry Mode: unavailable</string>
     <string name="set_keep_alive_title">Keep alive</string>
     <string name="set_keep_alive_summary">Brings the app back after it is killed or the car restarts. Off: it stays gone</string>
     <string name="set_recording_mode_title">Recording pipeline</string>
