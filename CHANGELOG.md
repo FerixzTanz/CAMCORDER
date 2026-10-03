@@ -11,6 +11,10 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.13-alpha] - 2026-10-04
+
+- Info bar steering: the angle digits and the degree sign are drawn over the wheel with a background outline, so the ring and spokes break around them instead of crossing them.
+
 ## [2.0.12-alpha] - 2026-10-04
 
 - Info bar: left turn, hazard and right turn are one cell; off is a grey outline, lit arrows are white with green light, hazard lights both arrows and a red nested double triangle (same mark on the vehicle status panel).

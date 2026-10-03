@@ -40,7 +40,7 @@ public final class InfoBarLayout {
         TURN(184, Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT),
         /**
          * 方向盘随读数转；先用着，满舵几圈、最大读数多少等 Lab（{@link Signal#STEERING_DEGREES_PER_UNIT}）。
-         * 78 宽，比自动驻车宽一点：三位数的角度数字要放在圈里（项目所有者 2026-10-04）；度数符号三位数时落在圈上，待定。
+         * 78 宽，比自动驻车宽一点：三位数的角度数字要放在圈里（项目所有者 2026-10-04）；数字和度数符号压在方向盘上，描底色边。
          */
         STEERING(78, Signal.STEERING),
         GEAR(70, Signal.GEAR),

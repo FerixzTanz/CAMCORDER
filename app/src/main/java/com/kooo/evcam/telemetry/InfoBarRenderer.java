@@ -443,9 +443,9 @@ public final class InfoBarRenderer {
     /**
      * 方向盘：整只随转角转；数字居中、度数符号挂在右边；左偏黄、右偏白，不带正负号。
      * 格子 78 宽（宽度是按设计机上的字定的），车机字体更宽时和车速一样缩字：数字的宽超过
-     * {@link #STEER_DIGIT_ROOM} 就缩到刚好，数字不压圈；度数符号超出格子右边也缩，不出格。
-     * 注意：三位数时度数符号落在圈上（以前 130 宽时也一样），缩半压缩后几乎看不见 —— 怎么改等项目所有者定；
-     * 0 / 180 / 360 / 540° 时横辐条和两边的数字有重叠（一直如此）。
+     * {@link #STEER_DIGIT_ROOM} 就缩到刚好；度数符号超出格子右边也缩，不出格。
+     * 数字和度数符号压在方向盘上（项目所有者 2026-10-04：字号、宽度都不变）：先用底色描一圈边再填字，
+     * 三位数时落在圈上的度数符号、转到 0 / 180 / 360 / 540° 时横过来的辐条，都在字边断开，不划过字（{@link #haloText}）。
      */
     private void drawSteering(float cx, float cy, Float degrees) {
         int ring = degrees == null ? UNKNOWN_LINE : ON;
@@ -475,8 +475,8 @@ public final class InfoBarRenderer {
         float size = tw > STEER_DIGIT_ROOM ? 32f * STEER_DIGIT_ROOM / tw : 32f;
         text.setTextSize(size);
         float half = text.measureText(digits) / 2f;
-        // 顺带把颜色设好，度数符号用同一个颜色
-        centeredText(digits, cx, cy + 11, size, color, text);
+        text.setTextAlign(Paint.Align.CENTER);
+        haloText(digits, cx, cy + 11, color);
         float degX = cx + half + 2f;
         text.setTextSize(20f);
         float dw = text.measureText("°");
@@ -485,7 +485,22 @@ public final class InfoBarRenderer {
             text.setTextSize(20f * degRoom / dw);
         }
         text.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("°", degX, cy, text);
+        haloText("°", degX, cy, color);
+    }
+
+    /**
+     * 字压在线上：先用底色描一圈 4 px 的边，再填字 —— 线在字边断开，字不被划过（方向盘的数字和度数符号）。
+     * 用 {@code text} 画笔当前的字号和对齐。
+     */
+    private void haloText(String s, float x, float baseline, int color) {
+        text.setStyle(Paint.Style.STROKE);
+        text.setStrokeWidth(4f);
+        text.setStrokeJoin(Paint.Join.ROUND);
+        text.setColor(BG);
+        canvas.drawText(s, x, baseline, text);
+        text.setStyle(Paint.Style.FILL);
+        text.setColor(color);
+        canvas.drawText(s, x, baseline, text);
     }
 
     /** 喇叭：一只号角，右边两道声波。亮填实，灭画轮廓，没数据深灰加斜杠。 */
