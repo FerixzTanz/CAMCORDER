@@ -183,4 +183,25 @@ public class VehicleStateMapperTest {
         // 前雾灯这台车多半没装：它亮不亮都不算
         assertNull(map(readings(Signal.FRONT_FOG, true), true).fogLights);
     }
+
+    /** 哨兵模式自己闪一下（P 挡就绪时 0 → 1 → 0 约 1 秒，Lab 0.23.0）不算；稳住 2 秒才换过去。 */
+    @Test
+    public void sentryHasToHoldStillBeforeItCounts() {
+        VehicleStateMapper mapper = new VehicleStateMapper();
+        long settle = VehicleStateMapper.SENTRY_SETTLE_MS;
+        assertEquals("第一次读到直接算", Integer.valueOf(0), sentry(mapper, 1000L, 0));
+        assertEquals(Integer.valueOf(0), sentry(mapper, 2000L, 1));
+        assertEquals("1.18 秒后回 0：那个 1 从没算过", Integer.valueOf(0), sentry(mapper, 3180L, 0));
+        assertEquals(Integer.valueOf(0), sentry(mapper, 3180L + settle, 0));
+        assertEquals(Integer.valueOf(0), sentry(mapper, 6000L, 1));
+        assertEquals(Integer.valueOf(0), sentry(mapper, 6000L + settle - 1, 1));
+        assertEquals("真的开了：稳住 2 秒", Integer.valueOf(1), sentry(mapper, 6000L + settle, 1));
+        assertEquals(settle, VehicleStateMapper.republishAfterMs(Signal.SENTRY_MODE));
+    }
+
+    private static Integer sentry(VehicleStateMapper mapper, long at, int code) {
+        VehicleState.Builder b = VehicleState.empty().edit();
+        mapper.apply(b, readings(Signal.SENTRY_MODE, code), at, true);
+        return b.build().sentry;
+    }
 }

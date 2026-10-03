@@ -110,7 +110,7 @@
     <string name="set_screen_off_wake_title">熄屏后不让车机睡，最多（小时）</string>
     <string name="unit_hours">%1$s 小时</string>
     <string name="set_screen_off_keep_title">熄屏持续录制</string>
-    <string name="set_screen_off_keep_summary">需配合车辆的哨兵模式：打开这个开关，并且哨兵模式开着，熄屏后接着录；哨兵模式没开的话，车机睡着时录制暂停，醒来接着录。关掉这个开关，不管哨兵模式开没开，熄屏后都会停止录制</string>
+    <string name="set_screen_off_keep_summary">需配合哨兵模式使用。未开启哨兵模式时，车机休眠期间录制暂停，唤醒后自动恢复。关闭本项，熄屏后停止录制。</string>
     <string name="sentry_status_on">哨兵模式：已开启</string>
     <string name="sentry_status_armed">哨兵模式：已布防</string>
     <string name="sentry_status_off">哨兵模式：未开启</string>
@@ -485,6 +485,10 @@
     <string name="record_preparing">正在准备…</string>
     <string name="record_idle_detail">每段 %1$d 分钟</string>
     <string name="record_segment_detail">本段 %1$s / %2$d 分钟</string>
+    <string name="record_screen_off_continue">熄屏后继续录制</string>
+    <string name="record_screen_off_pause">熄屏暂停，唤醒后恢复</string>
+    <string name="record_screen_off_stop">熄屏后停止录制</string>
+    <string name="record_screen_off_needs_sentry">熄屏续录需开启哨兵模式</string>
     <string name="recording_chip">录制中 %1$s · 第 %2$d 段</string>
     <string name="rail_photo">拍照</string>
     <string name="rail_settings">设置</string>

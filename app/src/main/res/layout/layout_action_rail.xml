@@ -104,6 +104,17 @@
                     android:maxLines="1"
                     android:textColor="@color/text_secondary"
                     android:textAppearance="@style/TextAppearance.Cam.Caption" />
+
+                <!-- 录制中才有：熄屏后这段录像会怎样（自己读设置和哨兵模式，RecordButtonUi 管显隐） -->
+                <com.kooo.evcam.ui.ScreenOffHintView
+                    android:id="@+id/record_hint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:maxLines="2"
+                    android:textColor="@color/text_secondary"
+                    android:textAppearance="@style/TextAppearance.Cam.Micro"
+                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

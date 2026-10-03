@@ -481,8 +481,9 @@ final class EcarxSource {
         schedulePublish(0);
         long hold = VehicleStateMapper.republishAfterMs(s);
         if (hold > 0) {
-            // 显示里有保持的信号（转向灯闪烁、闪远光）到点要再算一次，否则要等下一次变化才灭
-            schedulePublish(hold + 50);
+            // 显示里有保持 / 稳住的信号（转向灯闪烁、闪远光、哨兵模式）到点要再算一次，否则要等下一次变化才变。
+            // 映射看到这次变化是在合并发布之后（最多晚 PUBLISH_COALESCE_MS），重算也跟着往后让这么多
+            schedulePublish(hold + PUBLISH_COALESCE_MS + 50);
         }
     }
 

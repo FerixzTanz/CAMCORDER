@@ -92,7 +92,7 @@
     <string name="set_screen_off_wake_title">Kekalkan kereta berjaga sehingga (jam)</string>
     <string name="unit_hours">%1$s jam</string>
     <string name="set_screen_off_keep_title">Terus merakam apabila skrin padam</string>
-    <string name="set_screen_off_keep_summary">Berfungsi dengan Mod Sentry kereta: jika ini dihidupkan dan Mod Sentry hidup, rakaman diteruskan selepas skrin padam; tanpa Mod Sentry kereta tidur dan rakaman berhenti sementara sehingga ia bangun. Jika ini dimatikan, rakaman berhenti apabila skrin padam, sama ada Mod Sentry hidup atau tidak</string>
+    <string name="set_screen_off_keep_summary">Memerlukan Mod Sentry. Tanpanya, rakaman dijeda semasa kereta tidur dan disambung semula apabila bangun. Jika dimatikan, rakaman berhenti apabila skrin padam.</string>
     <string name="sentry_status_on">Mod Sentry: hidup</string>
     <string name="sentry_status_armed">Mod Sentry: bersiaga</string>
     <string name="sentry_status_off">Mod Sentry: mati</string>
@@ -476,6 +476,10 @@
     <string name="record_preparing">Bermula…</string>
     <string name="record_idle_detail">Klip %1$d min</string>
     <string name="record_segment_detail">Klip ini %1$s / %2$d min</string>
+    <string name="record_screen_off_continue">Diteruskan ketika skrin padam</string>
+    <string name="record_screen_off_pause">Dijeda ketika skrin padam, disambung apabila bangun</string>
+    <string name="record_screen_off_stop">Berhenti apabila skrin padam</string>
+    <string name="record_screen_off_needs_sentry">Perlu Mod Sentry untuk merakam ketika skrin padam</string>
     <string name="recording_chip">Merakam %1$s · klip %2$d</string>
     <string name="rail_photo">Ambil foto</string>
     <string name="rail_settings">Tetapan</string>

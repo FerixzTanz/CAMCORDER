@@ -11,6 +11,12 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.7-alpha] - 2026-10-03
+
+- Record button: while recording, a small line says what happens when the screen goes off.
+- Settings → System → Keep recording when the screen goes off: shorter description.
+- Sentry Mode has to hold for 2 s before it counts (it can blink on for a second while parked).
+
 ## [2.0.6-alpha] - 2026-10-03
 
 - Sentry Mode status can now be shown anywhere it matters (SentryStatusView).

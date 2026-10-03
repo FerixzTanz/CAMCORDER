@@ -247,14 +247,16 @@ public final class RecordingCoordinator {
         darkSinceElapsedMs = android.os.SystemClock.elapsedRealtime();
         darkSinceUptimeMs = android.os.SystemClock.uptimeMillis();
         stopsWhileDark = 0;
-        if (appConfig.isScreenOffRecordingEnabled()) {
-            // 唤醒锁由 ScreenOffRecording 拿
-            BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
-            return;
-        }
-        if (appConfig.isScreenOffKeepRecording()) {
-            // 不申请唤醒、不拉住车机 —— 车机睡了录像就停在那一刻，醒来接着录；熄屏期间断了照样等环视接回
-            BlackBox.noteImportant("熄屏时在录像：熄屏持续录制开着，接着录（不唤醒车机）");
+        // 停不停、亮屏接不接，规矩在 ScreenOffPlan 一处（录制键上的小字照的也是它）
+        if (ScreenOffPlan.keepsRecording(appConfig)) {
+            if (appConfig.isScreenOffRecordingEnabled()) {
+                // 唤醒锁由 ScreenOffRecording 拿
+                BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
+            } else {
+                // 不申请唤醒、不拉住车机 —— 车机睡了录像就停在那一刻，醒来接着录；熄屏期间断了照样等环视接回
+                BlackBox.noteImportant("熄屏时在录像：熄屏持续录制开着，接着录（不唤醒车机）；哨兵模式"
+                        + sentryForLog());
+            }
             return;
         }
         BlackBox.noteImportant("熄屏时在录像：熄屏录制没生效"
@@ -269,13 +271,20 @@ public final class RecordingCoordinator {
             if (!isRecording() && pending == null) {
                 return;
             }
-            if (appConfig.isScreenOffRecordingEnabled() || appConfig.isScreenOffKeepRecording()) {
+            if (ScreenOffPlan.keepsRecording(appConfig)) {
                 return;
             }
             BlackBox.noteImportant("熄屏已 " + (SCREEN_OFF_STOP_MS / 1000) + " 秒，停录");
             stop(RecordingStops.Reason.SCREEN_OFF);
         };
         main.postDelayed(screenOffStop, SCREEN_OFF_STOP_MS);
+    }
+
+    /** 黑匣子用：哨兵模式此刻开没开 —— 熄屏持续录制开着时，接不接着录看的就是它。 */
+    private static String sentryForLog() {
+        Integer sentry = com.kooo.evcam.telemetry.Telemetry.get().latest().sentry;
+        return sentry == null ? "读不到" : sentry == 2 ? "布防" : sentry == 1 ? "开"
+                : "关（车机睡着时录像停住，醒来接着录）";
     }
 
     private void cancelScreenOffStop() {
@@ -306,7 +315,7 @@ public final class RecordingCoordinator {
         if (isRecording() || pending != null) {
             return;
         }
-        if (lastStopReason == RecordingStops.Reason.SCREEN_OFF && appConfig.isAutoStartRecording()
+        if (lastStopReason == RecordingStops.Reason.SCREEN_OFF && ScreenOffPlan.resumesOnScreenOn(appConfig)
                 && RecordingIntent.current().shouldRestore(true)) {
             lastStopReason = null;
             request(Why.SCREEN_ON);

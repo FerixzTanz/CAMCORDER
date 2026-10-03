@@ -710,6 +710,11 @@ public class AppConfig {
         return onChanged(action, KEY_VEHICLE_STATUS, KEY_INFO_BAR_ALL);
     }
 
+    /** 熄屏后录像会怎样（{@code ScreenOffPlan}）看的这几项，一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
+    public SharedPreferences.OnSharedPreferenceChangeListener onScreenOffPlanChanged(Runnable action) {
+        return onChanged(action, KEY_SCREEN_OFF_RECORDING, KEY_SCREEN_OFF_KEEP_RECORDING, KEY_AUTO_START_RECORDING);
+    }
+
     /** 这几项里有一项变了就叫 {@code action}。返回的监听器调用方要拿住，用完交给 {@link #removeChangeListener}。 */
     public SharedPreferences.OnSharedPreferenceChangeListener onChanged(Runnable action, String... keys) {
         java.util.List<String> watched = java.util.Arrays.asList(keys);
