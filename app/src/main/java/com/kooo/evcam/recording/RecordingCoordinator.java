@@ -254,8 +254,11 @@ public final class RecordingCoordinator {
                 BlackBox.noteImportant("熄屏时在录像：熄屏录制生效，继续录");
             } else {
                 // 不申请唤醒、不拉住车机 —— 车机睡了录像就停在那一刻，醒来接着录；熄屏期间断了照样等环视接回
+                // 哨兵模式此刻开没开一起记下：熄屏持续录制开着时，接不接着录看的就是它
+                Integer sentry = com.kooo.evcam.telemetry.Telemetry.get().latest().sentry;
                 BlackBox.noteImportant("熄屏时在录像：熄屏持续录制开着，接着录（不唤醒车机）；哨兵模式"
-                        + sentryForLog());
+                        + (sentry == null ? "读不到" : sentry == 2 ? "布防" : sentry == 1 ? "开"
+                        : "关（车机睡着时录像停住，醒来接着录）"));
             }
             return;
         }
@@ -278,13 +281,6 @@ public final class RecordingCoordinator {
             stop(RecordingStops.Reason.SCREEN_OFF);
         };
         main.postDelayed(screenOffStop, SCREEN_OFF_STOP_MS);
-    }
-
-    /** 黑匣子用：哨兵模式此刻开没开 —— 熄屏持续录制开着时，接不接着录看的就是它。 */
-    private static String sentryForLog() {
-        Integer sentry = com.kooo.evcam.telemetry.Telemetry.get().latest().sentry;
-        return sentry == null ? "读不到" : sentry == 2 ? "布防" : sentry == 1 ? "开"
-                : "关（车机睡着时录像停住，醒来接着录）";
     }
 
     private void cancelScreenOffStop() {
