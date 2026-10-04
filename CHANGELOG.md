@@ -11,6 +11,10 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.14-alpha] - 2026-10-04
+
+- Info bar front view redrawn as the 7X nose: two straight daytime running light strips with a dark middle, flat low/high beam lamps below them; high beam lights with a strong round glow. The separate low/high beam cell stays for now.
+
 ## [2.0.13-alpha] - 2026-10-04
 
 - Info bar steering: the angle digits and the degree sign are drawn over the wheel with a background outline, so the ring and spokes break around them instead of crossing them.

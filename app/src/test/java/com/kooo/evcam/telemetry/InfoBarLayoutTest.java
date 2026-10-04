@@ -84,10 +84,11 @@ public class InfoBarLayoutTest {
     /** 一格管几个信号的，勾任意一个就带出整格。 */
     @Test
     public void anyOneSignalOfAnIconBringsTheWholeIcon() {
-        assertEquals(Collections.singletonList(InfoBarLayout.Cell.BEAMS),
+        assertEquals("前视也画近远光：勾近光带出前视和近光远光那一格",
+                Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.LOW_BEAM))));
-        assertEquals("闪远光在信息条上算近光远光那一格（单独那格只在面板上）",
-                Collections.singletonList(InfoBarLayout.Cell.BEAMS),
+        assertEquals("闪远光在信息条上算进前视和近光远光那一格（单独那格只在面板上）",
+                Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.HIGH_BEAM_FLASH))));
         assertEquals("转向灯、双闪合成一格（双闪单独那格只在面板上）",
                 Collections.singletonList(InfoBarLayout.Cell.TURN),
@@ -113,6 +114,27 @@ public class InfoBarLayoutTest {
             assertTrue(s.name(), defaults.contains(s.name()));
             assertTrue(s.name(), InfoBarLayout.hasIcon(s));
         }
+    }
+
+    /**
+     * 前视画日行灯，也画近远光（项目所有者 2026-10-04）：近光、远光、闪远光也列在前视那一格，勾哪个都带出前视；
+     * 近光远光那一格先留着；只勾日行灯 / 前位置灯不带出近光远光那一格。前视和后视一样宽。
+     */
+    @Test
+    public void theFrontViewCarriesTheBeamsAndTheBeamsCellStays() {
+        assertEquals(Arrays.asList(Signal.DRL, Signal.FRONT_POSITION_LAMP, Signal.LOW_BEAM, Signal.HIGH_BEAM,
+                Signal.HIGH_BEAM_FLASH), InfoBarLayout.Cell.DRL.signals());
+        assertEquals(Arrays.asList(Signal.LOW_BEAM, Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
+                InfoBarLayout.Cell.BEAMS.signals());
+        assertTrue(InfoBarLayout.Cell.BEAMS.onStrip);
+        assertEquals(106, InfoBarLayout.Cell.DRL.width);
+        assertEquals(InfoBarLayout.Cell.REAR_LAMPS.width, InfoBarLayout.Cell.DRL.width);
+        assertEquals(Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
+                cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.HIGH_BEAM))));
+        assertEquals(Collections.singletonList(InfoBarLayout.Cell.DRL),
+                cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.DRL))));
+        assertEquals(Collections.singletonList(InfoBarLayout.Cell.DRL),
+                cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.FRONT_POSITION_LAMP))));
     }
 
     /** 没有图标的信号画成文字格，排在图标格后面，按信号表的顺序。 */

@@ -27,10 +27,13 @@ import java.util.Locale;
  *   <li>转向灯、双闪一格（项目所有者 2026-10-04）：左箭头 | 双层嵌套三角（同实车双闪键）| 右箭头。
  *       灭 = 灰色空心描边（和自动驻车、哨兵的「灭」同一个画法）；亮 = 近白实心 + 绿色光晕（像实车的转向指示，
  *       和日行灯、远近光的「亮」同一个路数）—— 亮灭靠明度分，去掉颜色也分得开；双闪 = 两只箭头都亮、三角填红。</li>
- *   <li>日行灯那一格以 7X 正脸为底：车身轮廓、星门灯带、徽标、灯带下沿两条白色日行灯线，亮时带光晕。
- *       后灯组以 7X 车尾为底，同一套画法。两格一样宽，图按原来的比例只是居中，不缩不压（项目所有者 2026-10-04）。</li>
- *   <li>灯组靠「哪一块亮、光线朝哪」分状态，不靠颜色深浅：近远光看光线方向，刹车看高位刹车灯那一块，
- *       后雾灯 / 倒车灯各占保险杠上的位置。</li>
+ *   <li>前视、后视一样宽（106），是同一台 7X 的车头和车尾：车身轮廓、风挡、轮子同一条路径（项目所有者 2026-10-04）。
+ *       前视：深色星门灯带正中一个徽标（不亮），灯带下沿左右两条平直的日行灯条（徽标下面那一段不亮），
+ *       两条灯条外端下面各一块扁的大灯模块。灯的档次靠明度和光晕分，不靠颜色：灭 = 实心灰；日行灯 = 灯条近白 + 光晕；
+ *       近光 = 模块近白 + 光晕；远光（含闪远光）= 再加一圈把整块灯包住的圆形光晕。近光 + 远光那一格先留着
+ *       （项目所有者还要看它好不好认）。</li>
+ *   <li>灯组靠「哪一块亮、怎么亮」分状态，不靠颜色深浅：前视近远光看模块亮不亮、有没有包住整块的圆光，
+ *       近光 + 远光那一格看光线方向，刹车看高位刹车灯那一块，后雾灯 / 倒车灯各占保险杠上的位置。</li>
  * </ul>
  *
  * <p>只在编码线程上用；快照版本没变就不重画（{@link #renderIfDue}）。</p>
@@ -57,11 +60,10 @@ public final class InfoBarRenderer {
     private static final int TEXT_DIM = 0xFFA3A6AB;
     /** 方向盘左偏的数字。 */
     private static final int LEFT_YELLOW = 0xFFFFD54F;
-    /** 车身轮廓（日行灯、车厢）。 */
+    /** 车身轮廓（前视、后视、车厢）。 */
     private static final int OUTLINE = 0xFFA3A6AB;
-    /** 日行灯的核心色（偏白）和亮着的星门灯带。 */
+    /** 灯的核心色（偏白）。 */
     private static final int LAMP_CORE = 0xFFFFF3EA;
-    private static final int BAND_LIT = 0xFFD0602E;
     /** 尾灯：位置灯暗红，刹车灯、后雾灯亮红。 */
     private static final int TAIL_DIM = 0xFFA8323A;
     private static final int TAIL_BRIGHT = 0xFFFF5A5F;
@@ -80,6 +82,17 @@ public final class InfoBarRenderer {
      * Roboto Bold 的「513」量出来 55.08、实际墨迹约 52，不缩。
      */
     private static final float STEER_DIGIT_ROOM = 56f;
+
+    /** 前视灯光状态只有一个值：远光（含闪远光）优先，其次近光，否则关。 */
+    private static final int BEAM_OFF = 0, BEAM_LOW = 1, BEAM_HIGH = 2;
+
+    /**
+     * 远光光晕：方案三那一层（灯块外扩 4 / 6、圆角 6、模糊 10、不透明）连画几遍；形状不变，只是更亮。
+     * 项目所有者 2026-10-04 要方案三那种把灯块整个包住的圆形光晕、更亮，不管灯条下那道缝还看不看得见。
+     * 按压缩后半尺寸量（样稿 JPEG q22、缩一半，代替录像压缩）：3 遍的散光是方案三的 1.5 倍（日行灯开）/
+     * 1.7 倍（日行灯关）；2 遍 1.2 倍，4 遍 1.75 倍。要再亮只改遍数。
+     */
+    private static final int HIGH_BEAM_BLOOM_PASSES = 3;
 
     /** 位图的像素宽（信息条上就是视频宽）。 */
     private final int width;
@@ -104,6 +117,8 @@ public final class InfoBarRenderer {
     /** 双闪里面那只三角（外面那只用 {@link #path}）。 */
     private final Path innerPath = new Path();
     private final RectF rect = new RectF();
+    /** 远光光晕的模糊（{@link #HIGH_BEAM_BLOOM_PASSES}）：建一次，每帧不再分配。 */
+    private final BlurMaskFilter highBeamBloom = new BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL);
     private long lastVersion = -1;
     private boolean drawnOnce;
 
@@ -245,7 +260,7 @@ public final class InfoBarRenderer {
                 drawCabin(cx, cy, s.doorsOpen, s.beltsUnbuckled);
                 break;
             case DRL:
-                drawDaytimeLights(cx, s.daytimeRunningLights);
+                drawFrontView(cx, s.daytimeRunningLights, s.lowBeam, s.highBeam);
                 break;
             case BEAMS:
                 drawBeams(s.lowBeam, s.highBeam);
@@ -740,91 +755,99 @@ public final class InfoBarRenderer {
     }
 
     /**
-     * 日行灯：以 7X 正脸为底 —— 车身轮廓（车顶、A 柱、肩线、轮子）、星门灯带、正中的徽标、
-     * 车牌，以及灯带下沿左右两条白色日行灯线（向外端上挑收进转角灯组）。
-     * 亮时两条线带橙色光晕、灯带亮起并向四周散光；灭时整组灰、轮廓还在。
-     * 格子 106 宽，和后灯组一样（项目所有者 2026-10-04）：图还是原来为 130 宽的格子画的那张（对称于 x 65，
-     * 实际占 x 16..114，两只轮子），整张平移到格子正中，不缩不压 —— 只去掉两边的空白。
+     * 前视（106 宽，和后灯组一样）：7X 车头，和后视同一套画法 —— 车身轮廓、风挡、轮子是后视那一条路径，
+     * 都相对 cx 画，前后看着是同一台车。车头一道深色星门灯带，正中徽标（不亮）；灯带下沿左右两条平直的日行灯条，
+     * 徽标下面那一段不亮；两条灯条外端下面各一块扁的大灯模块（16 × 6），车牌在两块中间。
+     * 灯的档次靠明度和光晕分，不靠颜色：灭 = 实心灰；日行灯 = 两条灯条近白 + 光晕；近光 = 模块近白 + 光晕；
+     * 远光 = 再加一圈把整块灯包住的圆形光晕（方案三那一层连画 {@link #HIGH_BEAM_BLOOM_PASSES} 遍）。
+     * 远近光只有一个状态（项目所有者 2026-10-04）：远光亮（{@code high} 已含闪远光）就按远光画，否则近光亮按近光，
+     * 否则灭；日行灯单独看。三个都读不到才算没数据（轮廓、风挡、徽标改用没数据的线色，灯深灰，一道斜杠）；读到任意一个，其余按灭画。
+     * 先画远近光的光晕，再画日行灯条（光晕 + 灯条），最后画模块 —— 灯条压在光晕上面，还是一根干净的直条。
      */
-    private void drawDaytimeLights(float cx, Boolean on) {
-        canvas.save();
-        canvas.translate(cx - 65f, 0f);
-        boolean lit = Boolean.TRUE.equals(on);
-        int lineColor = on == null ? UNKNOWN_LINE : OUTLINE;
-        // 车身轮廓
+    private void drawFrontView(float cx, Boolean drl, Boolean low, Boolean high) {
+        boolean unknown = drl == null && low == null && high == null;
+        boolean stripsOn = Boolean.TRUE.equals(drl);
+        int beam = Boolean.TRUE.equals(high) ? BEAM_HIGH : (Boolean.TRUE.equals(low) ? BEAM_LOW : BEAM_OFF);
+        int lampOff = unknown ? UNKNOWN_FILL : OFF;
+        // 车身轮廓、风挡、轮子：后视那一条路径
         path.reset();
-        path.moveTo(20, 84);
-        path.lineTo(22, 50);
-        path.quadTo(24, 44, 30, 42);
-        path.lineTo(44, 20);
-        path.quadTo(46, 18, 50, 18);
-        path.lineTo(80, 18);
-        path.quadTo(84, 18, 86, 20);
-        path.lineTo(100, 42);
-        path.quadTo(106, 44, 108, 50);
-        path.lineTo(110, 84);
+        path.moveTo(cx - 45, 86);
+        path.lineTo(cx - 43, 50);
+        path.quadTo(cx - 41, 44, cx - 35, 42);
+        path.lineTo(cx - 23, 22);
+        path.quadTo(cx - 21, 20, cx - 17, 20);
+        path.lineTo(cx + 17, 20);
+        path.quadTo(cx + 21, 20, cx + 23, 22);
+        path.lineTo(cx + 35, 42);
+        path.quadTo(cx + 41, 44, cx + 43, 50);
+        path.lineTo(cx + 45, 86);
         path.close();
-        stroke.setColor(lineColor);
+        stroke.setColor(unknown ? UNKNOWN_LINE : OUTLINE);
         stroke.setStrokeWidth(5f);
         canvas.drawPath(path, stroke);
-        // 风挡
         path.reset();
-        path.moveTo(36, 42);
-        path.lineTo(48, 24);
-        path.lineTo(82, 24);
-        path.lineTo(94, 42);
+        path.moveTo(cx - 29, 42);
+        path.lineTo(cx - 19, 26);
+        path.lineTo(cx + 19, 26);
+        path.lineTo(cx + 29, 42);
         path.close();
-        stroke.setColor(on == null ? UNKNOWN_LINE : OFF);
+        stroke.setColor(unknown ? UNKNOWN_LINE : OFF);
         stroke.setStrokeWidth(4f);
         canvas.drawPath(path, stroke);
-        // 轮子、车牌
         fill.setColor(UNKNOWN_FILL);
-        rect.set(16, 80, 34, 90);
+        rect.set(cx - 49, 84, cx - 31, 92);
         canvas.drawRoundRect(rect, 3, 3, fill);
-        rect.set(96, 80, 114, 90);
+        rect.set(cx + 31, 84, cx + 49, 92);
         canvas.drawRoundRect(rect, 3, 3, fill);
-        rect.set(52, 70, 78, 80);
+        // 车牌、星门灯带、徽标（徽标不亮）
+        rect.set(cx - 13, 70, cx + 13, 80);
         canvas.drawRoundRect(rect, 2, 2, fill);
-        // 星门灯带：亮时先散一圈橙光，带子本身也亮
-        if (lit) {
-            glow.setStyle(Paint.Style.FILL);
-            glow.setColor(ON);
-            glow.setAlpha(140);
-            glow.setMaskFilter(new BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL));
-            rect.set(22, 50, 108, 64);
-            canvas.drawRoundRect(rect, 6, 6, glow);
-        }
-        fill.setColor(lit ? BAND_LIT : UNKNOWN_FILL);
-        rect.set(24, 52, 106, 62);
-        canvas.drawRoundRect(rect, 4, 4, fill);
-        // 两条日行灯线
-        path.reset();
-        path.moveTo(58, 66);
-        path.lineTo(32, 66);
-        path.quadTo(26, 66, 24, 62);
-        path.moveTo(72, 66);
-        path.lineTo(98, 66);
-        path.quadTo(104, 66, 106, 62);
-        if (lit) {
-            glow.setStyle(Paint.Style.STROKE);
-            glow.setStrokeWidth(11f);
-            glow.setColor(ON);
-            glow.setAlpha(240);
-            glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
-            canvas.drawPath(path, glow);
-            glow.setMaskFilter(null);
-        }
-        stroke.setColor(lit ? LAMP_CORE : (on == null ? UNKNOWN_LINE : OFF));
-        stroke.setStrokeWidth(5f);
-        canvas.drawPath(path, stroke);
-        // 徽标
-        fill.setColor(lit ? LAMP_CORE : (on == null ? UNKNOWN_LINE : OFF));
-        rect.set(61, 54, 69, 60);
+        rect.set(cx - 41, 49, cx + 41, 59);
+        canvas.drawRoundRect(rect, 3, 3, fill);
+        fill.setColor(unknown ? UNKNOWN_LINE : OFF);
+        rect.set(cx - 4, 50, cx + 4, 58);
         canvas.drawRoundRect(rect, 1.5f, 1.5f, fill);
-        if (on == null) {
-            slash(20, 84, 110, 16);
+        // 大灯模块：上下 66..72，左 cx-39..cx-23、右 cx+23..cx+39
+        float t = 66f;
+        float b = 72f;
+        // 1) 远近光的光晕：压在所有亮的东西下面
+        for (int d = -1; d <= 1; d += 2) {
+            float ml = d < 0 ? cx - 39 : cx + 23;
+            float mr = d < 0 ? cx - 23 : cx + 39;
+            if (beam == BEAM_HIGH) {
+                // 远光：方案三那一层圆光（模块外扩 4 / 6、圆角 6、模糊 10、不透明），同一个形状连画几遍，只是更亮
+                glow.setStyle(Paint.Style.FILL);
+                glow.setColor(LAMP_CORE);
+                glow.setAlpha(255);
+                glow.setMaskFilter(highBeamBloom);
+                rect.set(ml - 4, t - 6, mr + 4, b + 6);
+                for (int i = 0; i < HIGH_BEAM_BLOOM_PASSES; i++) {
+                    canvas.drawRoundRect(rect, 6, 6, glow);
+                }
+                glow.setMaskFilter(null);
+            }
+            if (beam != BEAM_OFF) {
+                glowRect(ml - 2, t - 2, mr + 2, b + 2, 3, LAMP_CORE);
+            }
         }
-        canvas.restore();
+        // 2) 两条日行灯条：灯带下沿，平直，中间不亮
+        for (int d = -1; d <= 1; d += 2) {
+            float sl = d < 0 ? cx - 42 : cx + 9;
+            float sr = d < 0 ? cx - 9 : cx + 42;
+            if (stripsOn) {
+                glowRect(sl - 2, 55, sr + 2, 65, 4, LAMP_CORE);
+            }
+            lamp(sl, 57, sr, 63, 3, stripsOn ? LAMP_CORE : lampOff);
+        }
+        // 3) 大灯模块
+        for (int d = -1; d <= 1; d += 2) {
+            float ml = d < 0 ? cx - 39 : cx + 23;
+            float mr = d < 0 ? cx - 23 : cx + 39;
+            lamp(ml, t, mr, b, 2, beam != BEAM_OFF ? LAMP_CORE : lampOff);
+        }
+        if (unknown) {
+            slash(cx - 45, 88, cx + 45, 14);
+        }
     }
 
     /**
