@@ -11,6 +11,10 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.15-alpha] - 2026-10-04
+
+- Easter egg: if a licence plate is set (Settings → Recording), the plate on the info bar's front view shows its digits in white (last 4 if longer).
+
 ## [2.0.14-alpha] - 2026-10-04
 
 - Info bar front view redrawn as the 7X nose: two straight daytime running light strips with a dark middle, flat low/high beam lamps below them; high beam lights with a strong round glow. The separate low/high beam cell stays for now.

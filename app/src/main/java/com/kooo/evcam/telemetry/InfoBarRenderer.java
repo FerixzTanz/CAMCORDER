@@ -9,6 +9,9 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
+import com.kooo.evcam.AppConfig;
+import com.kooo.evcam.settings.LicensePlate;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -34,6 +37,11 @@ import java.util.Locale;
  *       （项目所有者还要看它好不好认）。</li>
  *   <li>灯组靠「哪一块亮、怎么亮」分状态，不靠颜色深浅：前视近远光看模块亮不亮、有没有包住整块的圆光，
  *       近光 + 远光那一格看光线方向，刹车看高位刹车灯那一块，后雾灯 / 倒车灯各占保险杠上的位置。</li>
+ *   <li>车牌数字（彩蛋，项目所有者 2026-10-04）：设置 → 录制里填了车牌（{@link AppConfig#getLicensePlate} 不是空串），
+ *       信息条前视正中那块车牌上用白字写车牌里的数字，只留数字、多于四位留最后四位（{@link LicensePlate#infoBarDigits}）；
+ *       没填或者没有数字，车牌照旧空着。车牌那块的位置、大小和格子里别的东西都不变。它不是读数，是上面那几条规矩的例外：
+ *       字只有约 10 px 高、笔画 1–2 px，用的是中粗（500）不是粗体（为了 6 px 一格里空心更开、0 和 8 分得开）——
+ *       原尺寸、压缩后认得出，缩到一半看（2560 的录像在 1280 宽上看）认不出，车牌号以左上角那行字为准。车辆状态面板不写。</li>
  * </ul>
  *
  * <p>只在编码线程上用；快照版本没变就不重画（{@link #renderIfDue}）。</p>
@@ -94,6 +102,28 @@ public final class InfoBarRenderer {
      */
     private static final int HIGH_BEAM_BLOOM_PASSES = 3;
 
+    /**
+     * 前视车牌那块（不变，{@link #drawFrontView} 里照旧那样画）：x cx-13..cx+13、y 70..80。车牌数字只画在它里面（裁在这块里）。
+     */
+    private static final float PLATE_HALF = 13f, PLATE_TOP = 70f, PLATE_BOTTOM = 80f;
+    /**
+     * 车牌数字最多多宽（measureText 量的宽）：车牌宽 26，两边各让 1 px —— 四位数字刚好 6 px 一位。
+     * 宽了只横向压窄（textScaleX），字高不变；两位数字放得下，不压。
+     */
+    private static final float PLATE_ROOM = 24f;
+    /**
+     * 车牌数字的字号：Roboto 的数字高 0.711 em，14 × 0.711 ≈ 10 px，正好是车牌的高；基线压在车牌下沿，墨迹占 y 70..79。
+     * 只按宽缩、不按高缩：车机字体的数字比 0.711 em 高的话，顶上超出车牌的那一点被裁掉（0.73 em 也只差 0.3 px）。
+     */
+    private static final float PLATE_TEXT_SIZE = 14f;
+    /**
+     * 车牌数字的字重：中粗 500（Roboto Medium，和应用界面里的 sans-serif-medium 同一档），和信息条别的数字同一个字族、比粗体细一档。
+     * 样稿（整框高、按宽收窄，试过粗体 / 窄体 / 等宽各个字号和三种字重）里它原尺寸和压缩后（JPEG q22）的读数测试都最好：
+     * 6 px 一格里笔画细一档，空心和字缝更开，最先糊的 0 和 8 差得最多。车机字体没有 500 这一档时 Android 退到常规体（400），
+     * 压缩后和粗体差不多、0 和 8 照样比粗体好分。要改回粗体：{@code Typeface.DEFAULT_BOLD}。
+     */
+    private static final int PLATE_WEIGHT = 500;
+
     /** 位图的像素宽（信息条上就是视频宽）。 */
     private final int width;
     /** 逻辑宽度：格子坐标量的是它（信息条上等于 width）。 */
@@ -113,6 +143,13 @@ public final class InfoBarRenderer {
     private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mono = new Paint(Paint.ANTI_ALIAS_FLAG);
+    /** 车牌数字单用一支笔：字重（{@link #PLATE_WEIGHT}）和按车牌量过的 textScaleX 都是它专用的，{@link #text} 的 textScaleX 得一直是 1。 */
+    private final Paint plate = new Paint(Paint.ANTI_ALIAS_FLAG);
+    /**
+     * 前视车牌上写的数字（{@link LicensePlate#infoBarDigits}）；空串 = 不写，车牌照旧空着。
+     * 信息条建的时候读一次设置（{@link #readPlate}），和录像左上角那行字里的车牌同时定下、整段录像不变；车辆状态面板一直是空串。
+     */
+    private String plateDigits = "";
     private final Path path = new Path();
     /** 双闪里面那只三角（外面那只用 {@link #path}）。 */
     private final Path innerPath = new Path();
@@ -122,16 +159,20 @@ public final class InfoBarRenderer {
     private long lastVersion = -1;
     private boolean drawnOnce;
 
-    /** 录像下面那一条：宽 = 视频宽，高 {@link #HEIGHT}；放哪几格看系统信息里勾的（{@link InfoBar#selection}）。 */
+    /**
+     * 录像下面那一条：宽 = 视频宽，高 {@link #HEIGHT}；放哪几格看系统信息里勾的（{@link InfoBar#selection}）。
+     * 前视车牌上的数字这时读一次设置（和录像左上角那行字里的车牌同一个来源、同一个时候），整段录像不变。
+     */
     public InfoBarRenderer(Context context, int width) {
         // 文字格的字按应用语言取（Application 的 Context 在 Android 13 以下是系统语言）
         this(com.kooo.evcam.settings.Languages.localized(context),
                 InfoBarLayout.fit(Math.max(2, width), InfoBar.selection(context)),
                 Math.max(2, width), HEIGHT, 1f, true);
         fittedSelection = InfoBar.selectionVersion();
+        readPlate();
     }
 
-    /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。 */
+    /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。车牌上不写数字。 */
     public InfoBarRenderer(InfoBarLayout.Arrangement arrangement, float scale) {
         this(null, arrangement.cells, arrangement.width, arrangement.height, scale, false);
     }
@@ -155,6 +196,35 @@ public final class InfoBarRenderer {
         glow.setStrokeJoin(Paint.Join.ROUND);
         text.setTypeface(Typeface.DEFAULT_BOLD);
         mono.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
+        plate.setTypeface(Typeface.create(Typeface.DEFAULT, PLATE_WEIGHT, false));
+        plate.setColor(TEXT);
+        plate.setTextAlign(Paint.Align.CENTER);
+        plate.setTextSize(PLATE_TEXT_SIZE);
+    }
+
+    /**
+     * 读设置里的车牌，换成前视车牌上要写的数字，并按 {@link #PLATE_ROOM} 量好宽（数字录制当中不变，量一次就够）。
+     * 只有信息条读（{@code context} 不是 null）；只在建的时候调一次，不是每帧。
+     */
+    private void readPlate() {
+        if (context == null) {
+            return;
+        }
+        plateDigits = LicensePlate.infoBarDigits(new AppConfig(context).getLicensePlate());
+        // 宽了就横向压窄到刚好，只缩不放：两位数字照原样。measureText 已经算上 textScaleX；
+        // 第二遍是给按整像素取的字宽兜底，车机字体更宽（比如不是 Roboto）也一样放得下
+        plate.setTextScaleX(1f);
+        if (plateDigits.isEmpty()) {
+            return;
+        }
+        float w = plate.measureText(plateDigits);
+        if (w > PLATE_ROOM) {
+            plate.setTextScaleX(PLATE_ROOM / w);
+            w = plate.measureText(plateDigits);
+            if (w > PLATE_ROOM) {
+                plate.setTextScaleX(plate.getTextScaleX() * PLATE_ROOM / w);
+            }
+        }
     }
 
     public int width() {
@@ -763,6 +833,9 @@ public final class InfoBarRenderer {
      * 远近光只有一个状态（项目所有者 2026-10-04）：远光亮（{@code high} 已含闪远光）就按远光画，否则近光亮按近光，
      * 否则灭；日行灯单独看。三个都读不到才算没数据（轮廓、风挡、徽标改用没数据的线色，灯深灰，一道斜杠）；读到任意一个，其余按灭画。
      * 先画远近光的光晕，再画日行灯条（光晕 + 灯条），最后画模块 —— 灯条压在光晕上面，还是一根干净的直条。
+     * 填了车牌（{@link #plateDigits} 不是空串）就在车牌上用白字写它的数字（最多四位），在模块之后、斜杠之前画，
+     * 远光的光晕盖不住；裁在车牌那块里（{@link #PLATE_HALF}），一个像素也不出车牌。车牌是设置不是读数，
+     * 没数据时数字照样是白的。没填就和原来一模一样。
      */
     private void drawFrontView(float cx, Boolean drl, Boolean low, Boolean high) {
         boolean unknown = drl == null && low == null && high == null;
@@ -844,6 +917,13 @@ public final class InfoBarRenderer {
             float ml = d < 0 ? cx - 39 : cx + 23;
             float mr = d < 0 ? cx - 23 : cx + 39;
             lamp(ml, t, mr, b, 2, beam != BEAM_OFF ? LAMP_CORE : lampOff);
+        }
+        // 4) 车牌数字（彩蛋）：最后画，光晕盖不住；裁在车牌里 —— 圆字的过冲、抗锯齿、车机上更高的字都出不了车牌
+        if (!plateDigits.isEmpty()) {
+            canvas.save();
+            canvas.clipRect(cx - PLATE_HALF, PLATE_TOP, cx + PLATE_HALF, PLATE_BOTTOM);
+            canvas.drawText(plateDigits, cx, PLATE_BOTTOM, plate);
+            canvas.restore();
         }
         if (unknown) {
             slash(cx - 45, 88, cx + 45, 14);
