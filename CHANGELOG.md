@@ -11,7 +11,7 @@ commit message, not here.
 
 Nothing yet.
 
-## [2.0.17-beta] - 2026-10-04
+## [2.1.0-beta] - 2026-10-04
 
 Upgrade from 2.0.0.
 
