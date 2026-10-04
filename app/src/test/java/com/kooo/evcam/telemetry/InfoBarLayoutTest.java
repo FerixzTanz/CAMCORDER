@@ -101,12 +101,16 @@ public class InfoBarLayoutTest {
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(InfoBarLayout.POSITION_ITEM))));
     }
 
-    /** 转向灯、双闪合成一格（项目所有者 2026-10-04）：默认照样勾着三个转向信号；双闪那格只在面板上。 */
+    /**
+     * 转向灯、双闪合成一格（项目所有者 2026-10-04）：默认照样勾着转向信号；双闪那格只在面板上，画的是同几个信号。
+     * 转向指示显示（跟着闪）说的是同一个「左 / 右 / 双闪」，也列在转向灯那一格（不拿来画）。
+     */
     @Test
     public void theTurnCellCarriesTheTurnSignalsAndTheHazardCellStaysOnThePanel() {
-        List<Signal> turn = Arrays.asList(Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT);
+        List<Signal> drawn = Arrays.asList(Signal.INDICATOR, Signal.TURN_LEFT, Signal.TURN_RIGHT);
+        List<Signal> turn = Arrays.asList(Signal.INDICATOR, Signal.INDICATOR_DISPLAY, Signal.TURN_LEFT, Signal.TURN_RIGHT);
         assertEquals(turn, InfoBarLayout.Cell.TURN.signals());
-        assertEquals(turn, InfoBarLayout.Cell.HAZARD.signals());
+        assertEquals(drawn, InfoBarLayout.Cell.HAZARD.signals());
         assertTrue(InfoBarLayout.Cell.TURN.onStrip);
         assertFalse(InfoBarLayout.Cell.HAZARD.onStrip);
         Set<String> defaults = InfoBarLayout.defaultSelection();
@@ -114,6 +118,95 @@ public class InfoBarLayoutTest {
             assertTrue(s.name(), defaults.contains(s.name()));
             assertTrue(s.name(), InfoBarLayout.hasIcon(s));
         }
+    }
+
+    /**
+     * 有图标表示这个信息点，勾上就显示图标（项目所有者 2026-10-04）：转向指示显示 → 转向灯那一格，
+     * 刹车踏板 → 刹车油门那一格，主驾 / 副驾座位 → 车厢；不再是文字格。
+     */
+    @Test
+    public void signalsShownByAnIconBringThatIcon() {
+        Object[][] cases = {
+                {Signal.INDICATOR_DISPLAY, InfoBarLayout.Cell.TURN},
+                {Signal.BRAKE_PEDAL, InfoBarLayout.Cell.PEDALS},
+                {Signal.SEAT_DRIVER, InfoBarLayout.Cell.CABIN},
+                {Signal.SEAT_PASSENGER, InfoBarLayout.Cell.CABIN},
+        };
+        for (Object[] c : cases) {
+            Signal signal = (Signal) c[0];
+            InfoBarLayout.Cell cell = (InfoBarLayout.Cell) c[1];
+            assertEquals(signal.name(), Collections.singletonList(cell), InfoBarLayout.cellsFor(signal.name()));
+            List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, pick(signal));
+            assertEquals(signal.name(), Collections.singletonList(cell), cellsOf(placed));
+            assertNull(signal.name(), placed.get(0).text);
+            assertTrue(signal.name(), InfoBarLayout.hasIcon(signal));
+        }
+        assertEquals(Arrays.asList(Signal.BRAKE_DEPTH, Signal.THROTTLE_DEPTH, Signal.BRAKE_PEDAL),
+                InfoBarLayout.Cell.PEDALS.signals());
+        assertTrue(InfoBarLayout.Cell.CABIN.signals().containsAll(Arrays.asList(Signal.SEAT_DRIVER,
+                Signal.SEAT_PASSENGER, Signal.BELT_DRIVER, Signal.DOOR_DRIVER)));
+    }
+
+    /**
+     * 只是相关、图标画的不是同一个信息的，照旧是文字格：自动驻车开关 ≠ 正在驻车，原厂画面弹出 / 泊车影像 ≠ 原厂 360，
+     * 灯光开关位置 ≠ 灯亮没亮，前 / 后备箱、充电口盖车厢图上没画，另外几项辅助开关不在那六块里。
+     */
+    @Test
+    public void relatedButDifferentInformationStaysText() {
+        for (Signal s : new Signal[]{Signal.AUTO_HOLD, Signal.STOCK_POPUP, Signal.PARK_ASSIST, Signal.LIGHT_SWITCH,
+                Signal.DOOR_FRUNK, Signal.DOOR_TRUNK, Signal.CHARGE_PORT, Signal.LANE_CHANGE_ASSIST,
+                Signal.AUTO_LANE_CHANGE, Signal.DOOR_OPEN_WARNING, Signal.LCC, Signal.BATTERY}) {
+            assertTrue(s.name(), InfoBarLayout.cellsFor(s.name()).isEmpty());
+            assertFalse(s.name(), InfoBarLayout.hasIcon(s));
+            List<InfoBarLayout.Placed> placed = InfoBarLayout.fit(SURROUND, pick(s));
+            assertEquals(s.name(), 1, placed.size());
+            assertEquals(s.name(), s, placed.get(0).text);
+        }
+    }
+
+    /**
+     * 系统信息页每一行说「勾上显示成哪几格」用的就是 {@link InfoBarLayout#cellsFor}：一项带出两格的两格都列，
+     * 经纬度那一项是位置格，只在面板上的格不列；每一格都有名字。
+     */
+    @Test
+    public void cellsForListsTheStripCellsInOrder() {
+        assertEquals(Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
+                InfoBarLayout.cellsFor(Signal.LOW_BEAM.name()));
+        assertEquals(Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
+                InfoBarLayout.cellsFor(Signal.HIGH_BEAM_FLASH.name()));
+        assertEquals(Collections.singletonList(InfoBarLayout.Cell.TURN),
+                InfoBarLayout.cellsFor(Signal.INDICATOR.name()));
+        assertEquals(Collections.singletonList(InfoBarLayout.Cell.POSITION),
+                InfoBarLayout.cellsFor(InfoBarLayout.POSITION_ITEM));
+        assertTrue(InfoBarLayout.cellsFor("NO_SUCH_ITEM").isEmpty());
+        for (InfoBarLayout.Cell cell : InfoBarLayout.Cell.values()) {
+            // 信息条上的格都有名字（系统信息页要写）；只在面板上的没有
+            assertEquals(cell.name(), cell.onStrip, cell.labelRes != 0);
+        }
+    }
+
+    /**
+     * 新列进格子的信号（座椅、转向指示显示、刹车踏板）都已确认，跟着进默认；默认带出来的格不变，
+     * 没验证的、驾驶辅助那一格的不在默认里。
+     */
+    @Test
+    public void theDefaultSelectionTakesTheNewlyListedSignals() {
+        Set<String> defaults = InfoBarLayout.defaultSelection();
+        for (Signal s : new Signal[]{Signal.SEAT_DRIVER, Signal.SEAT_PASSENGER, Signal.INDICATOR_DISPLAY,
+                Signal.BRAKE_PEDAL, Signal.BELT_DRIVER}) {
+            assertTrue(s.name(), defaults.contains(s.name()));
+        }
+        for (Signal s : new Signal[]{Signal.BELT_PASSENGER, Signal.BELT_REAR_LEFT, Signal.AEB, Signal.AUTO_HOLD,
+                Signal.BATTERY}) {
+            assertFalse(s.name(), defaults.contains(s.name()));
+        }
+        Set<String> without = new LinkedHashSet<>(defaults);
+        without.removeAll(Arrays.asList(Signal.SEAT_DRIVER.name(), Signal.SEAT_PASSENGER.name(),
+                Signal.INDICATOR_DISPLAY.name(), Signal.BRAKE_PEDAL.name()));
+        List<InfoBarLayout.Placed> before = InfoBarLayout.fit(SURROUND, without);
+        List<InfoBarLayout.Placed> after = InfoBarLayout.fit(SURROUND, defaults);
+        assertEquals(cellsOf(before), cellsOf(after));
+        assertEquals(before.get(before.size() - 1).x, after.get(after.size() - 1).x);
     }
 
     /**

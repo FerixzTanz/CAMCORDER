@@ -7,7 +7,9 @@ package com.kooo.evcam.telemetry;
  * <ul>
  *   <li>转向灯和双闪优先用不闪的「转向指示状态」（0 关 1 左 2 右 3 双闪）；读不到时退回两盏灯的
  *       闪烁保持判定（双闪 = 两盏同时在闪；专用的双闪功能号一直读 255，不用）。</li>
- *   <li>车门和安全带按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾安全带在右前。</li>
+ *   <li>车门和座位（座椅有没有人 + 安全带）按「主驾在哪一边」落到左右：右舵车主驾门 / 主驾座位在右前。</li>
+ *   <li>每个座位一个状态（{@link #seatState}）：系着优先；有座椅传感器的（前排）看有没有人；
+ *       后排没有座椅传感器，读到没系算没人。</li>
  *   <li>刹车 / 油门深度 0–100 → 0..1；雾灯 = 后雾灯（前雾灯这台车多半没装）。车速在 {@link Signal#decode} 里已从 m/s 换成 km/h。</li>
  *   <li>前视那一格的两条日行灯条画的是前灯带，按车外看到的亮灭：日行灯或前位置灯有一个亮就亮。灯带白天以日行灯身份亮；
  *       一开灯（位置灯档、近光）日行灯信号就回 0，灯带改以前位置灯身份接着亮（Lab 0.13.0）。</li>
@@ -42,7 +44,7 @@ public final class VehicleStateMapper {
     }
 
     /**
-     * @param driverOnRight 主驾在右（右舵）；决定主驾门 / 主驾安全带画在哪一边
+     * @param driverOnRight 主驾在右（右舵）；决定主驾门 / 主驾座位画在哪一边
      */
     public void apply(VehicleState.Builder b, Readings r, long nowMs, boolean driverOnRight) {
         b.readings(r);
@@ -89,13 +91,42 @@ public final class VehicleStateMapper {
                 new Boolean[]{r.bool(Signal.DOOR_DRIVER), r.bool(Signal.DOOR_PASSENGER),
                         r.bool(Signal.DOOR_REAR_LEFT), r.bool(Signal.DOOR_REAR_RIGHT)},
                 new int[]{driverBit, passengerBit, VehicleState.REAR_LEFT, VehicleState.REAR_RIGHT}));
-        // 安全带表里记的是「没系」
-        b.beltsUnbuckled(mask(
-                new Boolean[]{not(r.bool(Signal.BELT_DRIVER)), not(r.bool(Signal.BELT_PASSENGER)),
-                        not(r.bool(Signal.BELT_REAR_LEFT)), not(r.bool(Signal.BELT_REAR_CENTER)),
-                        not(r.bool(Signal.BELT_REAR_RIGHT))},
-                new int[]{driverBit, passengerBit, VehicleState.REAR_LEFT, VehicleState.REAR_CENTER,
-                        VehicleState.REAR_RIGHT}));
+        b.seat(driverBit, seatState(r.bool(Signal.SEAT_DRIVER), r.bool(Signal.BELT_DRIVER), true));
+        b.seat(passengerBit, seatState(r.bool(Signal.SEAT_PASSENGER), r.bool(Signal.BELT_PASSENGER), true));
+        b.seat(VehicleState.REAR_LEFT, seatState(null, r.bool(Signal.BELT_REAR_LEFT), false));
+        b.seat(VehicleState.REAR_CENTER, seatState(null, r.bool(Signal.BELT_REAR_CENTER), false));
+        b.seat(VehicleState.REAR_RIGHT, seatState(null, r.bool(Signal.BELT_REAR_RIGHT), false));
+    }
+
+    /**
+     * 一个座位的状态（{@link VehicleState#SEAT_UNKNOWN} …）：
+     * <ul>
+     *   <li>安全带读到系着 = 系着，哪怕座椅说没人：主驾用力踩踏板时身体离开坐垫，座椅会闪成没人（Lab），
+     *       不能因此闪成灰。唤醒那一下安全带偶尔假读成系着（Lab 0.21.0，没人也是 1），也画成系着 —— 不误报红。</li>
+     *   <li>有座椅传感器（前排）：有人、安全带读到没系 = 有人没系（红）；座椅读到没人 = 没人。</li>
+     *   <li>没有座椅传感器（后排）：安全带读到没系就算没人 —— 分不出有没有人，误报红比不报更糟。</li>
+     *   <li>其余都是没数据：有人但安全带读不到（副驾、后排安全带没验证，非开发者拿不到）、
+     *       前排座椅读不到而安全带没系、都读不到。</li>
+     * </ul>
+     *
+     * @param occupied  座椅有人（null = 读不到；没有座椅传感器的传 null）
+     * @param belted    安全带系着（null = 读不到）
+     * @param hasSensor 这个座位有没有座椅传感器
+     */
+    static int seatState(Boolean occupied, Boolean belted, boolean hasSensor) {
+        if (Boolean.TRUE.equals(belted)) {
+            return VehicleState.SEAT_BELTED;
+        }
+        if (!hasSensor) {
+            return Boolean.FALSE.equals(belted) ? VehicleState.SEAT_EMPTY : VehicleState.SEAT_UNKNOWN;
+        }
+        if (Boolean.TRUE.equals(occupied) && Boolean.FALSE.equals(belted)) {
+            return VehicleState.SEAT_UNBELTED;
+        }
+        if (Boolean.FALSE.equals(occupied)) {
+            return VehicleState.SEAT_EMPTY;
+        }
+        return VehicleState.SEAT_UNKNOWN;
     }
 
     /** 车停着的界限：0.1 m/s。 */
@@ -121,11 +152,7 @@ public final class VehicleStateMapper {
         return Boolean.TRUE.equals(a) || Boolean.TRUE.equals(b);
     }
 
-    static Boolean not(Boolean v) {
-        return v == null ? null : !v;
-    }
-
-    /** 各位置的开 / 没系 → 位掩码；一个都不知道时为 null。 */
+    /** 各扇门的开 / 关 → 位掩码（开着的门）；一个都不知道时为 null。 */
     static Integer mask(Boolean[] flags, int[] bits) {
         int mask = 0;
         boolean any = false;

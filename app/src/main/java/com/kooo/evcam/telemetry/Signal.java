@@ -75,7 +75,8 @@ public enum Signal {
     SUNROOF_SHADE(Group.BODY, Kind.FUNCTION_ZONE, 0x20080100, 0x8, R.string.vi_sunroof_shade, Trust.CONFIRMED, Format.RAW),
     /**
      * 主驾安全带：1 系着、0 没系。车刚唤醒那一刻会先读成 1（锁车 14 分钟后唤醒，没人坐、车门没开就 0 → 1，Lab 0.21.0，
-     * 只见过一次）：唤醒后、有人坐下之前的读数不可信。信息条只拿它画「没系就标红」，这个假的 1 画出来和系着一样，不会误报。
+     * 只见过一次）：唤醒后、有人坐下之前的读数不可信。信息条车厢图上系着优先（{@link VehicleStateMapper#seatState}）：
+     * 这个假的 1 画出来是系着，不会误报红；红只在座椅有人、安全带读到没系时画。
      */
     BELT_DRIVER(Group.BODY, Kind.SENSOR_EVENT, 0x00201200, 0, R.string.vi_belt_driver, Trust.CONFIRMED, Format.BELT),
     BELT_PASSENGER(Group.BODY, Kind.SENSOR_EVENT, 0x00201300, 0, R.string.vi_belt_passenger, Trust.UNVERIFIED, Format.BELT),

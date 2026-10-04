@@ -110,9 +110,28 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Maklumat kenderaan (percubaan)</string>
     <string name="set_vehicle_info_summary">Isyarat kenderaan yang didedahkan unit kepala dan keadaan semasanya; bacaan berhenti apabila anda keluar</string>
-    <string name="vi_legend">Item yang ditanda dipaparkan dalam bar maklumat pemanduan: sebagai ikon jika ada, jika tidak sebagai teks; yang tidak muat tidak dipaparkan. Label gelap: konsisten dalam ujian di kereta (masih disemak silang); kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan, hanya pembangun boleh menandanya</string>
+    <string name="vi_legend">Item yang ditanda dipaparkan dalam bar maklumat pemanduan: sebagai ikon jika ada, jika tidak sebagai teks buat masa ini (setiap baris menyatakannya); yang tidak muat tidak dipaparkan. Label gelap: konsisten dalam ujian di kereta (masih disemak silang); kelabu: boleh digunakan, butiran belum muktamad; cerah: boleh dibaca tetapi belum disahkan, hanya pembangun boleh menandanya</string>
     <string name="vi_position">Kedudukan (lat/long)</string>
     <string name="vi_position_source">Lokasi sistem</string>
+    <!-- Under each vehicle info row: how a tick shows on the info bar (InfoBarLayout.cellsFor); info bar cell names (InfoBarLayout.Cell) -->
+    <string name="vi_bar_icon">Ikon bar maklumat: %1$s</string>
+    <string name="vi_bar_text">Teks bar maklumat (belum ada ikon)</string>
+    <string name="vi_bar_join">", "</string>
+    <string name="vi_cell_turn">Lampu isyarat</string>
+    <string name="vi_cell_steering">Stereng</string>
+    <string name="vi_cell_gear">Gear</string>
+    <string name="vi_cell_pedals">Brek dan pendikit</string>
+    <string name="vi_cell_speed">Kelajuan</string>
+    <string name="vi_cell_auto_hold">Auto hold</string>
+    <string name="vi_cell_stock_360">360 kilang</string>
+    <string name="vi_cell_sentry">Mod Sentry</string>
+    <string name="vi_cell_cabin">Kabin</string>
+    <string name="vi_cell_front_view">Pandangan hadapan</string>
+    <string name="vi_cell_beams">Lampu rendah / tinggi</string>
+    <string name="vi_cell_rear_lamps">Lampu belakang</string>
+    <string name="vi_cell_assist">Bantuan pemandu</string>
+    <string name="vi_cell_odometer">Odometer</string>
+    <string name="vi_cell_position">Kedudukan</string>
     <string name="vi_group_drive">Pemanduan</string>
     <string name="vi_group_lamps">Lampu</string>
     <string name="vi_group_body">Badan</string>

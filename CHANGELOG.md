@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.16-alpha] - 2026-10-04
+
+- Info bar cabin: empty seats are a darker grey, a seated passenger without a belt is red, belted is the light look; seats with unreadable belts show as no data instead of looking belted.
+- System info: seat sensors, the turn indicator display and the brake pedal now bring their icons; every row says whether a tick shows as an icon (which one) or as text.
+
 ## [2.0.15-alpha] - 2026-10-04
 
 - Easter egg: if a licence plate is set (Settings → Recording), the plate on the info bar's front view shows its digits in white (last 4 if longer).

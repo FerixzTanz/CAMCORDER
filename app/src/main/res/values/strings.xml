@@ -128,9 +128,28 @@
     <!-- 系统信息（试验性）：分组、信号名、值 -->
     <string name="set_vehicle_info_title">系统信息（试验性）</string>
     <string name="set_vehicle_info_summary">车机能读到的车辆信号和此刻的状态；离开这一页即停止读取</string>
-    <string name="vi_legend">勾上的显示在行驶信息条上：有图标的带出图标，没有的显示文字；放不下的不显示。名字深色：实车实验中观察一致（持续交叉验证）；中灰：能用，细节待定；浅色：读得到但未验证，只有开发者能勾</string>
+    <string name="vi_legend">勾上的显示在行驶信息条上：有图标的显示图标，没有图标的暂时显示文字（每一行下面写着是哪一种）；放不下的不显示。名字深色：实车实验中观察一致（持续交叉验证）；中灰：能用，细节待定；浅色：读得到但未验证，只有开发者能勾</string>
     <string name="vi_position">位置（经纬度）</string>
     <string name="vi_position_source">系统定位</string>
+    <!-- 系统信息每一行下面：勾上在信息条上显示成什么（InfoBarLayout.cellsFor）；信息条各格的名字（InfoBarLayout.Cell） -->
+    <string name="vi_bar_icon">信息条图标：%1$s</string>
+    <string name="vi_bar_text">信息条文字（暂无图标）</string>
+    <string name="vi_bar_join">、</string>
+    <string name="vi_cell_turn">转向灯</string>
+    <string name="vi_cell_steering">方向盘</string>
+    <string name="vi_cell_gear">档位</string>
+    <string name="vi_cell_pedals">刹车油门</string>
+    <string name="vi_cell_speed">车速</string>
+    <string name="vi_cell_auto_hold">自动驻车</string>
+    <string name="vi_cell_stock_360">原厂 360</string>
+    <string name="vi_cell_sentry">哨兵模式</string>
+    <string name="vi_cell_cabin">车厢</string>
+    <string name="vi_cell_front_view">前视</string>
+    <string name="vi_cell_beams">近光远光</string>
+    <string name="vi_cell_rear_lamps">后灯组</string>
+    <string name="vi_cell_assist">驾驶辅助</string>
+    <string name="vi_cell_odometer">总里程</string>
+    <string name="vi_cell_position">位置</string>
     <string name="vi_group_drive">行驶</string>
     <string name="vi_group_lamps">灯光</string>
     <string name="vi_group_body">车身</string>

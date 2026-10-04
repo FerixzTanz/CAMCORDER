@@ -25,7 +25,7 @@ import java.util.Locale;
  *       灭的用实心中灰，不用半透明；没数据的、没启用的（没验证过）都是深灰加一道亮斜杠；
  *       数字加粗、不小于 26 px；
  *       不用虚线、点阵和 1–3 px 的缝。</li>
- *   <li>亮是极氪橙；开着的门、没系的安全带用红；刹车条红、油门条绿（明度也分得开）；
+ *   <li>亮是极氪橙；开着的门、有人坐却没系安全带的座位用红（没人的座位、后排读到没系的是灭的灰）；刹车条红、油门条绿（明度也分得开）；
  *       方向盘角度左偏黄、右偏白，不带正负号。</li>
  *   <li>转向灯、双闪一格（项目所有者 2026-10-04）：左箭头 | 双层嵌套三角（同实车双闪键）| 右箭头。
  *       灭 = 灰色空心描边（和自动驻车、哨兵的「灭」同一个画法）；亮 = 近白实心 + 绿色光晕（像实车的转向指示，
@@ -123,6 +123,15 @@ public final class InfoBarRenderer {
      * 压缩后和粗体差不多、0 和 8 照样比粗体好分。要改回粗体：{@code Typeface.DEFAULT_BOLD}。
      */
     private static final int PLATE_WEIGHT = 500;
+
+    /** 车厢的四扇门：左前、右前、左后、右后。 */
+    private static final int[] DOOR_BITS = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
+            VehicleState.REAR_LEFT, VehicleState.REAR_RIGHT};
+    /** 车厢的五个座位：左前、右前、左后、中后、右后；中心相对 (cx, cy) 的偏移在 {@link #SEAT_DX} / {@link #SEAT_DY}。 */
+    private static final int[] SEAT_BITS = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
+            VehicleState.REAR_LEFT, VehicleState.REAR_CENTER, VehicleState.REAR_RIGHT};
+    private static final float[] SEAT_DX = {-14f, 14f, -18f, 0f, 18f};
+    private static final float[] SEAT_DY = {-18f, -18f, 18f, 18f, 18f};
 
     /** 位图的像素宽（信息条上就是视频宽）。 */
     private final int width;
@@ -327,7 +336,7 @@ public final class InfoBarRenderer {
                 drawSentry(cx, cy, s.sentry);
                 break;
             case CABIN:
-                drawCabin(cx, cy, s.doorsOpen, s.beltsUnbuckled);
+                drawCabin(cx, cy, s);
                 break;
             case DRL:
                 drawFrontView(cx, s.daytimeRunningLights, s.lowBeam, s.highBeam);
@@ -768,23 +777,32 @@ public final class InfoBarRenderer {
     }
 
     /**
-     * 车厢：俯视的车身，四扇门开着的翘出来变红；车里五个座位（前两后三）的安全带，
-     * 没系的填红，系着的画轮廓。
+     * 车厢（110 宽）：俯视的车身，四扇门开着的翘出来变红；车里五个座位（前两后三），每个座位一个状态
+     * （{@link VehicleState#seat}，{@link VehicleStateMapper#seatState} 算，项目所有者 2026-10-04）：
+     * 系着 = 浅灰轮廓 + 一道斜带（原来系着的样子）；有人没系 = 实心红块；没人 = 深一档的灰轮廓
+     * （{@link #OFF}，信息条上「灭」的灰），没有斜带；没数据 = 深灰底、浅灰边、一道亮斜杠（信息条没数据的画法，
+     * 斜杠和安全带方向相反）。斜带只在系着时有：去掉颜色也靠形状分得开（空心 / 空心 + 斜带 / 实心 / 暗底 + 亮斜杠）。
+     * 门和五个座位都读不到才整格没数据：车身改用没数据的线色，加一道大斜杠。
      */
-    private void drawCabin(float cx, float cy, Integer doors, Integer belts) {
-        boolean unknown = doors == null && belts == null;
-        int body = unknown ? UNKNOWN_LINE : OUTLINE;
-        stroke.setColor(body);
+    private void drawCabin(float cx, float cy, VehicleState s) {
+        Integer doors = s.doorsOpen;
+        boolean anySeat = false;
+        for (int bit : SEAT_BITS) {
+            if (s.seat(bit) != VehicleState.SEAT_UNKNOWN) {
+                anySeat = true;
+                break;
+            }
+        }
+        boolean unknown = doors == null && !anySeat;
+        stroke.setColor(unknown ? UNKNOWN_LINE : OUTLINE);
         stroke.setStrokeWidth(6f);
         rect.set(cx - 32, cy - 40, cx + 32, cy + 40);
         canvas.drawRoundRect(rect, 16, 16, stroke);
 
-        int[] doorBits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
-                VehicleState.REAR_LEFT, VehicleState.REAR_RIGHT};
         for (int i = 0; i < 4; i++) {
             boolean left = i % 2 == 0;
             boolean front = i < 2;
-            Boolean open = doors == null ? null : (doors & doorBits[i]) != 0;
+            Boolean open = doors == null ? null : (doors & DOOR_BITS[i]) != 0;
             float hx = left ? cx - 32 : cx + 32;
             float hy = front ? cy - 28 : cy + 4;
             canvas.save();
@@ -795,32 +813,44 @@ public final class InfoBarRenderer {
             canvas.restore();
         }
 
-        int[] beltBits = {VehicleState.FRONT_LEFT, VehicleState.FRONT_RIGHT,
-                VehicleState.REAR_LEFT, VehicleState.REAR_CENTER, VehicleState.REAR_RIGHT};
-        float[] sx = {cx - 14, cx + 14, cx - 18, cx, cx + 18};
-        float[] sy = {cy - 18, cy - 18, cy + 18, cy + 18, cy + 18};
-        for (int i = 0; i < 5; i++) {
-            Boolean unbuckled = belts == null ? null : (belts & beltBits[i]) != 0;
-            drawSeat(sx[i], sy[i], unbuckled);
+        for (int i = 0; i < SEAT_BITS.length; i++) {
+            drawSeat(cx + SEAT_DX[i], cy + SEAT_DY[i], s.seat(SEAT_BITS[i]));
         }
         if (unknown) {
             slash(cx - 34, cy + 34, cx + 34, cy - 34);
         }
     }
 
-    /** 一个座位：小方块加一条斜着的带子。 */
-    private void drawSeat(float x, float y, Boolean unbuckled) {
+    /** 一个座位（{@link VehicleState#SEAT_UNKNOWN} …）：16 × 16、圆角 3，线宽 4。 */
+    private void drawSeat(float x, float y, int state) {
         rect.set(x - 8, y - 8, x + 8, y + 8);
-        if (Boolean.TRUE.equals(unbuckled)) {
-            fill.setColor(WARN);
-            canvas.drawRoundRect(rect, 3, 3, fill);
-            line(x - 5, y - 5, x + 5, y + 5, 4f, BG);
-        } else {
-            int color = unbuckled == null ? UNKNOWN_LINE : OUTLINE;
-            stroke.setColor(color);
-            stroke.setStrokeWidth(4f);
-            canvas.drawRoundRect(rect, 3, 3, stroke);
-            line(x - 5, y - 5, x + 5, y + 5, 4f, color);
+        switch (state) {
+            case VehicleState.SEAT_BELTED:
+                stroke.setColor(OUTLINE);
+                stroke.setStrokeWidth(4f);
+                canvas.drawRoundRect(rect, 3, 3, stroke);
+                line(x - 5, y - 5, x + 5, y + 5, 4f, OUTLINE);
+                break;
+            case VehicleState.SEAT_UNBELTED:
+                // 实心红块，不带斜带（原来没系的红块上有一道底色斜带：要回到那样，这里加
+                // line(x - 5, y - 5, x + 5, y + 5, 4f, BG)）
+                fill.setColor(WARN);
+                canvas.drawRoundRect(rect, 3, 3, fill);
+                break;
+            case VehicleState.SEAT_EMPTY:
+                // 只有一圈灰，不带斜带（要「原来的样子、整个暗一档」：这里加 line(x - 5, y - 5, x + 5, y + 5, 4f, OFF)）
+                stroke.setColor(OFF);
+                stroke.setStrokeWidth(4f);
+                canvas.drawRoundRect(rect, 3, 3, stroke);
+                break;
+            default:
+                fill.setColor(UNKNOWN_FILL);
+                canvas.drawRoundRect(rect, 3, 3, fill);
+                stroke.setColor(UNKNOWN_LINE);
+                stroke.setStrokeWidth(4f);
+                canvas.drawRoundRect(rect, 3, 3, stroke);
+                line(x - 5, y + 5, x + 5, y - 5, 4f, SLASH);
+                break;
         }
     }
 

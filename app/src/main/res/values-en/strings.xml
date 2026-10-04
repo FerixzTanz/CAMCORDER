@@ -110,9 +110,28 @@
     <!-- Vehicle info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">Vehicle info (experimental)</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; reading stops when you leave</string>
-    <string name="vi_legend">Ticked items appear in the driving info bar: as an icon where there is one, otherwise as text; what does not fit is left out. Dark label: consistent in on-car tests (still cross-checked); grey: usable, details pending; light: readable but unverified, only developers can tick it</string>
+    <string name="vi_legend">Ticked items appear in the driving info bar: as an icon where there is one, otherwise as text for now (each row says which); what does not fit is left out. Dark label: consistent in on-car tests (still cross-checked); grey: usable, details pending; light: readable but unverified, only developers can tick it</string>
     <string name="vi_position">Position (lat/long)</string>
     <string name="vi_position_source">System location</string>
+    <!-- Under each vehicle info row: how a tick shows on the info bar (InfoBarLayout.cellsFor); info bar cell names (InfoBarLayout.Cell) -->
+    <string name="vi_bar_icon">Info bar icon: %1$s</string>
+    <string name="vi_bar_text">Info bar text (no icon yet)</string>
+    <string name="vi_bar_join">", "</string>
+    <string name="vi_cell_turn">Turn signals</string>
+    <string name="vi_cell_steering">Steering</string>
+    <string name="vi_cell_gear">Gear</string>
+    <string name="vi_cell_pedals">Brake and throttle</string>
+    <string name="vi_cell_speed">Speed</string>
+    <string name="vi_cell_auto_hold">Auto hold</string>
+    <string name="vi_cell_stock_360">Stock 360</string>
+    <string name="vi_cell_sentry">Sentry Mode</string>
+    <string name="vi_cell_cabin">Cabin</string>
+    <string name="vi_cell_front_view">Front view</string>
+    <string name="vi_cell_beams">Low / high beam</string>
+    <string name="vi_cell_rear_lamps">Rear lamps</string>
+    <string name="vi_cell_assist">Driver assistance</string>
+    <string name="vi_cell_odometer">Odometer</string>
+    <string name="vi_cell_position">Position</string>
     <string name="vi_group_drive">Driving</string>
     <string name="vi_group_lamps">Lamps</string>
     <string name="vi_group_body">Body</string>

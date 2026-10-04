@@ -21,8 +21,10 @@ import com.kooo.evcam.telemetry.Telemetry;
 import com.kooo.evcam.telemetry.VehicleState;
 import com.kooo.evcam.telemetry.SignalText;
 import com.kooo.evcam.telemetry.InfoBar;
+import com.kooo.evcam.telemetry.InfoBarLayout;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -30,11 +32,13 @@ import java.util.Map;
  * 系统信息（试验性）：车机能读到的车辆信号和此刻的状态。
  *
  * <p>每一行最前面一个勾：勾上的显示在行驶信息条上（{@link InfoBar}，项目所有者 2026-10-03）。
- * 有图标的带出它那一格，没图标的画成文字格；没验证的只有开发者勾得了。</p>
+ * 有图标的带出它那一格，没图标的暂时画成文字格；没验证的只有开发者勾得了。</p>
  *
  * <p>行按信号表（{@link Signal}）生成，表里加一行这里就多一行；分组、名字、验证程度都从表里来，
  * 这里只管排版和把值写成人话。名字深色的是实验中观察一致的，中灰是先用着的（细节待定），浅色的没验证；
- * 值深色是有数据，浅色「—」是没数据。名字下面一行小字是号码，对照 Lab 的记录用。</p>
+ * 值深色是有数据，浅色「—」是没数据。名字下面一行小字先说勾上在信息条上显示成什么 —— 图标（是哪几格）
+ * 还是文字（项目所有者 2026-10-04；哪几格从 {@link InfoBarLayout#cellsFor} 来，和信息条摆格子同一处），
+ * 后面是号码，对照 Lab 的记录用。</p>
  *
  * <p>资源只在这一页开着时占：进来登记（{@link Telemetry#acquire}），离开注销 —— 没别人（录像的信息条）
  * 在用的话，车辆接口的监听、定位订阅、线程全都停掉。</p>
@@ -82,7 +86,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 TextView label = row.findViewById(R.id.vehicle_info_label);
                 label.setText(s.labelRes);
                 label.setTextColor(ContextCompat.getColor(ctx, tone(s.trust)));
-                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(address(s));
+                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(detail(ctx, s.name(), address(s)));
                 valueViews.put(s, row.findViewById(R.id.vehicle_info_value));
                 bindCheck(row, s.name(), InfoBar.selectable(s));
                 list.addView(row);
@@ -91,7 +95,8 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 // 经纬度不是车辆信号（系统定位），放在车辆这一组最后
                 View row = inflater.inflate(R.layout.item_vehicle_info_row, list, false);
                 ((TextView) row.findViewById(R.id.vehicle_info_label)).setText(R.string.vi_position);
-                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(R.string.vi_position_source);
+                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(
+                        detail(ctx, InfoBar.POSITION, ctx.getString(R.string.vi_position_source)));
                 positionView = row.findViewById(R.id.vehicle_info_value);
                 bindCheck(row, InfoBar.POSITION, true);
                 list.addView(row);
@@ -187,7 +192,31 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         }
     }
 
-    /** 号码那一行：怎么读 + 号码（+ 区域）。 */
+    /** 名字下面那行小字：勾上在信息条上显示成什么（{@link #barHint}）· 号码 / 来源。 */
+    private static String detail(Context ctx, String item, String source) {
+        return barHint(ctx, item) + " · " + source;
+    }
+
+    /**
+     * 勾上这一项（信号名或 {@link InfoBar#POSITION}）在信息条上显示成什么：有图标就是「图标：哪几格」
+     * （一项带出两格的，两格都写，比如近光灯 → 前视、近光远光），没有就是「文字（暂无图标）」。
+     */
+    private static String barHint(Context ctx, String item) {
+        List<InfoBarLayout.Cell> cells = InfoBarLayout.cellsFor(item);
+        if (cells.isEmpty()) {
+            return ctx.getString(R.string.vi_bar_text);
+        }
+        StringBuilder names = new StringBuilder();
+        for (InfoBarLayout.Cell cell : cells) {
+            if (names.length() > 0) {
+                names.append(ctx.getString(R.string.vi_bar_join));
+            }
+            names.append(ctx.getString(cell.labelRes));
+        }
+        return ctx.getString(R.string.vi_bar_icon, names.toString());
+    }
+
+    /** 号码：怎么读 + 号码（+ 区域）。 */
     static String address(Signal s) {
         String id = String.format(Locale.US, "0x%08X", s.id);
         switch (s.kind) {
