@@ -318,6 +318,11 @@
     <string name="dlg_footage_lock_off_title">Matikan Kunci rakaman?</string>
     <string name="dlg_footage_lock_off_msg">%1$d fail dikunci (%2$s). Selepas dimatikan, fail ini tidak lagi dilindungi: apabila ruang habis ia dipadam dari yang paling lama seperti rakaman lain, dan fail yang dipadam tidak boleh dipulihkan.</string>
     <string name="dlg_footage_lock_off_ok">Matikan</string>
+    <string name="set_footage_lock_flash_title">Kunci rakaman semasa kelip lampu tinggi</string>
+    <string name="set_footage_lock_flash_summary">Semasa merakam, kelipkan lampu tinggi untuk mengunci rakaman dari 10 saat sebelum hingga 10 saat selepas, pada setiap kamera. Jika rakaman yang dikunci memenuhi ruang, rakaman berhenti</string>
+    <string name="set_footage_lock_horn_title">Kunci rakaman semasa hon dibunyikan</string>
+    <string name="set_footage_lock_horn_summary">Isyarat hon kereta belum dapat dibaca, jadi ini belum boleh dihidupkan buat masa ini</string>
+    <string name="msg_flash_locked">Kelip lampu tinggi: rakaman 10 saat sebelum dan selepas telah dikunci</string>
     <string name="msg_storage_locked_stopped">Rakaman yang dikunci telah memenuhi ruang, rakaman dihentikan. Buka kunci sebahagian dalam main semula</string>
     <string name="msg_storage_locked_refuse">Rakaman yang dikunci telah memenuhi ruang, rakaman tidak dapat dimulakan. Buka kunci sebahagian dalam main semula</string>
     <string name="action_lock_footage">Kunci</string>

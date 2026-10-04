@@ -125,6 +125,19 @@
             android:title="@string/set_footage_lock_title"
             android:summary="@string/set_footage_lock_summary" />
 
+        <!-- 车机信号自动锁定（AutoLock），默认关：自动锁的也占空间，锁满了就停录。锁定影像关着时置灰 -->
+        <SwitchPreferenceCompat
+            android:key="pref_footage_lock_flash"
+            android:dependency="pref_footage_lock"
+            android:title="@string/set_footage_lock_flash_title"
+            android:summary="@string/set_footage_lock_flash_summary" />
+
+        <!-- 鸣笛：车上还读不到喇叭信号，一直置灰、打不开（只在 SettingsPreferenceFragment.bindAutoLock 里设，和水印品牌那一行一样） -->
+        <SwitchPreferenceCompat
+            android:key="pref_footage_lock_horn"
+            android:title="@string/set_footage_lock_horn_title"
+            android:summary="@string/set_footage_lock_horn_summary" />
+
         <Preference
             android:key="pref_footage_locked"
             android:title="@string/set_footage_locked_title"

@@ -318,6 +318,11 @@
     <string name="dlg_footage_lock_off_title">Turn off Lock footage?</string>
     <string name="dlg_footage_lock_off_msg">%1$d files are locked (%2$s). Once this is off they are no longer protected: when space runs out they are deleted oldest first like any other recording, and deleted files can\'t be recovered.</string>
     <string name="dlg_footage_lock_off_ok">Turn off</string>
+    <string name="set_footage_lock_flash_title">Lock footage on flash-to-pass</string>
+    <string name="set_footage_lock_flash_summary">While recording, flash the high beams to lock the footage from 10 seconds before to 10 seconds after, on every camera. If locked footage fills the space, recording stops</string>
+    <string name="set_footage_lock_horn_title">Lock footage on horn</string>
+    <string name="set_footage_lock_horn_summary">The car\'s horn signal can\'t be read yet, so this can\'t be turned on for now</string>
+    <string name="msg_flash_locked">Flash-to-pass: locked the footage 10 seconds before and after</string>
     <string name="msg_storage_locked_stopped">Locked footage has filled the space, so recording stopped. Unlock some in playback</string>
     <string name="msg_storage_locked_refuse">Locked footage has filled the space, so recording can\'t start. Unlock some in playback</string>
     <string name="action_lock_footage">Lock</string>

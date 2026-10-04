@@ -274,7 +274,27 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 value -> appConfig.setPhotoStorageLimitGb(value));
 
         bindFootageLock();
+        bindAutoLock();
         updateStorageUsage();
+    }
+
+    /**
+     * 锁定影像下面的两个自动锁定（项目所有者 2026-10-04），默认关：自动锁的也占空间，锁满了就停录。
+     * 「锁定影像」关着时闪远光那一项置灰、不起作用（XML 里的 dependency；{@code AutoLock.flashEnabled} 也看它）。
+     * 鸣笛那一项：车上还读不到喇叭信号，一直置灰、打不开，没有触发它的代码。「打不开」只在这里设
+     * （XML 里不写 enabled，和水印品牌那一行一样）。
+     */
+    private void bindAutoLock() {
+        bindSwitch("pref_footage_lock_flash", appConfig.isFlashLockEnabled(), value -> {
+            appConfig.setFlashLockEnabled(value);
+            com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
+        });
+        SwitchPreferenceCompat horn = findPreference("pref_footage_lock_horn");
+        if (horn != null) {
+            horn.setPersistent(false);
+            horn.setChecked(false);
+            horn.setEnabled(false);
+        }
     }
 
     /**
@@ -330,6 +350,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         appConfig.setFootageLockEnabled(on);
         pref.setChecked(on);
         com.kooo.evcam.blackbox.BlackBox.noteImportant("开关变更: pref_footage_lock → " + (on ? "开" : "关"));
+        // 闪远光自动锁定跟着它：正在录的话马上开始 / 不再看信号
+        com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
         updateFootageLocked();
     }
 

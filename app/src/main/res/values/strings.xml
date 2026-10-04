@@ -327,6 +327,11 @@
     <string name="dlg_footage_lock_off_title">关闭锁定影像？</string>
     <string name="dlg_footage_lock_off_msg">已锁定 %1$d 个文件（%2$s）。关闭后它们不再受保护，空间不够时会和其他录像一样从旧到新删除，删掉的找不回来。</string>
     <string name="dlg_footage_lock_off_ok">关闭</string>
+    <string name="set_footage_lock_flash_title">闪远光时自动锁定当前录像</string>
+    <string name="set_footage_lock_flash_summary">录像时闪一下远光，那一刻前后 10 秒的录像（每一路画面）自动锁定。锁定的占满了空间时会停止录制</string>
+    <string name="set_footage_lock_horn_title">鸣笛时自动锁定当前录像</string>
+    <string name="set_footage_lock_horn_summary">车上还读不到喇叭信号，暂时不能打开</string>
+    <string name="msg_flash_locked">闪远光：已锁定前后 10 秒的录像</string>
     <string name="msg_storage_locked_stopped">锁定的影像占满了空间，录制已停止。请在回放里解锁一些</string>
     <string name="msg_storage_locked_refuse">锁定的影像占满了空间，无法开始录制。请在回放里解锁一些</string>
     <string name="action_lock_footage">锁定</string>

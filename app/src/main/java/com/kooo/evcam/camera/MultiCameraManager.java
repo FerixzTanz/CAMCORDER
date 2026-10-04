@@ -53,7 +53,7 @@ public class MultiCameraManager {
     // 统一分段时间戳管理（解决多路摄像头分段切换时时间戳差1秒的问题）
     private String cachedSegmentTimestamp = null;  // 缓存的分段时间戳
     private long timestampGeneratedTime = 0;  // 时间戳生成时间（毫秒）
-    private static final long TIMESTAMP_CACHE_DURATION_MS = 10000;  // 时间戳缓存有效期（10秒，需覆盖各摄像头首次写入的时间差）
+    public static final long TIMESTAMP_CACHE_DURATION_MS = 10000;  // 时间戳缓存有效期（10秒，需覆盖各摄像头首次写入的时间差）；自动锁定算文件结束时也按它放宽（LockWindow.SLACK_MS）
     private final Object timestampLock = new Object();  // 时间戳访问锁
     
     // Watchdog 回退相关
@@ -1114,6 +1114,26 @@ public class MultiCameraManager {
     }
 
     /**
+     * 录像状态只在这里改。录像期间才有的登记跟着它走，不靠哪一条停录路径记得撤：
+     * 变成「在录」时闪远光自动锁定开始看信号（它自己登记车辆信号，带上这次中转写入的目标目录）；
+     * 变成「不在录」时 —— 停录、开录时所有相机都没起来、重建前先停 —— 车辆信号的两份登记
+     * （信息条的、自动锁定的）都撤掉。以前只有 stopRecording 撤，而开录失败后 RecordingCoordinator
+     * 看到「没在录」就不会再调它，登记一直挂着、车辆信号一直在收（2026-10-04 审查）。
+     */
+    private void setRecording(boolean recording) {
+        boolean was = isRecording;
+        isRecording = recording;
+        if (recording && !was) {
+            com.kooo.evcam.storage.AutoLock.get().recordingStarted(context,
+                    useRelayWrite ? finalSaveDir : null);
+        } else if (!recording) {
+            // 信息条那份在开录时就登记了（还没真正录上），开录失败也要撤；没登记过时无害
+            com.kooo.evcam.telemetry.Telemetry.get().release("recording");
+            com.kooo.evcam.storage.AutoLock.get().recordingStopped();
+        }
+    }
+
+    /**
      * 管一次录像空间：设了上限就按上限删最旧的，录不下去了就停。
      *
      * <p>放在相机层而不是界面里：分段切换的回调以前要经过 MainActivity 才有人处理，
@@ -1392,7 +1412,7 @@ public class MultiCameraManager {
         }
         
         if (!activeCameras.isEmpty()) {
-            isRecording = true;
+            setRecording(true);
             lastNotifiedSegmentIndex = -1;
             AppLog.d(TAG, activeCameras.size() + " camera(s) started recording successfully: " + activeCameras);
             
@@ -1403,7 +1423,7 @@ public class MultiCameraManager {
             }
         } else {
             AppLog.e(TAG, "All cameras failed to start recording");
-            isRecording = false;
+            setRecording(false);
             // 清理所有录制器
             for (String key : keys) {
                 VideoRecorder recorder = recorders.get(key);
@@ -1863,11 +1883,11 @@ public class MultiCameraManager {
 
         if (anyActive) {
             lastNotifiedSegmentIndex = -1;
-            isRecording = true;
+            setRecording(true);
             AppLog.d(TAG, activeCount + " camera(s) started codec recording successfully");
         } else {
             AppLog.e(TAG, "Failed to start codec recording on all cameras");
-            isRecording = false;
+            setRecording(false);
             for (CodecVideoRecorder recorder : codecRecorders.values()) {
                 recorder.release();
             }
@@ -1902,13 +1922,12 @@ public class MultiCameraManager {
 
         // 立即标记停止状态，防止新的录制请求
         final boolean wasRecording = isRecording;
-        isRecording = false;
+        // 车辆信号的登记（信息条、闪远光自动锁定）也只在录像期间，跟着录像状态撤（setRecording）
+        setRecording(false);
         mainHandler.removeCallbacks(storageTick);
         StorageHelper.noteRecordingFallback(null, null);
         // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
         com.kooo.evcam.recording.ScreenOffRecording.release("recording-stopped");
-        // 车辆信号的登记也只在录像期间
-        com.kooo.evcam.telemetry.Telemetry.get().release("recording");
 
         // 在后台线程执行停止操作，避免阻塞主线程
         new Thread(() -> {
@@ -2195,7 +2214,7 @@ public class MultiCameraManager {
             }
         }
         
-        isRecording = false;
+        setRecording(false);
     }
     
     /**
@@ -2365,7 +2384,7 @@ public class MultiCameraManager {
             cameras.clear();
             recorders.clear();
             codecRecorders.clear();
-            isRecording = false;
+            setRecording(false);
             isRebuildingRecording = false;
             currentRecordingTimestamp = null;
             currentEnabledCameras = null;

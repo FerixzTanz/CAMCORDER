@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.17-alpha] - 2026-10-04
+
+- Lock footage: new option to lock automatically on flash-to-pass (off by default): every segment of every camera within 10 s before and after the flash is locked. A "lock on horn" option is shown but can't be turned on yet (the horn signal isn't readable).
+- Car-signal reading during recording is now released when a recording fails to start.
+
 ## [2.0.16-alpha] - 2026-10-04
 
 - Info bar cabin: empty seats are a darker grey, a seated passenger without a belt is red, belted is the light look; seats with unreadable belts show as no data instead of looking belted.
