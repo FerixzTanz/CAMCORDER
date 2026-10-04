@@ -1893,7 +1893,7 @@ public class MainActivity extends AppCompatActivity {
         if (plan.assignedCount() == 0) {
             AppLog.w(TAG, "没有任何可用相机，三路模式无法显示");
             runOnUiThread(() -> Toast.makeText(this,
-                    R.string.zeekr_composite_not_found, Toast.LENGTH_LONG).show());
+                    R.string.msg_no_camera_available, Toast.LENGTH_LONG).show());
         }
 
         // 合成流的几何先按探测结果给上；若最终协商到的不是条带尺寸，

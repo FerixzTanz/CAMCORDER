@@ -13,7 +13,8 @@
     <string name="zeekr_lane_left">左</string>
     <string name="zeekr_lane_right">右</string>
     <string name="zeekr_mode_grid">四宫格</string>
-    <string name="zeekr_composite_not_found">未检测到四联合成流，本机可能不支持极氪合成模式</string>
+    <string name="zeekr_composite_not_found">未找到环视合成流，此车机可能不受支持</string>
+    <string name="msg_no_camera_available">未找到可用的摄像头</string>
 
     <!-- 关于页面 -->
     <string name="about_title">关于与致谢</string>
@@ -304,7 +305,7 @@
     <string name="guide_title">开始之前</string>
     <string name="guide_1">实验性的非官方软件，未经任何车辆功能安全认证。它不替代原厂行车记录仪、倒车影像或盲区监测，行驶中请不要操作它，也不要靠它的画面判断路况。</string>
     <string name="guide_2">录制只写 U 盘。没插 U 盘不会开始录制 —— 行车记录是持续写入，而车机内置闪存写坏了换不了。U 盘上的录像不加密，盘拔下来在别的设备上就能读。</string>
-    <string name="guide_3">菜单键永远在左上角。操作按钮可以整列放到左边或右边（设置 → 界面 → 操作按钮位置），按驾驶座在哪一侧选。超级后视镜默认关着，在设置 → 超级后视镜里开；开了之后可以拖动、缩放，上下划换取景、左右划换一路。</string>
+    <string name="guide_3">菜单键固定在左上角。操作按钮可在「设置 → 界面 → 操作按钮位置」中放到驾驶座一侧。超级后视镜默认关闭，可在菜单或「设置 → 超级后视镜」中开启；开启后拖动窗口两侧可移动，双指可缩放，在窗口中间上下滑动调整取景、左右滑动切换摄像头。</string>
     <string name="guide_4">出了问题先重启一次应用。还不正常的话，从 设置 → 系统 → 诊断信息 导出报告 —— 带着它提 issue 最省事。</string>
     <string name="action_got_it_guide">我知道了</string>
 
@@ -312,12 +313,12 @@
     <string name="msg_camera_not_ready">相机未准备好，请重试</string>
     <string name="msg_need_camera_storage">需要相机和存储权限</string>
     <string name="msg_camera_access_failed">相机访问失败：%1$s</string>
-    <string name="msg_codec_fallback">录制故障，已回退到 MediaCodec 模式；若频繁发生请在设置里更改录制模式</string>
+    <string name="msg_codec_fallback">录制出错，已改用 MediaCodec 继续录制</string>
     <string name="msg_record_start_failed">录制启动失败，请重试</string>
     <string name="msg_storage_full_stopped">U 盘已满，录制已停止。没有设置视频存储上限，所以不会自动删除旧录像</string>
     <string name="msg_storage_full_refuse">U 盘空间不足，无法开始录制。没有设置视频存储上限，不会自动删除旧录像</string>
     <string name="msg_storage_cleaning">空间不够，正在删除最旧的录像，完成后开始录制…</string>
-    <string name="msg_storage_cannot_free">U 盘空间不足：删掉本应用的旧录像也腾不出足够空间，录制已停止</string>
+    <string name="msg_storage_cannot_free">U 盘空间不足，即使删除本应用的旧录像也不够，无法录制。请清理 U 盘上的其他文件。</string>
     <string name="set_footage_lock_title">锁定影像</string>
     <string name="set_footage_lock_summary">在回放里可以锁定录像和照片。锁定的不会被自动清理删除，也不能直接删除（先解锁）；锁定的占满了空间时会停止录制</string>
     <string name="set_footage_locked_title">已锁定</string>
@@ -346,7 +347,7 @@
     <string name="msg_record_start_retrying">录制没能启动，正在自动重试…</string>
     <string name="msg_record_start_gave_up">录制还是没能启动，请点一下「开始录制」</string>
     <string name="msg_recording_lost_in_background">录制已在后台停止</string>
-    <string name="msg_record_error">录制发生异常</string>
+    <string name="msg_record_error">录制异常，已删除无效的录像片段</string>
     <string name="msg_photo_taken">照片已保存</string>
     <string name="msg_photo_waiting">正在打开摄像头，稍后拍照</string>
     <string name="msg_photo_partial">照片已保存（%1$d/%2$d 路）</string>
@@ -358,10 +359,10 @@
     <string name="msg_sd_fallback">未检测到 U 盘，已回退到内置存储</string>
     <string name="msg_recording_resumed">已自动恢复录制</string>
     <string name="msg_recording_interrupted">录像被打断：%1$s</string>
-    <string name="msg_recording_interrupted_resuming">录像被打断：%1$s。等环视画面恢复后自动继续</string>
+    <string name="msg_recording_interrupted_resuming">录制中断：%1$s。环视画面正常后自动恢复录制。</string>
     <string name="msg_recording_resume_gave_up">自动恢复录像连续 %1$d 次没成功，不再尝试</string>
     <string name="rec_reason_no_data">开始录像后一直没收到画面</string>
-    <string name="rec_reason_unknown">录制器自己停了</string>
+    <string name="rec_reason_unknown">原因未知</string>
     <string name="rec_reason_write_stalled">录像写不进文件</string>
     <string name="rec_reason_camera_lost">相机被别的程序拿走了</string>
     <string name="msg_recording_auto_started">已自动开始录制</string>
@@ -376,18 +377,18 @@
     <string name="msg_camera_not_ready_adjust">相机未就绪，无法打开调节窗口</string>
     <string name="msg_overlay_denied">悬浮窗权限未授予</string>
     <string name="dlg_no_external_title">未检测到 U 盘</string>
-    <string name="dlg_no_external_msg">正常模式下只录到 U 盘，以免持续写入损耗车机内置闪存。\n\n请插入 U 盘后重试。已插入却识别不到时，可换一个接口，或在设置里重新选择存储位置。</string>
+    <string name="dlg_no_external_msg">录像仅保存到 U 盘，以免持续写入损耗内置存储。\n\n请插入 U 盘后重试。如已插入仍未识别，可更换 USB 接口，或在「设置 → 存储 → 存储位置」中重新选择 U 盘。</string>
     <string name="dlg_will_use_internal_title">将录制到内置存储</string>
     <string name="dlg_internal_reason_chosen">当前设置的存储位置就是内置存储。</string>
     <string name="dlg_internal_reason_fallback">已选择 U 盘，但当前未检测到，录像会落到内置存储。</string>
     <string name="dlg_internal_warn">%1$s\n\n行车记录会持续不断地写入数据，而闪存的写入寿命有限；长期如此会消耗车机存储的寿命，且车机存储通常不可更换。\n\n建议插入 U 盘并在设置里选中它。</string>
     <string name="action_record_anyway">仍然录制</string>
     <string name="notif_channel_name">相机服务</string>
-    <string name="notif_channel_desc">用于后台拍照和录制</string>
-    <string name="notif_running">相机服务运行中</string>
-    <string name="notif_running_desc">正在处理拍照 / 录制请求</string>
+    <string name="notif_channel_desc">录制状态与后台运行通知</string>
+    <string name="notif_running">在后台运行</string>
+    <string name="notif_running_desc">点击返回应用</string>
     <string name="msg_starting_recording">正在启动录制，请稍候…</string>
-    <string name="msg_recording_service_failed">录制服务启动失败，请重试</string>
+    <string name="msg_recording_service_failed">录制服务无响应，请重试</string>
     <string name="msg_segment_unplayable">这段录像无法播放，已停止</string>
     <string name="player_lane_no_footage">这一刻没有这一路的录像</string>
     <string name="player_lane_unplayable">这一段放不出来</string>
@@ -463,7 +464,7 @@
     <string name="upd_no_installer">这台车机上打不开安装界面：%1$s</string>
     <string name="upd_no_settings_page">这台车机上打不开该设置页</string>
     <string name="msg_keep_one_camera_refuse">请至少开启一路相机</string>
-    <string name="msg_refuse_no_external">未检测到 U 盘，不会开始录制。为避免持续写入损耗车机内置闪存，正常模式下只录到 U 盘。</string>
+    <string name="msg_refuse_no_external">未检测到 U 盘，插入后自动开始录制</string>
 
     <!-- 关于页 -->
     <string name="date_group_count">%1$d 组</string>
@@ -572,7 +573,7 @@
     <string name="status_storage_free">U 盘 %1$s 可用</string>
     <string name="status_storage_none">未检测到 U 盘</string>
     <string name="status_recording_fallback">录像已改写到 %1$s（%2$s 不可用）</string>
-    <string name="status_camera_taken">环视被车机占用，放开后自动继续录像</string>
+    <string name="status_camera_taken">摄像头被占用，释放后自动继续录制</string>
     <string name="status_internal_storage">内置存储</string>
     <string name="nav_group_switches">开关</string>
 
@@ -729,7 +730,7 @@
     <string name="debug_recording">录制：%1$s</string>
     <string name="debug_rec">● 录制中</string>
     <string name="debug_stopped">○ 停止</string>
-    <string name="debug_mode">模式：%1$s</string>
+    <string name="debug_mode">录制模式设置：%1$s</string>
     <string name="debug_memory">内存：%1$d/%2$d MB</string>
     <string name="debug_model">车型：%1$s · 相机数：%2$d</string>
     <string name="debug_version">版本：%1$s</string>

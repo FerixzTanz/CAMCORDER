@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.1.1-alpha] - 2026-10-04
+
+- Clearer wording for recording, storage and notification messages and the first-run guide, in all three languages.
+- "No camera available" now has its own message instead of the surround-stream one.
+
 ## [2.1.0-beta] - 2026-10-04
 
 Upgrade from 2.0.0.

@@ -285,6 +285,7 @@
     <string name="about_title">About &amp; credits</string>
     <string name="accessibility_service_description">Keeps the app alive in the background.\n\nIt does not read or control the screen and collects no data.</string>
     <string name="zeekr_composite_not_found">No surround composite stream found. This head unit may not be supported</string>
+    <string name="msg_no_camera_available">No camera available</string>
     <string name="zeekr_lane_front">Front</string>
     <string name="zeekr_lane_back">Rear</string>
     <string name="zeekr_lane_left">Left</string>
@@ -295,7 +296,7 @@
     <string name="guide_title">Before you start</string>
     <string name="guide_1">Experimental, unofficial software with no vehicle safety certification. It does not replace the factory dashcam, reversing camera or blind-spot monitor. Do not use it while driving, and do not rely on its picture to judge the road.</string>
     <string name="guide_2">Recordings go to the USB drive only; without a drive, recording does not start. Recordings are not encrypted: anyone with the drive can read them.</string>
-    <string name="guide_3">The menu is at the top left. Put the action buttons on the driver\'s side in Settings → Interface → Button side. The super mirror is off by default; turn it on in Settings → Super mirror.</string>
+    <string name="guide_3">The menu button is always at the top left. Put the action buttons on the driver\'s side in Settings → Interface → Button side. The Super mirror is off by default; turn it on from the menu or Settings → Super mirror. Drag its sides to move it, pinch to resize, and in the middle swipe up or down to adjust the framing, or left or right to change camera.</string>
     <string name="guide_4">If something goes wrong, restart the app. If it continues, export a report from Settings → System → Diagnostics and attach it to an issue.</string>
     <string name="action_got_it_guide">Got it</string>
 
@@ -303,12 +304,12 @@
     <string name="msg_camera_not_ready">Camera not ready — try again</string>
     <string name="msg_need_camera_storage">Camera and storage permissions are required</string>
     <string name="msg_camera_access_failed">Camera access failed: %1$s</string>
-    <string name="msg_codec_fallback">Recording failed and switched to MediaCodec. If this keeps happening, change the recording pipeline in Settings</string>
+    <string name="msg_codec_fallback">Recording error. Switched to MediaCodec and kept recording.</string>
     <string name="msg_record_start_failed">Could not start recording — try again</string>
     <string name="msg_storage_full_stopped">USB drive full — recording stopped. No video storage cap is set, so old recordings are not deleted</string>
     <string name="msg_storage_full_refuse">Not enough space on the USB drive to start recording. No video storage cap is set, so old recordings are not deleted</string>
     <string name="msg_storage_cleaning">Not enough space — deleting the oldest recordings, then recording will start…</string>
-    <string name="msg_storage_cannot_free">USB drive full: deleting this app\'s old recordings would not free enough space. Recording stopped</string>
+    <string name="msg_storage_cannot_free">Not enough space on the USB drive, even if this app\'s old recordings were deleted. Can\'t record. Free up space used by other files.</string>
     <string name="set_footage_lock_title">Lock footage</string>
     <string name="set_footage_lock_summary">Lock videos and photos in playback. Locked files are never removed by automatic cleanup and can\'t be deleted until unlocked; if locked files fill the space, recording stops</string>
     <string name="set_footage_locked_title">Locked</string>
@@ -337,7 +338,7 @@
     <string name="msg_record_start_retrying">Recording did not start — retrying…</string>
     <string name="msg_record_start_gave_up">Recording still did not start. Tap Start recording</string>
     <string name="msg_recording_lost_in_background">Recording stopped while the app was in the background</string>
-    <string name="msg_record_error">Recording error</string>
+    <string name="msg_record_error">Recording error: invalid clips deleted</string>
     <string name="msg_photo_taken">Photo saved</string>
     <string name="msg_photo_waiting">Opening the cameras, the photo follows shortly</string>
     <string name="msg_photo_partial">Photo saved (%1$d of %2$d cameras)</string>
@@ -349,10 +350,10 @@
     <string name="msg_sd_fallback">No USB drive found; using internal storage</string>
     <string name="msg_recording_resumed">Recording resumed automatically</string>
     <string name="msg_recording_interrupted">Recording interrupted: %1$s</string>
-    <string name="msg_recording_interrupted_resuming">Recording interrupted: %1$s. It will resume once the surround view is back</string>
+    <string name="msg_recording_interrupted_resuming">Recording interrupted: %1$s. It resumes once the surround view is working.</string>
     <string name="msg_recording_resume_gave_up">Recording failed to resume %1$d times in a row; no longer retrying</string>
     <string name="rec_reason_no_data">no picture arrived after recording started</string>
-    <string name="rec_reason_unknown">the recorder stopped on its own</string>
+    <string name="rec_reason_unknown">unknown cause</string>
     <string name="rec_reason_write_stalled">nothing was being written to the file</string>
     <string name="rec_reason_camera_lost">the camera was taken by another app</string>
     <string name="msg_recording_auto_started">Recording started automatically</string>
@@ -367,18 +368,18 @@
     <string name="msg_camera_not_ready_adjust">Camera not ready — cannot open the adjustment window</string>
     <string name="msg_overlay_denied">Overlay permission not granted</string>
     <string name="dlg_no_external_title">No USB drive found</string>
-    <string name="dlg_no_external_msg">Recordings go to the USB drive only, to spare the internal flash.\n\nInsert a USB drive and try again. If it is not detected, try another port or choose the storage location again in Settings.</string>
+    <string name="dlg_no_external_msg">Recordings go to a USB drive only, to avoid wearing out the internal storage.\n\nInsert a USB drive and try again. If it isn\'t detected, try another port or select the drive again in Settings → Storage → Storage location.</string>
     <string name="dlg_will_use_internal_title">Recording to internal storage</string>
     <string name="dlg_internal_reason_chosen">Internal storage is the location currently selected.</string>
     <string name="dlg_internal_reason_fallback">A USB drive is selected but none is detected, so recordings will go to internal storage.</string>
     <string name="dlg_internal_warn">%1$s\n\nContinuous recording wears out internal storage, which usually cannot be replaced.\n\nInsert a USB drive and select it in Settings.</string>
     <string name="action_record_anyway">Record anyway</string>
     <string name="notif_channel_name">Camera service</string>
-    <string name="notif_channel_desc">Used for background capture and recording</string>
-    <string name="notif_running">Camera service running</string>
-    <string name="notif_running_desc">Handling capture and recording</string>
+    <string name="notif_channel_desc">Recording status and background-running notifications</string>
+    <string name="notif_running">Running in the background</string>
+    <string name="notif_running_desc">Tap to return to the app</string>
     <string name="msg_starting_recording">Starting recording…</string>
-    <string name="msg_recording_service_failed">Recording service failed to start — try again</string>
+    <string name="msg_recording_service_failed">Recording service isn\'t responding. Try again</string>
     <string name="msg_segment_unplayable">This clip cannot be played; playback stopped</string>
     <string name="player_lane_no_footage">No recording from this camera at this moment</string>
     <string name="player_lane_unplayable">This clip cannot be played</string>
@@ -454,7 +455,7 @@
     <string name="upd_no_installer">This head unit cannot open the installer: %1$s</string>
     <string name="upd_no_settings_page">This head unit cannot open that settings page</string>
     <string name="msg_keep_one_camera_refuse">Select at least one camera to record</string>
-    <string name="msg_refuse_no_external">No USB drive detected. Recordings go to a USB drive only.</string>
+    <string name="msg_refuse_no_external">No USB drive found. Recording starts when one is inserted.</string>
 
     <!-- About screen -->
     <string name="date_group_count">%1$d group(s)</string>
@@ -563,7 +564,7 @@
     <string name="status_storage_free">USB %1$s free</string>
     <string name="status_storage_none">No USB drive</string>
     <string name="status_recording_fallback">Recording to %1$s (%2$s unavailable)</string>
-    <string name="status_camera_taken">Surround camera in use by the car; recording resumes when released</string>
+    <string name="status_camera_taken">Camera in use. Recording resumes when it is released.</string>
     <string name="status_internal_storage">internal storage</string>
     <string name="nav_group_switches">Switches</string>
 
@@ -720,7 +721,7 @@
     <string name="debug_recording">Recording: %1$s</string>
     <string name="debug_rec">● REC</string>
     <string name="debug_stopped">○ stopped</string>
-    <string name="debug_mode">mode: %1$s</string>
+    <string name="debug_mode">Pipeline setting: %1$s</string>
     <string name="debug_memory">Memory: %1$d/%2$d MB</string>
     <string name="debug_model">Model: %1$s · cameras: %2$d</string>
     <string name="debug_version">Version: %1$s</string>
