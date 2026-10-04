@@ -1294,10 +1294,6 @@ public class AppConfig {
     }
 
     /**
-     * 获取时间角标开关状态
-     * @return true 表示启用时间角标
-     */
-    /**
      * 要落进画面的车牌号；关掉开关或者没填时返回空串。
      *
      * <p>存进来的值一律先过 {@link LicensePlate#sanitize} —— 界面上显示的、
@@ -1415,6 +1411,11 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_LICENSE_PLATE_ENABLED, enabled).apply();
     }
 
+    /**
+     * 「时间角标」开关：只管日期时间（录像还有跟着它的规格行，照片还有尺寸行）。
+     * 左上角的应用名和车牌号不看它。
+     * @return true 表示启用时间水印
+     */
     public boolean isTimestampWatermarkEnabled() {
         // 默认开启（项目所有者 2026-09-27 定；以前默认关）
         return prefs.getBoolean(KEY_TIMESTAMP_WATERMARK_ENABLED, true);

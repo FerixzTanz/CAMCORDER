@@ -62,6 +62,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     private AppConfig appConfig;
     /** 外置卷的取值前缀，后面接它在探测结果里的下标。 */
     private static final String EXTERNAL_PREFIX = "external:";
+    /**
+     * 设置里选的是 U 盘、眼下却一个都没探测到时那一项的取值。故意不带 {@link #EXTERNAL_PREFIX}：
+     * 它后面没有下标，不能当成某个卷去解析；选它什么都不改。
+     */
+    private static final String EXTERNAL_MISSING = "external-missing";
     private List<StorageHelper.VolumeInfo> storageVolumes;
 
     private static final String ARG_SECTION = "section";
@@ -150,7 +155,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 });
         bindLicensePlate();
 
-        // 应用名与版本是无条件盖上去的（见 MultiCameraManager.buildBrandLine），
+        // 应用名与版本（填了车牌号跟在后面）每一路 MediaCodec 录像、每一张照片都盖，和「时间角标」开不开无关
+        // （录像见 EglSurfaceEncoder.drawBrandOverlay，照片见 SingleCamera.addWatermark；
+        // 开发者选项里的 MediaRecorder 模式什么角标都画不了），
         // 这里只是把这件事摆在界面上：开着、灰着、点不动。
         // 给一个能关的开关，等于承诺一件代码里并不打算允许的事。
         SwitchPreferenceCompat brand = findPreference("pref_watermark_brand");
@@ -210,7 +217,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
      * 视频流配置。
      *
      * <p>「环视 + 两路座舱」0.48 起对所有人开放：座舱那两路的旋转、镜像、
-     * 画面填充都做完并在车上验证过了，它不再是半成品。</p>
+     * 画面适配都做完并在车上验证过了，它不再是半成品。</p>
      *
      * <p>「自定义」仍然只在开发者选项里 —— 那一档要手动指定每一路接哪个相机，
      * 用途是排查，不是日常使用。半成品混在正常选项里，选中之后出问题会让人
@@ -443,6 +450,13 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             // 真正被记住的是下面钉进 customSdCardPath 的根目录
             values.add(EXTERNAL_PREFIX + i);
         }
+        // 选的是 U 盘、盘却不在：单列一项照实写。不列的话，选中项只能落到下面的
+        // 「内置存储」上 —— 看着像设置被改过，其实一直是 U 盘
+        String current = currentStorageValue(volumes);
+        if (EXTERNAL_MISSING.equals(current)) {
+            labels.add(getString(R.string.storage_external_missing));
+            values.add(EXTERNAL_MISSING);
+        }
         // 内置存储照样列出来 —— 藏起来只会让人以为软件没这个能力。
         // 但标明它要开发者选项，选中时也会被拦下。
         labels.add(getString(StorageHelper.isInternalStorageAllowed()
@@ -451,12 +465,16 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
         pref.setEntries(labels.toArray(new String[0]));
         pref.setEntryValues(values.toArray(new String[0]));
-        pref.setValue(currentStorageValue(volumes));
+        pref.setValue(current);
         pref.setSummary(pref.getEntry() != null
                 ? pref.getEntry() : getString(R.string.info_none_selected));
 
         pref.setOnPreferenceChangeListener((preference, newValue) -> {
             String value = String.valueOf(newValue);
+            if (EXTERNAL_MISSING.equals(value)) {
+                // 没有卷可钉，也不该借这一下改成别的：原样不动
+                return false;
+            }
             if (AppConfig.STORAGE_INTERNAL.equals(value)) {
                 if (!StorageHelper.isInternalStorageAllowed()) {
                     explainInternalStorageIsGated();
@@ -471,10 +489,16 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         updateStorageUsage();
     }
 
-    /** 当前生效的是哪一项。外置时要对上具体哪个卷，不能笼统算「外置」。 */
+    /**
+     * 当前生效的是哪一项。外置时要对上具体哪个卷，不能笼统算「外置」；
+     * 选了外置却一个卷都没有时是 {@link #EXTERNAL_MISSING}，不能算成内置。
+     */
     private String currentStorageValue(List<StorageHelper.VolumeInfo> volumes) {
-        if (!appConfig.isUsingExternalSdCard() || volumes.isEmpty()) {
+        if (!appConfig.isUsingExternalSdCard()) {
             return AppConfig.STORAGE_INTERNAL;
+        }
+        if (volumes.isEmpty()) {
+            return EXTERNAL_MISSING;
         }
         String pinned = appConfig.getCustomSdCardPath();
         if (pinned != null && !pinned.isEmpty()) {
@@ -549,7 +573,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
     /**
      * 熄屏录制最多不让车机睡多久：用户自己填小时数，可带小数（24、30 都行），存成分钟。
-     * 填错、填 0 或负数都不收，提示「请输入数字」。
+     * 填错、留空、填 0 或负数（折成分钟四舍五入为 0 的也算）都不收，提示「请输入大于 0 的数字」；
+     * 大到分钟数存不下的，按能存的最大值收。
      */
     private void bindScreenOffWakeHours() {
         EditTextPreference pref = findPreference("pref_screen_off_wake_hours");
@@ -563,12 +588,14 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             int minutes;
             try {
                 double hours = Double.parseDouble(String.valueOf(newValue).trim());
-                minutes = (int) Math.round(hours * 60);
+                // 先夹在 int 范围里再收窄：直接强转，太大的正数会绕成负数被当成「填了负数」，
+                // 太小的负数反倒绕成正数被收下
+                minutes = (int) Math.max(0, Math.min(Integer.MAX_VALUE, Math.round(hours * 60)));
             } catch (NumberFormatException e) {
                 minutes = 0;
             }
             if (minutes <= 0) {
-                toast(getString(R.string.msg_enter_number));
+                toast(getString(R.string.msg_enter_positive_number));
                 return false;
             }
             appConfig.setScreenOffWakeMinutes(minutes);
@@ -1172,7 +1199,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 .setNegativeButton(R.string.action_cancel, null));
     }
 
-    /** 单行文本输入：车牌号、视频 / 图片存储上限。 */
+    /**
+     * 单行文本输入：车牌号、视频 / 图片存储上限。
+     * 标题和说明取 XML 里的 dialogTitle / dialogMessage（存储上限靠它们写单位和清理规则），
+     * 和下拉框一个规矩：没写标题就用这一行的标题，没写说明就不带。
+     */
     private void showTextDialog(EditTextPreference pref) {
         final android.widget.EditText input =
                 com.kooo.evcam.ui.CamDialogs.input(requireContext());
@@ -1184,8 +1215,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         box.setPadding(pad, pad / 2, pad, 0);
         box.addView(input);
 
+        CharSequence title = pref.getDialogTitle() != null
+                ? pref.getDialogTitle() : pref.getTitle();
         com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Cam_MaterialAlertDialog)
-                .setTitle(pref.getTitle())
+                .setTitle(title)
+                .setMessage(pref.getDialogMessage())
                 .setView(box)
                 .setPositiveButton(R.string.action_save, (dialog, which) -> {
                     String value = input.getText().toString();

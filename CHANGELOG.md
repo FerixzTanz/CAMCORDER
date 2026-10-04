@@ -11,6 +11,13 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.1.2-alpha] - 2026-10-04
+
+- The app name and version, and the plate number when it is turned on, are now on every recording, including the cabin cameras, and on every photo, whether or not the timestamp is on. The timestamp switch now only controls the date and time.
+- Storage cap dialogs now show their title and explanation.
+- Storage location shows "USB drive (not found)" instead of internal storage when the selected drive isn't plugged in.
+- Clearer wording in recording, storage, Super mirror and floating button settings, in all three languages.
+
 ## [2.1.1-alpha] - 2026-10-04
 
 - Clearer wording for recording, storage and notification messages and the first-run guide, in all three languages.

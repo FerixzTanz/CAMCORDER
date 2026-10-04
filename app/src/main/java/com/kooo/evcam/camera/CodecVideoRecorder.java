@@ -273,7 +273,7 @@ public class CodecVideoRecorder {
     }
 
     /**
-     * 设置是否启用时间水印
+     * 设置是否启用时间水印。只管右上角时间 + 规格行；左上角应用名（+ 车牌号）每一路都画，不看它。
      * @param enabled true 表示启用水印
      */
     public void setWatermarkEnabled(boolean enabled) {
@@ -358,7 +358,8 @@ public class CodecVideoRecorder {
     private static final long BITRATE_WINDOW_MS = 1000L;
 
     /**
-     * 录像左上角标的那行字：应用名 + 版本号。
+     * 录像左上角标的那行字：应用名 + 版本号，填了车牌号跟在后面。每一路都画，和时间水印开关无关
+     * （只限这条 MediaCodec 录制路径；开发者选项里的 MediaRecorder 模式没有 GL 这一步，什么角标都不盖）。
      *
      * <p>由调用方给 —— 这个类拿不到 Context。录出来的文件常常是拿去当证据
      * 或者发给别人的，落上是哪个应用、哪个版本录的，回头出问题才对得上。</p>
@@ -613,7 +614,7 @@ public class CodecVideoRecorder {
                     // 创建 EGL 渲染器（在编码线程上）
                     eglEncoder = new EglSurfaceEncoder(cameraId, width, height);
                     // 左上角的应用名与版本号。要在 initialize() 之前设好 ——
-                    // 那块贴图在初始化时画一次，之后不再重画
+                    // 那块贴图在 initialize() 里画一次（每一路都画，和时间水印无关），之后不再重画
                     eglEncoder.setBrandLine(brandLine);
                     // 行驶信息条也要在 initialize() 之前：画面区域按它的高让出来
                     eglEncoder.setInfoBar(infoBar);
@@ -715,7 +716,7 @@ public class CodecVideoRecorder {
                         eglEncoder.setFourLanePlan(fourLanePlan, fourLaneOrder);
                     }
 
-                    // 设置时间水印（如果启用）
+                    // 设置时间水印（如果启用）。只建右上角时间那一块；左上角应用名上面 initialize() 已经建好
                     if (watermarkEnabled) {
                         eglEncoder.setWatermarkEnabled(true);
                         // 规格行必须在这里再补一次。createEncoder() 里算好 encoderSpecLine

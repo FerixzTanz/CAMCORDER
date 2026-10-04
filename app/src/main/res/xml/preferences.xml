@@ -117,7 +117,7 @@
             android:key="pref_photo_limit"
             android:title="@string/set_photo_limit_title"
             android:dialogTitle="@string/set_photo_limit_dialog"
-            android:dialogMessage="@string/set_limit_message" />
+            android:dialogMessage="@string/set_photo_limit_message" />
 
         <!-- 锁定影像：锁定的不被自动清理删掉（FootageLocks）；下面一行是锁了多少 -->
         <SwitchPreferenceCompat
@@ -217,7 +217,7 @@
 
         <SwitchPreferenceCompat
             android:key="pref_recording_floating"
-            android:title="@string/set_recording_floating_title"
+            android:title="@string/set_section_floating"
             android:summary="@string/set_recording_floating_summary" />
 
         <ListPreference

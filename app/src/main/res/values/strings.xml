@@ -34,40 +34,41 @@
     <string name="set_section_about">关于</string>
     <string name="set_car_model_title">视频流配置</string>
     <string name="set_profile_editor_title">视频流配置编辑</string>
-    <string name="set_profile_editor_summary">录制画质、每一路相机的细调和画面摆位</string>
+    <string name="set_profile_editor_summary">录制画质、各路摄像头参数和主界面画面布局</string>
     <string name="set_photo_jpeg_title">拍照走图片通道</string>
     <string name="set_photo_jpeg_summary">用相机自己的 JPEG 输出拍照，尺寸取相机最大；关掉则是抓预览画面，分辨率跟着预览走。改完需重启应用</string>
     <string name="set_watermark_title">时间角标</string>
     <string name="set_watermark_on">在保存的视频与图片上添加时间水印</string>
-    <string name="set_watermark_off">不添加水印。仅影响保存的文件，预览始终不显示</string>
+    <string name="set_watermark_off">录像和照片不叠加日期和时间</string>
     <string name="set_watermark_spec_title">角标附带录制规格</string>
-    <string name="set_watermark_spec_summary">水印中一并标注分辨率与帧率</string>
+    <string name="set_watermark_spec_summary">在录像水印中标注分辨率、实测帧率、编码和实时码率</string>
     <string name="set_info_bar_title">行驶信息条</string>
     <string name="set_info_bar_summary">录像下方加一条车辆状态。显示哪几项在「设置 → 系统 → 系统信息」里勾选，默认是转向灯、方向盘、档位、车速、油门刹车、车门、灯光、经纬度等。试验功能</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">下车后开着哨兵模式时，只有 USB-A 口（哨兵模式存录像的那个）还通电，能接着录。U 盘插在 Type-C 口也可以：下车后它断电，录像会自动改存到 USB-A 口的 U 盘上接着录。</string>
     <string name="set_relay_title">中转写入</string>
-    <string name="set_relay_summary">先写入内置存储，分段完成后再转存至 U 盘。U 盘速度不稳时可减少丢帧</string>
+    <string name="set_relay_summary">先写入内置存储，每个片段完成后再转存至 U 盘，可减少 U 盘写入不稳导致的丢帧。开启后，U 盘断开时不会自动改为录制到其他 U 盘。</string>
     <string name="set_video_limit_title">视频存储上限</string>
     <string name="set_video_limit_dialog">视频存储上限（GB）</string>
     <string name="set_photo_limit_title">图片存储上限</string>
     <string name="set_photo_limit_dialog">图片存储上限（GB）</string>
-    <string name="set_limit_message">超出上限时从最旧的录像删起，删的只有本应用录的文件。留空或填 0 表示不限制：不删任何录像，U 盘写满就停止录制</string>
-    <string name="set_storage_usage_title">当前写入位置</string>
+    <string name="set_limit_message">超出上限或剩余空间不足时，自动清理最旧的录像，仅删除本应用录制且未锁定的文件。留空或填 0 表示不限制：不自动删除，空间不足时停止录制。</string>
+    <string name="set_photo_limit_message">每小时检查一次，超出上限时自动清理最旧的照片，仅删除本应用拍摄且未锁定的照片。留空或填 0 表示不限制。</string>
+    <string name="set_storage_usage_title">录像保存路径</string>
     <string name="set_rearview_summary">将环视中的任一路单独放大为悬浮窗。后视一路做左右镜像，与实际后视镜一致</string>
     <string name="set_rearview_button_mode_title">按键模式</string>
     <string name="set_rearview_button_mode_summary">窗口按对角线分成四块，点上、下、左、右那一块就切到前、后、左、右那一路，代替中间的左右划</string>
     <string name="set_rearview_front_rear_title">只显示前后视</string>
     <string name="set_rearview_front_rear_summary">只在后视与前视之间切换，不经过两侧。按键模式下窗口只分上下两半：上前、下后</string>
     <string name="set_rearview_fisheye_title">鱼眼校正</string>
-    <string name="set_rearview_fisheye_summary">校正鱼眼镜头的桶形畸变。仅影响显示，录制的原始画面不变。校正会放大画面中心，清晰度略低于不校正时</string>
+    <string name="set_rearview_fisheye_summary">校正鱼眼镜头的桶形畸变，仅作用于超级后视镜，不影响录像。</string>
     <string name="set_rearview_fov_title">视野角度</string>
-    <string name="set_rearview_fov_summary">角度越大，视野越宽、放大倍数越小（画面更清晰），但边缘拉伸更明显</string>
+    <string name="set_rearview_fov_summary">角度越大，视野越宽、画面越清晰，但边缘变形越明显</string>
     <string name="set_rearview_width_title">窗口宽度</string>
     <string name="set_rearview_height_title">窗口高度</string>
     <string name="set_rearview_height_summary">宽高可分别调至整块屏幕。画面比例保持不变，窗口形状只决定可见范围</string>
-    <string name="set_rearview_reset_title">重置取景与位置</string>
-    <string name="set_rearview_reset_summary">窗口移出视野或取景调乱时，用此项恢复默认</string>
+    <string name="set_rearview_reset_title">重置窗口与画面</string>
+    <string name="set_rearview_reset_summary">恢复窗口位置、大小、取景、视野角度、鱼眼校正和「只显示前后视」的默认值，并切回后视</string>
     <string name="set_rearview_guide_title">使用指南</string>
     <string name="set_rearview_guide_summary">三个手势区域、换一路、调取景、贴边隐藏、缩放</string>
     <string name="rearview_guide_hint">左右划翻页 · 点击图片外关闭</string>
@@ -80,11 +81,10 @@
     -->
     <string name="mirror_dock_label">Super mirror</string>
     <string name="rearview_guide_page">使用指南第 %1$d 张，共 %2$d 张</string>
-    <string name="set_floating_alpha_title">悬浮窗透明度</string>
-    <string name="set_recording_floating_title">录制悬浮按钮</string>
-    <string name="set_recording_floating_summary">随时开始或停止录制</string>
+    <string name="set_floating_alpha_title">按钮透明度</string>
+    <string name="set_recording_floating_summary">悬浮显示录制状态；点击和长按的操作在下方设置</string>
     <string name="set_button_size_title">按钮大小</string>
-    <string name="set_button_text_size_title">按钮文字大小</string>
+    <string name="set_button_text_size_title">时长文字大小</string>
     <string name="set_floating_tap_title">单击</string>
     <string name="set_floating_long_press_title">长按</string>
     <string name="set_floating_lock_title">锁定位置</string>
@@ -98,11 +98,11 @@
     <string name="set_recording_stats_title">录制状态显示</string>
     <string name="set_recording_stats_summary">录制时在画面角落显示时长与分段数</string>
     <string name="set_reset_floating_title">重置悬浮按钮</string>
-    <string name="set_reset_floating_summary">恢复它的默认位置和大小</string>
+    <string name="set_reset_floating_summary">恢复默认位置、按钮大小和时长文字大小</string>
     <string name="set_auto_start_title">开机自启动</string>
     <string name="set_auto_start_summary">系统启动后自动运行</string>
     <string name="set_auto_record_title">启动自动录制</string>
-    <string name="set_auto_record_summary">应用启动后自动开始录制；录着被打断的，环视一恢复就接着录；人停的不再自动开</string>
+    <string name="set_auto_record_summary">应用启动时自动开始录制，因熄屏停止的录制在亮屏后自动恢复；手动停止后不再自动开始</string>
     <string name="set_screen_off_title">熄屏录制</string>
     <string name="set_screen_off_summary">熄屏时在录像，就接着录，并且不让车机睡，最长按下面设的时长</string>
     <string name="set_screen_off_wake_title">熄屏后不让车机睡，最多（小时）</string>
@@ -260,7 +260,7 @@
     <!-- 设置界面里的提示与对话框 -->
     <string name="msg_stream_changed">视频流配置已改为「%1$s」，重启应用后生效</string>
     <string name="info_none_selected">未选择</string>
-    <string name="msg_relay_dev_only">会先写内置存储再搬到 U 盘，因此仅限开发者模式</string>
+    <string name="msg_relay_dev_only">需开启开发者选项（会先写入内置存储）</string>
     <string name="dlg_internal_title">确定使用内置存储？</string>
     <string name="dlg_internal_msg">行车记录会持续不断地写入数据 —— 只要在录，就一直在写。\n\n闪存的写入寿命有限，长期把车机内置存储作为记录仪的写入位置会实打实地消耗它的寿命，而车机存储通常不可更换。\n\n建议改用 U 盘：损坏后可随时更换，也便于直接取下拷贝。</string>
     <string name="dlg_internal_ok">仍然使用内置存储</string>
@@ -273,13 +273,14 @@
     <string name="opt_internal_storage_locked">内置存储（仅限开发者模式）</string>
     <string name="dlg_internal_locked_title">内置存储需要开发者选项</string>
     <string name="dlg_internal_locked_msg">行车记录会持续不断地写入数据，而车机内置闪存的写入寿命有限，损坏后通常无法更换。因此正常模式下只录到 U 盘。\n\n确有需要时，在「关于 → 安全须知」里打开开发者选项后再选。</string>
-    <string name="msg_storage_changed">存储位置已切换为「%1$s」</string>
+    <string name="msg_storage_changed">存储位置已切换为「%1$s」，下次开始录制时生效</string>
     <string name="msg_enter_number">请输入数字</string>
+    <string name="msg_enter_positive_number">请输入大于 0 的数字</string>
     <string name="info_unlimited">不限制</string>
     <string name="info_reading">正在读取…</string>
     <string name="info_read_failed">读取失败</string>
-    <string name="msg_rearview_on">超级后视镜已开启：中间三分之一上下划调取景、左右划换一路，两侧拖动窗口</string>
-    <string name="msg_rearview_reset">超级后视镜取景与位置已重置</string>
+    <string name="msg_rearview_on">超级后视镜已开启：拖动两侧移动窗口，中间上下滑动调整取景</string>
+    <string name="msg_rearview_reset">超级后视镜窗口与画面已重置</string>
     <string name="msg_floating_reset">悬浮按钮已重置</string>
     <string name="msg_adjust_opened">调节窗口已打开</string>
     <string name="msg_adjust_reset">亮度 / 降噪参数已恢复默认</string>
@@ -332,7 +333,7 @@
     <string name="set_footage_lock_flash_summary">录像时闪一下远光，那一刻前后 10 秒的录像（每一路画面）自动锁定。锁定的占满了空间时会停止录制</string>
     <string name="set_footage_lock_horn_title">鸣笛时自动锁定当前录像</string>
     <string name="set_footage_lock_horn_summary">车上还读不到喇叭信号，暂时不能打开</string>
-    <string name="msg_flash_locked">闪远光：已锁定前后 10 秒的录像</string>
+    <string name="msg_flash_locked">闪远光：已锁定前后 10 秒所在的录像片段</string>
     <string name="msg_storage_locked_stopped">锁定的影像占满了空间，录制已停止。请在回放里解锁一些</string>
     <string name="msg_storage_locked_refuse">锁定的影像占满了空间，无法开始录制。请在回放里解锁一些</string>
     <string name="action_lock_footage">锁定</string>
@@ -515,7 +516,7 @@
     <string name="upd_download_failed_title">下载失败</string>
     <string name="share_phone_qr_failed">二维码没能生成，请直接在手机浏览器里输入下面这个地址</string>
     <string name="set_plate_switch_title">在画面中标注车牌号</string>
-    <string name="set_plate_switch_summary">录像和照片的左上角会跟着应用名一起标出车牌号</string>
+    <string name="set_plate_switch_summary">显示车牌号</string>
     <string name="set_plate_title">车牌号</string>
     <string name="set_plate_hint">最长十位，只能是大写字母和数字</string>
     <string name="set_plate_empty">未填写</string>
@@ -591,7 +592,7 @@
     <string name="editor_lanes_lost">打不开。请退回去重新进一次视频流配置编辑</string>
     <string name="editor_no_camera">这份配置里还没有相机</string>
     <string name="editor_cabin_note_title">这一路还不能挪位置、改大小</string>
-    <string name="editor_cabin_note_summary">旋转、镜像、画面填充、缩放平移已生效；位置和大小暂时固定</string>
+    <string name="editor_cabin_note_summary">旋转、镜像、画面适配、缩放与平移仅改变屏幕预览，录像和照片不受影响</string>
     <string name="editor_position">位置与大小</string>
     <string name="editor_position_value">左上 %1$s, %2$s · 大小 %3$s × %4$s</string>
     <string name="editor_position_dialog">位置与大小（容器宽高的比例，0–1）</string>
@@ -601,11 +602,12 @@
     <string name="editor_h">高</string>
     <string name="editor_rotation">旋转</string>
     <string name="editor_mirror">镜像</string>
-    <string name="editor_mirror_summary">左右翻转，和真实后视镜一致</string>
+    <string name="editor_mirror_summary">仅翻转主界面画面，录像和照片不翻转</string>
     <string name="editor_crop">裁切</string>
     <string name="editor_crop_value">上 %1$s · 下 %2$s · 左 %3$s · 右 %4$s</string>
-    <string name="editor_fit">画面填充</string>
-    <string name="editor_fit_fit">适应 · 整幅可见，两边留黑</string>
+    <string name="editor_fit">画面适配</string>
+    <string name="editor_fit_surround">画面适配（鱼眼校正关闭时）</string>
+    <string name="editor_fit_fit">适应 · 完整显示，空余处留白</string>
     <string name="editor_fit_fill">填充 · 铺满，多出来的裁掉</string>
     <string name="editor_quality_title">录制画质</string>
     <string name="editor_quality_summary">一次定下每一路的帧率和码率。想单独改某一路，下面细调</string>
@@ -618,8 +620,8 @@
     <string name="editor_quality_balanced_note">20 fps、中码率；清晰度与占用兼顾</string>
     <string name="editor_quality_sharp">最清晰</string>
     <string name="editor_quality_sharp_note">不限帧率、高码率；细节保留最充分</string>
-    <string name="editor_cameras_title">在录 %1$d 路</string>
-    <string name="editor_cameras_summary">关掉的那一路不开相机、也不占空间；点一路展开细调</string>
+    <string name="editor_cameras_title">已开启 %1$d 路摄像头</string>
+    <string name="editor_cameras_summary">关闭的摄像头不录制、不占用空间；点击卡片可单独调整该路。开关改动重启应用后生效。</string>
     <string name="editor_camera_tuned">已细调</string>
     <string name="editor_open_lanes">摆位</string>
     <string name="editor_detail_title">%1$s · 细调</string>
@@ -629,7 +631,7 @@
     <string name="editor_knob_resolution">分辨率</string>
     <string name="editor_knob_resolution_note">预览与录制</string>
     <string name="editor_knob_photo_size">拍照</string>
-    <string name="editor_knob_photo_size_note">固定最大尺寸</string>
+    <string name="editor_knob_photo_size_note">使用 JPEG 输出时为最大尺寸，否则与预览相同</string>
     <string name="editor_knob_codec">编码</string>
     <string name="editor_budget_none">没有开启任何相机，不会录下任何东西</string>
     <string name="editor_budget">在录 %1$s 路，合计 %2$s，每小时约 %3$s GB</string>
@@ -650,7 +652,7 @@
     <string name="editor_auto">自动</string>
     <string name="editor_max">最大</string>
     <string name="editor_resolved">%1$s → %2$s</string>
-    <string name="editor_resolved_by_camera">由相机按最接近 1280x800 挑</string>
+    <string name="editor_resolved_by_camera">由摄像头决定</string>
     <string name="editor_per_cell">每格 %1$s</string>
     <string name="editor_landing">录成 %1$s</string>
     <string name="editor_fps_unlimited">原始帧率（不限制）</string>
@@ -662,7 +664,7 @@
     <string name="editor_high">高</string>
     <string name="editor_codec_auto">自动（优先 H.265）</string>
     <string name="editor_issue_no_cameras">这份配置里一路相机都没有</string>
-    <string name="editor_issue_none_enabled">一路相机都没启用，什么都不会显示也不会录</string>
+    <string name="editor_issue_none_enabled">未开启任何摄像头，无法录制</string>
     <string name="editor_issue_undeclared_size">%1$s 的%2$s尺寸 %3$dx%4$d 这一路没有声明过</string>
     <string name="editor_issue_preview_split_only">%1$s：预览拆四格但录制不拆，录出来的是一整幅画面</string>
     <string name="editor_issue_record_split_only">%1$s：录制拆四格但预览不拆，超级后视镜取不到单独那一路</string>
@@ -670,8 +672,7 @@
     <string name="editor_stream_record">录制</string>
     <string name="editor_stream_photo">拍照</string>
     <string name="editor_camera_missing">（找不到对应的相机）</string>
-    <string name="editor_camera_summary">相机 %1$s · 最大 %2$s</string>
-    <string name="editor_size_unknown">尺寸未知</string>
+    <string name="editor_camera_summary">摄像头 %1$s</string>
     <string name="editor_splits">拆四格</string>
 
     <!-- 连续回放 -->
@@ -710,6 +711,7 @@
     <string name="storage_external_named">U 盘（%1$s）</string>
     <string name="storage_external_n">U 盘 %1$d</string>
     <string name="storage_external_n_named">U 盘 %1$d（%2$s）</string>
+    <string name="storage_external_missing">U 盘（未检测到）</string>
 
     <!-- 图片回看 -->
     <string name="photo_count_badge">%1$d 张</string>

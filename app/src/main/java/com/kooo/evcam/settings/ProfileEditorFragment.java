@@ -1081,11 +1081,7 @@ public class ProfileEditorFragment extends Fragment {
         if (cameraId == null) {
             return getString(R.string.editor_camera_missing);
         }
-        List<int[]> sizes = declaredSizes(role);
-        String largest = sizes.isEmpty()
-                ? getString(R.string.editor_size_unknown)
-                : sizes.get(0)[0] + "x" + sizes.get(0)[1];
-        return getString(R.string.editor_camera_summary, cameraId, largest)
+        return getString(R.string.editor_camera_summary, cameraId)
                 + (splitsFor(role) ? " · " + getString(R.string.editor_splits) : "");
     }
 

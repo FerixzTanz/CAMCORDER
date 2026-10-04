@@ -2180,11 +2180,9 @@ public class SingleCamera {
             }
         }
 
-        // 检查是否需要添加时间角标
-        android.graphics.Bitmap finalBitmap = sourceBitmap;
-        if (appConfig.isTimestampWatermarkEnabled()) {
-            finalBitmap = addTimestampWatermark(sourceBitmap, timestamp);
-        }
+        // 盖角标：左上角应用名（填了车牌号跟在后面）每一张都有；时间和尺寸那两行跟着「时间角标」开关
+        android.graphics.Bitmap finalBitmap =
+                addWatermark(sourceBitmap, timestamp, appConfig.isTimestampWatermarkEnabled());
 
         FileOutputStream output = null;
         try {
@@ -2293,31 +2291,32 @@ public class SingleCamera {
      * {@link WatermarkText} 拼字符串：</p>
      *
      * <pre>
-     *   极氪即刻 v0.36.2  京A12345     &lt;- 无条件；车牌号可选
-     *   2026-09-03 14:22:07
+     *   极氪即刻 v0.36.2  京A12345     &lt;- 每一张都有；车牌号可选
+     *   2026-09-03 14:22:07            &lt;- 这一行和下一行跟着「时间角标」开关
      *   2560x2560                      &lt;- 这张图真实的尺寸
      * </pre>
      *
      * <p>照片没有帧率、码率、编码，那几项就不写 —— 为了「看起来一致」
      * 硬凑几个数，比不写更糟。</p>
      *
+     * <p>盖不上（复制整张图时内存不够之类）就存原图：没有角标的照片也比丢掉这张强。</p>
+     *
      * @param timestamp 时间戳字符串（格式：yyyyMMdd_HHmmss）
+     * @param withTime 「时间角标」开着：画时间和尺寸两行
      */
-    private android.graphics.Bitmap addTimestampWatermark(
-            android.graphics.Bitmap originalBitmap, String timestamp) {
+    private android.graphics.Bitmap addWatermark(
+            android.graphics.Bitmap originalBitmap, String timestamp, boolean withTime) {
+        android.graphics.Bitmap mutableBitmap = null;
         try {
-            android.graphics.Bitmap mutableBitmap =
-                    originalBitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, true);
-            android.graphics.Canvas canvas = new android.graphics.Canvas(mutableBitmap);
-
-            java.util.List<String> lines = new java.util.ArrayList<>();
-            lines.add(buildPhotoBrandLine());
-            lines.add(readableTime(timestamp));
-            String spec = WatermarkText.photoSpecLine(
-                    mutableBitmap.getWidth(), mutableBitmap.getHeight());
-            if (!spec.isEmpty()) {
-                lines.add(spec);
+            java.util.List<String> lines = WatermarkText.photoLines(
+                    buildPhotoBrandLine(), readableTime(timestamp),
+                    originalBitmap.getWidth(), originalBitmap.getHeight(), withTime);
+            if (lines.isEmpty()) {
+                return originalBitmap;  // 一行都没有，不必复制
             }
+
+            mutableBitmap = originalBitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, true);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(mutableBitmap);
 
             // 字号跟着图片宽度走：四宫格 2560 和单路 1280 差一倍，
             // 固定字号在其中一边一定不合适
@@ -2336,12 +2335,10 @@ public class SingleCamera {
             textPaint.setAntiAlias(true);
             textPaint.setTypeface(android.graphics.Typeface.MONOSPACE);
 
+            // 空行 photoLines 已经去掉了，这里每一行都画
             float x = textSize * 0.5f;
             float y = textSize * 1.2f;
             for (String line : lines) {
-                if (line == null || line.isEmpty()) {
-                    continue;
-                }
                 canvas.drawText(line, x + 2, y + 2, shadowPaint);
                 canvas.drawText(line, x, y, textPaint);
                 y += textSize * 1.25f;
@@ -2350,8 +2347,12 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " 照片角标: " + lines);
             return mutableBitmap;
 
-        } catch (Exception e) {
-            AppLog.e(TAG, "Camera " + cameraId + " failed to add timestamp watermark", e);
+        } catch (Exception | OutOfMemoryError e) {
+            AppLog.e(TAG, "Camera " + cameraId + " failed to add watermark", e);
+            // 复制出来但没画完的那张不要了
+            if (mutableBitmap != null && mutableBitmap != originalBitmap) {
+                mutableBitmap.recycle();
+            }
             return originalBitmap;  // 失败时返回原图
         }
     }

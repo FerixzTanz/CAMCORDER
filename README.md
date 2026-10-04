@@ -24,8 +24,9 @@ splits it back into a 2×2 grid and builds on that. Chinese, English and Malay i
 - Three recording presets — save space (10 fps), balanced (20 fps), sharpest — each showing how
   many GB an hour it needs and how long your USB drive will last. Frame rate, bitrate, segment
   length and codec can also be tuned per camera.
-- 1–10 minute segments. With a video storage cap set, the oldest clips are deleted to stay under
-  it; with no cap, nothing is deleted and recording stops when the drive is full.
+- 1–10 minute segments. With a video storage cap set, the oldest unlocked clips are cleaned up when
+  over the cap or low on space; with no cap, nothing is deleted and recording stops when space runs
+  low.
 - Photos use each camera's largest size.
 - Records to a **USB drive only**. Writing to the head unit's built-in flash sits behind developer
   options, because that storage cannot be replaced once worn out.
@@ -93,7 +94,7 @@ through `ZEEKR_KEYSTORE`, `ZEEKR_KEYSTORE_PASSWORD`, `ZEEKR_KEY_ALIAS` and `ZEEK
 If recording stops working properly on the USB drive because the files have grown too large:
 
 1. **Lower the frame rate to 10 fps first.** In **Settings → Recording → Edit stream profile**, tap
-   each camera under *Cameras recording* and set **Frame rate** to *10 fps (cap)*.
+   each camera under *Cameras on* and set **Frame rate** to *10 fps (cap)*.
 2. **Still not working? Then lower the bitrate** for those cameras.
 
 Changes apply from the next recording.
