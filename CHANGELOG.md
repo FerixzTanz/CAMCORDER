@@ -11,6 +11,16 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.0.17-beta] - 2026-10-04
+
+Upgrade from 2.0.0.
+
+- Driving info bar: refined design, integration and display. There's a little easter egg in it, see if you can find it.
+- Lock videos and photos, by hand or automatically. Locked videos and photos are marked and are never removed by the app's loop recording.
+  - Including flash-to-pass: flash the high beams to lock the current recording automatically.
+- The record button explains more clearly what happens.
+- Improved stability.
+
 ## [2.0.17-alpha] - 2026-10-04
 
 - Lock footage: new option to lock automatically on flash-to-pass (off by default): every segment of every camera within 10 s before and after the flash is locked. A "lock on horn" option is shown but can't be turned on yet (the horn signal isn't readable).
