@@ -9,7 +9,7 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- Ending a recording now actually frees the video encoder's graphics resources, and no longer races the last frame being drawn.
 
 ## [2.1.2-alpha] - 2026-10-04
 

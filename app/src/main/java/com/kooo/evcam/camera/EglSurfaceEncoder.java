@@ -900,7 +900,12 @@ public class EglSurfaceEncoder {
     }
 
     /**
-     * 释放资源
+     * 释放资源。
+     *
+     * <p><b>只能在建它的那个线程（编码线程）上调</b>：EGL 上下文只在那个线程上是当前的。
+     * 在别的线程上调，下面的 glDelete* 全是空操作，eglDestroyContext 也只是把上下文记成「待删」，
+     * 而编码线程那边可能正在画一帧。CodecVideoRecorder 把它排到编码线程上（releaseGlOnEncoderThread）；
+     * initialize 失败时本来就在编码线程上。</p>
      */
     public void release() {
         if (isReleased) {
