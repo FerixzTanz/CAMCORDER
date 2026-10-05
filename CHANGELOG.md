@@ -9,6 +9,18 @@ commit message, not here.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.1.3-alpha] - 2026-10-06
+
+- Interface text reworded across the app in all three languages, following one terminology and style guide (docs/ui-text-style.md).
+- Turning developer options off now really switches their features off; turning them back on restores the previous settings.
+- Removed the extra cleanup rule that deleted 20% of files on internal storage below 3 GB; storage caps are the only cleanup rules.
+- "Deleting oldest recordings" now only shows when recordings are actually being deleted.
+- Settings: Image adjustment opens its window again; Video folder shows when no USB drive is found; the stream profile editor remembers the chosen quality and marks cameras tuned by hand; the photo size row shows the size actually saved.
+- Recording stats and the debug overlay follow the setting without reopening the app; the overlay shows the pipeline in use.
+- The info bar shows "—" for missing data, as the System info page does.
+- Developer tools (permissions, repair, archive) are translated.
 - Ending a recording now actually frees the video encoder's graphics resources, and no longer races the last frame being drawn.
 
 ## [2.1.2-alpha] - 2026-10-04

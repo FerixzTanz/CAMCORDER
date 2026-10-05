@@ -237,7 +237,7 @@ public final class RecordingCoordinator {
 
     /**
      * 熄屏了（ScreenState 在主线程调）。规矩只有一条（项目所有者 2026-09-27）：
-     * 「熄屏录制」（开发者，拿唤醒锁）或「熄屏持续录制」开着就接着录；两个都没开，熄屏 10 秒后停，
+     * 「熄屏录制（阻止休眠）」（开发者，拿唤醒锁）或「熄屏持续录制」开着就接着录；两个都没开，熄屏 10 秒后停，
      * 手动开的、自动开的一样停。
      */
     public void screenOff() {
@@ -392,8 +392,9 @@ public final class RecordingCoordinator {
             return false;
         }
         AppLog.i(TAG, "开录前空间不够，先清理最旧的录像");
-        notifyRefused(context.getString(R.string.msg_storage_cleaning));
-        com.kooo.evcam.camera.StorageGuard.enforceAsync(context, dir, decision -> {
+        // 「正在删除最旧的录像」等真要删时才弹：一个都删不掉（全锁着、删光也不够）时不该先说在删
+        com.kooo.evcam.camera.StorageGuard.enforceAsync(context, dir,
+                () -> notifyRefused(context.getString(R.string.msg_storage_cleaning)), decision -> {
             if (decision.verdict == com.kooo.evcam.camera.StoragePlan.Verdict.FULL) {
                 refused(why, counts, context.getString(decision.lockedFull
                         ? R.string.msg_storage_locked_refuse : R.string.msg_storage_cannot_free));

@@ -127,7 +127,7 @@ public class FisheyeVideoFrame extends FrameLayout {
     }
 
     /**
-     * 开发者选项「视频回看：GPU 逐像素鱼眼校正」开着时，给播放器的转接；没开返回 null。
+     * 开发者选项「录像回放：GPU 逐像素鱼眼校正」开着时，给播放器的转接；没开返回 null。
      * 要在 TextureView 的画布好之前交给播放器（{@link ManagedVideoPlayer#setSurfaceRoute}）。
      */
     public ManagedVideoPlayer.SurfaceRoute gpuRoute() {

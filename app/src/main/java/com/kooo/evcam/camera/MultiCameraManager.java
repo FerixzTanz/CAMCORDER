@@ -2066,11 +2066,15 @@ public class MultiCameraManager {
     /**
      * 处理录制重建请求（Watchdog 触发）
      * 
-     * 重建策略：
+     * 重建策略（只有 MediaRecorder 的录制器发重建请求）：
      * 1. 第一次触发：尝试重建 MediaRecorder（不切换模式）
-     * 2. 第二次触发：如果录制模式为"自动"，则切换到 Codec 模式
-     * 3. 已在 Codec 模式或非自动模式：不再处理
-     * 
+     * 2. 第二次起：录制模式读出来是"自动"就切换到 Codec 模式（提示 msg_codec_fallback），否则再试 MediaRecorder
+     * 3. 已在 Codec 模式：不再处理
+     *
+     * 第 2 条的回退很少走到："自动"开录本来就走 Codec（AppConfig.shouldUseCodecRecording），
+     * 而管线只在相机管理器创建时定一次。只有按 MediaRecorder 建好之后、录制模式才读成"自动"
+     * （开发者选项里改了，管理器没有重建）时，才会在这里改用 Codec。
+     *
      * 注意：多个摄像头可能同时触发此方法，需要防重入保护
      * 
      * @param cameraId 触发重建的相机ID

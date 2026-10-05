@@ -447,6 +447,9 @@ public class StorageHelper {
      * <p>只有开发者选项打开时才允许。行车记录是持续写入，而车机闪存
      * 写坏了换不了 —— 这个代价不该由「不熟悉软件、一路点确定」的人承担，
      * 所以它不是一个弹窗能放行的选择，而是默认就不给。</p>
+     *
+     * <p>选过的「内置存储」在开发者选项关着时本来就按 U 盘算（{@code AppConfig.getStorageLocation}）；
+     * 这里管的是选 U 盘、盘却不在时，能不能退到内置存储上录（设置里那一项能不能选、录制器换盘时最后一站）。</p>
      */
     public static boolean isInternalStorageAllowed() {
         return com.kooo.evcam.settings.DeveloperMode.isUnlocked();
@@ -465,7 +468,7 @@ public class StorageHelper {
     /**
      * 录像实际上会不会落在内置存储上。
      *
-     * <p>两种情况都算：选的就是内置存储，或者选了 U 盘但盘不在
+     * <p>两种情况都算：选的就是内置存储（开发者选项开着时才算数），或者选了 U 盘但盘不在
      * （那时会回退到内置，见 {@code getStorageDir}）。</p>
      *
      * <p>后一种尤其值得提醒 —— 用户以为在写 U 盘，实际在写车机闪存，
@@ -714,15 +717,28 @@ public class StorageHelper {
     }
     
     /**
-     * 获取当前存储路径描述
-     * @param context 上下文
-     * @return 当前存储路径描述
+     * 设置里「录像保存路径」那一行写的目录。
+     *
+     * <ul>
+     *   <li>正在录：录制器实际写的那个（盘写不进、换过盘就是新盘）。中转写入时录像先在内部缓存里，
+     *       写完才转存过去 —— 这一行写转存到的目录，不写缓存；</li>
+     *   <li>没在录：按设置下一次开录会写的那个；</li>
+     *   <li>此刻录不了（没有 U 盘、开发者选项没开）：null —— 那一行写「未检测到 U 盘」，
+     *       不写一个永远不会写进去的内置存储路径。</li>
+     * </ul>
+     *
+     * <p>会碰盘，不要在主线程调。</p>
      */
-    public static String getCurrentStoragePathDesc(Context context) {
-        AppConfig config = new AppConfig(context);
-        boolean useExternalSd = config.isUsingExternalSdCard();
-        
-        File videoDir = getVideoDir(context, useExternalSd);
-        return videoDir.getAbsolutePath();
+    public static File savedVideoDir(Context context, boolean recording) {
+        File actual = lastRecordingDir;
+        File relayCache = new File(context.getCacheDir(), FileTransferManager.TEMP_VIDEO_DIR);
+        if (recording && actual != null
+                && !actual.getAbsoluteFile().equals(relayCache.getAbsoluteFile())) {
+            return actual;
+        }
+        if (!isRecordingStorageAvailable(context)) {
+            return null;
+        }
+        return getVideoDir(context);
     }
 }

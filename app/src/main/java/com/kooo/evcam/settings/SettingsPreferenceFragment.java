@@ -60,6 +60,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     private static final String TAG = "SettingsPreference";
 
     private AppConfig appConfig;
+    /** 绑定这一页时开发者选项开没开；回到这一页时变了就重绑（见 {@link #onResume}）。 */
+    private boolean boundUnlocked;
     /** 外置卷的取值前缀，后面接它在探测结果里的下标。 */
     private static final String EXTERNAL_PREFIX = "external:";
     /**
@@ -97,6 +99,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             return;
         }
         appConfig = new AppConfig(getContext());
+        boundUnlocked = DeveloperMode.isUnlocked();
 
         bindRecording();
         bindStorage();
@@ -104,8 +107,12 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindFloating();
         bindInterface();
         bindSystem();
-        bindAdvanced();
-        bindDeveloper();
+        // 开发者选项分区：没开时不接线。左栏已经把整块拿掉了；万一是直接跳进来的，点了也不起作用 ——
+        // 里面的设置这时本来就按没存过算（AppConfig.DEVELOPER_KEYS）
+        if (boundUnlocked) {
+            bindAdvanced();
+            bindDeveloper();
+        }
         bindUpdate();
 
         // 行样式在交给列表之前套上（车机系统式：卡片行、开关在前、值在后）
@@ -122,6 +129,19 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     @Override
     public void onResume() {
         super.onResume();
+        // 停在开发者选项这一页时把它关了（「关于与致谢」里关的）：这一页不能再留着，换回默认分区
+        if (!DeveloperMode.isUnlocked() && getArguments() != null
+                && SettingsShellFragment.DEVELOPER_SECTION.equals(getArguments().getString(ARG_SECTION))
+                && getParentFragment() instanceof SettingsShellFragment) {
+            ((SettingsShellFragment) getParentFragment()).showSection(SettingsShellFragment.DEFAULT_SECTION);
+            return;
+        }
+        // 开发者选项在「关于与致谢」（另一个 Activity）里开关：回来时变了就按新的状态整页重绑 ——
+        // 中转写入能不能开、内置存储那一项怎么写、开发者分区接不接线都跟着它
+        if (appConfig != null && boundUnlocked != DeveloperMode.isUnlocked()) {
+            onCreatePreferences(null, null);
+            return;
+        }
         // 权限、存储用量这些可能在别处被改过，回到这个界面时重新读一次
         updateStorageUsage();
         refreshRearViewSize();
@@ -133,7 +153,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindCarModel();
 
         // 相机与视频流的参数（每一路的三条流、每一格的摆法）都在下面这个
-        // 「视频流配置编辑」里。同一件事只留一个入口：两个入口意味着
+        // 「编辑视频流配置」里。同一件事只留一个入口：两个入口意味着
         // 迟早会出现「这边写着 30、那边写着 15」。
         onClick("pref_profile_editor",
                 pref -> openFragment(new ProfileEditorFragment(), R.string.set_profile_editor_title));
@@ -155,7 +175,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 });
         bindLicensePlate();
 
-        // 应用名与版本（填了车牌号跟在后面）每一路 MediaCodec 录像、每一张照片都盖，和「时间角标」开不开无关
+        // 应用名与版本（填了车牌号跟在后面）每一路 MediaCodec 录像、每一张照片都盖，和「时间水印」开不开无关
         // （录像见 EglSurfaceEncoder.drawBrandOverlay，照片见 SingleCamera.addWatermark；
         // 开发者选项里的 MediaRecorder 模式什么角标都画不了），
         // 这里只是把这件事摆在界面上：开着、灰着、点不动。
@@ -216,7 +236,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     /**
      * 视频流配置。
      *
-     * <p>「环视 + 两路座舱」0.48 起对所有人开放：座舱那两路的旋转、镜像、
+     * <p>「极氪7X（环视 + 前后座舱）」0.48 起对所有人开放：座舱那两路的旋转、镜像、
      * 画面适配都做完并在车上验证过了，它不再是半成品。</p>
      *
      * <p>「自定义」仍然只在开发者选项里 —— 那一档要手动指定每一路接哪个相机，
@@ -260,7 +280,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindStorageLocation();
 
         // 中转写入是「先写内置再搬走」，本质上就是往内置存储规律性地写，
-        // 所以和内置存储同一个门槛
+        // 所以和内置存储同一个门槛：开发者选项关着时置灰，值也按关算（AppConfig 那道门），写着关就是关
         SwitchPreferenceCompat relay = findPreference("pref_relay_write");
         if (relay != null) {
             relay.setPersistent(false);
@@ -465,9 +485,9 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
         pref.setEntries(labels.toArray(new String[0]));
         pref.setEntryValues(values.toArray(new String[0]));
+        // 当前值一定在列表里：某个卷、「U 盘（未检测到）」，或者一直列着的内置存储
         pref.setValue(current);
-        pref.setSummary(pref.getEntry() != null
-                ? pref.getEntry() : getString(R.string.info_none_selected));
+        pref.setSummary(pref.getEntry());
 
         pref.setOnPreferenceChangeListener((preference, newValue) -> {
             String value = String.valueOf(newValue);
@@ -492,6 +512,7 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     /**
      * 当前生效的是哪一项。外置时要对上具体哪个卷，不能笼统算「外置」；
      * 选了外置却一个卷都没有时是 {@link #EXTERNAL_MISSING}，不能算成内置。
+     * 开发者选项关着时，存着的内置存储按 U 盘算（{@code AppConfig.getStorageLocation}），这里写的也是 U 盘。
      */
     private String currentStorageValue(List<StorageHelper.VolumeInfo> volumes) {
         if (!appConfig.isUsingExternalSdCard()) {
@@ -657,6 +678,10 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         return gigabytes > 0 ? gigabytes + " GB" : getString(R.string.info_unlimited);
     }
 
+    /**
+     * 「录像保存路径」：在录写录制器实际写的目录，没在录写下一次会写的目录；
+     * 此刻录不了（没有 U 盘、开发者选项没开）写「未检测到 U 盘」（{@link StorageHelper#savedVideoDir}）。
+     */
     private void updateStorageUsage() {
         Preference pref = findPreference("pref_storage_usage");
         if (pref == null || getContext() == null) {
@@ -664,12 +689,17 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         }
         pref.setSummary(getString(R.string.info_reading));
         final Context context = getContext().getApplicationContext();
+        final boolean recording = getActivity() instanceof MainActivity
+                && ((MainActivity) getActivity()).isCurrentlyRecording();
+        final String noDrive = getString(R.string.set_storage_usage_no_drive);
+        final String failed = getString(R.string.info_read_failed);
         new Thread(() -> {
             String desc;
             try {
-                desc = StorageHelper.getCurrentStoragePathDesc(context);
+                java.io.File dir = StorageHelper.savedVideoDir(context, recording);
+                desc = dir != null ? dir.getAbsolutePath() : noDrive;
             } catch (Throwable t) {
-                desc = getString(R.string.info_read_failed);
+                desc = failed;
             }
             final String result = desc;
             if (isAdded()) {
@@ -1006,10 +1036,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     }
 
     /**
-     * 息屏录制：没开开发者选项时锁住 —— 灰掉、关着、写明为什么。
-     *
-     * <p>用「锁」不用「藏」：这是一个普通人会来找的选项，藏起来的话找的人不知道它存在，
-     * 也不知道去哪打开。值那边 AppConfig 同样锁着，界面写着关，实际就是关。</p>
+     * 系统：诊断信息、系统信息、开机自启、保活、熄屏持续录制。
+     * 开发者的「熄屏录制（阻止休眠）」不在这里，在开发者选项分区（{@link #bindAdvanced}）。
      */
     private void bindSystem() {
         // 诊断信息放在系统里：它是给所有人导出报告用的
@@ -1044,7 +1072,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
     private void bindAdvanced() {
         bindEnum("pref_recording_mode", SettingsRegistry.RECORDING_MODE,
-                appConfig.getRecordingMode(), value -> appConfig.setRecordingMode(value));
+                appConfig.getRecordingMode(), value -> appConfig.setRecordingMode(value),
+                this::showRecordingModeSummary);
 
         // 熄屏录制 = 熄屏持续录制 + 唤醒锁（规格 §3.1）。整块只在开发者选项里出现，不用再单独锁
         bindSwitch("pref_screen_off_recording", appConfig.isScreenOffRecordingEnabled(),
@@ -1053,11 +1082,14 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_force_h264", appConfig.isForceH264Encoding(),
                 value -> appConfig.setForceH264Encoding(value));
 
+        // 画面调节：打开调节窗口（MainActivity 管着它，退出设置也还在），同时开启画面调节、套上存着的参数。
+        // 窗口开没开成由 MainActivity 说：没有悬浮窗权限、相机还没好时它自己提示
         onClick("pref_image_adjust", pref -> {
             if (getActivity() instanceof MainActivity) {
+                MainActivity main = (MainActivity) getActivity();
                 appConfig.setImageAdjustEnabled(true);
-                ((MainActivity) getActivity()).setImageAdjustEnabled(true);
-                toast(getString(R.string.msg_adjust_opened));
+                main.setImageAdjustEnabled(true);
+                main.showImageAdjustFloatingWindow();
             }
         });
 
@@ -1082,6 +1114,14 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
 
     }
 
+    /** 摘要除了选中项，还写明这一项现在不起作用：录制固定走 MediaCodec。 */
+    private void showRecordingModeSummary() {
+        ListPreference pref = findPreference("pref_recording_mode");
+        if (pref != null && getContext() != null) {
+            pref.setSummary(getString(R.string.set_recording_mode_summary, pref.getEntry()));
+        }
+    }
+
     private void updateCameraMappingSummary() {
         Preference pref = findPreference("pref_camera_mapping");
         if (pref == null) {
@@ -1094,20 +1134,15 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     // ------------------------------------------------------------------ 开发者选项
 
     /**
-     * 开发者选项整块的显隐。
+     * 开发者选项里的工具。只在开发者选项开着时接线（见 {@link #onCreatePreferences}）。
      *
-     * <p>没解锁时把整个分类从界面上移除，而不是置灰 —— 置灰等于告诉别人
+     * <p>没开时整个分区从左栏上移除，而不是置灰 —— 置灰等于告诉别人
      * 「这里有东西但你用不了」，而这些本来就不该出现在普通用户的设置里。</p>
      */
     private void bindDeveloper() {
         // 这里原来先找一个 key 为 cat_developer 的分类，找不到就整个返回 ——
         // 而 0.21.0 把分区改成嵌套 PreferenceScreen 之后，这个 key 就不存在了。
         // 于是下面四个入口一个都没接上，点了毫无反应，也不报错。
-        if (!DeveloperMode.isUnlocked()) {
-            // 左栏已经把整块拿掉了；万一是直接跳进来的，这里也不接线
-            return;
-        }
-
         onClick("pref_permissions",
                 pref -> openFragment(new PermissionsPreferenceFragment(), R.string.dev_permissions_title));
 

@@ -53,7 +53,7 @@ Photo playback uses the same layout.
 
 ### Send to your phone
 
-While viewing a photo or a video segment, tap **send to phone**: the app shows a QR code, your
+While viewing a photo or a video segment, tap **Send to phone**: the app shows a QR code, your
 phone's browser opens that file, and you save it. Nothing to install on the phone.
 
 The file is served over your local network only while the dialog is open, from a random one-off

@@ -9,7 +9,7 @@ import com.kooo.evcam.R;
  *
  * <p>App 自己能决定的只有两件：熄屏后停不停（{@link #keepsRecording}），因熄屏停下的录像亮屏后接不接
  * （{@link #resumesOnScreenOn}）。车机睡不睡由车辆的哨兵模式决定：开着时车机一直醒着、只是黑屏，录像不断；
- * 没开的话车机睡着，录像停在那一刻，醒来接着录（lifecycle-spec §2.4）。开发者的「熄屏录制」拿唤醒锁拉住车机，
+ * 没开的话车机睡着，录像停在那一刻，醒来接着录（lifecycle-spec §2.4）。开发者的「熄屏录制（阻止休眠）」拿唤醒锁拉住车机，
  * 哨兵模式开没开都接着录。</p>
  */
 public enum ScreenOffPlan {
@@ -30,7 +30,7 @@ public enum ScreenOffPlan {
         this.text = text;
     }
 
-    /** 熄屏后不停录：开发者「熄屏录制」或「熄屏持续录制」开着。 */
+    /** 熄屏后不停录：开发者「熄屏录制（阻止休眠）」或「熄屏持续录制」开着。 */
     static boolean keepsRecording(AppConfig config) {
         return config.isScreenOffRecordingEnabled() || config.isScreenOffKeepRecording();
     }

@@ -8,7 +8,7 @@ import android.content.SharedPreferences;
  *
  * <h3>打开之后一直开着（项目拥有者 2026-09-26 定）</h3>
  *
- * <p>重启、更新都不会关。只有三种情况会关：在「关于」里同一个位置关掉；清除应用数据；
+ * <p>重启、更新都不会关。只有三种情况会关：在「关于与致谢」里同一个位置关掉；清除应用数据；
  * 卸载重装。以前刻意不保存，装一次新版就悄悄关了 —— 开着「息屏录制」的人每次更新都失效一次，
  * 界面上还看不出来。</p>
  *
@@ -17,6 +17,14 @@ import android.content.SharedPreferences;
  *
  * <p>{@link #isUnlocked()} 不带参数，各处直接问；进程里第一次建 {@code AppConfig}
  * 或 Application 启动时会调 {@link #init} 把存着的值读进来。</p>
+ *
+ * <h3>关着时，里面的功能停止生效（项目所有者 2026-10-05）</h3>
+ *
+ * <p>设置不用各自来问这里：归开发者选项管的设置列在 {@code AppConfig.DEVELOPER_KEYS}，
+ * 关着时按没存过算（普通用户的值），存着的不动，再打开就回来。直接问 {@link #isUnlocked()} 的
+ * 只剩不存设置的几件事：分区本身显不显示（{@code SettingsHeadersFragment}、{@code SettingsPreferenceFragment}）、
+ * 内置存储能不能当录像盘（{@code StorageHelper.isInternalStorageAllowed}）、没验证的车辆信号算不算数
+ * （{@code InfoBar.selectable}）、诊断信息里的「发送到手机」。</p>
  */
 public final class DeveloperMode {
 

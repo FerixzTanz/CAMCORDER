@@ -81,13 +81,21 @@ public final class StorageGuard {
      * <p>不要在主线程调：U 盘上列目录和删文件都可能慢。</p>
      */
     public static StoragePlan.Decision enforce(Context context, File videoDir) {
+        return enforce(context, videoDir, null);
+    }
+
+    /**
+     * @param beforeDelete 真要删的那一刻先发到主线程（只在决定是「删」时发）。
+     *                     「正在删除最旧的录像」这类提示挂在这里，什么都不删时就不会弹
+     */
+    private static StoragePlan.Decision enforce(Context context, File videoDir, Runnable beforeDelete) {
         // 读锁定清单、决定、删，整段拿着：中间有人锁上的文件不会正好在这一轮的删除名单里
         synchronized (com.kooo.evcam.storage.FootageLocks.guard()) {
-            return enforceLocked(context, videoDir);
+            return enforceLocked(context, videoDir, beforeDelete);
         }
     }
 
-    private static StoragePlan.Decision enforceLocked(Context context, File videoDir) {
+    private static StoragePlan.Decision enforceLocked(Context context, File videoDir, Runnable beforeDelete) {
         List<StoragePlan.Clip> clips = new ArrayList<>();
         File[] files = videoDir != null ? videoDir.listFiles() : null;
         if (files != null) {
@@ -128,6 +136,9 @@ public final class StorageGuard {
                         : ""));
 
         if (decision.verdict == StoragePlan.Verdict.DELETE) {
+            if (beforeDelete != null) {
+                MAIN.post(beforeDelete);
+            }
             int deleted = 0;
             List<String> gone = new ArrayList<>();
             for (String name : decision.toDelete) {
@@ -149,11 +160,16 @@ public final class StorageGuard {
 
     /** 在自己的线程上跑 {@link #enforce}，结果回主线程。 */
     public static void enforceAsync(Context context, File videoDir, Callback callback) {
+        enforceAsync(context, videoDir, null, callback);
+    }
+
+    /** 同上；真要删时先在主线程跑 {@code beforeDelete}（见 {@link #enforce(Context, File, Runnable)}）。 */
+    public static void enforceAsync(Context context, File videoDir, Runnable beforeDelete, Callback callback) {
         final Context app = context.getApplicationContext();
         EXECUTOR.execute(() -> {
             StoragePlan.Decision decision;
             try {
-                decision = enforce(app, videoDir);
+                decision = enforce(app, videoDir, beforeDelete);
             } catch (Exception e) {
                 AppLog.e(TAG, "存储检查失败", e);
                 return;

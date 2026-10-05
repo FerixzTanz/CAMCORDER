@@ -102,7 +102,7 @@ public class TimelineSessionAdapter
     /** 每一条有没有锁定的文件（锁定影像），和 sessions 一一对应。 */
     private boolean[] sessionLocked = new boolean[0];
 
-    /** 哪几条含锁定的文件：行尾多写一句「含锁定」。 */
+    /** 哪几条含锁定的文件：行尾多写一句「含已锁定文件」。 */
     public void setLocked(boolean[] locked) {
         sessionLocked = locked != null ? locked : new boolean[0];
         notifyDataSetChanged();

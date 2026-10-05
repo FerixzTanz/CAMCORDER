@@ -93,7 +93,7 @@ public class DiagnosticsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 发送到手机是开发者功能（项目拥有者 2026-09-26 定）。开发者模式在「关于」里开关，
+        // 发送到手机是开发者功能（项目拥有者 2026-09-26 定）。开发者模式在「关于与致谢」里开关，
         // 回到这里时按当时的状态显示
         if (sendPhoneButton != null) {
             sendPhoneButton.setVisibility(com.kooo.evcam.settings.DeveloperMode.isUnlocked()

@@ -10,6 +10,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 
 import com.kooo.evcam.AppConfig;
+import com.kooo.evcam.R;
 import com.kooo.evcam.settings.LicensePlate;
 
 import java.util.List;
@@ -143,6 +144,12 @@ public final class InfoBarRenderer {
     private List<InfoBarLayout.Placed> cells;
     /** 文字格要用字串；车辆状态面板没有文字格，是 null。 */
     private final Context context;
+    /**
+     * 没数据的读数写的字：vi_v_none「—」，和系统信息页（{@link SignalText}）同一个字，建的时候按界面语言取一次。
+     * 量过（Roboto Bold 和等宽字，样稿 JPEG q22、缩一半看）：30 px 的「—」墨迹 22×4 px，和以前画的「--」一样宽、一样粗，
+     * 压缩后照样认得出；车机字体里没有这个字时 Android 退到后备字体去画，不会是方框。
+     */
+    private final String none;
     /** 摆的时候用的勾选版本（{@link InfoBar#selectionVersion}）：变了就重新摆，正在录的下一帧就换。 */
     private int fittedSelection;
     private final Bitmap bitmap;
@@ -181,14 +188,16 @@ public final class InfoBarRenderer {
         readPlate();
     }
 
-    /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。车牌上不写数字。 */
-    public InfoBarRenderer(InfoBarLayout.Arrangement arrangement, float scale) {
-        this(null, arrangement.cells, arrangement.width, arrangement.height, scale, false);
+    /** 别的摆法（车辆状态面板）：按 scale 画到实际像素上，图标不糊。车牌上不写数字；context 只用来取没数据的字（{@link #none}）。 */
+    public InfoBarRenderer(Context context, InfoBarLayout.Arrangement arrangement, float scale) {
+        this(context, arrangement.cells, arrangement.width, arrangement.height, scale, false);
     }
 
     private InfoBarRenderer(Context context, List<InfoBarLayout.Placed> cells, int logicalWidth,
                             int logicalHeight, float scale, boolean strip) {
-        this.context = context;
+        // 车辆状态面板只取没数据的字，不留 Context（它没有文字格，也不读车牌）
+        this.context = strip ? context : null;
+        this.none = context.getString(R.string.vi_v_none);
         this.cells = cells;
         this.logicalWidth = logicalWidth;
         this.scale = scale;
@@ -557,7 +566,7 @@ public final class InfoBarRenderer {
         canvas.drawLine(cx, cy + r, cx, cy + inner, stroke);
         canvas.restore();
         if (degrees == null) {
-            centeredText("--", cx, cy + 11, 32f, TEXT_DIM, text);
+            centeredText(none, cx, cy + 11, 32f, TEXT_DIM, text);
             slash(cx - 34, cy + 34, cx + 34, cy - 34);
             return;
         }
@@ -653,7 +662,7 @@ public final class InfoBarRenderer {
 
     private void drawDepthBar(int cellWidth, float top, Float value, int color) {
         float bottom = top + 24f;
-        String number = value == null ? "--" : String.format(Locale.US, "%d", Math.round(value * 100f));
+        String number = value == null ? none : String.format(Locale.US, "%d", Math.round(value * 100f));
         text.setTextSize(30f);
         text.setColor(value == null ? TEXT_DIM : TEXT);
         text.setTextAlign(Paint.Align.RIGHT);
@@ -683,7 +692,7 @@ public final class InfoBarRenderer {
      */
     private void drawSpeed(float cx, float cy, Float kmh) {
         float cellWidth = cx * 2f;
-        String number = kmh == null ? "--" : String.format(Locale.US, "%d", Math.round(kmh));
+        String number = kmh == null ? none : String.format(Locale.US, "%d", Math.round(kmh));
         text.setTextSize(64f);
         float room = cellWidth - 60f;
         float tw = text.measureText(number);
@@ -1146,7 +1155,7 @@ public final class InfoBarRenderer {
     }
 
     private void drawOdometer(float cx, float cy, Float km) {
-        String label = km == null ? "-- km" : String.format(Locale.US, "%d km", Math.round(km));
+        String label = km == null ? none + " km" : String.format(Locale.US, "%d km", Math.round(km));
         mono.setTextSize(28f);
         mono.setColor(km == null ? TEXT_DIM : TEXT);
         mono.setTextAlign(Paint.Align.LEFT);
@@ -1159,7 +1168,7 @@ public final class InfoBarRenderer {
     /**
      * 文字格：没有图标的信号（项目所有者 2026-10-03：先用文字，要的话之后再画）。
      * 上面一行名称（小、灰），下面一行值（大、白），写法和系统信息页一样（{@link SignalText}）；
-     * 没数据是「--」加斜杠，和别的格一个规矩。放不下的截掉，末尾一个省略号。
+     * 没数据是「—」（{@link SignalText} 给的就是 {@link #none} 那个字）加斜杠，和别的格一个规矩。放不下的截掉，末尾一个省略号。
      */
     private void drawText(Signal signal, int cellWidth, Readings readings) {
         if (context == null) {
@@ -1173,8 +1182,7 @@ public final class InfoBarRenderer {
         canvas.drawText(fit(context.getString(signal.labelRes), room, text), 4, 36, text);
         text.setTextSize(30f);
         text.setColor(value == null ? TEXT_DIM : TEXT);
-        canvas.drawText(fit(value == null ? "--" : SignalText.text(context, signal, value), room, text),
-                4, 76, text);
+        canvas.drawText(fit(SignalText.text(context, signal, value), room, text), 4, 76, text);
         if (value == null) {
             float cx = cellWidth / 2f;
             float cy = HEIGHT / 2f;
@@ -1200,8 +1208,8 @@ public final class InfoBarRenderer {
         mono.setTextSize(26f);
         mono.setColor(known ? TEXT : TEXT_DIM);
         mono.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(known ? String.format(Locale.US, "%.6f", lat) : "--", 4, 44, mono);
-        canvas.drawText(known ? String.format(Locale.US, "%.6f", lon) : "--", 4, 78, mono);
+        canvas.drawText(known ? String.format(Locale.US, "%.6f", lat) : none, 4, 44, mono);
+        canvas.drawText(known ? String.format(Locale.US, "%.6f", lon) : none, 4, 78, mono);
         if (!known) {
             slash(cx - 28, cy + 28, cx + 28, cy - 28);
         }

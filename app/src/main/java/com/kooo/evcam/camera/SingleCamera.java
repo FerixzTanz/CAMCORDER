@@ -245,7 +245,7 @@ public class SingleCamera {
      * 「back 一律加左右镜像」这条祖传规则还该不该生效。
      *
      * <p>它是给自定义 / E5 车型写的 —— 那里的 back 是倒车影像，本来就该反着看。
-     * 但在「环视 + 两路座舱」里，back 这个槽位装的是<b>座舱第一路</b>：它被无条件
+     * 但在「极氪7X（环视 + 前后座舱）」里，back 这个槽位装的是<b>座舱第一路</b>：它被无条件
      * 镜像，而且是直接 {@code setTransform}，把配置算出来的矩阵整个盖掉。</p>
      *
      * <p>判断只看<b>配置里有没有这一路的那一格</b>。原来看的是车型，而车型这个键
@@ -1010,7 +1010,7 @@ public class SingleCamera {
                 previewSize = chooseOptimalSize(sizes);
                 AppLog.d(TAG, "Camera " + cameraId + " selected preview size: " + previewSize);
 
-                // 拍照通道：开着「拍照走图片通道」时，建一个常驻的 JPEG 输出。
+                // 拍照通道：开着「拍照使用 JPEG 输出」时，建一个常驻的 JPEG 输出。
                 // 关着时什么都不建，行为和以前完全一样（抓预览画面）。
                 // 每次真正开相机都再试一次拍照通道：上一次是因为当时那套流
                 // 配不上才丢的，换了配置未必还配不上
@@ -2180,7 +2180,7 @@ public class SingleCamera {
             }
         }
 
-        // 盖角标：左上角应用名（填了车牌号跟在后面）每一张都有；时间和尺寸那两行跟着「时间角标」开关
+        // 盖角标：左上角应用名（填了车牌号跟在后面）每一张都有；时间和尺寸那两行跟着「时间水印」开关
         android.graphics.Bitmap finalBitmap =
                 addWatermark(sourceBitmap, timestamp, appConfig.isTimestampWatermarkEnabled());
 
@@ -2292,7 +2292,7 @@ public class SingleCamera {
      *
      * <pre>
      *   极氪即刻 v0.36.2  京A12345     &lt;- 每一张都有；车牌号可选
-     *   2026-09-03 14:22:07            &lt;- 这一行和下一行跟着「时间角标」开关
+     *   2026-09-03 14:22:07            &lt;- 这一行和下一行跟着「时间水印」开关
      *   2560x2560                      &lt;- 这张图真实的尺寸
      * </pre>
      *
@@ -2302,7 +2302,7 @@ public class SingleCamera {
      * <p>盖不上（复制整张图时内存不够之类）就存原图：没有角标的照片也比丢掉这张强。</p>
      *
      * @param timestamp 时间戳字符串（格式：yyyyMMdd_HHmmss）
-     * @param withTime 「时间角标」开着：画时间和尺寸两行
+     * @param withTime 「时间水印」开着：画时间和尺寸两行
      */
     private android.graphics.Bitmap addWatermark(
             android.graphics.Bitmap originalBitmap, String timestamp, boolean withTime) {

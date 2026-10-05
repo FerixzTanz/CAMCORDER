@@ -93,7 +93,7 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
     /** 两路座舱那一列。两格都没有文件时整列让开，环视独占整块。 */
     private View cabinColumn;
     private TextView labelFront, labelBack, labelLeft, labelRight;
-    /** 只有环视那一格有：别的几格没有文件时整个收起来，没有地方需要说「无图片」。 */
+    /** 只有环视那一格有：别的几格没有文件时整个收起来，没有地方需要说「无照片」。 */
     private TextView placeholderFront;
     private Button btnViewMode;
     private Button btnSendToPhone;

@@ -28,11 +28,12 @@ import java.util.Locale;
 /**
  * 「检查更新」这件事从头到尾。
  *
- * <h3>装完之后不留东西</h3>
+ * <h3>安装包放在哪、什么时候删</h3>
  *
  * <p>APK 下到<b>应用缓存目录</b>。系统装包必须从一个真实文件读，没法从内存直接装，
- * 所以「不落盘」做不到；能做到的是不落到用户的存储里，并且<b>每次检查前先把上一次
- * 的残留清掉</b>。缓存目录也在系统的回收范围内，空间紧张时会被自动清理。</p>
+ * 所以「不落盘」做不到；能做到的是不落到用户的存储里，并且<b>每次下载前先把上一次
+ * 下的安装包删掉</b>（{@link #clear}）。装完不删：交给系统安装界面之后，应用这边不知道它什么时候装完。
+ * 缓存目录也在系统的回收范围内，空间紧张时会被自动清理。</p>
  *
  * <h3>这是本应用唯一一次主动出网</h3>
  *
@@ -115,7 +116,6 @@ public final class UpdateFlow {
         ProgressBar bar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
         bar.setMax(100);
         TextView label = new TextView(activity);
-        label.setText(R.string.upd_downloading);
         label.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                 activity.getResources().getDimension(R.dimen.text_body));
         LinearLayout box = new LinearLayout(activity);
@@ -192,7 +192,7 @@ public final class UpdateFlow {
         }
         // 不先问 canRequestPackageInstalls()。车上的虚拟化容器（App Lab）里它回 false，
         // 可系统安装界面其实打得开 —— 浏览器下载的 APK 就是这样装上的。以前先问这一句，
-        // 于是永远弹「需要允许安装应用」，而「去设置」那一页车机上又打不开，应用内更新就卡死了。
+        // 于是永远弹「需要『安装未知应用』权限」，而「打开设置」那一页车机上又打不开，应用内更新就卡死了。
         // 直接交给系统安装器：真缺授权时，安装器会自己提示并带去设置的入口。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AppLog.i(TAG, "canRequestPackageInstalls="

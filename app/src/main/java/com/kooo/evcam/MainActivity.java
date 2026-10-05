@@ -307,11 +307,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        // 定时保活任务：只在「保活」开关打开时登记，关着就取消（见 KeepAliveManager）
+        // 定时保活任务：只在「保持后台运行」开关打开时登记，关着就取消（见 KeepAliveManager）
         KeepAliveManager.startKeepAliveWork(this);
         AppLog.d(TAG, "定时保活任务已启动");
         
-        // 唤醒锁只属于「熄屏录制」（规格 §3.1）：熄屏时在录像才拿，见 ScreenOffRecording
+        // 唤醒锁只属于「熄屏录制（阻止休眠）」（规格 §3.1）：熄屏时在录像才拿，见 ScreenOffRecording
                 
         // 启动存储清理任务（如果用户设置了限制）
         storageCleanupManager = new StorageCleanupManager(this);
@@ -706,7 +706,7 @@ public class MainActivity extends AppCompatActivity {
         }
         
         // 从设置加载显示开关状态
-        isRecordingStatsEnabled = appConfig.isRecordingStatsEnabled();
+        applyRecordingStatsSetting();
         
         // 初始化计时器 Handler
         recordingTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -749,6 +749,17 @@ public class MainActivity extends AppCompatActivity {
         }
         
         AppLog.d(TAG, "录制状态显示切换: " + (isRecordingStatsEnabled ? "开启" : "关闭"));
+    }
+
+    /**
+     * 按设置里的「录制状态显示」画角标。主界面建好时读一次，从设置回到主界面时再读一次 ——
+     * 以前只在 onCreate 读，设置里切了要等界面重建才生效。不在录时角标是 GONE，只记下开关。
+     */
+    private void applyRecordingStatsSetting() {
+        isRecordingStatsEnabled = appConfig.isRecordingStatsEnabled();
+        if (tvRecordingStats != null) {
+            tvRecordingStats.setAlpha(isRecordingStatsEnabled ? 1.0f : 0.0f);
+        }
     }
     
     /**
@@ -1202,6 +1213,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 可能刚在设置里换了边
         applyActionRailSide();
+        // 可能刚在设置里开关了「录制状态显示」
+        applyRecordingStatsSetting();
         // 可能刚在设置里换了录像盘：状态条的余量按新盘重算（探测缓存已在设置里清掉）
         updateStatusLine();
         recordingLayout.setVisibility(View.VISIBLE);
@@ -2231,8 +2244,11 @@ public class MainActivity extends AppCompatActivity {
         sb.append("\n\n");
         sb.append(getString(R.string.debug_recording,
                 getString(isRecording ? R.string.debug_rec : R.string.debug_stopped)));
-        if (isRecording) {
-            sb.append("  ").append(getString(R.string.debug_mode, appConfig.getRecordingMode()));
+        if (isRecording && cameraManager != null) {
+            // 实际在用的管线（相机管理器建好时定的，回退后会变），括号里是设置值：两者可以不一样
+            sb.append("  ").append(getString(R.string.debug_mode,
+                    cameraManager.isCodecRecordingMode() ? "MediaCodec" : "MediaRecorder",
+                    appConfig.getRecordingMode()));
         }
 
         // 内存使用
@@ -3164,7 +3180,12 @@ public class MainActivity extends AppCompatActivity {
             AppLog.d(TAG, "Image adjust floating window dismissed");
         });
         imageAdjustFloatingWindow.show();
-        
+        // 窗口真打开了才说「已打开」：没权限、摄像头没就绪各有自己的提示（上面两处）；
+        // show() 加不上窗口时只记日志不抛，所以问一下它
+        if (imageAdjustFloatingWindow.isShowing()) {
+            Toast.makeText(this, R.string.msg_adjust_opened, Toast.LENGTH_SHORT).show();
+        }
+
         AppLog.d(TAG, "Image adjust floating window shown");
     }
     
