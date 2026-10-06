@@ -9,7 +9,9 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- When no camera starts recording, the notification and floating button no longer stay on recording: the app shows "Recording didn't start. Retrying…" and retries when the surround view is back, up to three times.
+- A recording that starts while the screen is off now holds the wake lock from the start when Screen-off recording (keep awake) is on.
+- Stopping right after starting no longer leaves a dead recording output on the cameras or stops the next recording; a stop during a MediaRecorder rebuild is no longer undone.
 
 ## [2.1.4-alpha] - 2026-10-06
 

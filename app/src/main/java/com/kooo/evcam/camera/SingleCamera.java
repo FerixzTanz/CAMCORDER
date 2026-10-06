@@ -561,6 +561,25 @@ public class SingleCamera {
         AppLog.d(TAG, "Record surface cleared for camera " + cameraId);
     }
 
+    /** 挂着的录像输出；null = 没挂。停录只摘挂着的那几路、只重建它们的会话：没挂的不必白白重建一次。 */
+    public Surface getRecordSurface() {
+        return recordSurface;
+    }
+
+    /**
+     * 挂着的还是 {@code expected} 这一个才摘。停录在后台收拾完才回来摘，这中间又开了录、挂上了新的输出，
+     * 就不能把新的也摘掉。
+     *
+     * @return true：摘了（会话要重建才生效）
+     */
+    public boolean clearRecordSurfaceIf(Surface expected) {
+        if (expected == null || recordSurface != expected) {
+            return false;
+        }
+        clearRecordSurface();
+        return true;
+    }
+
     /**
      * 暂停向录制 Surface 发送帧（旧方法，保留兼容性）
      * 注意：此方法会停止整个预览，导致画面卡顿，建议使用 switchToPreviewOnlyMode() 代替

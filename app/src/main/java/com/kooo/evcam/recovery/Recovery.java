@@ -9,9 +9,8 @@ import com.kooo.evcam.AppLog;
 import com.kooo.evcam.MainActivity;
 import com.kooo.evcam.UserExit;
 import com.kooo.evcam.blackbox.BlackBox;
-import com.kooo.evcam.camera.CameraManagerHolder;
-import com.kooo.evcam.camera.MultiCameraManager;
 import com.kooo.evcam.overlay.OverlayCoordinator;
+import com.kooo.evcam.recording.RecordingCoordinator;
 import com.kooo.evcam.recording.RecordingIntent;
 
 /**
@@ -105,7 +104,7 @@ public final class Recovery {
             did.append("overlays");
         }
 
-        boolean recording = recordingNow();
+        boolean recording = RecordingCoordinator.get(context).isRecording();
         boolean mainScreenAlive = MainActivity.getInstance() != null;
         RecordingIntent intent = RecordingIntent.current();
         boolean wantRecording = config.isAutoStartRecording() && !recording
@@ -125,15 +124,6 @@ public final class Recovery {
             lastSummary = summary;
             BlackBox.noteImportant("恢复（" + why + "）：" + summary + "；录像中=" + recording
                     + " 主界面在=" + mainScreenAlive + " " + intent.describe());
-        }
-    }
-
-    private static boolean recordingNow() {
-        try {
-            MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
-            return manager != null && manager.isRecording();
-        } catch (Throwable t) {
-            return false;
         }
     }
 }
