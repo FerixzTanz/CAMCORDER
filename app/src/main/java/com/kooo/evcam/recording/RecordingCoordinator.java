@@ -9,6 +9,7 @@ import com.kooo.evcam.AppLog;
 import com.kooo.evcam.CameraForegroundService;
 import com.kooo.evcam.R;
 import com.kooo.evcam.blackbox.BlackBox;
+import com.kooo.evcam.camera.CameraManagerHolder;
 import com.kooo.evcam.camera.CameraNeeds;
 import com.kooo.evcam.camera.MultiCameraManager;
 import com.kooo.evcam.service.RecordingFloatingService;
@@ -34,6 +35,11 @@ import java.util.Set;
  *       看一眼环视，出画面就开。以前主界面里有七处各自「等两秒再开」的梯子，都归到这一个；</li>
  *   <li><b>为什么停</b>：停的人把原因交给 {@link #stop}；停了之后接不接（{@link RecordingStops#resumesOnSurround}）、
  *       还剩几次额度（{@link RecordingStops.ResumeBudget}），都在这里判；</li>
+ *   <li><b>在不在录</b>只有这里说了算（{@link RecordingLifecycle}：空闲 → 开录中 → 在录 → 停录中）。
+ *       熄屏录制、恢复、前台服务心跳、主界面、悬浮按钮都问 {@link #isRecording}，不再问相机层（2026-10-05）；</li>
+ *   <li><b>停只有一条路</b>（{@link #end}）：人停的、被打断、开录失败、录着的那一份管线没了，
+ *       都在这里收通知、悬浮按钮、唤醒锁，让相机层按同一套收拾（{@link MultiCameraManager#stopRecording()}），
+ *       收拾完了才开下一次；</li>
  *   <li>主界面、悬浮按钮、开机自启动、亮屏、被打断 —— 都是同一个入口，同一套答案。</li>
  * </ul>
  *
@@ -75,9 +81,6 @@ public final class RecordingCoordinator {
 
         /** 条件不满足，压根没开始。 */
         void onRecordingRefused(String reason);
-
-        /** 条件满足但相机没起来。 */
-        void onRecordingFailed(String reason);
     }
 
     private static RecordingCoordinator instance;
@@ -95,9 +98,17 @@ public final class RecordingCoordinator {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<Listener> listeners = new ArrayList<>();
     private final RecordingStops.ResumeBudget budget = new RecordingStops.ResumeBudget();
+    /** 下一次开录用的那一份管线。 */
     private MultiCameraManager cameraManager;
+    /** 这一次录像在哪一份管线上开的：停、收拾都找它，它报上来的才算数（管线换了也一样）。 */
+    private MultiCameraManager attemptManager;
+    private final RecordingLifecycle lifecycle = new RecordingLifecycle();
 
-    /** 正在等环视出画面；null = 没在等。 */
+    /**
+     * 正在等环视出画面、或者已经决定开录在查盘；null = 没在等。
+     * 一直留到真正开录（{@link RecordingLifecycle#begin}）才清：查盘是异步的，这中间人停了、退出了，
+     * 清掉它，查完回来就不开。
+     */
     private Why pending;
     /** 这次接回计不计入额度（相机被别的程序拿走的那种不计）。 */
     private boolean pendingCounts;
@@ -122,7 +133,11 @@ public final class RecordingCoordinator {
 
     /**
      * 相机管理器换了对象就要重新交一次：它换了而这里还握着旧的，表现是「按了录制，什么都没发生」。
-     * 录制管线的几个回调（写不进、相机被拿走、盘满、一路都没起来）都接到这里，主界面在不在都一样。
+     * 录制管线的几个回调（写不进、相机被拿走、盘满、开录 / 停录走到哪一步）都接到这里，主界面在不在都一样。
+     *
+     * <p>录着的时候换了一份（车型变了、路数对不上，旧的那份被释放重建）：旧的那份上的录像到头了，
+     * 按「录制器自己停了」走停录那条路，环视好了在新的这一份上接回。以前这里不知道，
+     * 一直以为还在录。</p>
      */
     public void setCameraManager(MultiCameraManager manager) {
         if (cameraManager == manager) {
@@ -132,21 +147,76 @@ public final class RecordingCoordinator {
         if (manager == null) {
             return;
         }
-        manager.setStorageFullCallback(decision -> main.post(() -> stop(decision.capless
-                ? RecordingStops.Reason.STORAGE_FULL : decision.lockedFull
-                ? RecordingStops.Reason.STORAGE_LOCKED : RecordingStops.Reason.STORAGE_CANNOT_FREE)));
-        // 录制器判的：写出过数据又断了是「写不进」，一个字节都没写出过是「没收到画面」
-        manager.setWriteStallCallback((stalledMs, everWrote) -> main.post(() -> stop(everWrote
-                ? RecordingStops.Reason.WRITE_STALLED : RecordingStops.Reason.NO_DATA)));
-        manager.setCameraLostCallback(cameraId -> main.post(() -> stop(RecordingStops.Reason.CAMERA_LOST)));
-        manager.setRecordingStatusCallback((active, failed) -> main.post(() -> {
-            if (active.isEmpty()) {
-                // 一路都没起来：录制器根本没跑，按「相机那一侧的问题」处理，环视好了再接
-                AppLog.e(TAG, "所有摄像头启动录制失败");
-                notifyFailed(context.getString(R.string.msg_record_start_failed));
-                stop(RecordingStops.Reason.UNKNOWN);
+        wire(manager);
+        if (lifecycle.isRecording() && attemptManager != null && attemptManager != manager) {
+            BlackBox.noteImportant("录着的那一份相机管线换掉了：这一段到头，等环视恢复后在新的管线上接回");
+            end(RecordingStops.Reason.UNKNOWN);
+        }
+    }
+
+    /**
+     * 管线的回调。只认这一次录像所在的那一份（{@link #attemptManager}）报上来的：
+     * 换掉的、释放了的旧管线再报什么都不算。都转到主线程。
+     */
+    private void wire(MultiCameraManager manager) {
+        manager.setStorageFullCallback(decision -> main.post(() -> {
+            if (manager == attemptManager) {
+                stop(decision.capless ? RecordingStops.Reason.STORAGE_FULL : decision.lockedFull
+                        ? RecordingStops.Reason.STORAGE_LOCKED : RecordingStops.Reason.STORAGE_CANNOT_FREE);
             }
         }));
+        // 录制器判的：写出过数据又断了是「写不进」，一个字节都没写出过是「没收到画面」
+        manager.setWriteStallCallback((stalledMs, everWrote) -> main.post(() -> {
+            if (manager == attemptManager) {
+                stop(everWrote ? RecordingStops.Reason.WRITE_STALLED : RecordingStops.Reason.NO_DATA);
+            }
+        }));
+        manager.setCameraLostCallback(cameraId -> main.post(() -> {
+            if (manager == attemptManager) {
+                stop(RecordingStops.Reason.CAMERA_LOST);
+            }
+        }));
+        manager.setPipelineCallback(new MultiCameraManager.PipelineCallback() {
+            @Override
+            public void onPipelineStarted(Set<String> active, Set<String> failed) {
+                main.post(() -> onPipelineReport(manager, RecordingLifecycle.Report.STARTED,
+                        active + (failed.isEmpty() ? "" : " / failed " + failed)));
+            }
+
+            @Override
+            public void onPipelineStartFailed(String why) {
+                main.post(() -> onPipelineReport(manager, RecordingLifecycle.Report.START_FAILED, why));
+            }
+
+            @Override
+            public void onPipelineStopped() {
+                main.post(() -> onPipelineReport(manager, RecordingLifecycle.Report.STOPPED, null));
+            }
+        });
+    }
+
+    /** 管线报上来开录 / 停录走到了哪一步（主线程）。该怎么办由 {@link RecordingLifecycle#on} 判。 */
+    private void onPipelineReport(MultiCameraManager from, RecordingLifecycle.Report report, String detail) {
+        if (from != attemptManager) {
+            return;
+        }
+        RecordingLifecycle.Action action = lifecycle.on(report);
+        switch (action) {
+            case NOTE:
+                BlackBox.noteImportant("录制器已启动 " + detail);
+                break;
+            case END:
+                BlackBox.noteImportant(report == RecordingLifecycle.Report.START_FAILED
+                        ? "开录失败：" + detail : "录制管线自己停了（没人叫它停，被释放了）");
+                // 原因按停之前的阶段定：开录中没起来是开录失败，录了一阵之后重建没起来是录制器自己停了
+                end(lifecycle.endReason(report));
+                break;
+            case SETTLED:
+                settled("pipeline-stopped");
+                break;
+            default:
+                break;
+        }
     }
 
     public void addListener(Listener listener) {
@@ -159,13 +229,22 @@ public final class RecordingCoordinator {
         listeners.remove(listener);
     }
 
+    /**
+     * 在不在录 —— 进程里唯一的答案：开录指令发出去起（开录中），到停为止（{@link RecordingLifecycle}）。
+     * 录制器是不是已经写出了第一笔数据是另一回事（主界面的「准备中」），问相机层的 {@code hasWrittenFirstData}。
+     */
     public boolean isRecording() {
-        return cameraManager != null && cameraManager.isRecording();
+        return lifecycle.isRecording();
     }
 
     /** 正在等环视出画面、准备开录。 */
     public boolean isWaiting() {
         return pending != null;
+    }
+
+    /** 录制管线还有人要：在录、在等开录、或者上一次还在收拾。主界面销毁时据此决定留不留管线。 */
+    public boolean needsPipeline() {
+        return !lifecycle.isIdle() || pending != null;
     }
 
     public RecordingStops.Reason lastStopReason() {
@@ -218,10 +297,15 @@ public final class RecordingCoordinator {
                 pending = null;
                 return;
             }
-            if (cameraManager != null && cameraManager.surroundHealthy()) {
+            if (!lifecycle.isIdle()) {
+                // 上一次还在收拾：收拾完了（settled）会立刻再来看
+                main.postDelayed(this, POLL_MS);
+                return;
+            }
+            MultiCameraManager manager = currentManager();
+            if (manager != null && manager.surroundHealthy()) {
                 Why why = pending;
                 boolean counts = pendingCounts;
-                pending = null;
                 long waited = (android.os.SystemClock.elapsedRealtime() - pendingSinceMs) / 1000;
                 if (why == Why.RESUME && counts) {
                     budget.noteAttempt();
@@ -321,17 +405,29 @@ public final class RecordingCoordinator {
 
     // ================================================================= 开
 
+    /**
+     * 开录用哪一份管线。手里那份没了（被释放）而进程里已经有了新的一份（{@link CameraManagerHolder}），
+     * 就换成它 —— 换管线的地方不一定都记得交过来（后台建的那一份、换车型重建的那一份）。
+     */
+    private MultiCameraManager currentManager() {
+        MultiCameraManager held = CameraManagerHolder.getInstance().getCameraManager();
+        if (held != null && held != cameraManager && (cameraManager == null || cameraManager.isReleased())) {
+            setCameraManager(held);
+        }
+        return cameraManager;
+    }
+
     /** 环视出画面了，真正去开。查盘在存储线程上，查完回主线程接着开。 */
     private void start(Why why, boolean counts) {
-        if (cameraManager == null || cameraManager.isRecording()) {
-            return;
-        }
         // 录哪几路 = 配置里启用了哪几路。这两件事本来就是同一件：关掉的相机不开、不录、不占流
         Set<String> cameras = com.kooo.evcam.profile.RecordSpecs.enabledCameraKeys(context);
         if (cameras.isEmpty()) {
             refused(why, counts, context.getString(R.string.msg_keep_one_camera_refuse));
             return;
         }
+        // 查盘是异步的：查完回来就接着开（或者拒了再等）。万一一直不回来，到点再看一次，别一直等下去
+        main.removeCallbacks(poll);
+        main.postDelayed(poll, REFUSED_RETRY_MS);
         StorageState.refresh(context, "start", snapshot -> startWith(snapshot, cameras, why, counts, true));
     }
 
@@ -341,7 +437,15 @@ public final class RecordingCoordinator {
      */
     private void startWith(StorageState.Snapshot storage, Set<String> cameras, Why why, boolean counts,
                            boolean checkStorage) {
-        if (cameraManager == null || cameraManager.isRecording()) {
+        // 查盘这段时间里人停了、退出了（不等了）：不开
+        if (pending == null) {
+            return;
+        }
+        MultiCameraManager manager = currentManager();
+        if (!lifecycle.isIdle() || manager == null) {
+            // 已经开起来了（轮询会把「等」清掉），或者还没有管线：接着等
+            main.removeCallbacks(poll);
+            main.postDelayed(poll, POLL_MS);
             return;
         }
         // 正常模式下不往内置存储录：行车记录是一直在写的，而车机闪存换不了。
@@ -354,23 +458,31 @@ public final class RecordingCoordinator {
         if (checkStorage && !ensureRoomToStart(storage, cameras, why, counts)) {
             return;
         }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        if (!cameraManager.startRecording(timestamp, cameras)) {
-            notifyFailed(context.getString(R.string.msg_record_start_failed));
-            // 相机那一侧没起来：环视恢复了再接，走同一套额度
-            resumeAfter(RecordingStops.Reason.UNKNOWN);
-            return;
-        }
+        // 从这里起算「在录」（开录中）：到这一步才清掉「等」
+        lifecycle.begin();
+        pending = null;
+        main.removeCallbacks(poll);
+        attemptManager = manager;
         startedAtMs = android.os.SystemClock.elapsedRealtime();
         lastStopReason = null;
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
+        // 这一趟要录过了：开录失败也算，失败了照样接回（规格 2.3）
         RecordingIntent.current().noteRecordingStarted();
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        if (!manager.startRecording(timestamp, cameras)) {
+            // 准备就失败了：准备到一半的录像输出、编码器照样由停录那条路收拾
+            BlackBox.noteImportant("开录失败：相机层没能开始（" + why + "）");
+            end(RecordingStops.Reason.START_FAILED);
+            return;
+        }
         BlackBox.noteImportant("录像开始: " + cameras + "（" + why + "）");
         // 前台服务：没有它，系统会在应用退到后台后把录制掐掉
         CameraForegroundService.start(context,
                 context.getString(R.string.notif_recording_title),
                 context.getString(R.string.notif_recording_tap));
         RecordingFloatingService.sendRecordingStateChanged(context, true);
+        // 屏幕已经黑着才开始的录像（熄屏期间接回的那种），熄屏录制同样要拿锁
+        ScreenOffRecording.onRecordingStarted(context);
         AppLog.d(TAG, "开始录制 " + cameras.size() + " 路: " + cameras);
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingStarted(cameras, storage.sdFellBack);
@@ -392,9 +504,15 @@ public final class RecordingCoordinator {
             return false;
         }
         AppLog.i(TAG, "开录前空间不够，先清理最旧的录像");
+        // 清理出错时不会回来（StorageGuard 只记日志）：到点再看一次
+        main.removeCallbacks(poll);
+        main.postDelayed(poll, REFUSED_RETRY_MS);
         // 「正在删除最旧的录像」等真要删时才弹：一个都删不掉（全锁着、删光也不够）时不该先说在删
         com.kooo.evcam.camera.StorageGuard.enforceAsync(context, dir,
                 () -> notifyRefused(context.getString(R.string.msg_storage_cleaning)), decision -> {
+            if (pending == null) {
+                return;  // 清理的这段时间里人停了、退出了
+            }
             if (decision.verdict == com.kooo.evcam.camera.StoragePlan.Verdict.FULL) {
                 refused(why, counts, context.getString(decision.lockedFull
                         ? R.string.msg_storage_locked_refuse : R.string.msg_storage_cannot_free));
@@ -420,7 +538,7 @@ public final class RecordingCoordinator {
      * 停。停的人说清原因；接不接、什么时候接，这里判。主线程调。
      *
      * <p>人停的、退出的：不再等。熄屏停的：等亮屏（{@link #screenOn}）。
-     * 写不进、相机被拿走、没画面、录制器自己停了：环视恢复了自动接回，有额度。
+     * 写不进、相机被拿走、没画面、开录失败、录制器自己停了：环视恢复了自动接回，有额度。
      * 盘满：接回去也录不下，不接。</p>
      */
     public void stop(RecordingStops.Reason reason) {
@@ -439,11 +557,32 @@ public final class RecordingCoordinator {
         if (!wasRecording) {
             return;
         }
-        cameraManager.stopRecording();
+        end(reason);
+    }
+
+    /**
+     * 这一次录像到头了 —— 唯一的停录路径。开录中、在录都从这里停：人停的、被打断、开录失败、管线没了。
+     *
+     * <p>以前停录先问相机层在不在录，一路都没起来时它说没有，于是通知、悬浮按钮、唤醒锁都没人收，
+     * 也不接回（2026-10-05）。现在不问：这里说在录就收，相机层按同一套收拾（开录走到哪一步都一样），
+     * 收拾完了报上来（{@link #settled}）才开下一次。</p>
+     */
+    private void end(RecordingStops.Reason reason) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (!lifecycle.stop(now)) {
+            return;
+        }
+        if (attemptManager != null) {
+            attemptManager.stopRecording();
+        }
+        main.removeCallbacks(stopDeadline);
+        main.postDelayed(stopDeadline, RecordingLifecycle.STOP_DEADLINE_MS);
         CameraForegroundService.stop(context);
         RecordingFloatingService.sendRecordingStateChanged(context, false);
+        // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
+        ScreenOffRecording.release("recording-stopped");
 
-        long lasted = startedAtMs > 0 ? android.os.SystemClock.elapsedRealtime() - startedAtMs : 0;
+        long lasted = startedAtMs > 0 ? now - startedAtMs : 0;
         startedAtMs = 0;
         lastStopReason = reason;
         if (darkSinceElapsedMs > 0) {
@@ -459,6 +598,26 @@ public final class RecordingCoordinator {
         }
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingStopped(reason, lasted, willResume);
+        }
+    }
+
+    /** 停录中，管线收拾了太久还没报完：不等了，免得再也开不起来。 */
+    private final Runnable stopDeadline = () -> {
+        if (lifecycle.stopOverdue(android.os.SystemClock.elapsedRealtime())) {
+            BlackBox.noteImportant("停录收拾了 " + (RecordingLifecycle.STOP_DEADLINE_MS / 1000)
+                    + " 秒还没报完，不等了");
+            settled("deadline");
+        }
+    };
+
+    /** 上一次收拾完了（停录中 → 空闲）：等着开录的现在就去看。 */
+    private void settled(String why) {
+        main.removeCallbacks(stopDeadline);
+        attemptManager = null;
+        AppLog.d(TAG, "停录收拾完（" + why + "）");
+        if (pending != null) {
+            main.removeCallbacks(poll);
+            main.post(poll);
         }
     }
 
@@ -502,13 +661,6 @@ public final class RecordingCoordinator {
         AppLog.w(TAG, "不满足录制条件：" + reason);
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingRefused(reason);
-        }
-    }
-
-    private void notifyFailed(String reason) {
-        AppLog.e(TAG, "录制启动失败：" + reason);
-        for (Listener listener : new ArrayList<>(listeners)) {
-            listener.onRecordingFailed(reason);
         }
     }
 }

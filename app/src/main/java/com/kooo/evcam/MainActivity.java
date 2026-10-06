@@ -2517,6 +2517,8 @@ public class MainActivity extends AppCompatActivity {
                     length = Toast.LENGTH_SHORT;
                     break;
                 case NO_DATA:
+                case START_FAILED:
+                    // 一路都没起来、起来了一直没画面：录像没开始，不说「中断」（界面文字审查 rec_reason_unknown）
                     text = getString(willResume
                             ? R.string.msg_record_start_retrying : R.string.msg_record_start_gave_up);
                     break;
@@ -2551,11 +2553,6 @@ public class MainActivity extends AppCompatActivity {
             }
             lastRefusalShown = reason;
             Toast.makeText(MainActivity.this, reason, Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onRecordingFailed(String reason) {
-            Toast.makeText(MainActivity.this, reason, Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -2689,10 +2686,11 @@ public class MainActivity extends AppCompatActivity {
      *
      * <p>主界面被重建或者重新打开时，录制管线一直在跑（见 onDestroy 的 keepPipeline）。
      * 新界面要做的只是把按钮、计时器画成管线现在的样子：写出过第一笔数据就是录制中，
-     * 计时从那一刻接着走；还没写出就是准备中，看门狗照常盯着。</p>
+     * 计时从那一刻接着走；还没写出就是准备中，看门狗照常盯着。
+     * 在不在录问协调器（开录中也算）—— 以前问相机层，开录中重建的界面会画成没在录。</p>
      */
     private void syncRecordingStateFromManager() {
-        if (cameraManager == null || !cameraManager.isRecording()) {
+        if (cameraManager == null || !recordingCoordinator.isRecording()) {
             return;
         }
         isRecording = true;
@@ -2715,14 +2713,15 @@ public class MainActivity extends AppCompatActivity {
      * 回到前台时，对一下「界面以为在录」和「录制器真的在录」是不是一回事。
      *
      * <p>以前这里只写了一句「录制中，相机应该还连着」就什么都不查。录制器若在后台停了，
-     * 界面会一直停在准备中或录制中，要等用户去点才暴露。录制器在请求开始的那一刻就会
-     * 把自己标成在录（不等第一笔数据），所以正常的准备中不会被误判。</p>
+     * 界面会一直停在准备中或录制中，要等用户去点才暴露。在不在录问协调器：开录指令一发出去就算
+     * （不等录制器启动、不等第一笔数据），所以正常的准备中不会被误判 —— 以前问的是相机层，
+     * 它要等会话建好才算，开录那几秒里回到前台会被误判成「已在后台停止」。</p>
      */
     private void reconcileRecordingState() {
         if (!isRecording || cameraManager == null) {
             return;
         }
-        if (cameraManager.isRecording()) {
+        if (recordingCoordinator.isRecording()) {
             return;
         }
         AppLog.w(TAG, "回到前台：界面以为在录，录制器其实没在录 " + instanceTag()
@@ -2871,16 +2870,16 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
         final boolean othersNeedCamera = needs.heldByAnyoneExcept(
                 com.kooo.evcam.camera.CameraNeeds.Holder.PREVIEW);
-        // 协调器还在等环视开录的（开机自启动、悬浮按钮拉起）也算有人要：管线拆了它就永远开不起来
+        // 协调器还在等环视开录的（开机自启动、悬浮按钮拉起）也算有人要：管线拆了它就永远开不起来。
+        // 在录（含开录中）、上一次停录还在收拾的，同样留着（needsPipeline，问的是协调器那一份「在不在录」）
         final boolean keepPipeline = cameraManager != null && !cameraManager.isReleased()
-                && (cameraManager.isRecording() || isChangingConfigurations() || othersNeedCamera
-                || recordingCoordinator.isWaiting());
+                && (recordingCoordinator.needsPipeline() || isChangingConfigurations() || othersNeedCamera);
         if (othersNeedCamera && cameraManager != null && !cameraManager.isReleased()) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("主界面销毁，但相机还有人要（"
                     + needs.describe() + "），不释放");
         }
         AppLog.i(TAG, "onDestroy 录制管线" + (keepPipeline ? "保留" : "释放") + " "
-                + instanceTag() + " recording=" + (cameraManager != null && cameraManager.isRecording())
+                + instanceTag() + " recording=" + recordingCoordinator.isRecording()
                 + " changingConfigurations=" + isChangingConfigurations());
         if (!keepPipeline) {
             // 不留就清掉 Holder：release() 会清空 cameras map，进程若因 Service 存活而不退出，
@@ -2993,10 +2992,12 @@ public class MainActivity extends AppCompatActivity {
         // 记录日志（始终记录）
         AppLog.w(TAG, "Recording error, deleted " + deletedFiles.size() + " corrupted files: " + deletedFiles);
 
-        // 准备中超时后按「没收到画面」停掉录制器，清掉的正是那个空分段 —— 这是在收拾，不是新的异常。
+        // 准备中超时后按「没收到画面」停掉录制器、开录一路都没起来时停录收拾，清掉的正是那个空分段 ——
+        // 这是在收拾，不是新的异常，提示里已经说了「录制未能启动」。
         // 这个回调是发到主线程上来的，到这里时协调器已经把停录原因记下了
-        if (recordingCoordinator.lastStopReason() == RecordingStops.Reason.NO_DATA) {
-            AppLog.d(TAG, "准备中超时的清理，不弹录制异常");
+        if (recordingCoordinator.lastStopReason() == RecordingStops.Reason.NO_DATA
+                || recordingCoordinator.lastStopReason() == RecordingStops.Reason.START_FAILED) {
+            AppLog.d(TAG, "准备中超时、开录失败的清理，不弹录制异常");
             return;
         }
 

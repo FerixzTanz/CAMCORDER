@@ -317,7 +317,6 @@
     <string name="msg_need_camera_storage">Camera and storage permissions are required</string>
     <string name="msg_camera_access_failed">Can\'t access the cameras</string>
     <string name="msg_codec_fallback">Recording error. Switched to MediaCodec and kept recording.</string>
-    <string name="msg_record_start_failed">Can\'t start recording. Try again</string>
     <string name="msg_storage_full_stopped">USB drive full. Recording stopped. No video storage cap is set, so old recordings aren\'t cleaned up automatically.</string>
     <string name="msg_storage_full_refuse">Not enough space on the USB drive to start recording. No video storage cap is set, so old recordings aren\'t cleaned up automatically.</string>
     <string name="msg_storage_cleaning">Not enough space. Cleaning up the oldest recordings, then recording starts…</string>

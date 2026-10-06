@@ -36,7 +36,12 @@ public final class RecordingStops {
          * 相机 1 和 2 同时只能开一路）。它放开、我们接回相机之后录像自动继续。
          */
         CAMERA_LOST,
-        /** 录制器自己停了，没人告诉我们为什么。 */
+        /**
+         * 开录走到底一路都没起来：会话全配不上、录制器全启动失败、准备失败。录了一阵之后 MediaRecorder 重建没起来不算这个（录像开始过），算 UNKNOWN。
+         * 录像根本没开始，所以不说「中断」（2026-10-05 界面文字审查 rec_reason_unknown）。
+         */
+        START_FAILED,
+        /** 录制器自己停了，没人告诉我们为什么（含录着的那一份相机管线被释放、换掉）。 */
         UNKNOWN,
     }
 
@@ -52,12 +57,13 @@ public final class RecordingStops {
      *   <li>存储满了 —— 环视好不好跟它无关，接回去也录不下；</li>
      *   <li>写不进文件 —— 重开一次录制就是换一个新的编码器、新的文件，常常就好了；</li>
      *   <li>相机被拿走 —— 它放开、我们接回之后就接着录；</li>
+     *   <li>开录失败 —— 用户要录，只是这一次没起来：和别的打断一样接，走同一份额度；</li>
      *   <li>其余 —— 都是相机那一侧的问题，环视回来了就接。</li>
      * </ul>
      */
     public static boolean resumesOnSurround(Reason reason) {
         return reason == Reason.NO_DATA || reason == Reason.UNKNOWN || reason == Reason.WRITE_STALLED
-                || reason == Reason.CAMERA_LOST;
+                || reason == Reason.CAMERA_LOST || reason == Reason.START_FAILED;
     }
 
     /**

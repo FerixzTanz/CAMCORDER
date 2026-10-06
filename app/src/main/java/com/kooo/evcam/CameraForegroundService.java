@@ -2,7 +2,6 @@ package com.kooo.evcam;
 
 
 import com.kooo.evcam.AppLog;
-import com.kooo.evcam.camera.MultiCameraManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -207,13 +206,7 @@ public class CameraForegroundService extends Service {
     }
 
     private boolean isRecordingNow() {
-        try {
-            com.kooo.evcam.camera.MultiCameraManager manager =
-                    com.kooo.evcam.camera.CameraManagerHolder.getInstance().getCameraManager();
-            return manager != null && manager.isRecording();
-        } catch (Throwable t) {
-            return false;
-        }
+        return com.kooo.evcam.recording.RecordingCoordinator.get(this).isRecording();
     }
 
     private boolean isScreenOnNow() {
