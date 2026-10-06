@@ -369,6 +369,10 @@ public class MultiCameraManager {
     private void noteRecordingDir() {
         try {
             File dir = StorageHelper.getRecordingDir(context);
+            if (dir == null) {
+                // 刚开录盘就没了（没有地方可存）：录制器写不进会自己换盘或报停，这里没有目录可记
+                return;
+            }
             StorageHelper.noteRecordingDir(dir);
             String custom = new AppConfig(context).getCustomSdCardPath();
             boolean offTarget = custom != null && !custom.isEmpty()
@@ -1183,7 +1187,12 @@ public class MultiCameraManager {
         
         // 获取录制目录（可能是临时目录或最终目录）
         File saveDir = StorageHelper.getRecordingDir(context);
-        
+        if (saveDir == null) {
+            // 没有地方可存（没有 U 盘、开发者选项没开）：RecordingCoordinator 开录前已经拦过，走到这里是查完之后盘没了
+            AppLog.e(TAG, "没有地方存录像（没有 U 盘），不开录");
+            return false;
+        }
+
         // 如果不使用中转写入（直接写入U盘），检查U盘是否可用
         if (!useRelayWrite) {
             File sdCard = StorageHelper.getExternalSdCardRoot(context);
@@ -1587,19 +1596,25 @@ public class MultiCameraManager {
         firstDataWritten = false;
         firstDataWrittenAtMs = 0;
 
-        // 行驶信息条开着：录像期间登记要用车辆信号，停录时注销（没别人在用就全停）
-        if (com.kooo.evcam.telemetry.InfoBar.isOnForRecording(context)) {
-            com.kooo.evcam.telemetry.Telemetry.get().acquire(context, "recording");
-        }
-
         // 检查是否使用中转写入模式
         AppConfig appConfig = new AppConfig(context);
         useRelayWrite = appConfig.shouldUseRelayWrite();
-        
+
         // 获取录制目录（可能是临时目录或最终目录）
         File saveDir = StorageHelper.getRecordingDir(context);
+        if (saveDir == null) {
+            // 没有地方可存（没有 U 盘、开发者选项没开）：RecordingCoordinator 开录前已经拦过，走到这里是查完之后盘没了。
+            // 放在登记车辆信号之前：不开录就不登记
+            AppLog.e(TAG, "没有地方存录像（没有 U 盘），不开录");
+            return false;
+        }
         if (!saveDir.exists()) {
             saveDir.mkdirs();
+        }
+
+        // 行驶信息条开着：录像期间登记要用车辆信号，停录时注销（没别人在用就全停）
+        if (com.kooo.evcam.telemetry.InfoBar.isOnForRecording(context)) {
+            com.kooo.evcam.telemetry.Telemetry.get().acquire(context, "recording");
         }
         
         // 如果使用中转写入，记录最终目录
@@ -2424,6 +2439,9 @@ public class MultiCameraManager {
          * @param expected 该拍几路
          */
         void onPhotoResult(int saved, int pressed, int expected);
+
+        /** 没有地方存照片（没有 U 盘、开发者选项没开）：一路都没拍。和 {@link #onPhotoResult} 二选一。 */
+        void onNoStorage();
     }
 
     /** 等各路出画面最多多久：冷开相机，加上看门狗第一次重建会话（8 秒）都等得到。 */
@@ -2464,6 +2482,10 @@ public class MultiCameraManager {
      * {@link #PHOTO_READY_TIMEOUT_MS}，到点只拍出了画面的），存完注销 —— 没人要了相机照常在 1.5 秒后关。
      * 结果按真的存下了几路回报；以前按了就说「已保存」，相机没开时其实什么也没拍到。</p>
      *
+     * <p>开相机之前先看有没有地方存：没有 U 盘、开发者选项没开时一路都不拍，回报 {@link PhotoCallback#onNoStorage}
+     * （项目所有者 2026-10-06：不允许存到内置存储）。和拒录是同一个判断（存储快照的 {@code available}）；
+     * 查盘在存储线程上，查完回主线程接着拍。以前不查，拍完存进内置存储。</p>
+     *
      * @return false：上一张还在拍，这一次不接
      */
     public boolean takePhoto(PhotoCallback callback) {
@@ -2479,10 +2501,22 @@ public class MultiCameraManager {
             callback.onPhotoResult(0, 0, 0);
             return false;
         }
-        photoJob = new PhotoJob(callback);
-        // 没开的相机、没有输出的会话，都由登记表的规则去补（reconcileCameras）
-        CameraNeeds.current().claim(CameraNeeds.Holder.PHOTO);
-        stepPhoto();
+        final PhotoJob job = new PhotoJob(callback);
+        photoJob = job;
+        com.kooo.evcam.storage.StorageState.refresh(context, "photo", snapshot -> {
+            if (photoJob != job) {
+                return;   // 查盘的时候管理器没了（release 已经把这一张作罢）
+            }
+            if (!snapshot.available) {
+                photoJob = null;
+                com.kooo.evcam.blackbox.BlackBox.note("拍照：没有地方存（没有 U 盘），不拍；" + snapshot.describe());
+                callback.onNoStorage();
+                return;
+            }
+            // 没开的相机、没有输出的会话，都由登记表的规则去补（reconcileCameras）
+            CameraNeeds.current().claim(CameraNeeds.Holder.PHOTO);
+            stepPhoto();
+        });
         return true;
     }
 

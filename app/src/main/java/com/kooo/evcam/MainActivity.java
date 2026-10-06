@@ -1459,9 +1459,9 @@ public class MainActivity extends AppCompatActivity {
                 checkAutoStartRecording();
 
             } catch (CameraAccessException e) {
+                // 这里只会是列相机、读参数时相机服务出错，原因（英文原话和错误码）只进日志
                 AppLog.e(TAG, "Failed to access camera", e);
-                Toast.makeText(this, getString(R.string.msg_camera_access_failed, e.getMessage()),
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.msg_camera_access_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

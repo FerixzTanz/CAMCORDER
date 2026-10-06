@@ -268,8 +268,10 @@ public final class ArchiveFlow {
                     if (item.to.exists() && !item.to.delete()) {
                         AppLog.w(TAG, "写了一半的目标文件删不掉：" + item.to.getAbsolutePath());
                     }
-                    failed.add(activity.getString(R.string.dev_tool_file_result,
-                            item.from.getName(), e.getMessage()));
+                    // 原因说得清（空间不足之类）就写上；说不清的只列文件名，原文在上面那行日志里
+                    String reason = com.kooo.evcam.ui.FailureReason.of(activity, e);
+                    failed.add(reason == null ? item.from.getName()
+                            : activity.getString(R.string.dev_tool_file_result, item.from.getName(), reason));
                 }
                 done += length;
             }

@@ -224,8 +224,9 @@ public final class Mp4RepairFlow {
                 }
             }
             if (template == null) {
-                return new Outcome(false, activity.getString(R.string.dev_repair_skip_bad_reference,
-                        last == null ? "?" : last.getMessage()));
+                // 读不出的原因（Mp4Repair 抛的中文说明、系统的英文原话）只进日志，报告里只说跳过了
+                AppLog.w(TAG, key + " 的参考片段都读不出解码参数，跳过 " + file.getName(), last);
+                return new Outcome(false, activity.getString(R.string.dev_repair_skip_bad_reference));
             }
             AppLog.i(TAG, key + " 的参考片段：" + template.source.getName()
                     + "，" + template.width + "x" + template.height
@@ -241,7 +242,7 @@ public final class Mp4RepairFlow {
             });
         } catch (Exception e) {
             AppLog.e(TAG, "修复失败：" + file.getName(), e);
-            return new Outcome(false, activity.getString(R.string.dev_repair_failed, e.getMessage()));
+            return new Outcome(false, activity.getString(R.string.dev_repair_failed));
         }
 
         if (!playable(file)) {
@@ -251,12 +252,13 @@ public final class Mp4RepairFlow {
                 return new Outcome(false, activity.getString(R.string.dev_repair_rolled_back));
             } catch (IOException e) {
                 AppLog.e(TAG, "退回失败：" + file.getName(), e);
-                return new Outcome(false, activity.getString(R.string.dev_repair_rollback_failed, e.getMessage()));
+                return new Outcome(false, activity.getString(R.string.dev_repair_rollback_failed));
             }
         }
         AppLog.i(TAG, "修好 " + file.getName() + "：" + repaired.samples + " 帧，"
                 + repaired.durationMs + "ms，丢掉结尾 " + repaired.tailIgnored + " 字节");
-        String done = activity.getString(R.string.dev_repair_ok, repaired.samples,
+        String done = activity.getResources().getQuantityString(R.plurals.dev_repair_ok,
+                repaired.samples, repaired.samples,
                 String.format(Locale.US, "%.1f", repaired.durationMs / 1000f));
         return new Outcome(true, repaired.tailIgnored > 0
                 ? activity.getString(R.string.dev_repair_ok_tail, done) : done);

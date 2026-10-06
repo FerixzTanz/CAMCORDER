@@ -23,7 +23,7 @@ import android.content.SharedPreferences;
  * <p>设置不用各自来问这里：归开发者选项管的设置列在 {@code AppConfig.DEVELOPER_KEYS}，
  * 关着时按没存过算（普通用户的值），存着的不动，再打开就回来。直接问 {@link #isUnlocked()} 的
  * 只剩不存设置的几件事：分区本身显不显示（{@code SettingsHeadersFragment}、{@code SettingsPreferenceFragment}）、
- * 内置存储能不能当录像盘（{@code StorageHelper.isInternalStorageAllowed}）、没验证的车辆信号算不算数
+ * 录像、照片能不能存到内置存储（{@code StorageHelper.isInternalStorageAllowed}）、没验证的车辆信号算不算数
  * （{@code InfoBar.selectable}）、诊断信息里的「发送到手机」。</p>
  */
 public final class DeveloperMode {

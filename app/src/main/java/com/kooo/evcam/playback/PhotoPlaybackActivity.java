@@ -32,6 +32,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
 
 import com.kooo.evcam.AppConfig;
+import com.kooo.evcam.AppLog;
 import com.kooo.evcam.MainActivity;
 import com.kooo.evcam.R;
 import com.kooo.evcam.StorageHelper;
@@ -564,8 +565,9 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
             } else {
                 lockedPhotos.addAll(names);
             }
-            Toast.makeText(this, getString(unlock ? R.string.msg_footage_unlocked : R.string.msg_footage_locked,
-                    names.size()), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getResources().getQuantityString(
+                    unlock ? R.plurals.msg_footage_unlocked : R.plurals.msg_footage_locked,
+                    names.size(), names.size()), Toast.LENGTH_SHORT).show();
             adapter.setLockedNames(lockedPhotos);
             updateLockButton();
         });
@@ -730,7 +732,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         lockedPhotos = com.kooo.evcam.storage.FootageLocks.shown(PhotoPlaybackActivity.this, saveDir);
         adapter.setLockedNames(lockedPhotos);
         updateLockButton();
-        if (!saveDir.exists() || !saveDir.isDirectory()) {
+        // null：没有地方存照片（没有 U 盘、开发者选项没开），也就没有照片可列
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory()) {
             showEmptyState();
             showNoSelection();
             return;
@@ -883,7 +886,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
         com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.dlg_delete_photos_title)
-                .setMessage(getString(R.string.dlg_delete_photos_msg, selectedGroups.size()))
+                .setMessage(getResources().getQuantityString(R.plurals.dlg_delete_photos_msg,
+                        selectedGroups.size(), selectedGroups.size()))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> {
                     // selectedGroups 就是 adapter 手里那个集合，下面会被清空，
                     // 先留一份 —— 删完还要拿它对一下预览区放的是不是其中之一
@@ -921,8 +925,10 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                     updateSelectedCount();
 
                     android.widget.Toast.makeText(PhotoPlaybackActivity.this,
-                            getString(R.string.msg_photos_deleted, deletedCount)
-                                    + (keptCount > 0 ? getString(R.string.msg_kept_locked, keptCount) : ""),
+                            getResources().getQuantityString(R.plurals.msg_photos_deleted,
+                                    deletedCount, deletedCount)
+                                    + (keptCount > 0 ? getResources().getQuantityString(
+                                            R.plurals.msg_kept_locked, keptCount, keptCount) : ""),
                             android.widget.Toast.LENGTH_SHORT).show();
 
                     if (dateSections.isEmpty()) {
@@ -1009,8 +1015,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
         // 显示分享选项对话框
         showPhotoShareOptionsDialog(getString(R.string.action_share_photos),
-            getString(R.string.photo_share_count,
-                    selectedGroups.size(), allPhotoFiles.size()),
+            getResources().getQuantityString(R.plurals.photo_share_count,
+                    selectedGroups.size(), selectedGroups.size(), allPhotoFiles.size()),
             allPhotoFiles);
     }
 
@@ -1033,7 +1039,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         }
 
         showPhotoShareOptionsDialog(getString(R.string.action_share_photos),
-            getString(R.string.photo_share_total, photoFiles.size()),
+            getResources().getQuantityString(R.plurals.photo_share_total,
+                    photoFiles.size(), photoFiles.size()),
             photoFiles);
     }
 
@@ -1133,12 +1140,13 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                 }
             }
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "分享图片失败: FileProvider 无法处理该文件路径", e);
+            AppLog.e(TAG, "分享图片失败: FileProvider 无法处理该文件路径", e);
             Toast.makeText(PhotoPlaybackActivity.this, R.string.msg_share_path_unsupported,
                     Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Log.e(TAG, "分享图片失败", e);
-            Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_share_failed, e.getMessage()),
+            // 异常原文（英文、有时是 null）只进日志，界面上只说分享不了
+            AppLog.e(TAG, "分享图片失败", e);
+            Toast.makeText(PhotoPlaybackActivity.this, R.string.msg_share_failed,
                     Toast.LENGTH_SHORT).show();
         }
     }

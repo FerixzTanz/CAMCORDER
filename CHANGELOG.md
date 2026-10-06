@@ -11,6 +11,12 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.1.4-alpha] - 2026-10-06
+
+- Photos are saved to the USB drive only, like videos; with no drive the shutter says so instead of saving to internal storage (developer options excepted).
+- Turning on the driving info bar no longer asks for location permission; latitude and longitude show when the head unit already allows it.
+- English: correct singular and plural forms, full stops on multi-sentence texts, and failure messages no longer show raw error text or "null".
+
 ## [2.1.3-alpha] - 2026-10-06
 
 - Interface text reworded across the app in all three languages, following one terminology and style guide (docs/ui-text-style.md).

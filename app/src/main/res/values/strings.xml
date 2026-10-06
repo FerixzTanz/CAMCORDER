@@ -305,14 +305,14 @@
     <!-- 首次启动引导 -->
     <string name="guide_title">开始之前</string>
     <string name="guide_1">试验性非官方应用，未经任何车辆功能安全认证，不能替代原厂行车记录仪、倒车影像或盲区监测。行驶中请勿操作本应用，也不要依据其画面判断路况。</string>
-    <string name="guide_2">录像仅保存到 U 盘，未插入 U 盘时不会开始录制。行车记录需要持续写入，而内置存储的写入寿命有限，且通常无法更换。U 盘上的录像未加密，取下后可在其他设备上直接读取。</string>
+    <string name="guide_2">录像和照片仅保存到 U 盘，未插入 U 盘时不会开始录制，也无法拍照。行车记录需要持续写入，而内置存储的写入寿命有限，且通常无法更换。U 盘上的录像和照片未加密，取下后可在其他设备上直接读取。</string>
     <string name="guide_3">菜单键固定在左上角。操作按钮可在「设置 → 界面 → 操作按钮位置」中放到驾驶座一侧。超级后视镜默认关闭，可在菜单或「设置 → 超级后视镜」中开启；开启后拖动窗口两侧可移动，双指可缩放，在窗口中间上下滑动调整取景、左右滑动切换摄像头。</string>
     <string name="guide_4">遇到问题请先重启应用。如仍未恢复，请在「设置 → 系统 → 诊断信息」中导出诊断报告，并附在 issue 中提交。</string>
     <string name="action_got_it_guide">知道了</string>
 
     <!-- 主界面 / 通知 / 回放 -->
     <string name="msg_need_camera_storage">需要相机和存储权限</string>
-    <string name="msg_camera_access_failed">无法访问摄像头：%1$s</string>
+    <string name="msg_camera_access_failed">无法访问摄像头</string>
     <string name="msg_codec_fallback">录制出错，已改用 MediaCodec 继续录制</string>
     <string name="msg_record_start_failed">无法开始录制，请重试</string>
     <string name="msg_storage_full_stopped">U 盘已满，录制已停止。未设置「录像存储上限」，不会自动清理旧录像。</string>
@@ -329,7 +329,9 @@
     <string name="set_footage_locked_none">没有锁定的影像</string>
     <string name="set_footage_locked_unprotected">%1$s（「锁定影像」已关闭，不受保护）</string>
     <string name="dlg_footage_lock_off_title">关闭「锁定影像」？</string>
-    <string name="dlg_footage_lock_off_msg">已锁定 %1$d 个文件（%2$s）。关闭后它们不再受保护，自动清理时会和其他文件一样从最旧的开始删除，删除后无法找回。</string>
+    <plurals name="dlg_footage_lock_off_msg">
+        <item quantity="other">已锁定 %1$d 个文件（%2$s）。关闭后它们不再受保护，自动清理时会和其他文件一样从最旧的开始删除，删除后无法找回。</item>
+    </plurals>
     <string name="dlg_footage_lock_off_ok">关闭</string>
     <string name="set_footage_lock_flash_title">闪远光时自动锁定当前录像</string>
     <string name="set_footage_lock_flash_summary">录制时闪远光，自动锁定此刻前后 10 秒所在的录像片段（每一路画面）。锁定的录像占满空间时停止录制。</string>
@@ -340,13 +342,19 @@
     <string name="msg_storage_locked_refuse">锁定的影像占满了空间，无法开始录制。请在回放里解锁一些</string>
     <string name="action_lock_footage">锁定</string>
     <string name="action_unlock_footage">解锁</string>
-    <string name="msg_footage_locked">已锁定 %d 个文件</string>
-    <string name="msg_footage_unlocked">已解锁 %d 个文件</string>
+    <plurals name="msg_footage_locked">
+        <item quantity="other">已锁定 %d 个文件</item>
+    </plurals>
+    <plurals name="msg_footage_unlocked">
+        <item quantity="other">已解锁 %d 个文件</item>
+    </plurals>
     <string name="msg_footage_lock_failed">无法保存锁定状态，请重试</string>
     <string name="msg_footage_nothing_here">当前时刻无可锁定的录像</string>
     <string name="player_session_locked">含已锁定文件</string>
     <string name="photo_group_locked">已锁定</string>
-    <string name="msg_kept_locked">，%d 个已锁定文件未删除</string>
+    <plurals name="msg_kept_locked">
+        <item quantity="other">，%d 个已锁定文件未删除</item>
+    </plurals>
     <string name="msg_record_start_retrying">录制未能启动，正在自动重试…</string>
     <string name="msg_record_start_gave_up">录制仍未能启动，请点击「开始录制」</string>
     <string name="msg_recording_lost_in_background">录制已在后台停止</string>
@@ -356,6 +364,7 @@
     <string name="msg_photo_partial">照片已保存（%1$d/%2$d 路）</string>
     <string name="msg_photo_not_saved">拍照失败：无法保存照片</string>
     <string name="msg_photo_no_picture">拍照失败：摄像头无画面</string>
+    <string name="msg_photo_no_drive">拍照失败：未检测到 U 盘</string>
     <string name="msg_recording_stopped">录制已停止</string>
     <string name="msg_recording_started_all">已开始录制（全部摄像头）</string>
     <string name="msg_recording_started_n">已开始录制 %1$d 路</string>
@@ -365,6 +374,11 @@
     <string name="rec_reason_unknown">原因未知</string>
     <string name="rec_reason_write_stalled">无法写入文件</string>
     <string name="rec_reason_camera_lost">摄像头被占用</string>
+    <!-- 「X 失败：原因」里的原因，由 ui/FailureReason 按异常挑选；挑不出的不显示原因 -->
+    <string name="reason_no_network">无网络连接</string>
+    <string name="reason_timeout">连接超时</string>
+    <string name="reason_no_space">存储空间不足</string>
+    <string name="reason_file_not_found">文件不存在</string>
     <string name="msg_screen_off_stopped">熄屏 10 秒，已自动停止录制</string>
     <string name="msg_screen_off_background">熄屏 15 秒，已转入后台</string>
     <string name="msg_stats_on">录制状态显示已开启</string>
@@ -396,15 +410,21 @@
     <string name="action_delete_clip">删除此录像</string>
     <string name="action_pause">暂停</string>
     <string name="action_play">播放</string>
-    <string name="info_clip_count">%1$d 条录像 · %2$s</string>
+    <plurals name="info_clip_count">
+        <item quantity="other">%1$d 条录像 · %2$s</item>
+    </plurals>
     <string name="date_today">今天</string>
     <string name="date_yesterday">昨天</string>
     <string name="date_before_yesterday">前天</string>
     <string name="msg_selected_n">已选择 %1$d 项</string>
     <string name="dlg_delete_photos_title">删除所选照片？</string>
-    <string name="dlg_delete_photos_msg">将删除所选 %1$d 组的全部照片，已锁定的除外。删除后无法恢复。</string>
+    <plurals name="dlg_delete_photos_msg">
+        <item quantity="other">将删除所选 %1$d 组的全部照片，已锁定的除外。删除后无法恢复。</item>
+    </plurals>
     <string name="action_delete">删除</string>
-    <string name="msg_photos_deleted">已删除 %1$d 张照片</string>
+    <plurals name="msg_photos_deleted">
+        <item quantity="other">已删除 %1$d 张照片</item>
+    </plurals>
     <string name="msg_select_photos_first">请先选择要分享的照片</string>
     <string name="msg_no_photos_to_share">没有可分享的照片</string>
     <string name="action_share_photos">分享照片</string>
@@ -430,6 +450,7 @@
     <!-- 检查更新 -->
     <string name="upd_checking">正在检查更新…</string>
     <string name="upd_check_failed">检查更新失败：%1$s</string>
+    <string name="upd_cannot_check">无法检查更新，请重试</string>
     <string name="upd_none">未找到可安装的版本</string>
     <string name="upd_up_to_date">已是最新版本（%1$s）</string>
     <string name="upd_found_title">发现新版本</string>
@@ -443,6 +464,7 @@
     <string name="upd_downloading_pct">正在下载… %1$d%%（%2$s / %3$s MB）</string>
     <string name="upd_download_title">下载 %1$s</string>
     <string name="upd_download_failed">下载失败：%1$s</string>
+    <string name="upd_cannot_download">无法下载安装包，请重试</string>
     <string name="upd_apk_missing">找不到安装包，请重试</string>
     <string name="upd_err_bad_response">无法解析 GitHub 的响应</string>
     <string name="upd_err_http">服务器返回 HTTP %1$d</string>
@@ -453,21 +475,27 @@
     <string name="upd_need_install_title">需要「安装未知应用」权限</string>
     <string name="upd_need_install_msg">需在系统设置中允许本应用「安装未知应用」，才能打开系统安装界面。\n\n授权后返回此处，再次点击「检查更新」。</string>
     <string name="upd_go_settings">打开设置</string>
-    <string name="upd_cannot_open_apk">无法打开安装包：%1$s</string>
-    <string name="upd_no_installer">无法打开系统安装界面：%1$s</string>
+    <string name="upd_cannot_open_apk">无法打开安装包</string>
+    <string name="upd_no_installer">无法打开系统安装界面</string>
     <string name="upd_no_settings_page">无法打开「安装未知应用」设置页</string>
     <string name="msg_keep_one_camera_refuse">未开启任何摄像头，请在「编辑视频流配置」中开启</string>
     <string name="msg_refuse_no_external">未检测到 U 盘，插入后自动开始录制</string>
 
     <!-- 关于页 -->
-    <string name="date_group_count">%1$d 组</string>
+    <plurals name="date_group_count">
+        <item quantity="other">%1$d 组</item>
+    </plurals>
 
     <!-- 图片回看 -->
     <string name="photo_mode_multi">多路</string>
     <string name="photo_mode_single">%1$s</string>
-    <string name="photo_share_count">已选择 %1$d 组照片，共 %2$d 张</string>
-    <string name="photo_share_total">共 %1$d 张照片</string>
-    <string name="msg_share_failed">分享失败：%1$s</string>
+    <plurals name="photo_share_count">
+        <item quantity="other">已选择 %1$d 组照片，共 %2$d 张</item>
+    </plurals>
+    <plurals name="photo_share_total">
+        <item quantity="other">共 %1$d 张照片</item>
+    </plurals>
+    <string name="msg_share_failed">无法分享照片</string>
     <string name="msg_share_path_unsupported">分享失败：文件路径不受支持</string>
 
     <!-- 图片回看界面 -->
@@ -625,7 +653,9 @@
     <string name="editor_knob_codec">编码</string>
     <string name="editor_budget_none">未开启任何摄像头，不会录制</string>
     <string name="editor_budget">已开启 %1$s 路，总码率 %2$s，每小时约 %3$s GB</string>
-    <string name="editor_budget_with_space">已开启 %1$s 路，总码率 %2$s，每小时约 %3$s GB，U 盘剩余空间约可录 %4$s 小时</string>
+    <plurals name="editor_budget_with_space">
+        <item quantity="other">已开启 %1$s 路，总码率 %2$s，每小时约 %3$s GB，U 盘剩余空间约可录 %4$s 小时</item>
+    </plurals>
     <string name="editor_crop_off">暂不可用</string>
     <string name="editor_crop_dialog">裁切（各边裁去的比例）</string>
     <string name="editor_top">上</string>
@@ -661,13 +691,23 @@
     <string name="editor_splits">分为四格</string>
 
     <!-- 连续回放 -->
-    <string name="player_session_title">%1$s · %2$d 段 · %3$s</string>
+    <plurals name="player_session_title">
+        <item quantity="other">%1$s · %2$d 段 · %3$s</item>
+    </plurals>
     <string name="player_share_chooser">分享录像</string>
     <string name="player_delete_title">删除所选录像？</string>
-    <string name="player_delete_msg">所选录像共 %1$d 个文件（%2$s），已锁定的文件将保留。删除后无法恢复。</string>
-    <string name="player_deleted">已删除 %1$d 个文件</string>
-    <string name="player_info">录像 %1$d/%2$d · 开始于 %3$s · %4$d 段 · 时长 %5$s</string>
-    <string name="player_clip_count">%1$d 段</string>
+    <plurals name="player_delete_msg">
+        <item quantity="other">所选录像共 %1$d 个文件（%2$s），已锁定的文件将保留。删除后无法恢复。</item>
+    </plurals>
+    <plurals name="player_deleted">
+        <item quantity="other">已删除 %1$d 个文件</item>
+    </plurals>
+    <plurals name="player_info">
+        <item quantity="other">录像 %1$d/%2$d · 开始于 %3$s · %4$d 段 · 时长 %5$s</item>
+    </plurals>
+    <plurals name="player_clip_count">
+        <item quantity="other">%1$d 段</item>
+    </plurals>
 
     <!-- 保存配置前看一眼 -->
 
@@ -696,7 +736,9 @@
     <string name="storage_external_missing">U 盘（未检测到）</string>
 
     <!-- 图片回看 -->
-    <string name="photo_count_badge">%1$d 张</string>
+    <plurals name="photo_count_badge">
+        <item quantity="other">%1$d 张</item>
+    </plurals>
     <string name="cd_expand">展开或收起</string>
     <string name="cd_selected">选择</string>
 
@@ -726,15 +768,16 @@
     <string name="diag_btn_refresh">重新采集</string>
     <string name="diag_send_phone_note">诊断报告为 .json 文件。保存到手机后，可直接发送给需要的人。</string>
     <string name="diag_collecting">正在采集诊断信息…</string>
-    <string name="diag_collect_failed">采集失败：%1$s</string>
+    <string name="diag_collect_failed">无法采集诊断信息</string>
     <string name="diag_not_ready">诊断信息尚未生成</string>
     <string name="diag_mkdir_failed">无法创建目录：%1$s</string>
     <string name="diag_saved">已保存到：\n%1$s</string>
     <string name="diag_save_failed">保存失败：%1$s</string>
+    <string name="diag_cannot_save">无法保存诊断报告</string>
     <string name="diag_clipboard_unavailable">剪贴板不可用</string>
     <string name="diag_clip_label">诊断报告</string>
     <string name="diag_copied">已复制到剪贴板</string>
-    <string name="diag_copy_failed">复制失败：%1$s</string>
+    <string name="diag_copy_failed">无法复制到剪贴板</string>
     <string name="diag_exporting">正在导出…</string>
 
     <!-- 画面调节悬浮窗 -->
@@ -821,11 +864,13 @@
     <string name="dev_repair_done_title">已修复 %1$d / %2$d 个</string>
     <string name="dev_repair_done_hint">修复后的片段可在「录像回放」中查看。</string>
     <string name="dev_repair_skip_no_reference">已跳过：没有同一摄像头的完好片段可作参考</string>
-    <string name="dev_repair_skip_bad_reference">已跳过：无法从参考片段读取解码参数（%1$s）</string>
-    <string name="dev_repair_failed">无法修复：%1$s</string>
+    <string name="dev_repair_skip_bad_reference">已跳过：无法从参考片段读取解码参数</string>
+    <string name="dev_repair_failed">无法修复</string>
     <string name="dev_repair_rolled_back">重建的索引无法读取，已还原</string>
-    <string name="dev_repair_rollback_failed">重建的索引无法读取，且还原失败：%1$s</string>
-    <string name="dev_repair_ok">已修复：%1$d 帧 / %2$s 秒</string>
+    <string name="dev_repair_rollback_failed">重建的索引无法读取，且还原失败</string>
+    <plurals name="dev_repair_ok">
+        <item quantity="other">已修复：%1$d 帧 / %2$s 秒</item>
+    </plurals>
     <string name="dev_repair_ok_tail">%1$s（已丢弃末尾不完整的一帧）</string>
     <string name="dev_archive_title">归档到其他 U 盘</string>
     <string name="dev_archive_summary">将录像、照片和诊断报告从存储位置所选的 U 盘移到另一个 U 盘，并复制应用日志；录制时不可用</string>

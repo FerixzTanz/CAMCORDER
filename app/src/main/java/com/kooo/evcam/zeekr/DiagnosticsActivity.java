@@ -114,8 +114,9 @@ public class DiagnosticsActivity extends AppCompatActivity {
             try {
                 result = DiagnosticsCollector.collect(getApplicationContext());
             } catch (Throwable t) {
+                // 采集失败是代码的问题，异常原文只进日志
                 AppLog.e(TAG, "采集诊断信息失败", t);
-                result = getString(R.string.diag_collect_failed, String.valueOf(t));
+                result = getString(R.string.diag_collect_failed);
             }
             final String finalResult = result;
             mainHandler.post(() -> {
@@ -235,7 +236,9 @@ public class DiagnosticsActivity extends AppCompatActivity {
             return out;
         } catch (Exception e) {
             AppLog.e(TAG, "保存诊断报告失败", e);
-            toast(getString(R.string.diag_save_failed, String.valueOf(e.getMessage())));
+            String reason = com.kooo.evcam.ui.FailureReason.of(this, e);
+            toast(reason != null ? getString(R.string.diag_save_failed, reason)
+                    : getString(R.string.diag_cannot_save));
             return null;
         }
     }
@@ -255,7 +258,7 @@ public class DiagnosticsActivity extends AppCompatActivity {
             toast(getString(R.string.diag_copied));
         } catch (Exception e) {
             AppLog.e(TAG, "复制失败", e);
-            toast(getString(R.string.diag_copy_failed, String.valueOf(e.getMessage())));
+            toast(getString(R.string.diag_copy_failed));
         }
     }
 

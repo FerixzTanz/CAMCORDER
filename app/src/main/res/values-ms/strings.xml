@@ -279,14 +279,14 @@
     <string name="slot_cabin_rear">Kabin belakang</string>
     <string name="action_save">Simpan</string>
     <string name="action_all_auto">Semua automatik</string>
-    <string name="msg_mapping_saved">Pemetaan kamera disimpan. Berkuat kuasa selepas apl dimulakan semula</string>
-    <string name="msg_mapping_cleared">Penetapan automatik dipulihkan. Berkuat kuasa selepas apl dimulakan semula</string>
+    <string name="msg_mapping_saved">Pemetaan kamera disimpan. Berkuat kuasa selepas apl dimulakan semula.</string>
+    <string name="msg_mapping_cleared">Penetapan automatik dipulihkan. Berkuat kuasa selepas apl dimulakan semula.</string>
     <string name="msg_language_hint">Anda boleh menukarnya kemudian di Tetapan → Antara muka → Bahasa</string>
 
     <!-- Antara muka utama -->
     <string name="about_title">Perihal &amp; penghargaan</string>
     <string name="accessibility_service_description">Digunakan oleh Kekal berjalan di latar belakang untuk membantu apl terus berjalan.\n\nIa tidak membaca atau mengawal apa-apa pada skrin dan tidak mengumpul data.</string>
-    <string name="zeekr_composite_not_found">Tiada strim komposit sekeliling ditemui. Unit kepala ini mungkin tidak disokong</string>
+    <string name="zeekr_composite_not_found">Tiada strim komposit sekeliling ditemui. Unit kepala ini mungkin tidak disokong.</string>
     <string name="msg_no_camera_available">Tiada kamera tersedia</string>
     <string name="zeekr_lane_front">Depan</string>
     <string name="zeekr_lane_back">Belakang</string>
@@ -296,14 +296,14 @@
     <!-- Panduan mula pertama -->
     <string name="guide_title">Sebelum anda mula</string>
     <string name="guide_1">Perisian percubaan tidak rasmi tanpa pensijilan keselamatan kenderaan. Ia tidak menggantikan kamera papan pemuka kilang, kamera undur atau pemantau titik buta. Jangan mengendalikannya semasa memandu, dan jangan bergantung pada paparannya untuk menilai keadaan jalan.</string>
-    <string name="guide_2">Rakaman disimpan ke pemacu USB sahaja; tanpanya, rakaman tidak bermula. Penulisan berterusan akan menghauskan storan dalaman unit kepala, yang biasanya tidak boleh diganti. Rakaman tidak disulitkan: sesiapa yang memegang pemacu boleh membacanya.</string>
+    <string name="guide_2">Video dan foto disimpan ke pemacu USB sahaja; tanpanya, rakaman tidak bermula dan foto tidak dapat diambil. Penulisan berterusan akan menghauskan storan dalaman unit kepala, yang biasanya tidak boleh diganti. Video dan foto tidak disulitkan: sesiapa yang memegang pemacu boleh membacanya.</string>
     <string name="guide_3">Butang menu sentiasa di kiri atas. Letakkan butang tindakan di sebelah pemandu melalui Tetapan → Antara muka → Sebelah butang tindakan. Cermin super dimatikan secara lalai; hidupkannya dari menu atau Tetapan → Cermin super. Seret sisinya untuk mengalihkannya, cubit untuk mengubah saiz, dan di bahagian tengah leret ke atas atau ke bawah untuk melaraskan bingkai, atau ke kiri atau ke kanan untuk menukar kamera.</string>
     <string name="guide_4">Jika ada yang tidak kena, mulakan semula apl. Jika berterusan, eksport laporan dari Tetapan → Sistem → Maklumat diagnostik dan lampirkannya pada isu.</string>
     <string name="action_got_it_guide">Faham</string>
 
     <!-- Skrin utama, pemberitahuan, main balik -->
     <string name="msg_need_camera_storage">Kebenaran kamera dan storan diperlukan</string>
-    <string name="msg_camera_access_failed">Tidak dapat mengakses kamera: %1$s</string>
+    <string name="msg_camera_access_failed">Tidak dapat mengakses kamera</string>
     <string name="msg_codec_fallback">Ralat rakaman. Ditukar kepada MediaCodec dan rakaman diteruskan.</string>
     <string name="msg_record_start_failed">Tidak dapat memulakan rakaman. Cuba lagi</string>
     <string name="msg_storage_full_stopped">Pemacu USB penuh. Rakaman dihentikan. Tiada had storan video ditetapkan, jadi rakaman lama tidak dibersihkan secara automatik.</string>
@@ -320,7 +320,9 @@
     <string name="set_footage_locked_none">Tiada yang dikunci</string>
     <string name="set_footage_locked_unprotected">%1$s (Kunci rakaman dimatikan, fail ini tidak dilindungi)</string>
     <string name="dlg_footage_lock_off_title">Matikan Kunci rakaman?</string>
-    <string name="dlg_footage_lock_off_msg">%1$d fail dikunci (%2$s). Jika dimatikan, fail ini tidak lagi dilindungi: pembersihan automatik memadamnya dari yang paling lama seperti fail lain, dan fail yang dipadam tidak boleh dipulihkan.</string>
+    <plurals name="dlg_footage_lock_off_msg">
+        <item quantity="other">%1$d fail dikunci (%2$s). Jika dimatikan, fail ini tidak lagi dilindungi: pembersihan automatik memadamnya dari yang paling lama seperti fail lain, dan fail yang dipadam tidak boleh dipulihkan.</item>
+    </plurals>
     <string name="dlg_footage_lock_off_ok">Matikan</string>
     <string name="set_footage_lock_flash_title">Kunci rakaman semasa kelip lampu tinggi</string>
     <string name="set_footage_lock_flash_summary">Semasa merakam, kelipkan lampu tinggi untuk mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas, pada setiap kamera. Jika rakaman yang dikunci memenuhi ruang, rakaman berhenti.</string>
@@ -331,15 +333,21 @@
     <string name="msg_storage_locked_refuse">Rakaman yang dikunci telah memenuhi ruang, rakaman tidak dapat dimulakan. Buka kunci sebahagian dalam main semula</string>
     <string name="action_lock_footage">Kunci</string>
     <string name="action_unlock_footage">Buka kunci</string>
-    <string name="msg_footage_locked">%d fail dikunci</string>
-    <string name="msg_footage_unlocked">%d fail dibuka kunci</string>
+    <plurals name="msg_footage_locked">
+        <item quantity="other">%d fail dikunci</item>
+    </plurals>
+    <plurals name="msg_footage_unlocked">
+        <item quantity="other">%d fail dibuka kunci</item>
+    </plurals>
     <string name="msg_footage_lock_failed">Tidak dapat menyimpan status kunci. Cuba lagi</string>
     <string name="msg_footage_nothing_here">Tiada rakaman di sini untuk dikunci</string>
     <string name="player_session_locked">ada fail dikunci</string>
     <string name="photo_group_locked">dikunci</string>
-    <string name="msg_kept_locked">, %d fail berkunci tidak dipadam</string>
+    <plurals name="msg_kept_locked">
+        <item quantity="other">, %d fail berkunci tidak dipadam</item>
+    </plurals>
     <string name="msg_record_start_retrying">Rakaman tidak bermula. Mencuba semula…</string>
-    <string name="msg_record_start_gave_up">Rakaman masih tidak bermula. Ketik Mula rakam</string>
+    <string name="msg_record_start_gave_up">Rakaman masih tidak bermula. Ketik Mula rakam.</string>
     <string name="msg_recording_lost_in_background">Rakaman berhenti semasa apl di latar belakang</string>
     <string name="msg_record_error">Ralat rakaman: klip tidak sah dipadam</string>
     <string name="msg_photo_taken">Foto disimpan</string>
@@ -347,21 +355,27 @@
     <string name="msg_photo_partial">Foto disimpan (%1$d daripada %2$d kamera)</string>
     <string name="msg_photo_not_saved">Tiada foto: foto tidak dapat disimpan</string>
     <string name="msg_photo_no_picture">Tiada foto: tiada imej daripada kamera</string>
+    <string name="msg_photo_no_drive">Tiada foto: tiada pemacu USB ditemui</string>
     <string name="msg_recording_stopped">Rakaman dihentikan</string>
     <string name="msg_recording_started_all">Rakaman bermula (semua kamera)</string>
     <string name="msg_recording_started_n">Rakaman bermula (%1$d kamera)</string>
-    <string name="msg_sd_fallback">Tiada pemacu USB ditemui. Merakam ke storan dalaman</string>
+    <string name="msg_sd_fallback">Tiada pemacu USB ditemui. Merakam ke storan dalaman.</string>
     <string name="msg_recording_interrupted">Rakaman terganggu: %1$s</string>
     <string name="msg_recording_interrupted_resuming">Rakaman terganggu: %1$s. Ia disambung semula apabila paparan sekeliling berfungsi.</string>
     <string name="rec_reason_unknown">punca tidak diketahui</string>
     <string name="rec_reason_write_stalled">tidak dapat menulis ke fail</string>
     <string name="rec_reason_camera_lost">kamera sedang digunakan</string>
+    <!-- Sebab dalam "X gagal: sebab", dipilih daripada pengecualian oleh ui/FailureReason; jika tiada, sebab tidak ditunjukkan -->
+    <string name="reason_no_network">tiada sambungan rangkaian</string>
+    <string name="reason_timeout">sambungan tamat masa</string>
+    <string name="reason_no_space">ruang storan tidak cukup</string>
+    <string name="reason_file_not_found">fail tidak ditemui</string>
     <string name="msg_screen_off_stopped">Skrin padam selama 10 saat. Rakaman dihentikan.</string>
     <string name="msg_screen_off_background">Skrin padam selama 15 saat. Dialihkan ke latar belakang.</string>
     <string name="msg_stats_on">Paparan status rakaman dihidupkan</string>
     <string name="msg_stats_off">Paparan status rakaman dimatikan</string>
     <string name="msg_need_overlay_adjust">Kebenaran paparan di atas apl lain diperlukan untuk membuka tetingkap pelarasan</string>
-    <string name="msg_camera_not_ready_adjust">Kamera belum sedia. Tetingkap pelarasan imej tidak dapat dibuka</string>
+    <string name="msg_camera_not_ready_adjust">Kamera belum sedia. Tetingkap pelarasan imej tidak dapat dibuka.</string>
     <string name="msg_overlay_denied">Kebenaran paparan di atas apl lain tidak diberikan</string>
     <string name="dlg_no_external_title">Tiada pemacu USB ditemui</string>
     <string name="dlg_no_external_msg">Rakaman disimpan ke pemacu USB sahaja, untuk mengelakkan storan dalaman haus.\n\nMasukkan pemacu USB dan cuba lagi. Jika ia tidak dikesan, cuba port lain atau pilih semula pemacu di Tetapan → Storan → Lokasi storan.</string>
@@ -387,15 +401,21 @@
     <string name="action_delete_clip">Padam rakaman ini</string>
     <string name="action_pause">Jeda</string>
     <string name="action_play">Main</string>
-    <string name="info_clip_count">%1$d rakaman · %2$s</string>
+    <plurals name="info_clip_count">
+        <item quantity="other">%1$d rakaman · %2$s</item>
+    </plurals>
     <string name="date_today">Hari ini</string>
     <string name="date_yesterday">Semalam</string>
     <string name="date_before_yesterday">2 hari lalu</string>
     <string name="msg_selected_n">%1$d dipilih</string>
     <string name="dlg_delete_photos_title">Padam foto yang dipilih?</string>
-    <string name="dlg_delete_photos_msg">Semua foto dalam %1$d kumpulan yang dipilih akan dipadam, kecuali yang dikunci. Tindakan ini tidak boleh dibatalkan.</string>
+    <plurals name="dlg_delete_photos_msg">
+        <item quantity="other">Semua foto dalam %1$d kumpulan yang dipilih akan dipadam, kecuali yang dikunci. Tindakan ini tidak boleh dibatalkan.</item>
+    </plurals>
     <string name="action_delete">Padam</string>
-    <string name="msg_photos_deleted">%1$d foto dipadam</string>
+    <plurals name="msg_photos_deleted">
+        <item quantity="other">%1$d foto dipadam</item>
+    </plurals>
     <string name="msg_select_photos_first">Pilih foto untuk dikongsi dahulu</string>
     <string name="msg_no_photos_to_share">Tiada foto untuk dikongsi</string>
     <string name="action_share_photos">Kongsi foto</string>
@@ -421,6 +441,7 @@
     <!-- Semakan kemas kini -->
     <string name="upd_checking">Menyemak kemas kini…</string>
     <string name="upd_check_failed">Semakan kemas kini gagal: %1$s</string>
+    <string name="upd_cannot_check">Tidak dapat menyemak kemas kini. Cuba lagi</string>
     <string name="upd_none">Tiada keluaran yang boleh dipasang</string>
     <string name="upd_up_to_date">Sudah terkini (%1$s)</string>
     <string name="upd_found_title">Kemas kini tersedia</string>
@@ -430,35 +451,42 @@
     <string name="upd_download">Muat turun dan pasang</string>
     <string name="upd_later">Nanti</string>
     <string name="upd_guide_start">Faham, muat turun</string>
-    <string name="upd_guide_image">Sebelum memasang: selepas muat turun, pemasang unit kepala dibuka. Selepas dipasang, ketik Kembali di kiri atas, bukan Buka di tengah</string>
+    <string name="upd_guide_image">Sebelum memasang: selepas muat turun, pemasang unit kepala dibuka. Selepas dipasang, ketik Kembali di kiri atas, bukan Buka di tengah.</string>
     <string name="upd_downloading_pct">Memuat turun… %1$d%% (%2$s / %3$s MB)</string>
     <string name="upd_download_title">Memuat turun %1$s</string>
     <string name="upd_download_failed">Muat turun gagal: %1$s</string>
+    <string name="upd_cannot_download">Tidak dapat memuat turun fail pemasang. Cuba lagi</string>
     <string name="upd_apk_missing">Fail pemasang tidak ditemui. Cuba lagi</string>
-    <string name="upd_err_bad_response">Respons daripada GitHub tidak boleh dibaca</string>
-    <string name="upd_err_http">Pelayan mengembalikan HTTP %1$d</string>
-    <string name="upd_err_too_large">Fail terlalu besar (%1$d MB), dibatalkan</string>
-    <string name="upd_err_no_dir">Tidak dapat mencipta folder muat turun</string>
-    <string name="upd_err_over_limit">Terlalu banyak data, dibatalkan</string>
-    <string name="upd_err_truncated">Hanya menerima %1$d daripada %2$d bait</string>
+    <string name="upd_err_bad_response">respons daripada GitHub tidak boleh dibaca</string>
+    <string name="upd_err_http">pelayan mengembalikan HTTP %1$d</string>
+    <string name="upd_err_too_large">fail terlalu besar (%1$d MB), dibatalkan</string>
+    <string name="upd_err_no_dir">tidak dapat mencipta folder muat turun</string>
+    <string name="upd_err_over_limit">terlalu banyak data, dibatalkan</string>
+    <string name="upd_err_truncated">hanya menerima %1$d daripada %2$d bait</string>
     <string name="upd_need_install_title">Kebenaran diperlukan: Pasang apl tidak diketahui</string>
     <string name="upd_need_install_msg">Benarkan apl ini memasang apl tidak diketahui dalam tetapan sistem, kemudian kembali dan ketik Semak kemas kini sekali lagi.</string>
     <string name="upd_go_settings">Buka tetapan</string>
-    <string name="upd_cannot_open_apk">Tidak dapat membuka fail pemasang: %1$s</string>
-    <string name="upd_no_installer">Tidak dapat membuka pemasang sistem: %1$s</string>
+    <string name="upd_cannot_open_apk">Tidak dapat membuka fail pemasang</string>
+    <string name="upd_no_installer">Tidak dapat membuka pemasang sistem</string>
     <string name="upd_no_settings_page">Tidak dapat membuka halaman tetapan Pasang apl tidak diketahui</string>
     <string name="msg_keep_one_camera_refuse">Tiada kamera dihidupkan. Hidupkan satu dalam Edit profil strim.</string>
     <string name="msg_refuse_no_external">Tiada pemacu USB ditemui. Rakaman bermula apabila pemacu dimasukkan.</string>
 
     <!-- Skrin perihal -->
-    <string name="date_group_count">%1$d kumpulan</string>
+    <plurals name="date_group_count">
+        <item quantity="other">%1$d kumpulan</item>
+    </plurals>
 
     <!-- Main balik foto -->
     <string name="photo_mode_multi">Semua kamera</string>
     <string name="photo_mode_single">%1$s</string>
-    <string name="photo_share_count">%1$d kumpulan dipilih, %2$d foto</string>
-    <string name="photo_share_total">%1$d foto</string>
-    <string name="msg_share_failed">Perkongsian gagal: %1$s</string>
+    <plurals name="photo_share_count">
+        <item quantity="other">%1$d kumpulan dipilih, %2$d foto</item>
+    </plurals>
+    <plurals name="photo_share_total">
+        <item quantity="other">%1$d foto</item>
+    </plurals>
+    <string name="msg_share_failed">Tidak dapat berkongsi foto</string>
     <string name="msg_share_path_unsupported">Perkongsian gagal: laluan fail ini tidak disokong</string>
 
     <!-- Skrin main balik foto -->
@@ -497,7 +525,7 @@
     <string name="upd_connecting">Menyambung…</string>
     <string name="upd_downloading_size">Memuat turun… %1$s MB</string>
     <string name="upd_download_failed_title">Muat turun gagal</string>
-    <string name="share_phone_qr_failed">Tidak dapat mencipta kod QR. Masukkan alamat ini dalam pelayar telefon</string>
+    <string name="share_phone_qr_failed">Tidak dapat mencipta kod QR. Masukkan alamat ini dalam pelayar telefon.</string>
     <string name="set_plate_switch_title">Tera nombor plat</string>
     <string name="set_plate_switch_summary">Menunjukkan nombor plat</string>
     <string name="set_plate_title">Nombor plat</string>
@@ -571,7 +599,7 @@
     <string name="editor_whole_frame">Bingkai penuh</string>
     <string name="editor_lane_group">%1$s · %2$s</string>
     <string name="editor_stage">Seret sel untuk mengalih, seret sudut untuk mengubah saiz</string>
-    <string name="editor_lanes_lost">Tidak dapat dibuka. Kembali dan buka Edit profil strim sekali lagi</string>
+    <string name="editor_lanes_lost">Tidak dapat dibuka. Kembali dan buka Edit profil strim sekali lagi.</string>
     <string name="editor_no_camera">Profil ini tiada kamera</string>
     <string name="editor_cabin_note_title">Kedudukan dan saiz kamera ini tetap</string>
     <string name="editor_cabin_note_summary">Putaran, cermin, penskalaan, zum dan alih hanya mengubah pratonton pada skrin; rakaman dan foto tidak berubah</string>
@@ -597,11 +625,11 @@
     <string name="editor_quality_gb_unit">GB / jam</string>
     <string name="editor_quality_hours_unit">jam lagi pada pemacu USB</string>
     <string name="editor_quality_space">Jimat ruang</string>
-    <string name="editor_quality_space_note">10 fps, kadar bit rendah. Paling mampat</string>
+    <string name="editor_quality_space_note">10 fps, kadar bit rendah; paling mampat</string>
     <string name="editor_quality_balanced">Seimbang</string>
-    <string name="editor_quality_balanced_note">20 fps, kadar bit sederhana. Seimbang antara perincian dan storan</string>
+    <string name="editor_quality_balanced_note">20 fps, kadar bit sederhana; seimbang antara perincian dan storan</string>
     <string name="editor_quality_sharp">Paling tajam</string>
-    <string name="editor_quality_sharp_note">Tiada had kadar bingkai, kadar bit tinggi. Paling terperinci</string>
+    <string name="editor_quality_sharp_note">Tiada had kadar bingkai, kadar bit tinggi; paling terperinci</string>
     <string name="editor_cameras_title">Kamera dihidupkan: %1$d</string>
     <string name="editor_cameras_summary">Kamera yang dimatikan tidak dirakam dan tidak menggunakan ruang; ketik kad untuk melaraskan kamera itu. Perubahan suis berkuat kuasa selepas apl dimulakan semula.</string>
     <string name="editor_camera_tuned">tersuai</string>
@@ -617,7 +645,9 @@
     <string name="editor_knob_codec">Kodek</string>
     <string name="editor_budget_none">Tiada kamera dihidupkan; tiada apa-apa akan dirakam</string>
     <string name="editor_budget">Kamera: %1$s · jumlah %2$s · lebih kurang %3$s GB/jam</string>
-    <string name="editor_budget_with_space">Kamera: %1$s · jumlah %2$s · lebih kurang %3$s GB/jam · lebih kurang %4$s jam lagi pada pemacu USB</string>
+    <plurals name="editor_budget_with_space">
+        <item quantity="other">Kamera: %1$s · jumlah %2$s · lebih kurang %3$s GB/jam · lebih kurang %4$s jam lagi pada pemacu USB</item>
+    </plurals>
     <string name="editor_crop_off">Belum tersedia</string>
     <string name="editor_crop_dialog">Pangkas (pecahan dipotong dari setiap tepi)</string>
     <string name="editor_top">Atas</string>
@@ -653,13 +683,23 @@
     <string name="editor_splits">dibahagi empat</string>
 
     <!-- Main balik berterusan -->
-    <string name="player_session_title">%1$s · %2$d klip · %3$s</string>
+    <plurals name="player_session_title">
+        <item quantity="other">%1$s · %2$d klip · %3$s</item>
+    </plurals>
     <string name="player_share_chooser">Kongsi rakaman</string>
     <string name="player_delete_title">Padam rakaman yang dipilih?</string>
-    <string name="player_delete_msg">Rakaman yang dipilih mengandungi %1$d fail (%2$s). Fail yang dikunci dikekalkan. Tindakan ini tidak boleh dibatalkan.</string>
-    <string name="player_deleted">%1$d fail dipadam</string>
-    <string name="player_info">Rakaman %1$d/%2$d · bermula %3$s · %4$d klip · %5$s</string>
-    <string name="player_clip_count">%1$d klip</string>
+    <plurals name="player_delete_msg">
+        <item quantity="other">Rakaman yang dipilih mengandungi %1$d fail (%2$s). Fail yang dikunci dikekalkan. Tindakan ini tidak boleh dibatalkan.</item>
+    </plurals>
+    <plurals name="player_deleted">
+        <item quantity="other">%1$d fail dipadam</item>
+    </plurals>
+    <plurals name="player_info">
+        <item quantity="other">Rakaman %1$d/%2$d · bermula %3$s · %4$d klip · %5$s</item>
+    </plurals>
+    <plurals name="player_clip_count">
+        <item quantity="other">%1$d klip</item>
+    </plurals>
 
     <!-- Buka pilihan pembangun -->
     <string name="dev_unlock_hint">Kata laluan</string>
@@ -686,7 +726,9 @@
     <string name="storage_external_missing">Pemacu USB (tidak ditemui)</string>
 
     <!-- Main balik foto -->
-    <string name="photo_count_badge">%1$d foto</string>
+    <plurals name="photo_count_badge">
+        <item quantity="other">%1$d foto</item>
+    </plurals>
     <string name="cd_expand">Kembang atau kuncup</string>
     <string name="cd_selected">Pilih</string>
 
@@ -716,15 +758,16 @@
     <string name="diag_btn_refresh">Kumpul semula</string>
     <string name="diag_send_phone_note">Laporan ialah fail .json. Setelah ada di telefon, hantar kepada sesiapa yang perlu melihatnya.</string>
     <string name="diag_collecting">Mengumpul maklumat diagnostik…</string>
-    <string name="diag_collect_failed">Pengumpulan gagal: %1$s</string>
+    <string name="diag_collect_failed">Tidak dapat mengumpul maklumat diagnostik</string>
     <string name="diag_not_ready">Laporan belum sedia</string>
     <string name="diag_mkdir_failed">Tidak dapat mencipta folder: %1$s</string>
     <string name="diag_saved">Disimpan ke:\n%1$s</string>
     <string name="diag_save_failed">Gagal menyimpan: %1$s</string>
+    <string name="diag_cannot_save">Tidak dapat menyimpan laporan diagnostik</string>
     <string name="diag_clipboard_unavailable">Papan keratan tidak tersedia</string>
     <string name="diag_clip_label">Laporan diagnostik</string>
     <string name="diag_copied">Disalin ke papan keratan</string>
-    <string name="diag_copy_failed">Gagal menyalin: %1$s</string>
+    <string name="diag_copy_failed">Tidak dapat menyalin ke papan keratan</string>
     <string name="diag_exporting">Mengeksport…</string>
 
     <!-- Tetingkap pelarasan gambar -->
@@ -790,7 +833,7 @@
     <string name="dev_gpu_fisheye_preview_title">Pratonton: pembetulan mata ikan per piksel dengan GPU</string>
     <string name="dev_gpu_fisheye_preview_summary">Membetulkan pratonton langsung sekeliling piksel demi piksel dengan GPU, melalui GL apl, selurus main semula foto dan bukan secara tampalan. Ini memilih kaedah sahaja; butang Luruskan masih menghidupkan dan mematikan pembetulan. Berkuat kuasa selepas apl dimulakan semula.</string>
     <string name="dev_gpu_fisheye_video_title">Main semula video: pembetulan mata ikan per piksel dengan GPU</string>
-    <string name="dev_gpu_fisheye_video_summary">Paparan sekeliling dalam main semula video dibetulkan piksel demi piksel dengan GPU. Ini memilih kaedah sahaja; butang Luruskan masih menghidupkan dan mematikan pembetulan. Berkuat kuasa apabila main semula video dibuka lagi</string>
+    <string name="dev_gpu_fisheye_video_summary">Paparan sekeliling dalam main semula video dibetulkan piksel demi piksel dengan GPU. Ini memilih kaedah sahaja; butang Luruskan masih menghidupkan dan mematikan pembetulan. Berkuat kuasa apabila main semula video dibuka lagi.</string>
     <string name="dev_repair_mp4_title">Baiki rakaman tanpa indeks</string>
     <string name="dev_repair_mp4_summary">Klip yang terputus secara tiba-tiba, contohnya kerana kuasa terputus, tiada indeks dan tidak boleh dimainkan. Indeks dibina semula daripada klip sihat kamera yang sama; nama fail kekal.</string>
     <string name="dev_repair_refuse_recording">Tidak dapat membaiki semasa merakam: klip yang sedang dirakam juga tiada indeks, jadi ia tidak dapat dibezakan daripada klip yang terputus. Hentikan rakaman dahulu.</string>
@@ -811,11 +854,13 @@
     <string name="dev_repair_done_title">%1$d daripada %2$d dibaiki</string>
     <string name="dev_repair_done_hint">Klip yang dibaiki boleh dilihat dalam Video.</string>
     <string name="dev_repair_skip_no_reference">Dilangkau: tiada klip sihat daripada kamera yang sama sebagai rujukan</string>
-    <string name="dev_repair_skip_bad_reference">Dilangkau: tidak dapat membaca tetapan penyahkod daripada klip rujukan (%1$s)</string>
-    <string name="dev_repair_failed">Tidak dapat dibaiki: %1$s</string>
+    <string name="dev_repair_skip_bad_reference">Dilangkau: tidak dapat membaca tetapan penyahkod daripada klip rujukan</string>
+    <string name="dev_repair_failed">Tidak dapat dibaiki</string>
     <string name="dev_repair_rolled_back">Indeks yang dibina semula tidak boleh dibaca; fail dipulihkan</string>
-    <string name="dev_repair_rollback_failed">Indeks yang dibina semula tidak boleh dibaca, dan pemulihan gagal: %1$s</string>
-    <string name="dev_repair_ok">Dibaiki: %1$d bingkai / %2$s saat</string>
+    <string name="dev_repair_rollback_failed">Indeks yang dibina semula tidak boleh dibaca, dan pemulihan gagal</string>
+    <plurals name="dev_repair_ok">
+        <item quantity="other">Dibaiki: %1$d bingkai / %2$s saat</item>
+    </plurals>
     <string name="dev_repair_ok_tail">%1$s (bingkai terakhir yang tidak lengkap dibuang)</string>
     <string name="dev_archive_title">Arkib ke pemacu lain</string>
     <string name="dev_archive_summary">Memindahkan video, foto dan laporan diagnostik dari pemacu USB lokasi storan ke pemacu USB lain dan menyalin log apl; tidak tersedia semasa merakam</string>

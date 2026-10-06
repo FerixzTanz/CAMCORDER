@@ -114,6 +114,9 @@
 | 未检测到 U 盘 | No USB drive found | Tiada pemacu USB ditemui |
 | 暂无（对象） | No (objects) yet | Belum ada (…) |
 | 删除后无法恢复。 | This can't be undone. | Tindakan ini tidak boleh dibatalkan. |
+| 原因：无网络连接 / 连接超时 / 存储空间不足 / 文件不存在 | no network connection / connection timed out / not enough storage space / file not found | tiada sambungan rangkaian / sambungan tamat masa / ruang storan tidak cukup / fail tidak ditemui |
+
+失败提示不显示异常的原文（英文类名、`null`）：能归到上面几种原因的就写原因，归不进去的只写「无法……」，异常本身只进日志。
 
 英文用缩写 can't / couldn't / isn't，不写 cannot / could not。
 

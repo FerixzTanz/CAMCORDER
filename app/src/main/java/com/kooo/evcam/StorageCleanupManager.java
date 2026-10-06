@@ -137,8 +137,12 @@ public class StorageCleanupManager {
     private CleanupResult cleanupPhotosLocked(File directory, long limitBytes) {
         CleanupResult result = new CleanupResult();
         
-        if (directory == null || !directory.exists() || !directory.isDirectory()) {
-            AppLog.w(TAG, "照片目录不存在: " + (directory != null ? directory.getAbsolutePath() : "null"));
+        if (directory == null) {
+            // 没插 U 盘、开发者选项也关着：照片没有地方可存，自然也没有要清的（不是异常）
+            return result;
+        }
+        if (!directory.exists() || !directory.isDirectory()) {
+            AppLog.w(TAG, "照片目录不存在: " + directory.getAbsolutePath());
             return result;
         }
         

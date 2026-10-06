@@ -323,8 +323,8 @@ public class TimelineSessionAdapter
 
             metaText.setText(TimelineFormat.duration(session.totalDurationMs)
                     + " · " + TimelineFormat.size(bytes)
-                    + " · " + itemView.getContext().getString(
-                            R.string.player_clip_count, session.segmentCount())
+                    + " · " + itemView.getContext().getResources().getQuantityString(
+                            R.plurals.player_clip_count, session.segmentCount(), session.segmentCount())
                     + (locked ? " · " + itemView.getContext().getString(R.string.player_session_locked) : ""));
 
             // 正在播的那条留着红条；多选时右边多一个勾

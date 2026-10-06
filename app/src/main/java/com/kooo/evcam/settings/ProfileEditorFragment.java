@@ -507,9 +507,11 @@ public class ProfileEditorFragment extends Fragment {
         String size = String.format(Locale.US, "%.1f", StorageBudget.gigabytesPerHour(perHour));
         // 合计码率也写出来：每改一下这一行都该动，
         // 写了它，「动没动」不用盯着一位小数去比
+        // 剩余小时数取整显示；英文的 hour / hours 跟着同一个整数走
+        int wholeHours = Math.round(hours);
         budgetLine.setText(hours > 0f
-                ? getString(R.string.editor_budget_with_space, lanes, sum, size,
-                        String.format(Locale.US, "%.0f", hours))
+                ? getResources().getQuantityString(R.plurals.editor_budget_with_space, wholeHours,
+                        lanes, sum, size, String.valueOf(wholeHours))
                 : getString(R.string.editor_budget, lanes, sum, size));
         renderIssues();
     }

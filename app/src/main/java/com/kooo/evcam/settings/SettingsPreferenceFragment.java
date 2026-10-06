@@ -193,44 +193,10 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_watermark_spec", appConfig.isWatermarkSpecEnabled(),
                 value -> appConfig.setWatermarkSpecEnabled(value));
 
-        // 行驶信息条（试验项目）：打开时顺手要定位权限 —— 经纬度和 GPS 车速靠它
-        bindSwitch("pref_info_bar", appConfig.isInfoBarEnabled(), enabled -> {
-            appConfig.setInfoBarEnabled(enabled);
-            if (enabled) {
-                askLocationPermission();
-            }
-        });
-    }
-
-    private static final int REQUEST_LOCATION = 41;
-
-    /** 信息条要经纬度和车速：向系统要定位权限。容器给不给、弹不弹框，看黑匣子。 */
-    private void askLocationPermission() {
-        android.content.Context context = getContext();
-        if (context == null) {
-            return;
-        }
-        boolean granted = androidx.core.content.ContextCompat.checkSelfPermission(context,
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        com.kooo.evcam.blackbox.BlackBox.note("行驶信息条打开，定位权限" + (granted ? "已有" : "没有，向系统申请"));
-        if (!granted) {
-            requestPermissions(new String[]{
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @androidx.annotation.NonNull String[] permissions,
-                                           @androidx.annotation.NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_LOCATION) {
-            boolean granted = grantResults.length > 0
-                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
-            com.kooo.evcam.blackbox.BlackBox.note("定位权限申请结果：" + (granted ? "已授予" : "被拒绝或没有弹框"));
-        }
+        // 行驶信息条（试验项目）：经纬度和 GPS 车速要定位权限，已经有了（比如车机预先授予）才用，
+        // 不弹权限框（项目所有者 2026-10-06）；没有就不显示，见 LocationSource
+        bindSwitch("pref_info_bar", appConfig.isInfoBarEnabled(),
+                value -> appConfig.setInfoBarEnabled(value));
     }
 
     /**
@@ -368,7 +334,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         }
         com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(getContext(), R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.dlg_footage_lock_off_title)
-                .setMessage(getString(R.string.dlg_footage_lock_off_msg, files, StorageHelper.formatSize(bytes)))
+                .setMessage(getResources().getQuantityString(R.plurals.dlg_footage_lock_off_msg,
+                        files, files, StorageHelper.formatSize(bytes)))
                 .setPositiveButton(R.string.dlg_footage_lock_off_ok, (dialog, which) -> applyFootageLock(pref, false))
                 .setNegativeButton(R.string.action_cancel, null));
     }

@@ -2141,6 +2141,11 @@ public class SingleCamera {
     private boolean saveBitmapAsJPEG(android.graphics.Bitmap bitmap, String timestamp) {
         boolean saved = false;
         File photoDir = StorageHelper.getPhotoDir(context);
+        if (photoDir == null) {
+            // 没有地方可存（没有 U 盘、开发者选项没开）：拍照入口已经拦过，走到这里是拍的途中盘没了
+            AppLog.w(TAG, "Camera " + cameraId + " 没有地方存照片（没有 U 盘），这一路没存");
+            return false;
+        }
         if (!photoDir.exists()) {
             photoDir.mkdirs();
         }
