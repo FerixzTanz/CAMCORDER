@@ -9,6 +9,15 @@ commit message, not here.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.10.0-alpha] - 2026-10-06
+
+Version jump: the whole interface text was reviewed and reworded in the 2.1.x alphas; this build finishes it and reworks the recording start/stop.
+
+- Super mirror, floating button, System info and vehicle-signal texts reworded in all three languages; System info is now called System info in English and Malay too.
+- The System info status line is translated and no longer shows raw error text.
+- "Camera in use" on the Super mirror no longer tells you to restart the head unit.
 - When no camera starts recording, the notification and floating button no longer stay on recording: the app shows "Recording didn't start. Retrying…" and retries when the surround view is back, up to three times.
 - A recording that starts while the screen is off now holds the wake lock from the start when Screen-off recording (keep awake) is on.
 - Stopping right after starting no longer leaves a dead recording output on the cameras or stops the next recording; a stop during a MediaRecorder rebuild is no longer undone.
