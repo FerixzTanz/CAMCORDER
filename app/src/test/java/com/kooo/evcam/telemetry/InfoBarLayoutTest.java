@@ -84,10 +84,10 @@ public class InfoBarLayoutTest {
     /** 一格管几个信号的，勾任意一个就带出整格。 */
     @Test
     public void anyOneSignalOfAnIconBringsTheWholeIcon() {
-        assertEquals("前视也画近远光：勾近光带出前视和近光远光那一格",
+        assertEquals("前灯组也画近远光：勾近光带出前灯组和近光 / 远光那一格",
                 Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.LOW_BEAM))));
-        assertEquals("闪远光在信息条上算进前视和近光远光那一格（单独那格只在面板上）",
+        assertEquals("闪远光在信息条上算进前灯组和近光 / 远光那一格（单独那格只在面板上）",
                 Arrays.asList(InfoBarLayout.Cell.DRL, InfoBarLayout.Cell.BEAMS),
                 cellsOf(InfoBarLayout.fit(SURROUND, pick(Signal.HIGH_BEAM_FLASH))));
         assertEquals("转向灯、双闪合成一格（双闪单独那格只在面板上）",
@@ -122,7 +122,7 @@ public class InfoBarLayoutTest {
 
     /**
      * 有图标表示这个信息点，勾上就显示图标（项目所有者 2026-10-04）：转向指示显示 → 转向灯那一格，
-     * 刹车踏板 → 刹车油门那一格，主驾 / 副驾座位 → 车厢；不再是文字格。
+     * 刹车踏板 → 刹车 / 油门那一格，主驾 / 副驾座位 → 座舱；不再是文字格。
      */
     @Test
     public void signalsShownByAnIconBringThatIcon() {
@@ -210,8 +210,8 @@ public class InfoBarLayoutTest {
     }
 
     /**
-     * 前视画日行灯，也画近远光（项目所有者 2026-10-04）：近光、远光、闪远光也列在前视那一格，勾哪个都带出前视；
-     * 近光远光那一格先留着；只勾日行灯 / 前位置灯不带出近光远光那一格。前视和后视一样宽。
+     * 前灯组画日行灯，也画近远光（项目所有者 2026-10-04）：近光、远光、闪远光也列在前灯组那一格，勾哪个都带出前灯组；
+     * 近光 / 远光那一格先留着；只勾日行灯 / 前位置灯不带出近光 / 远光那一格。前灯组和后灯组一样宽。
      */
     @Test
     public void theFrontViewCarriesTheBeamsAndTheBeamsCellStays() {

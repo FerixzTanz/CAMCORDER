@@ -78,7 +78,10 @@ final class EcarxSource {
     private final Map<Long, List<Signal>> byKey = new HashMap<>();
     private HandlerThread thread;
     private volatile Handler handler;
+    /** 连接经过的细节：只进日志和黑匣子（{@link Telemetry#sourceReported}）。 */
     private volatile String status = "not started";
+    /** 连接的结果：页面上的状态行只显示这个。 */
+    private volatile Telemetry.CarLink link = Telemetry.CarLink.CONNECTING;
     private volatile boolean stopped;
     private long readingsVersion;
     private boolean publishPending;
@@ -151,8 +154,8 @@ final class EcarxSource {
         status = "stopped";
     }
 
-    String status() {
-        return status;
+    Telemetry.CarLink link() {
+        return link;
     }
 
     // ================================================================= 连接（在自己的线程上）
@@ -166,13 +169,13 @@ final class EcarxSource {
                 Method create = match(carClass.getMethods(), "create", Context.class);
                 if (create == null) {
                     status = "no Car.create(Context)";
-                    report();
+                    report(Telemetry.CarLink.UNAVAILABLE);
                     return;
                 }
                 car = create.invoke(null, context);
                 if (car == null) {
                     status = "Car.create returned null";
-                    report();
+                    report(Telemetry.CarLink.UNAVAILABLE);
                     return;
                 }
                 cachedCar = car;
@@ -189,7 +192,7 @@ final class EcarxSource {
             }
             if (getFunctionValue == null && getSensorEvent == null) {
                 status = "no readable managers (function=" + (function != null) + ", sensor=" + (sensor != null) + ")";
-                report();
+                report(Telemetry.CarLink.UNAVAILABLE);
                 return;
             }
             String side = readDriverSide(car);
@@ -205,7 +208,7 @@ final class EcarxSource {
                     "connected in %d ms; function=%s zoned=%s sensorEvent=%s sensorValue=%s; driver %s; %s",
                     SystemClock.elapsedRealtime() - start, getFunctionValue != null, getFunctionValueZoned != null,
                     getSensorEvent != null, getSensorLatestValue != null, side, subscribed);
-            report();
+            report(Telemetry.CarLink.CONNECTED);
             Handler h = handler;
             if (h != null && !stopped) {
                 h.postDelayed(floatPoll, FLOAT_POLL_MS);
@@ -213,14 +216,16 @@ final class EcarxSource {
             }
         } catch (ClassNotFoundException e) {
             status = "no " + CAR_CLASS + " on this head unit";
-            report();
+            report(Telemetry.CarLink.UNAVAILABLE);
         } catch (Throwable t) {
             status = "connect failed: " + describe(t);
-            report();
+            report(Telemetry.CarLink.FAILED);
         }
     }
 
-    private void report() {
+    /** 结果给页面（{@link #link}），经过（{@link #status}，含异常原文）只进日志和黑匣子。 */
+    private void report(Telemetry.CarLink result) {
+        link = result;
         AppLog.i(TAG, status);
         telemetry.sourceReported("ecarx", status);
     }

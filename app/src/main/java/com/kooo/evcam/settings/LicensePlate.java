@@ -16,7 +16,7 @@ public final class LicensePlate {
     /** 最长十位。 */
     public static final int MAX_LENGTH = 10;
 
-    /** 信息条前视的车牌上最多显示几位数字（{@link #infoBarDigits}）。 */
+    /** 信息条前灯组那一格的车牌上最多显示几位数字（{@link #infoBarDigits}）。 */
     public static final int INFO_BAR_DIGITS = 4;
 
     private LicensePlate() {
@@ -47,7 +47,7 @@ public final class LicensePlate {
     }
 
     /**
-     * 信息条前视那块车牌上要显示的数字（彩蛋，项目所有者 2026-10-04）：只留数字（字母、汉字、空格一律去掉），
+     * 信息条前灯组那一格车牌上要显示的数字（彩蛋，项目所有者 2026-10-04）：只留数字（字母、汉字、空格一律去掉），
      * 超过四位只留最后 {@link #INFO_BAR_DIGITS} 位。例：「粤B12345」→「2345」，「SGX1234A」→「1234」，「WXY 89」→「89」。
      *
      * <p>只认 ASCII 的 0–9：传进来的是 {@code AppConfig.getLicensePlate()}，已经清洗过（只剩大写字母和数字），

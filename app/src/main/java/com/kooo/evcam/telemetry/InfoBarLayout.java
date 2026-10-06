@@ -78,16 +78,16 @@ public final class InfoBarLayout {
                 Signal.BELT_REAR_LEFT, Signal.BELT_REAR_CENTER, Signal.BELT_REAR_RIGHT,
                 Signal.SEAT_DRIVER, Signal.SEAT_PASSENGER),
         /**
-         * 前视：7X 车头（项目所有者 2026-10-04 定稿），和后灯组一样宽。日行灯或前位置灯亮，灯带下沿两条日行灯条就亮；
+         * 前灯组：7X 车头（项目所有者 2026-10-04 定稿），和后灯组一样宽。日行灯或前位置灯亮，灯带下沿两条日行灯条就亮；
          * 下面两块大灯模块画近光 / 远光：远光（含闪远光）亮就按远光画 —— 一圈把整块灯包住的圆形光晕，否则近光亮按近光。
-         * 所以近光、远光、闪远光也列在这一格：勾其中任意一个，前视和近光远光那一格一起带出来。
+         * 所以近光、远光、闪远光也列在这一格：勾其中任意一个，前灯组和近光 / 远光那一格一起带出来。
          */
         DRL(106, R.string.vi_cell_front_view, Signal.DRL, Signal.FRONT_POSITION_LAMP, Signal.LOW_BEAM,
                 Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
         /**
          * 近光 + 远光一格：四道光线的方向说明开的是哪个 —— 都不亮灰色全斜向下，只近光全斜向下，
          * 只远光（含闪远光）全平直，同时开上两道平直、下两道斜向下。
-         * 前视也画了近远光，这一格先留着（项目所有者 2026-10-04：还要看它好不好认）。
+         * 前灯组也画了近远光，这一格先留着（项目所有者 2026-10-04：还要看它好不好认）。
          */
         BEAMS(90, R.string.vi_cell_beams, Signal.LOW_BEAM, Signal.HIGH_BEAM, Signal.HIGH_BEAM_FLASH),
         /**
@@ -104,7 +104,7 @@ public final class InfoBarLayout {
         POSITION(170, R.string.vi_cell_position),
         /** 按喇叭（Lab 0.23.0：多半拿不到，五次测试都没有号跟着变）。只在车辆状态面板上。 */
         HORN(80, 0, false),
-        /** 闪远光：只在车辆状态面板上（信息条上它算进前视和近光远光那一格）。 */
+        /** 闪远光：只在车辆状态面板上（信息条上它算进前灯组和近光 / 远光那一格）。 */
         FLASH(90, 0, false, Signal.HIGH_BEAM_FLASH),
         /**
          * 双闪：只在车辆状态面板上（信息条上它算进转向灯那一格），和那一格中间的双层三角同一个画法。

@@ -28,7 +28,7 @@
     <string name="set_watermark_spec_title">Sertakan spesifikasi rakaman</string>
     <string name="set_watermark_spec_summary">Menambah resolusi, kadar bingkai sebenar, kodek dan kadar bit semasa pada tera video</string>
     <string name="set_info_bar_title">Bar maklumat pemanduan</string>
-    <string name="set_info_bar_summary">Menambah jalur isyarat kenderaan di bawah video. Pilih apa yang dipaparkan dalam Tetapan → Sistem → Maklumat kenderaan. Percubaan.</string>
+    <string name="set_info_bar_summary">Menambah jalur isyarat kenderaan di bawah video. Pilih apa yang dipaparkan dalam Tetapan → Sistem → Maklumat sistem. Percubaan.</string>
     <string name="set_storage_location_title">Lokasi storan</string>
     <string name="set_storage_sentry_note">Apabila Mod Sentry dihidupkan, hanya port USB-A (tempat Mod Sentry menyimpan rakamannya) kekal berkuasa selepas anda keluar dari kereta, jadi rakaman boleh diteruskan. Jika lokasi storan ialah pemacu pada port Type-C, port itu terputus kuasa dan rakaman beralih ke pemacu pada port USB-A.</string>
     <string name="set_relay_title">Tulis melalui perantara</string>
@@ -41,25 +41,25 @@
     <string name="set_photo_limit_message">Disemak setiap jam: apabila melebihi had, foto paling lama dibersihkan secara automatik. Hanya foto tidak dikunci yang diambil oleh apl ini dipadam. Biarkan kosong atau isi 0 untuk tiada had.</string>
     <string name="set_storage_usage_title">Folder video</string>
     <string name="set_storage_usage_no_drive">Tiada pemacu USB ditemui</string>
-    <string name="set_rearview_summary">Menunjukkan satu kamera keliling dalam tetingkap terapung. Pandangan belakang dicerminkan, seperti cermin sebenar</string>
+    <string name="set_rearview_summary">Menunjukkan mana-mana kamera sekeliling dalam tetingkap terapung; paparan belakang dicerminkan kiri-kanan, seperti cermin pandang belakang dalaman</string>
     <string name="set_rearview_button_mode_title">Mod butang</string>
-    <string name="set_rearview_button_mode_summary">Tetingkap dibahagi mengikut pepenjurunya kepada empat bahagian: ketik bahagian atas, bawah, kiri atau kanan untuk bertukar ke kamera depan, belakang, kiri atau kanan, menggantikan leretan di tengah</string>
+    <string name="set_rearview_button_mode_summary">Bertukar ke paparan depan, belakang, kiri atau kanan apabila kawasan atas, bawah, kiri atau kanan diketik</string>
     <string name="set_rearview_front_rear_title">Depan dan belakang sahaja</string>
-    <string name="set_rearview_front_rear_summary">Bertukar antara belakang dan depan sahaja, melangkau sisi. Dalam mod butang, tetingkap dibahagi kepada separuh atas untuk depan dan separuh bawah untuk belakang</string>
+    <string name="set_rearview_front_rear_summary">Bertukar antara paparan depan dan belakang sahaja</string>
     <string name="set_rearview_fisheye_title">Pembetulan mata ikan</string>
     <string name="set_rearview_fisheye_summary">Membetulkan herotan tong mata ikan dalam Cermin super sahaja; rakaman tidak berubah.</string>
     <string name="set_rearview_fov_title">Medan pandangan</string>
     <string name="set_rearview_fov_summary">Lebih luas menunjukkan lebih banyak dan nampak lebih tajam, tetapi tepinya lebih herot</string>
     <string name="set_rearview_width_title">Lebar tetingkap</string>
     <string name="set_rearview_height_title">Tinggi tetingkap</string>
-    <string name="set_rearview_height_summary">Sehingga satu skrin penuh. Nisbah gambar kekal; bentuk tetingkap menentukan berapa banyak yang kelihatan</string>
+    <string name="set_rearview_height_summary">Setiap satu boleh sehingga skrin penuh; nisbah gambar kekal dan bentuk tetingkap hanya menentukan berapa banyak yang kelihatan</string>
     <string name="set_rearview_reset_title">Set semula tetingkap dan paparan</string>
     <string name="set_rearview_reset_summary">Memulihkan kedudukan dan saiz tetingkap, bingkai, medan pandangan, pembetulan mata ikan dan Depan dan belakang sahaja kepada lalai, serta kembali ke pandangan belakang</string>
     <string name="set_rearview_guide_title">Cara guna</string>
-    <string name="set_rearview_guide_summary">Zon gerak isyarat, tukar kamera, bingkai, lekap tepi dan zum</string>
+    <string name="set_rearview_guide_summary">Zon gerak isyarat, tukar kamera, bingkai, lekap tepi dan ubah saiz</string>
     <string name="rearview_guide_hint">Leret untuk tukar halaman · Ketik di luar untuk tutup</string>
     <string name="mirror_paused_tap">Gambar terhenti · ketik untuk sambung</string>
-    <string name="mirror_resume_busy">Sesuatu yang lain sedang memegang kamera. Mulakan semula unit kepala untuk memulihkannya</string>
+    <string name="mirror_resume_busy">Kamera sedang digunakan dan tidak dapat dibuka buat masa ini</string>
     <string name="mirror_resume_failed">Kamera tidak dapat dibuka: %1$s</string>
     <string name="mirror_dock_label">Super mirror</string>
     <string name="rearview_guide_page">Halaman panduan %1$d daripada %2$d</string>
@@ -70,13 +70,13 @@
     <string name="set_floating_tap_title">Ketik</string>
     <string name="set_floating_long_press_title">Tekan lama</string>
     <string name="set_floating_lock_title">Kunci kedudukan</string>
-    <string name="set_floating_lock_summary">Ia tidak boleh diseret. Ketik dan tekan lama tetap berfungsi</string>
+    <string name="set_floating_lock_summary">Mengunci butang pada kedudukan semasa; ketik dan tekan lama tidak terjejas</string>
     <string name="set_floating_duration_title">Tunjuk masa rakaman</string>
     <string name="set_floating_duration_summary">Menunjukkan masa berlalu di sebelah butang semasa merakam</string>
     <string name="floating_action_open_app">Buka apl</string>
     <string name="floating_action_toggle_recording">Mula / henti rakaman</string>
     <string name="floating_action_take_photo">Ambil foto</string>
-    <string name="floating_action_toggle_mirror">Buka / tutup cermin super</string>
+    <string name="floating_action_toggle_mirror">Hidupkan / matikan Cermin super</string>
     <string name="set_recording_stats_title">Paparan status rakaman</string>
     <string name="set_recording_stats_summary">Menunjukkan masa berlalu dan nombor klip semasa di sudut semasa merakam</string>
     <string name="set_reset_floating_title">Set semula butang terapung</string>
@@ -109,13 +109,25 @@
     <string name="set_camera_mapping_summary">Pilih kamera bagi paparan sekeliling, kabin depan dan kabin belakang secara manual (penyelesaian masalah)</string>
     <string name="set_diagnostics_title">Maklumat diagnostik</string>
     <string name="set_diagnostics_summary">Lihat dan eksport butiran kamera, paparan dan storan serta log terkini</string>
-    <!-- Vehicle info (experimental): groups, signal names, values -->
-    <string name="set_vehicle_info_title">Maklumat kenderaan (percubaan)</string>
+    <!-- System info (experimental): groups, signal names, values -->
+    <string name="set_vehicle_info_title">Maklumat sistem (percubaan)</string>
     <string name="set_vehicle_info_summary">Isyarat kenderaan yang didedahkan unit kepala dan keadaan semasanya; item yang ditanda dipaparkan pada Bar maklumat pemanduan</string>
     <string name="vi_legend">Item yang ditanda dipaparkan pada Bar maklumat pemanduan (memerlukan Tetapan → Rakaman → Bar maklumat pemanduan): sebagai ikon jika ada, jika tidak sebagai teks buat masa ini, seperti dinyatakan di bawah setiap baris; item yang tidak muat tidak dipaparkan. Warna label menunjukkan tahap pengesahan: warna teks biasa, konsisten dalam ujian di kereta (masih disemak silang); kelabu, boleh digunakan, butiran belum muktamad; kelabu pudar, boleh dibaca tetapi belum disahkan, hanya boleh ditanda apabila pilihan pembangun dihidupkan.</string>
     <string name="vi_position">Kedudukan (lat/long)</string>
     <string name="vi_position_source">Lokasi sistem</string>
-    <!-- Under each vehicle info row: how a tick shows on the info bar (InfoBarLayout.cellsFor); info bar cell names (InfoBarLayout.Cell) -->
+    <!-- System info status line under the legend (VehicleInfoFragment.status); how each signal ID is read (VehicleInfoFragment.address; IDs and zones stay hex) -->
+    <string name="vi_status_known">Data untuk %1$d/%2$d isyarat</string>
+    <string name="vi_status_car_connected">Antara muka kenderaan: disambungkan</string>
+    <string name="vi_status_car_unavailable">Antara muka kenderaan: tidak tersedia</string>
+    <string name="vi_status_car_failed">Antara muka kenderaan: sambungan gagal</string>
+    <string name="vi_status_location_on">Lokasi: hidup</string>
+    <string name="vi_status_location_denied">Lokasi: tiada kebenaran</string>
+    <string name="vi_status_location_off">Lokasi: mati</string>
+    <string name="vi_kind_function">fungsi</string>
+    <string name="vi_kind_function_zone">fungsi·zon %1$s</string>
+    <string name="vi_kind_sensor_event">peristiwa sensor</string>
+    <string name="vi_kind_sensor_value">nilai sensor</string>
+    <!-- Under each System info row: how a tick shows on the info bar (InfoBarLayout.cellsFor); info bar cell names (InfoBarLayout.Cell) -->
     <string name="vi_bar_icon">Ikon bar maklumat: %1$s</string>
     <string name="vi_bar_text">Teks bar maklumat (belum ada ikon)</string>
     <string name="vi_bar_join">", "</string>
@@ -128,7 +140,7 @@
     <string name="vi_cell_stock_360">360 kilang</string>
     <string name="vi_cell_sentry">Mod Sentry</string>
     <string name="vi_cell_cabin">Kabin</string>
-    <string name="vi_cell_front_view">Pandangan hadapan</string>
+    <string name="vi_cell_front_view">Lampu hadapan</string>
     <string name="vi_cell_beams">Lampu rendah / tinggi</string>
     <string name="vi_cell_rear_lamps">Lampu belakang</string>
     <string name="vi_cell_assist">Bantuan pemandu</string>
@@ -136,7 +148,7 @@
     <string name="vi_cell_position">Kedudukan</string>
     <string name="vi_group_drive">Pemanduan</string>
     <string name="vi_group_lamps">Lampu</string>
-    <string name="vi_group_body">Badan</string>
+    <string name="vi_group_body">Badan kenderaan</string>
     <string name="vi_group_stock">Skrin kilang</string>
     <string name="vi_group_vehicle">Kenderaan</string>
     <string name="vi_group_assist">Bantuan pemandu</string>
@@ -148,7 +160,7 @@
     <string name="vi_throttle_depth">Kedalaman pendikit</string>
     <string name="vi_steering">Sudut stereng</string>
     <string name="vi_auto_hold">Suis auto hold (semasa memandu)</string>
-    <string name="vi_auto_hold_active">Auto hold, sedang menahan</string>
+    <string name="vi_auto_hold_active">Auto hold aktif</string>
     <string name="vi_indicator">Status penunjuk</string>
     <string name="vi_indicator_display">Paparan penunjuk (berkelip)</string>
     <string name="vi_turn_left">Lampu isyarat kiri</string>
@@ -169,7 +181,7 @@
     <string name="vi_door_rear_left">Pintu belakang kiri</string>
     <string name="vi_door_rear_right">Pintu belakang kanan</string>
     <string name="vi_door_frunk">But hadapan</string>
-    <string name="vi_door_trunk">Pintu belakang</string>
+    <string name="vi_door_trunk">But belakang</string>
     <string name="vi_charge_port">Penutup port cas</string>
     <string name="vi_sunroof_shade">Kedudukan bidai bumbung kaca</string>
     <string name="vi_belt_driver">Tali pinggang pemandu</string>
@@ -186,7 +198,7 @@
     <string name="vi_park_assist">Paparan bantuan parkir</string>
     <string name="vi_odometer">Odometer</string>
     <string name="vi_battery">Bateri</string>
-    <string name="vi_range">Jarak</string>
+    <string name="vi_range">Jarak pemanduan</string>
     <string name="vi_temp_outside">Suhu luar</string>
     <string name="vi_temp_inside">Suhu kabin</string>
     <string name="vi_battery_temp">Suhu bateri</string>
@@ -209,7 +221,7 @@
     <string name="vi_v_closed">Tertutup</string>
     <string name="vi_v_buckled">Dipasang</string>
     <string name="vi_v_unbuckled">Tidak dipasang</string>
-    <string name="vi_v_occupied">Ada orang</string>
+    <string name="vi_v_occupied">Diduduki</string>
     <string name="vi_v_empty">Kosong</string>
     <string name="vi_v_shown">Dipaparkan</string>
     <string name="vi_v_hidden">Tidak dipaparkan</string>
@@ -219,9 +231,9 @@
     <string name="vi_v_light_position">Lampu kedudukan</string>
     <string name="vi_v_light_low">Lampu rendah</string>
     <string name="vi_v_light_auto">Auto</string>
-    <string name="vi_v_mirror_normal">Biasa</string>
+    <string name="vi_v_mirror_normal">Normal</string>
     <string name="vi_v_mirror_tilting">Sedang condong</string>
-    <string name="vi_v_mirror_down">Condong</string>
+    <string name="vi_v_mirror_down">Telah condong</string>
     <string name="vi_v_mirror_returning">Sedang kembali</string>
     <string name="vi_v_day">Siang</string>
     <string name="vi_v_night">Malam</string>

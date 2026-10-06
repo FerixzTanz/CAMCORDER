@@ -86,7 +86,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
                 TextView label = row.findViewById(R.id.vehicle_info_label);
                 label.setText(s.labelRes);
                 label.setTextColor(ContextCompat.getColor(ctx, tone(s.trust)));
-                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(detail(ctx, s.name(), address(s)));
+                ((TextView) row.findViewById(R.id.vehicle_info_id)).setText(detail(ctx, s.name(), address(ctx, s)));
                 valueViews.put(s, row.findViewById(R.id.vehicle_info_value));
                 bindCheck(row, s.name(), InfoBar.selectable(s));
                 list.addView(row);
@@ -165,7 +165,49 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
             tv.setTextColor(v == null ? unknown : known);
         }
         showPosition();
-        statusView.setText(Telemetry.get().describe());
+        statusView.setText(status(ctx, r));
+    }
+
+    /**
+     * 图例下方那行：有数据几项 · 车辆接口 · 定位。只写结果，连接经过（耗时、方法探测、订阅、异常原文）
+     * 只进日志和黑匣子（{@code Telemetry.sourceReported}）。不写「正在读取 / 已停止」：页面在 onStart 里
+     * 先登记再画，看得见的时候一直在收集。车辆接口还在连（第一次约一秒）时先不写这一项，连上或连不上后再补上。
+     */
+    private static String status(Context ctx, Readings r) {
+        Telemetry t = Telemetry.get();
+        StringBuilder sb = new StringBuilder(
+                ctx.getString(R.string.vi_status_known, r.knownCount(), Signal.values().length));
+        Telemetry.CarLink car = t.carLink();
+        if (car != null && car != Telemetry.CarLink.CONNECTING) {
+            sb.append(" · ").append(ctx.getString(carText(car)));
+        }
+        Telemetry.LocationLink location = t.locationLink();
+        if (location != null) {
+            sb.append(" · ").append(ctx.getString(locationText(location)));
+        }
+        return sb.toString();
+    }
+
+    private static int carText(Telemetry.CarLink link) {
+        switch (link) {
+            case CONNECTED:
+                return R.string.vi_status_car_connected;
+            case UNAVAILABLE:
+                return R.string.vi_status_car_unavailable;
+            default:
+                return R.string.vi_status_car_failed;
+        }
+    }
+
+    private static int locationText(Telemetry.LocationLink link) {
+        switch (link) {
+            case ON:
+                return R.string.vi_status_location_on;
+            case NO_PERMISSION:
+                return R.string.vi_status_location_denied;
+            default:
+                return R.string.vi_status_location_off;
+        }
     }
 
     private void showPosition() {
@@ -199,7 +241,7 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
 
     /**
      * 勾上这一项（信号名或 {@link InfoBar#POSITION}）在信息条上显示成什么：有图标就是「图标：哪几格」
-     * （一项带出两格的，两格都写，比如近光灯 → 前视、近光远光），没有就是「文字（暂无图标）」。
+     * （一项带出两格的，两格都写，比如近光灯 → 前灯组、近光 / 远光），没有就是「文字（暂无图标）」。
      */
     private static String barHint(Context ctx, String item) {
         List<InfoBarLayout.Cell> cells = InfoBarLayout.cellsFor(item);
@@ -216,18 +258,19 @@ public class VehicleInfoFragment extends Fragment implements Telemetry.Listener 
         return ctx.getString(R.string.vi_bar_icon, names.toString());
     }
 
-    /** 号码：怎么读 + 号码（+ 区域）。 */
-    static String address(Signal s) {
+    /** 号码 + 怎么读（+ 区域）：读法用 Lab 信号手册的叫法；号码和区域号照原样写十六进制。 */
+    static String address(Context ctx, Signal s) {
         String id = String.format(Locale.US, "0x%08X", s.id);
         switch (s.kind) {
             case FUNCTION_ZONE:
-                return id + " · zone 0x" + Integer.toHexString(s.zone);
+                return id + " · " + ctx.getString(R.string.vi_kind_function_zone,
+                        "0x" + Integer.toHexString(s.zone));
             case SENSOR_EVENT:
-                return id + " · sensor event";
+                return id + " · " + ctx.getString(R.string.vi_kind_sensor_event);
             case SENSOR_VALUE:
-                return id + " · sensor value";
+                return id + " · " + ctx.getString(R.string.vi_kind_sensor_value);
             default:
-                return id + " · function";
+                return id + " · " + ctx.getString(R.string.vi_kind_function);
         }
     }
 

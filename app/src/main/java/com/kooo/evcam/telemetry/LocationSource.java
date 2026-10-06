@@ -31,7 +31,10 @@ final class LocationSource implements LocationListener {
     private final Telemetry telemetry;
     private LocationManager manager;
     private HandlerThread thread;
+    /** 订阅经过的细节：只进日志和黑匣子（{@link Telemetry#sourceReported}）。 */
     private volatile String status = "not started";
+    /** 订阅的结果：页面上的状态行只显示这个。 */
+    private volatile Telemetry.LocationLink link = Telemetry.LocationLink.OFF;
 
     LocationSource(Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -41,12 +44,14 @@ final class LocationSource implements LocationListener {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             status = "no permission";
+            link = Telemetry.LocationLink.NO_PERMISSION;
             telemetry.sourceReported("location", status);
             return;
         }
         manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if (manager == null) {
             status = "no service";
+            link = Telemetry.LocationLink.OFF;
             telemetry.sourceReported("location", status);
             return;
         }
@@ -54,6 +59,7 @@ final class LocationSource implements LocationListener {
         thread.start();
         StringBuilder subscribed = new StringBuilder();
         StringBuilder failed = new StringBuilder();
+        boolean denied = false;
         for (String provider : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
             try {
                 if (!manager.isProviderEnabled(provider)) {
@@ -68,6 +74,7 @@ final class LocationSource implements LocationListener {
                 }
             } catch (Exception e) {
                 // SecurityException（权限）、IllegalArgumentException（没有这个提供者）都算连不上
+                denied |= e instanceof SecurityException;
                 failed.append(provider).append('=').append(e.getClass().getSimpleName()).append(' ');
                 AppLog.w(TAG, "订阅 " + provider + " 失败: " + e);
             }
@@ -77,6 +84,8 @@ final class LocationSource implements LocationListener {
         if (failed.length() > 0) {
             status += " (" + failed.toString().trim() + ")";
         }
+        link = subscribed.length() > 0 ? Telemetry.LocationLink.ON
+                : denied ? Telemetry.LocationLink.NO_PERMISSION : Telemetry.LocationLink.OFF;
         telemetry.sourceReported("location", status);
     }
 
@@ -98,8 +107,8 @@ final class LocationSource implements LocationListener {
         status = "stopped";
     }
 
-    String status() {
-        return status;
+    Telemetry.LocationLink link() {
+        return link;
     }
 
     @Override

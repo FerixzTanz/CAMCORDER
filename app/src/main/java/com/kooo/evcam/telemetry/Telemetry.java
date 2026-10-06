@@ -201,7 +201,10 @@ public final class Telemetry {
         return carSpeedSeen;
     }
 
-    /** 来源报到：连上了什么、连不上什么。黑匣子里一行，诊断报告也读它。 */
+    /**
+     * 来源报到：连上了什么、连不上什么。细节（耗时、方法探测、订阅、异常原文）只进日志和黑匣子，诊断报告也读它；
+     * 页面上只显示 {@link #carLink} / {@link #locationLink} 的结果。
+     */
     void sourceReported(String source, String status) {
         AppLog.i(TAG, source + ": " + status);
         com.kooo.evcam.blackbox.BlackBox.note("行驶信息来源 " + source + ": " + status);
@@ -209,23 +212,40 @@ public final class Telemetry {
         notifyListeners(readings);
     }
 
-    /** 诊断报告 / 页面用的一段。 */
-    public String describe() {
+    /** 车辆接口这一路的结果（「系统信息」页的状态行）。 */
+    public enum CarLink {
+        /** 还在连（{@code Car.create} 第一次要一秒左右）：状态行先不写这一项 */
+        CONNECTING,
+        CONNECTED,
+        /** 这台车机没有 ECARX 接口，或者接口里没有能读的 */
+        UNAVAILABLE,
+        /** 有接口，连的时候出错 */
+        FAILED
+    }
+
+    /** 定位这一路的结果（「系统信息」页的状态行）。 */
+    public enum LocationLink {
+        ON,
+        NO_PERMISSION,
+        /** 系统定位关着（没有一个提供者能订阅） */
+        OFF
+    }
+
+    /** 车辆接口此刻的结果；没在收集时 null。 */
+    public CarLink carLink() {
         EcarxSource c;
-        LocationSource l;
         synchronized (lock) {
             c = car;
+        }
+        return c == null ? null : c.link();
+    }
+
+    /** 定位此刻的结果；没在收集时 null。 */
+    public LocationLink locationLink() {
+        LocationSource l;
+        synchronized (lock) {
             l = location;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(running ? "running" : "stopped");
-        sb.append(", known ").append(readings.knownCount()).append('/').append(Signal.values().length);
-        if (c != null) {
-            sb.append("; ecarx: ").append(c.status());
-        }
-        if (l != null) {
-            sb.append("; location: ").append(l.status());
-        }
-        return sb.toString();
+        return l == null ? null : l.link();
     }
 }

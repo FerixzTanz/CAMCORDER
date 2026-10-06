@@ -191,7 +191,7 @@
 | 超级后视镜 | 超级后视镜；其窗口在本分区内称「窗口」 | Super mirror（句中也大写 S） | Cermin super | 「电子后视镜」只作解释；贴边标签三种语言都写 Super mirror |
 | 悬浮按钮 | 悬浮按钮；按钮大小、按钮透明度、时长文字大小 | floating button；Button opacity | butang terapung；Kelegapan butang | 「悬浮窗」只用于系统权限名「悬浮窗权限」（Overlay / Paparan di atas apl lain） |
 | 行驶信息条 | 行驶信息条；仅系统信息页每行下方的小字可简称「信息条」 | Driving info bar（行下小字 Info bar） | Bar maklumat pemanduan | — |
-| 系统信息 | 系统信息（试验性） | Vehicle info (experimental) | Maklumat kenderaan (percubaan) | 引用时与当前标题一致 |
+| 系统信息 | 系统信息（试验性） | System info (experimental) | Maklumat sistem (percubaan) | — |
 | 车辆状态 / 车辆信号 | 车辆状态（试验性）只作主界面面板的功能名；泛指读到的数据用「车辆信号」 | Vehicle status (experimental)；vehicle signals | Status kenderaan (percubaan)；isyarat kenderaan | — |
 | 车机 / 车辆 / 车 | 车机 = 运行本应用的中控主机；车辆 = 整车；单字「车」只在固定词里（下车、锁车、车门、车速、车牌、左舵车） | head unit；vehicle | unit kepala；kenderaan | 休眠、重启、占用摄像头的是车机；日常短语可用 car / kereta（leave the car） |
 | 熄屏 / 休眠 | 熄屏、亮屏（屏幕）；休眠、唤醒（车机）；熄屏录制（阻止休眠）（开发者选项）；熄屏持续录制（系统） | screen off / on；sleep / wake；Screen-off recording (keep awake)；Keep recording when the screen goes off | skrin padam / hidup；tidur / bangun；Rakaman skrin padam (kekal berjaga)；Terus merakam apabila skrin padam | 不用「睡」「不让车机睡」；马来文不用 skrin mati |
