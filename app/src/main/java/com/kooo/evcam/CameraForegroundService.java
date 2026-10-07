@@ -2,7 +2,6 @@ package com.kooo.evcam;
 
 
 import com.kooo.evcam.AppLog;
-import com.kooo.evcam.camera.MultiCameraManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -95,7 +94,7 @@ public class CameraForegroundService extends Service {
     }
     
     /**
-     * 唤醒锁不在这里管了：它只属于「熄屏录制」（规格 §3.1，{@code ScreenOffRecording}），
+     * 唤醒锁不在这里管了：它只属于「熄屏录制（阻止休眠）」（规格 §3.1，{@code ScreenOffRecording}），
      * 熄屏时在录像才拿、录像停了就放、到了用户设的时长就放。
      */
 
@@ -140,10 +139,10 @@ public class CameraForegroundService extends Service {
         String content = intent != null ? intent.getStringExtra("content") : null;
 
         if (title == null) {
-            title = getString(R.string.notif_running);
+            title = getString(R.string.notif_background_title);
         }
         if (content == null) {
-            content = getString(R.string.notif_running_desc);
+            content = getString(R.string.notif_tap_to_return);
         }
 
         // 创建通知
@@ -207,13 +206,7 @@ public class CameraForegroundService extends Service {
     }
 
     private boolean isRecordingNow() {
-        try {
-            com.kooo.evcam.camera.MultiCameraManager manager =
-                    com.kooo.evcam.camera.CameraManagerHolder.getInstance().getCameraManager();
-            return manager != null && manager.isRecording();
-        } catch (Throwable t) {
-            return false;
-        }
+        return com.kooo.evcam.recording.RecordingCoordinator.get(this).isRecording();
     }
 
     private boolean isScreenOnNow() {
@@ -381,7 +374,7 @@ public class CameraForegroundService extends Service {
     /**
      * 录像停了（RecordingCoordinator 调）、或主界面收尾 / 退出要停服务。
      *
-     * <p>前台服务的寿命 = 「保活」开着 或 在录（规格 §3）。保活开着时它本来就该一直在：
+     * <p>前台服务的寿命 = 「保持后台运行」开着 或 在录（规格 §3）。保活开着时它本来就该一直在：
      * 这里只把通知换回「在后台运行」，不停。保活关着、或用户退出了，才真的停。
      * 以前一律 stopService，保活开着时它 onDestroy 里一秒后又把自己拉起来 ——
      * 每次停录都停一次、起一次，通知闪一下，冷启动的恢复再跑一遍。</p>
@@ -389,8 +382,8 @@ public class CameraForegroundService extends Service {
     public static void stop(Context context) {
         if (!UserExit.isExited(context) && new AppConfig(context).isKeepAliveEnabled()) {
             if (isForegroundReady) {
-                start(context, context.getString(R.string.notif_running),
-                        context.getString(R.string.notif_running_desc));
+                start(context, context.getString(R.string.notif_background_title),
+                        context.getString(R.string.notif_tap_to_return));
             }
             return;
         }

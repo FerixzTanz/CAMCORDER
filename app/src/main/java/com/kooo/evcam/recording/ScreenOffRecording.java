@@ -9,8 +9,6 @@ import com.kooo.evcam.AppConfig;
 import com.kooo.evcam.AppLog;
 import com.kooo.evcam.WakeUpHelper;
 import com.kooo.evcam.blackbox.BlackBox;
-import com.kooo.evcam.camera.CameraManagerHolder;
-import com.kooo.evcam.camera.MultiCameraManager;
 
 /**
  * 熄屏录制（开发者选项，规格 §3.1）：熄屏时正在录像，就拿住唤醒锁不让车机睡。
@@ -69,7 +67,8 @@ public final class ScreenOffRecording {
     /** 该拿就拿、到点就放。幂等，多调无害。 */
     private static void ensure(Context context) {
         AppConfig config = new AppConfig(context);
-        if (!config.isScreenOffRecordingEnabled() || !recordingNow()) {
+        // 「在录」问协调器：开录指令一发出去就算（以前问相机层，屏幕黑着时开始的录像在开录中这一步拿不到锁）
+        if (!config.isScreenOffRecordingEnabled() || !RecordingCoordinator.get(context).isRecording()) {
             return;
         }
         int minutes = config.getScreenOffWakeMinutes();
@@ -112,15 +111,6 @@ public final class ScreenOffRecording {
         if (timeout != null) {
             HANDLER.removeCallbacks(timeout);
             timeout = null;
-        }
-    }
-
-    private static boolean recordingNow() {
-        try {
-            MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
-            return manager != null && manager.isRecording();
-        } catch (Throwable t) {
-            return false;
         }
     }
 

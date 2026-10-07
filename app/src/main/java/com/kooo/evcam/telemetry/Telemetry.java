@@ -23,7 +23,8 @@ import java.util.Set;
  *   <li>来源各管一条路：{@link EcarxSource}（车机自带的 ECARX 接口，订阅），{@link LocationSource}（经纬度，
  *       车不给车速时用 GPS 车速）。再有新的路就是再加一个来源。</li>
  *   <li><b>谁要用就登记</b>（{@link #acquire} / {@link #release}，和相机的登记表一个道理）：录像开着信息条、
- *       「系统信息」页开着，都算要用；没人要了来源全停、快照清空 —— 关掉页面就释放全部资源，
+ *       「系统信息」页开着、录像时开着闪远光自动锁定（{@code storage.AutoLock}），都算要用；
+ *       没人要了来源全停、快照清空 —— 关掉页面就释放全部资源，
  *       下次不会把旧值画进新录像。</li>
  * </ul>
  *
@@ -53,8 +54,6 @@ public final class Telemetry {
     private boolean running;
     /** 车速有没有从车辆接口来过：有的话定位那边的 GPS 车速就不写了（那个是推算的）。 */
     private volatile boolean carSpeedSeen;
-    /** 信息条那份快照用全部读数（开发者的「激活所有栏目信息」）还是只用验证过的。 */
-    private volatile boolean infoBarAll;
     private EcarxSource car;
     private LocationSource location;
 
@@ -63,6 +62,17 @@ public final class Telemetry {
 
     public static Telemetry get() {
         return INSTANCE;
+    }
+
+    /** 信息条的勾选或开发者模式变了（{@link InfoBar}）：读数不变也按新的勾选重新映射一次。 */
+    public void selectionChanged() {
+        EcarxSource c;
+        synchronized (lock) {
+            c = car;
+        }
+        if (c != null) {
+            c.republish();
+        }
     }
 
     /** 登记：我要用车辆信号。第一个登记的把来源拉起来；重复登记无害。 */
@@ -77,7 +87,6 @@ public final class Telemetry {
             state = VehicleState.empty();
             readings = Readings.empty();
             Context app = context.getApplicationContext();
-            infoBarAll = new AppConfig(app).isInfoBarAllActive();
             car = new EcarxSource(this);
             location = new LocationSource(this);
             car.start(app);
@@ -183,10 +192,6 @@ public final class Telemetry {
         });
     }
 
-    /** 信息条快照要不要没验证过的信号。 */
-    boolean infoBarAllActive() {
-        return infoBarAll;
-    }
 
     void noteCarSpeed() {
         carSpeedSeen = true;
@@ -196,7 +201,10 @@ public final class Telemetry {
         return carSpeedSeen;
     }
 
-    /** 来源报到：连上了什么、连不上什么。黑匣子里一行，诊断报告也读它。 */
+    /**
+     * 来源报到：连上了什么、连不上什么。细节（耗时、方法探测、订阅、异常原文）只进日志和黑匣子，诊断报告也读它；
+     * 页面上只显示 {@link #carLink} / {@link #locationLink} 的结果。
+     */
     void sourceReported(String source, String status) {
         AppLog.i(TAG, source + ": " + status);
         com.kooo.evcam.blackbox.BlackBox.note("行驶信息来源 " + source + ": " + status);
@@ -204,23 +212,40 @@ public final class Telemetry {
         notifyListeners(readings);
     }
 
-    /** 诊断报告 / 页面用的一段。 */
-    public String describe() {
+    /** 车辆接口这一路的结果（「系统信息」页的状态行）。 */
+    public enum CarLink {
+        /** 还在连（{@code Car.create} 第一次要一秒左右）：状态行先不写这一项 */
+        CONNECTING,
+        CONNECTED,
+        /** 这台车机没有 ECARX 接口，或者接口里没有能读的 */
+        UNAVAILABLE,
+        /** 有接口，连的时候出错 */
+        FAILED
+    }
+
+    /** 定位这一路的结果（「系统信息」页的状态行）。 */
+    public enum LocationLink {
+        ON,
+        NO_PERMISSION,
+        /** 系统定位关着（没有一个提供者能订阅） */
+        OFF
+    }
+
+    /** 车辆接口此刻的结果；没在收集时 null。 */
+    public CarLink carLink() {
         EcarxSource c;
-        LocationSource l;
         synchronized (lock) {
             c = car;
+        }
+        return c == null ? null : c.link();
+    }
+
+    /** 定位此刻的结果；没在收集时 null。 */
+    public LocationLink locationLink() {
+        LocationSource l;
+        synchronized (lock) {
             l = location;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(running ? "running" : "stopped");
-        sb.append(", known ").append(readings.knownCount()).append('/').append(Signal.values().length);
-        if (c != null) {
-            sb.append("; ecarx: ").append(c.status());
-        }
-        if (l != null) {
-            sb.append("; location: ").append(l.status());
-        }
-        return sb.toString();
+        return l == null ? null : l.link();
     }
 }

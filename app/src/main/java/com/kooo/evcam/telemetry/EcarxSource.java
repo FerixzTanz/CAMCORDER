@@ -78,12 +78,17 @@ final class EcarxSource {
     private final Map<Long, List<Signal>> byKey = new HashMap<>();
     private HandlerThread thread;
     private volatile Handler handler;
+    /** 连接经过的细节：只进日志和黑匣子（{@link Telemetry#sourceReported}）。 */
     private volatile String status = "not started";
+    /** 连接的结果：页面上的状态行只显示这个。 */
+    private volatile Telemetry.CarLink link = Telemetry.CarLink.CONNECTING;
     private volatile boolean stopped;
     private long readingsVersion;
     private boolean publishPending;
     private boolean firstRoundReported;
     private boolean driverOnRight = true;
+    /** 取勾选用（{@link InfoBar#selection}）。 */
+    private volatile Context appContext;
 
     private Object function;
     private Object sensor;
@@ -118,6 +123,7 @@ final class EcarxSource {
 
     void start(Context context) {
         final Context app = context.getApplicationContext();
+        appContext = app;
         thread = new HandlerThread("Telemetry-Ecarx");
         thread.start();
         handler = new Handler(thread.getLooper());
@@ -148,8 +154,8 @@ final class EcarxSource {
         status = "stopped";
     }
 
-    String status() {
-        return status;
+    Telemetry.CarLink link() {
+        return link;
     }
 
     // ================================================================= 连接（在自己的线程上）
@@ -163,13 +169,13 @@ final class EcarxSource {
                 Method create = match(carClass.getMethods(), "create", Context.class);
                 if (create == null) {
                     status = "no Car.create(Context)";
-                    report();
+                    report(Telemetry.CarLink.UNAVAILABLE);
                     return;
                 }
                 car = create.invoke(null, context);
                 if (car == null) {
                     status = "Car.create returned null";
-                    report();
+                    report(Telemetry.CarLink.UNAVAILABLE);
                     return;
                 }
                 cachedCar = car;
@@ -186,7 +192,7 @@ final class EcarxSource {
             }
             if (getFunctionValue == null && getSensorEvent == null) {
                 status = "no readable managers (function=" + (function != null) + ", sensor=" + (sensor != null) + ")";
-                report();
+                report(Telemetry.CarLink.UNAVAILABLE);
                 return;
             }
             String side = readDriverSide(car);
@@ -202,7 +208,7 @@ final class EcarxSource {
                     "connected in %d ms; function=%s zoned=%s sensorEvent=%s sensorValue=%s; driver %s; %s",
                     SystemClock.elapsedRealtime() - start, getFunctionValue != null, getFunctionValueZoned != null,
                     getSensorEvent != null, getSensorLatestValue != null, side, subscribed);
-            report();
+            report(Telemetry.CarLink.CONNECTED);
             Handler h = handler;
             if (h != null && !stopped) {
                 h.postDelayed(floatPoll, FLOAT_POLL_MS);
@@ -210,14 +216,16 @@ final class EcarxSource {
             }
         } catch (ClassNotFoundException e) {
             status = "no " + CAR_CLASS + " on this head unit";
-            report();
+            report(Telemetry.CarLink.UNAVAILABLE);
         } catch (Throwable t) {
             status = "connect failed: " + describe(t);
-            report();
+            report(Telemetry.CarLink.FAILED);
         }
     }
 
-    private void report() {
+    /** 结果给页面（{@link #link}），经过（{@link #status}，含异常原文）只进日志和黑匣子。 */
+    private void report(Telemetry.CarLink result) {
+        link = result;
         AppLog.i(TAG, status);
         telemetry.sourceReported("ecarx", status);
     }
@@ -479,9 +487,19 @@ final class EcarxSource {
             values.put(s, decoded);
         }
         schedulePublish(0);
-        if (s == Signal.TURN_LEFT || s == Signal.TURN_RIGHT) {
-            // 闪烁保持到点要再算一次，否则松手后双闪要等下一次变化才灭
-            schedulePublish(TurnSignalHold.HOLD_MS + 50);
+        long hold = VehicleStateMapper.republishAfterMs(s);
+        if (hold > 0) {
+            // 显示里有保持的信号（转向灯闪烁、闪远光）到点要再算一次，否则要等下一次变化才灭。
+            // 映射看到这次变化是在合并发布之后（最多晚 PUBLISH_COALESCE_MS），重算也跟着往后让这么多
+            schedulePublish(hold + PUBLISH_COALESCE_MS + 50);
+        }
+    }
+
+    /** 勾选或开发者模式变了：读数不变也重新映射一次，信息条那份快照按新的勾选滤。 */
+    void republish() {
+        Handler h = handler;
+        if (h != null && !stopped) {
+            h.post(() -> schedulePublish(0));
         }
     }
 
@@ -510,8 +528,10 @@ final class EcarxSource {
         if (snapshot.number(Signal.SPEED) != null) {
             telemetry.noteCarSpeed();
         }
-        // 非开发者：不能用的信号先滤掉再映射，信息条上不出现猜的东西
-        final Readings forBar = telemetry.infoBarAllActive() ? snapshot : snapshot.usableOnly();
+        // 不能用的信号先滤掉再映射，信息条上不出现猜的东西；开发者勾了的没验证信号才放进来（InfoBar）
+        Context app = appContext;
+        final Readings forBar = app == null ? snapshot.usableOnly()
+                : snapshot.usableOr(InfoBar.selection(app));
         telemetry.edit(b -> mapper.apply(b, forBar, now, driverOnRight));
         telemetry.publishReadings(snapshot);
         if (!firstRoundReported) {

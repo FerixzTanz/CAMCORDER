@@ -8,7 +8,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * {@link StoragePlan} 的单元测试。
@@ -154,5 +156,62 @@ public class StoragePlanTest {
         assertEquals(600 * MB, StoragePlan.estimateSegmentBytes(clips));
         assertEquals(StoragePlan.DEFAULT_SEGMENT_BYTES,
                 StoragePlan.estimateSegmentBytes(group("20260917_110000", MB)));
+    }
+
+    // ---------------------------------------------------------------- 锁定的影像
+
+    /** 锁定的永远不进删除名单：跳过它，从下一组接着删。 */
+    @Test
+    public void lockedClipsAreNeverDeleted() {
+        // 10 组 × 2 路 × 500 MB = 10 GB，上限 8 GB、一段 1 GB：要腾 3 GB
+        List<StoragePlan.Clip> clips = minutes(10, 500 * MB);
+        Set<String> locked = new HashSet<>(Arrays.asList(
+                "20260917_100000_front.mp4", "20260917_100000_back.mp4"));
+        StoragePlan.Decision d = StoragePlan.decide(clips, locked, 8 * GB, 100 * GB, GB);
+        assertEquals(StoragePlan.Verdict.DELETE, d.verdict);
+        assertFalse(d.toDelete.contains("20260917_100000_front.mp4"));
+        assertFalse(d.toDelete.contains("20260917_100000_back.mp4"));
+        assertTrue(d.toDelete.contains("20260917_100100_front.mp4"));
+        assertTrue("锁着的那组不能删，就多删后面一组", d.toDelete.contains("20260917_100300_back.mp4"));
+        assertFalse(d.lockedFull);
+    }
+
+    /** 锁定的照样算占用：锁满了，没锁的删光也不够 —— 停录，而且说得出是锁定的原因。 */
+    @Test
+    public void lockedFootageThatFillsTheCapStopsRecording() {
+        List<StoragePlan.Clip> clips = minutes(10, 500 * MB);
+        Set<String> locked = new HashSet<>();
+        for (StoragePlan.Clip clip : clips.subList(0, 16)) {
+            locked.add(clip.name);
+        }
+        StoragePlan.Decision d = StoragePlan.decide(clips, locked, 8 * GB, 100 * GB, GB);
+        assertEquals(StoragePlan.Verdict.FULL, d.verdict);
+        assertTrue(d.lockedFull);
+        assertFalse(d.capless);
+        assertTrue(d.toDelete.isEmpty());
+    }
+
+    /** 盘快满了也一样：腾余量只能删没锁的，不够就停，原因是锁定。 */
+    @Test
+    public void lockedFootageThatFillsTheDiskStopsRecording() {
+        List<StoragePlan.Clip> clips = minutes(4, 500 * MB);
+        Set<String> locked = new HashSet<>();
+        for (StoragePlan.Clip clip : clips.subList(0, 4)) {
+            locked.add(clip.name);
+        }
+        // 上限很宽，盘只剩 0：余量 2 GB 要腾，没锁的旧录像只有一组 1 GB
+        StoragePlan.Decision d = StoragePlan.decide(clips, locked, 100 * GB, 0, GB);
+        assertEquals(StoragePlan.Verdict.FULL, d.verdict);
+        assertTrue(d.lockedFull);
+    }
+
+    /** 没锁任何东西时和以前一模一样。 */
+    @Test
+    public void nothingLockedBehavesAsBefore() {
+        List<StoragePlan.Clip> clips = minutes(10, 500 * MB);
+        StoragePlan.Decision before = StoragePlan.decide(clips, 8 * GB, 100 * GB, GB);
+        StoragePlan.Decision now = StoragePlan.decide(clips, new HashSet<String>(), 8 * GB, 100 * GB, GB);
+        assertEquals(before.verdict, now.verdict);
+        assertEquals(before.toDelete, now.toDelete);
     }
 }
