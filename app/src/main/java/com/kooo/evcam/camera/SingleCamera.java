@@ -126,6 +126,23 @@ public class SingleCamera {
 
     /** 眼下的会话里挂着出帧口没有（相机线程写，主线程读）。 */
     private volatile boolean frameSinkInSession;
+    /**
+     * 主界面不在前台：预览那块 TextureView 不再画，也就不再取帧（CAMCORDER 2026-10-07）。
+     * 它还挂在会话里的话，环视是一条共享流，一个不取帧的消费者能把整条流拖住 ——
+     * 实车两次「上车开录 → waitUntilIdle 排不空（-110）→ error 4 → 一直重连不好」，
+     * 导出时都是主界面不在前台、预览还挂着、出帧 0.8 fps。所以主界面一退后台就把预览摘掉，
+     * 回前台再挂上；要录、要拍时由不显示的出帧口（一定取帧）让相机转着。
+     */
+    private volatile boolean previewSuspended;
+    /** 最近几次 ERROR_CAMERA_DEVICE 的时刻（开机起算，含深睡），判断「连着出错」用。 */
+    private final java.util.ArrayDeque<Long> deviceErrorTimes = new java.util.ArrayDeque<>();
+    /** 连着出错时，最后一次出错的时刻；冷却期内算「在恢复」。 */
+    private volatile long lastDeviceErrorElapsedMs;
+    /** 两分钟内第几次 ERROR_CAMERA_DEVICE 起改成长冷却。 */
+    static final int COOL_DOWN_AFTER_ERRORS = 3;
+    static final long COOL_DOWN_WINDOW_MS = 120_000L;
+    /** 连着出错之后，等这么久再重开 —— 2026-10-07 那次退出应用、停了十几秒再开就好了。 */
+    static final long COOL_DOWN_MS = 15_000L;
 
     // 鱼眼矫正
     
@@ -846,7 +863,47 @@ public class SingleCamera {
      */
     public boolean wantsFrames() {
         return previewSurface != null || mainFloatingSurface != null || recordSurface != null
-                || photoWantsFrames();
+                || sinkWanted();
+    }
+
+    /** 不显示的出帧口要不要挂：有人等拍照，或者录像在等环视出画面（主界面不在前台、预览摘了时靠它）。 */
+    private static boolean sinkWanted() {
+        return photoWantsFrames() || CameraNeeds.current().isHeld(CameraNeeds.Holder.RECORDING);
+    }
+
+    /**
+     * 主界面进后台 / 回前台（{@link MultiCameraManager#setPreviewSuspended}）：摘掉 / 挂回预览，按最新的输出重建会话。
+     */
+    public void setPreviewSuspended(boolean suspended) {
+        if (previewSuspended == suspended) {
+            return;
+        }
+        previewSuspended = suspended;
+        AppLog.i(TAG, "Camera " + cameraId + " preview " + (suspended ? "suspended (main hidden)" : "resumed"));
+        if (cameraDevice != null) {
+            requestSessionRebuild(suspended ? "preview-suspended" : "preview-resumed", REBUILD_DEBOUNCE_MS);
+        }
+    }
+
+    /** 正在从连着出错里恢复：冷却期内、或者正在重连。侧视弹窗和录制键的提示看它。 */
+    public boolean isRecovering() {
+        long last = lastDeviceErrorElapsedMs;
+        boolean recentError = last != 0 && SystemClock.elapsedRealtime() - last < COOL_DOWN_MS + 10_000L;
+        return recentError || isReconnecting;
+    }
+
+    /**
+     * 记一次 ERROR_CAMERA_DEVICE，返回这一次之后该等多久再重开。纯函数部分见 {@link CameraCoolDown}。
+     */
+    private long noteDeviceError() {
+        long now = SystemClock.elapsedRealtime();
+        lastDeviceErrorElapsedMs = now;
+        long delay = CameraCoolDown.delayAfterError(deviceErrorTimes, now);
+        if (delay >= COOL_DOWN_MS) {
+            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 两分钟内连着出错 "
+                    + deviceErrorTimes.size() + " 次：放开 " + (delay / 1000) + " 秒再重开");
+        }
+        return delay;
     }
 
     /** 有人在等拍照（登记表上的 PHOTO）。 */
@@ -870,10 +927,10 @@ public class SingleCamera {
         if (cameraDevice == null) {
             return;
         }
-        boolean want = photoWantsFrames() && previewSurface == null
+        boolean want = sinkWanted() && previewSurface == null
                 && mainFloatingSurface == null && recordSurface == null;
         if (want != frameSinkInSession) {
-            requestSessionRebuild(want ? "photo-needs-frames" : "photo-done", 0);
+            requestSessionRebuild(want ? "needs-frames" : "frames-done", 0);
         }
     }
 
@@ -1300,7 +1357,8 @@ public class SingleCamera {
                         break;
                     case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
                         errorMsg = "ERROR_CAMERA_DEVICE (4) - Device error (may be temporary due to resource contention)";
-                        reconnectDelayFloorMs = 8000;
+                        // 一次两次照旧 8 秒；两分钟内第三次起放开 15 秒再开，给相机服务缓过来（CAMCORDER）
+                        reconnectDelayFloorMs = noteDeviceError();
                         shouldRetry = true;
                         shouldStopReconnect = false;
                         break;
@@ -1380,7 +1438,7 @@ public class SingleCamera {
             }
 
             SurfaceTexture surfaceTexture = null;
-            if (textureView != null && textureView.isAvailable()) {
+            if (textureView != null && textureView.isAvailable() && !previewSuspended) {
                 surfaceTexture = textureView.getSurfaceTexture();
             }
             if (surfaceTexture != null) {
@@ -1427,7 +1485,7 @@ public class SingleCamera {
             boolean nothingElse = (surface == null || !surface.isValid())
                     && (mainFloatingSurface == null || !mainFloatingSurface.isValid())
                     && (recordSurface == null || !recordSurface.isValid());
-            Surface sinkSurface = (nothingElse && photoWantsFrames()) ? frameSinkSurface() : null;
+            Surface sinkSurface = (nothingElse && sinkWanted()) ? frameSinkSurface() : null;
             frameSinkInSession = sinkSurface != null;
 
             // 检查是否有可用的输出 Surface（后台初始化时可能全部为 null）

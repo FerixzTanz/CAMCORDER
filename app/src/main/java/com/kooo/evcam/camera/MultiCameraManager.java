@@ -2693,7 +2693,30 @@ public class MultiCameraManager {
      */
     public boolean surroundHealthy() {
         SingleCamera surround = getCamera(CameraSlots.KEY_SURROUND);
-        return surround != null && surround.isCameraOpened() && surround.hasFramesWithin(SURROUND_FRESH_MS);
+        if (surround == null || !surround.isCameraOpened() || !surround.hasFramesWithin(SURROUND_FRESH_MS)) {
+            return false;
+        }
+        // 相机服务已经说这一路空了，我们手里的就是死的：别在它上面开录（CAMCORDER 2026-10-07：
+        // 实车一次是相机服务报空闲 1.3 秒后，最近一帧还算新鲜，就在死设备上重建会话、卡死）
+        if (CameraAvailabilityWatch.reportedFree(surround.getCameraId())) {
+            return false;
+        }
+        return true;
+    }
+
+    /** 环视那一路正在从连着出错里恢复。 */
+    public boolean surroundRecovering() {
+        SingleCamera surround = getCamera(CameraSlots.KEY_SURROUND);
+        return surround != null && surround.isRecovering();
+    }
+
+    /**
+     * 主界面进后台 / 回前台：每一路摘掉 / 挂回预览（见 {@link SingleCamera#setPreviewSuspended}）。
+     */
+    public void setPreviewSuspended(boolean suspended) {
+        for (SingleCamera camera : cameras.values()) {
+            camera.setPreviewSuspended(suspended);
+        }
     }
 
     /**
