@@ -53,6 +53,8 @@ public class ZeekrShortcutApp extends Application {
         }
         Languages.apply(new AppConfig(this).getLanguageMode());
         StallWatch.start(this);
+        // 录像跟着车走（CAMCORDER）：活在进程上，主界面在不在都听挡位和主驾座位
+        com.kooo.evcam.recording.DriveSessionWatcher.get(this).apply();
     }
 
     /**

@@ -123,6 +123,16 @@ public final class RecordingIntent {
         return stoppedByUser;
     }
 
+    /**
+     * 人下车了（{@link DriveSession}）：这一趟结束。手动停过的记录作废 —— 下一趟换出 P 挡照样自动开；
+     * 「录起来过」也清掉，没录起来之前不接回。「启动自动录制开过」留着：车机醒来、界面重建都不该因此开录。
+     */
+    public void noteLeftCar() {
+        stoppedByUser = false;
+        everStarted = false;
+        persist();
+    }
+
     /** 退出应用时归零 —— 下一次打开是新的一趟。 */
     public void reset() {
         autoStarted = false;
