@@ -19,8 +19,10 @@ package com.kooo.evcam.recording;
  *   <li>人走了：在录就停；这一趟算结束（手动停过的记录作废，下一趟换出 P 挡照样自动开）。
  *       在挡位离开 P 之前，自动开录、亮屏接回、启动自动录制都不开（{@link #driverAway()}）。
  *       人回来坐下就不算「走了」了：这时手动开录，再下车照样会停。</li>
- *   <li>时间按 {@code elapsedRealtime}（含深睡）算：不开哨兵模式时车机熄屏就睡，录像停在那一刻；
- *       醒来第一眼就知道座位已经空了很久，立刻停，不会接着录下去。</li>
+ *   <li><b>熄屏时不等 30 秒</b>：P 挡、屏幕已经黑了、主驾座位空着，就是人走了 —— 那 30 秒防的是踩踏板时座椅的误读，
+ *       熄屏挂 P 时不会踩踏板。不开哨兵模式时车机熄屏六秒就深睡，录像会冻在半截、文件没收尾；
+ *       所以熄屏那一刻由 {@link DriveSessionWatcher} 短暂拉住车机，在睡着之前把录像好好停掉（用户 2026-10-07）。</li>
+ *   <li>时间按 {@code elapsedRealtime}（含深睡）算：万一还是睡着了，醒来第一眼就知道座位已经空了很久，立刻停。</li>
  *   <li>挡位或座位读不到：什么都不判，交回熄屏那套老规矩。</li>
  * </ul>
  *
@@ -58,6 +60,8 @@ public final class DriveSession {
         public boolean autoStop;
         /** 这一趟用户手动停过（RecordingIntent）。 */
         public boolean stoppedByUser;
+        /** 屏幕黑着。 */
+        public boolean screenOff;
     }
 
     private String lastGear;
@@ -97,7 +101,8 @@ public final class DriveSession {
     }
 
     private boolean left(Input in) {
-        boolean seatGone = seatEmptySinceMs >= 0 && in.nowElapsedMs - seatEmptySinceMs >= LEAVE_AFTER_MS;
+        boolean seatGone = seatEmptySinceMs >= 0
+                && (in.screenOff || in.nowElapsedMs - seatEmptySinceMs >= LEAVE_AFTER_MS);
         // 布防只在座位没坐人时算数：人坐在车里从里面锁了车，照样是「人在车里」，不停
         boolean locked = in.sentry != null && in.sentry == SENTRY_ARMED && !Boolean.TRUE.equals(in.driverSeated);
         return seatGone || locked;
@@ -114,6 +119,11 @@ public final class DriveSession {
             return -1L;
         }
         return Math.max(0L, LEAVE_AFTER_MS - (nowElapsedMs - seatEmptySinceMs));
+    }
+
+    /** 最近一次读到的挡位；读不到过是 null。 */
+    public String gear() {
+        return lastGear;
     }
 
     /** 诊断报告 / 黑匣子用的一行。 */

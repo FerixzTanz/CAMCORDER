@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import com.kooo.evcam.AppConfig;
@@ -27,6 +28,10 @@ import com.kooo.evcam.telemetry.VehicleState;
  *       人就是在熄屏之后下车的。不开哨兵模式时车机熄屏就睡，睡着的进程什么都不跑，登记着也不费什么。</li>
  *   <li>座位空了之后读数不一定再变：每 {@link #RECHECK_MS} 再判一次，直到算出人走了或者人回来。
  *       亮屏、熄屏也各判一次 —— 车机睡醒那一刻就知道座位已经空了多久。</li>
+ *   <li><b>熄屏时拉住车机一会儿</b>：P 挡、正在录、人还没算走，熄屏那一刻拿一个最多 {@link #STAY_AWAKE_MS}
+ *       的唤醒锁（自己到点放）。不开哨兵模式时车机熄屏六秒就深睡，录像会冻在半截、文件没收尾；
+ *       拉住这一会儿，主驾座位一空就当场停录、等 {@link #FINISH_STOP_MS} 让文件收好尾，再放车机去睡。
+ *       人一直坐着就到点放开，照旧。和开发者的「熄屏录制」用的不是同一把锁，互不影响。</li>
  *   <li>开录走和悬浮按钮一样的路：相机管线在就直接交给 {@link RecordingCoordinator}；
  *       不在（主界面没开过）就把主界面拉起来开录，录起来之后它自己退回后台。用户退出了应用就不开。</li>
  * </ul>
@@ -37,6 +42,10 @@ public final class DriveSessionWatcher {
     private static final String TELEMETRY_USER = "drive-session";
     /** 座位空着、还没到 30 秒时多久再看一眼。 */
     static final long RECHECK_MS = 5_000L;
+    /** 熄屏后最多拉住车机多久，等主驾座位空出来。 */
+    static final long STAY_AWAKE_MS = 60_000L;
+    /** 停录之后再拉住多久，让录制器把文件收好尾。 */
+    static final long FINISH_STOP_MS = 5_000L;
 
     private static DriveSessionWatcher instance;
     /** 给 {@link RecordingCoordinator} 问：人下车了、车在 P，自己开的录像都不开。 */
@@ -47,6 +56,8 @@ public final class DriveSessionWatcher {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final DriveSession session = new DriveSession();
     private boolean running;
+    private PowerManager.WakeLock wakeLock;
+    private final Runnable letSleepAfterStop = () -> letSleep("stopped");
 
     private final Telemetry.Listener readingsListener = readings -> evaluate();
     private final Runnable recheck = this::evaluate;
@@ -54,10 +65,16 @@ public final class DriveSessionWatcher {
         @Override
         public void onScreenOff() {
             evaluate();
+            RecordingCoordinator coordinator = RecordingCoordinator.get(app);
+            if (running && config.isDriveAutoStop() && !away && "P".equals(session.gear())
+                    && (coordinator.isRecording() || coordinator.isWaiting())) {
+                holdAwake();
+            }
         }
 
         @Override
         public void onScreenOn() {
+            letSleep("screen-on");
             evaluate();
         }
     };
@@ -96,6 +113,7 @@ public final class DriveSessionWatcher {
             evaluate();
         } else {
             main.removeCallbacks(recheck);
+            letSleep("switched-off");
             ScreenState.removeListener(screenListener);
             Telemetry.get().removeListener(readingsListener);
             Telemetry.get().release(TELEMETRY_USER);
@@ -122,6 +140,7 @@ public final class DriveSessionWatcher {
         in.autoStart = config.isDriveAutoStart();
         in.autoStop = config.isDriveAutoStop();
         in.stoppedByUser = RecordingIntent.current().stoppedByUser();
+        in.screenOff = ScreenState.dark();
 
         DriveSession.Action action = session.update(in);
         away = in.autoStop && session.driverAway();
@@ -131,8 +150,15 @@ public final class DriveSessionWatcher {
                 break;
             case STOP:
                 BlackBox.noteImportant("下车了（" + session.describe() + "，哨兵 " + in.sentry + "）：停录");
+                if (in.screenOff) {
+                    // 熄屏了车机六秒就睡：先拉住，停完、文件收好尾再放
+                    holdAwake();
+                }
                 RecordingIntent.current().noteLeftCar();
                 coordinator.stop(RecordingStops.Reason.LEFT_CAR);
+                // 拉着车机的话，等录制器把文件收好尾再放
+                main.removeCallbacks(letSleepAfterStop);
+                main.postDelayed(letSleepAfterStop, FINISH_STOP_MS);
                 break;
             case LEFT:
                 BlackBox.noteImportant("下车了（" + session.describe() + "，哨兵 " + in.sentry + "），没在录：这一趟结束");
@@ -140,6 +166,7 @@ public final class DriveSessionWatcher {
                 if (in.autoStop) {
                     coordinator.cancelPending("left-car");
                 }
+                letSleep("left");
                 break;
             default:
                 break;
@@ -149,6 +176,38 @@ public final class DriveSessionWatcher {
         long wait = session.msUntilLeft(now);
         if (wait >= 0) {
             main.postDelayed(recheck, Math.min(RECHECK_MS, wait + 50L));
+        }
+    }
+
+    /** 熄屏那一刻拉住车机，最多 {@link #STAY_AWAKE_MS}，到点自己放。 */
+    private void holdAwake() {
+        try {
+            if (wakeLock == null) {
+                PowerManager pm = (PowerManager) app.getSystemService(Context.POWER_SERVICE);
+                if (pm == null) {
+                    return;
+                }
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "CAMCORDER:DriveSession");
+                wakeLock.setReferenceCounted(false);
+            }
+            if (!wakeLock.isHeld()) {
+                wakeLock.acquire(STAY_AWAKE_MS);
+                BlackBox.noteImportant("熄屏、P 挡、在录：拉住车机最多 " + STAY_AWAKE_MS / 1000 + " 秒，等主驾座位空出来");
+            }
+        } catch (Exception e) {
+            AppLog.w(TAG, "wake lock failed: " + e);
+        }
+    }
+
+    private void letSleep(String why) {
+        main.removeCallbacks(letSleepAfterStop);
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+                BlackBox.noteImportant("放开车机（" + why + "）");
+            }
+        } catch (Exception e) {
+            AppLog.w(TAG, "wake lock release failed: " + e);
         }
     }
 

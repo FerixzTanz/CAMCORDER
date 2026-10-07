@@ -21,8 +21,10 @@ Recording follows the car (Settings → Recording, both on by default):
   seconds, or Sentry Mode arms after you lock, recording stops and the cameras are free for Sentry
   Mode. Sitting in the car never stops it. Until you shift out of P again, nothing restarts it by
   itself, even when Sentry Mode wakes the screen.
-- Without Sentry Mode the car goes to sleep after you leave; the next time it wakes, recording
-  stops at once instead of carrying on.
+- It stops properly before the head unit sleeps: when the screen turns off in P while recording,
+  the app keeps the head unit awake for up to a minute, and stops and finishes the file as soon as
+  the driver's seat is empty (no 30-second wait once the screen is off). If you stay in the seat,
+  it lets the head unit sleep after that minute and nothing changes.
 - If the car's signals can't be read, the earlier screen-off rules apply.
 
 ## [2.10.1-beta] - 2026-10-07

@@ -182,4 +182,37 @@ public class DriveSessionTest {
         assertFalse("启动自动录制不再开", intent.shouldAutoStart(true));
         assertFalse("没录起来之前不接回", intent.shouldRestore(true));
     }
+
+    private DriveSession.Action stepDark(String gear, Boolean seated, boolean recording) {
+        DriveSession.Input in = new DriveSession.Input();
+        in.nowElapsedMs = now;
+        in.gear = gear;
+        in.driverSeated = seated;
+        in.sentry = 0;
+        in.recording = recording;
+        in.autoStart = true;
+        in.autoStop = true;
+        in.screenOff = true;
+        return session.update(in);
+    }
+
+    @Test
+    public void screenOffInParkWithEmptySeatStopsWithoutWaiting() {
+        step("P", true, 0, true);
+        assertEquals(DriveSession.Action.STOP, stepDark("P", false, true));
+    }
+
+    @Test
+    public void screenOffWhileSittingDoesNotStop() {
+        step("P", true, 0, true);
+        assertEquals(DriveSession.Action.NONE, stepDark("P", true, true));
+        now += 600_000L;
+        assertEquals(DriveSession.Action.NONE, stepDark("P", true, true));
+    }
+
+    @Test
+    public void screenOffWhileDrivingDoesNotStop() {
+        step("D", true, 0, true);
+        assertEquals(DriveSession.Action.NONE, stepDark("D", false, true));
+    }
 }
