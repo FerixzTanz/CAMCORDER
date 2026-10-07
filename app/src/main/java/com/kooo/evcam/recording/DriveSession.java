@@ -1,7 +1,7 @@
 package com.kooo.evcam.recording;
 
 /**
- * 录像跟着车走：换出 P 挡就开录，人下了车就停录 —— 不看屏幕。
+ * 录像跟着车走：人坐上主驾就开录，人下了车就停录 —— 不看屏幕。
  *
  * <h3>为什么不看屏幕（CAMCORDER，用户 2026-10-07）</h3>
  *
@@ -12,13 +12,21 @@ package com.kooo.evcam.recording;
  * <h3>规则（用户 2026-10-07 定）</h3>
  *
  * <ul>
- *   <li><b>开</b>：挡位从 P 换到别的挡（D / R / N）。用户这一趟手动停过的不开。</li>
+ *   <li><b>开（上车）</b>：P 挡（或挡位还读不到）时主驾座位从没人变成有人，包括应用起来时读到的第一份就是有人。
+ *       坐在车里不开走也录（用户 2026-10-07：「上了车就要录，哪怕只是坐着」）。只在 P 挡里认：
+ *       开车时用力踩踏板座椅会短暂读成没人、再变回有人，那一下不算上车。</li>
+ *   <li><b>开（开走）</b>：挡位从 P 换到别的挡（D / R / N）—— 上车那一下没录起来（比如关了录像又挂挡）时补上。
+ *       <b>读到的第一个挡位就不是 P</b> 也算 ——
+ *       应用起来晚了（上车就挂 D、车辆信号还没连上）、开着车应用重启了，都没有「从 P 换出来」那一下，
+ *       却都在开车（用户 2026-10-07 定，有了这条「启动自动录制」可以关）。
+ *       用户这一趟手动停过的不开（落盘的，应用重启也记得）。只在换挡这一下开、不是「不在 P 就一直要录」：
+ *       开不起来（没 U 盘、盘满）不会每次读数都再要一遍，接不接回由 RecordingCoordinator 定。</li>
  *   <li><b>人走了</b>：在 P 挡，并且<b>主驾座位</b>空着满 {@link #LEAVE_AFTER_MS}，或者哨兵模式变成布防（2，锁了车）。
  *       只看主驾：副驾还坐着人也算走了。30 秒是给座椅传感器的 —— 用力踩踏板时人离开坐垫，会短暂读成没人。
  *       人坐在车里挂着 P 不停，坐多久都不停。</li>
  *   <li>人走了：在录就停；这一趟算结束（手动停过的记录作废，下一趟换出 P 挡照样自动开）。
- *       在挡位离开 P 之前，自动开录、亮屏接回、启动自动录制都不开（{@link #driverAway()}）。
- *       人回来坐下就不算「走了」了：这时手动开录，再下车照样会停。</li>
+ *       人回来坐下、或者挡位离开 P 之前，启动自动录制、接回、亮屏接回都不开（{@link #driverAway()}）——
+ *       哨兵模式让车机醒来亮屏也不开。人回来坐下就不算「走了」，按「上车」开录；再下车照样会停。</li>
  *   <li><b>熄屏时不等 30 秒</b>：P 挡、屏幕已经黑了、主驾座位空着，就是人走了 —— 那 30 秒防的是踩踏板时座椅的误读，
  *       熄屏挂 P 时不会踩踏板。不开哨兵模式时车机熄屏六秒就深睡，录像会冻在半截、文件没收尾；
  *       所以熄屏那一刻由 {@link DriveSessionWatcher} 短暂拉住车机，在睡着之前把录像好好停掉（用户 2026-10-07）。</li>
@@ -65,12 +73,20 @@ public final class DriveSession {
     }
 
     private String lastGear;
+    /** 上一份读数里主驾座位有没有人；读不到过是 null。 */
+    private Boolean lastSeated;
     /** 主驾座位从什么时候开始空着；-1 = 有人或不知道。 */
     private long seatEmptySinceMs = -1L;
     /** 人走了，还没换出 P 挡、也没人坐回来。 */
     private boolean away;
 
     public Action update(Input in) {
+        // 上车：主驾座位从没人（或还不知道）变成有人，车在 P（或挡位还读不到）
+        boolean gotIn = Boolean.TRUE.equals(in.driverSeated) && !Boolean.TRUE.equals(lastSeated)
+                && (in.gear == null || "P".equals(in.gear));
+        if (in.driverSeated != null) {
+            lastSeated = in.driverSeated;
+        }
         if (in.driverSeated != null) {
             if (in.driverSeated) {
                 seatEmptySinceMs = -1L;
@@ -79,13 +95,20 @@ public final class DriveSession {
                 seatEmptySinceMs = in.nowElapsedMs;
             }
         }
+        if (gotIn && in.autoStart && !in.recording && !in.stoppedByUser) {
+            if (in.gear != null) {
+                lastGear = in.gear;
+            }
+            return Action.START;
+        }
         if (in.gear == null) {
             return Action.NONE;
         }
         String previous = lastGear;
         lastGear = in.gear;
 
-        if ("P".equals(previous) && !"P".equals(in.gear)) {
+        // previous == null：这是读到的第一个挡位（应用刚起来，或车辆信号刚连上）
+        if ((previous == null || "P".equals(previous)) && !"P".equals(in.gear)) {
             away = false;
             if (in.autoStart && !in.recording && !in.stoppedByUser) {
                 return Action.START;

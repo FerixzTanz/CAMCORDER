@@ -85,8 +85,8 @@
     <string name="set_auto_start_summary">Selepas unit kepala dimulakan semula atau sistem menutup apl, memulihkan Cermin super, butang terapung dan rakaman automatik jika dihidupkan. Berfungsi bersama Kekal berjalan di latar belakang.</string>
     <string name="set_auto_record_title">Rakam semasa dibuka</string>
     <string name="set_auto_record_summary">Mula merakam apabila apl dibuka, dan menyambung rakaman yang berhenti kerana skrin padam apabila skrin hidup semula; rakaman yang anda hentikan tidak dimulakan semula</string>
-    <string name="set_drive_auto_start_title">Mula merakam apabila anda menukar keluar dari P</string>
-    <string name="set_drive_auto_start_summary">Mula merakam apabila anda menukar ke D, R atau N, walaupun aplikasi tidak dibuka. Tidak jika anda sendiri menghentikan rakaman dalam perjalanan ini.</string>
+    <string name="set_drive_auto_start_title">Mula merakam apabila anda masuk</string>
+    <string name="set_drive_auto_start_summary">Mula merakam apabila anda duduk di tempat duduk pemandu dengan kereta dalam P, walaupun anda tidak memandu pergi. Juga bermula apabila anda menukar keluar dari P, atau jika aplikasi bermula semasa anda sudah memandu. Aplikasi tidak perlu dibuka. Tidak jika anda sendiri menghentikan rakaman dalam perjalanan ini.</string>
     <string name="set_drive_auto_stop_title">Henti merakam apabila anda meninggalkan kereta</string>
     <string name="set_drive_auto_stop_summary">Berhenti apabila kereta dalam P dan tempat duduk pemandu kosong selama 30 saat, atau Mod Sentry bersedia selepas anda mengunci. Kamera kemudian bebas untuk Mod Sentry. Duduk di dalam kereta tidak akan menghentikannya.</string>
     <string name="msg_left_car_stopped">Anda telah meninggalkan kereta. Rakaman dihentikan.</string>

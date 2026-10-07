@@ -85,8 +85,8 @@
     <string name="set_auto_start_summary">After the head unit restarts or the system closes the app, restores Super mirror, the floating button and auto-recording if they were on. Works with Keep running in background.</string>
     <string name="set_auto_record_title">Record on launch</string>
     <string name="set_auto_record_summary">Starts recording when the app opens and resumes a recording stopped by screen-off when the screen turns on; never restarts one you stopped</string>
-    <string name="set_drive_auto_start_title">Start recording when you shift out of P</string>
-    <string name="set_drive_auto_start_summary">Starts recording when you shift into D, R or N, even if the app isn\'t open. Not if you stopped recording yourself on this trip.</string>
+    <string name="set_drive_auto_start_title">Start recording when you get in</string>
+    <string name="set_drive_auto_start_summary">Starts recording when you sit in the driver\'s seat with the car in P, even if you don\'t drive off. Also starts when you shift out of P, or if the app comes up while you\'re already driving. The app doesn\'t need to be open. Not if you stopped recording yourself on this trip.</string>
     <string name="set_drive_auto_stop_title">Stop recording when you leave the car</string>
     <string name="set_drive_auto_stop_summary">Stops when the car is in P and the driver\'s seat has been empty for 30 seconds, or Sentry Mode arms after you lock. The cameras are then free for Sentry Mode. Sitting in the car never stops it.</string>
     <string name="msg_left_car_stopped">You left the car. Recording stopped.</string>

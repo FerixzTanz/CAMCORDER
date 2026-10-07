@@ -32,8 +32,8 @@ left camera; right signal, right camera. It closes when the signal goes off.
 It relies on vehicle signals that dts88 found by experiment on one car. They may behave
 differently on yours.
 
-**Recording follows the car.** Recording starts when you shift out of P and stops when you leave
-the car (driver's seat empty for 30 seconds in P, or Sentry Mode arming after you lock), so Sentry
+**Recording follows the driver.** Recording starts when you sit in the driver's seat (or shift out
+of P) and stops when you leave the car (driver's seat empty for 30 seconds in P, or Sentry Mode arming after you lock), so Sentry
 Mode can take over. Sitting in the car keeps it recording. Both can be turned off in Settings →
 Recording.
 
