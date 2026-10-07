@@ -109,6 +109,14 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     private Button viewModeButton;
     private Button prevSessionButton;
     private Button nextSessionButton;
+    /** 锁定此刻 / 解锁（锁定影像开着时才有）。 */
+    private Button lockButton;
+    /** 进度条下面那条：锁定的那几段。 */
+    private com.kooo.evcam.ui.LockedRangeStrip lockedStrip;
+    /** 「锁定影像」开着没有：扫描时读一次，回到前台时再看一眼。 */
+    private boolean lockEnabled;
+    /** 录像目录里锁定的文件名（开关关着时是空的）。 */
+    private final java.util.Set<String> lockedVideos = new java.util.HashSet<>();
     private RecyclerView sessionListView;
     private TextView listSummaryText;
     private TimelineSessionAdapter sessionAdapter;
@@ -231,6 +239,11 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         playPauseButton = findViewById(R.id.timeline_play_pause);
         prevSessionButton = findViewById(R.id.timeline_prev_session);
         nextSessionButton = findViewById(R.id.timeline_next_session);
+        lockButton = findViewById(R.id.timeline_lock);
+        lockedStrip = findViewById(R.id.timeline_locked_strip);
+        if (lockedStrip != null) {
+            lockedStrip.alignTo(seekBar);
+        }
         sessionListView = findViewById(R.id.timeline_session_list);
         listSummaryText = findViewById(R.id.timeline_list_summary);
         actionGroup = findViewById(R.id.pb_actions);
@@ -249,7 +262,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         surround = lanes[0];
         surroundFrame = findViewById(R.id.video_surround_frame);
         if (surroundFrame != null) {
-            // 开发者选项「视频回看：GPU 逐像素鱼眼校正」开着时，解码器先画进外框的管线。
+            // 开发者选项「录像回放：GPU 逐像素鱼眼校正」开着时，解码器先画进外框的管线。
             // 必须在 TextureView 的画布好之前交给播放器 —— onCreate 里正是时候
             surround.player.setSurfaceRoute(surroundFrame.gpuRoute());
         }
@@ -309,6 +322,9 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         }
         if (nextSessionButton != null) {
             nextSessionButton.setOnClickListener(v -> switchSession(sessionIndex + 1));
+        }
+        if (lockButton != null) {
+            lockButton.setOnClickListener(v -> toggleLockHere());
         }
         View sendButton = findViewById(R.id.timeline_send);
         if (sendButton != null) {
@@ -455,16 +471,24 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             }
 
             final List<RecordingTimeline.Session> built = RecordingTimeline.build(sources);
+            final boolean locksOn = com.kooo.evcam.storage.FootageLocks.enabled(getApplicationContext());
+            final java.util.Set<String> locked = com.kooo.evcam.storage.FootageLocks.shown(
+                    getApplicationContext(), StorageHelper.getVideoDir(getApplicationContext()));
             runOnUiThread(() -> {
                 sessions = built;
                 laneSources.clear();
                 laneSources.putAll(others);
+                lockEnabled = locksOn;
+                lockedVideos.clear();
+                lockedVideos.addAll(locked);
                 sessionBytes = new long[sessions.size()];
                 for (int i = 0; i < sessions.size(); i++) {
                     sessionBytes[i] = bytesOf(filesOf(sessions.get(i)));
                 }
+                sessionAdapter.setLocked(lockedFlags());
                 sessionAdapter.setSessions(sessions, sessionBytes);
                 updateListSummary();
+                refreshLockViews();
                 if (sessions.isEmpty()) {
                     // 全删光了：画面区也清掉，别留着已经不存在的文件
                     for (Lane lane : lanes) {
@@ -521,6 +545,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         updateSessionInfo(session);
         showPosition(0);
         applyViewMode(session.startEpochMs);
+        refreshLockViews();
 
         prevSessionButton.setEnabled(sessionIndex > 0);
         nextSessionButton.setEnabled(sessionIndex < sessions.size() - 1);
@@ -566,7 +591,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             totalMs += sessions.get(i).totalDurationMs;
             totalBytes += sessionBytes[i];
         }
-        listSummaryText.setText(getString(R.string.info_clip_count, sessions.size(),
+        listSummaryText.setText(getResources().getQuantityString(R.plurals.info_clip_count,
+                sessions.size(), sessions.size(),
                 TimelineFormat.duration(totalMs) + "　·　"
                         + TimelineFormat.size(totalBytes)));
     }
@@ -978,6 +1004,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         if (sessions.isEmpty()) {
             return;
         }
+        // 停着的时候拖了进度条，按钮也要跟着说这一刻锁没锁
+        updateLockButton();
         Lane lead = leader();
         if (!lead.ready || !lead.player.isPlaying()) {
             return;
@@ -1104,7 +1132,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             return;
         }
         RecordingTimeline.Session session = sessions.get(index);
-        String title = getString(R.string.player_session_title,
+        String title = getResources().getQuantityString(R.plurals.player_session_title,
+                session.segmentCount(),
                 new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
                         .format(new Date(session.startEpochMs)),
                 session.segmentCount(),
@@ -1227,7 +1256,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         }
         com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.player_delete_title)
-                .setMessage(getString(R.string.player_delete_msg, files, TimelineFormat.size(bytes)))
+                .setMessage(getResources().getQuantityString(R.plurals.player_delete_msg,
+                        files, files, TimelineFormat.size(bytes)))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> deleteChosen(indexes))
                 .setNegativeButton(R.string.action_cancel, null));
     }
@@ -1239,6 +1269,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         }
         int deleted = 0;
         int total = 0;
+        int kept = 0;
         for (int index : indexes) {
             if (index < 0 || index >= sessions.size()) {
                 continue;
@@ -1246,13 +1277,15 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             for (LaneTrack.Clip clip : filesOf(sessions.get(index))) {
                 total++;
                 File file = new File(clip.path);
-                if (file.exists() && file.delete()) {
+                if (isLocked(clip.path)) {
+                    kept++;
+                } else if (file.exists() && file.delete()) {
                     deleted++;
                 }
             }
         }
-        AppLog.i(TAG, "多选删除：" + deleted + "/" + total + " 个文件");
-        Toast.makeText(this, getString(R.string.player_deleted, deleted), Toast.LENGTH_SHORT).show();
+        AppLog.i(TAG, "多选删除：" + deleted + "/" + total + " 个文件，锁定的留下 " + kept + " 个");
+        Toast.makeText(this, deletedText(deleted, kept), Toast.LENGTH_SHORT).show();
         setSelecting(false);
         loadTimelines();
     }
@@ -1262,8 +1295,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         long bytes = bytesOf(files);
         com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.player_delete_title)
-                .setMessage(getString(R.string.player_delete_msg,
-                        files.size(), TimelineFormat.size(bytes)))
+                .setMessage(getResources().getQuantityString(R.plurals.player_delete_msg,
+                        files.size(), files.size(), TimelineFormat.size(bytes)))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> deleteSession(index, session))
                 .setNegativeButton(R.string.action_cancel, null));
     }
@@ -1277,15 +1310,165 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         }
         List<LaneTrack.Clip> files = filesOf(session);
         int deleted = 0;
+        int kept = 0;
         for (LaneTrack.Clip clip : files) {
             File file = new File(clip.path);
-            if (file.exists() && file.delete()) {
+            if (isLocked(clip.path)) {
+                kept++;
+            } else if (file.exists() && file.delete()) {
                 deleted++;
             }
         }
-        AppLog.i(TAG, "删除时间轴 " + index + "：" + deleted + "/" + files.size() + " 个文件");
-        Toast.makeText(this, getString(R.string.player_deleted, deleted), Toast.LENGTH_SHORT).show();
+        AppLog.i(TAG, "删除时间轴 " + index + "：" + deleted + "/" + files.size() + " 个文件，锁定的留下 " + kept + " 个");
+        Toast.makeText(this, deletedText(deleted, kept), Toast.LENGTH_SHORT).show();
         loadTimelines();
+    }
+
+    // ------------------------------------------------------------------ 锁定影像
+
+    /** 锁定的文件回放里不能直接删：先解锁（锁定影像关着时不算）。 */
+    private boolean isLocked(String path) {
+        return lockEnabled && lockedVideos.contains(new File(path).getName());
+    }
+
+    private String deletedText(int deleted, int kept) {
+        return getResources().getQuantityString(R.plurals.player_deleted, deleted, deleted)
+                + (kept > 0 ? getResources().getQuantityString(R.plurals.msg_kept_locked, kept, kept) : "");
+    }
+
+    /** 此刻各路正在放的文件：环视和座舱各一个（段与段之间那一两秒算下一段，同 {@link #place}）。 */
+    private List<File> filesHere() {
+        List<File> files = new ArrayList<>();
+        if (sessions.isEmpty()) {
+            return files;
+        }
+        long epoch = clockEpoch();
+        for (Lane lane : lanes) {
+            if (lane.track.isEmpty()) {
+                continue;
+            }
+            LaneTrack.Hit hit = lane.track.at(epoch);
+            if (hit == null) {
+                LaneTrack.Hit next = lane.track.atOrAfter(epoch);
+                if (next != null && next.clip.startEpochMs - epoch <= GAP_GRACE_MS) {
+                    hit = next;
+                }
+            }
+            if (hit != null) {
+                files.add(new File(hit.clip.path));
+            }
+        }
+        return files;
+    }
+
+    private static List<String> namesOf(List<File> files) {
+        List<String> names = new ArrayList<>();
+        for (File file : files) {
+            names.add(file.getName());
+        }
+        return names;
+    }
+
+    /**
+     * 锁定此刻 / 解锁（项目所有者 2026-10-03）：此刻各路正在放的文件 —— 环视、前座舱、后座舱有几路锁几路。
+     * 都已经锁着就一起解开，否则一起锁上。
+     */
+    private void toggleLockHere() {
+        List<File> files = filesHere();
+        if (files.isEmpty()) {
+            Toast.makeText(this, R.string.msg_footage_nothing_here, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final List<String> names = namesOf(files);
+        final boolean unlock = lockedVideos.containsAll(names);
+        lockButton.setEnabled(false);
+        com.kooo.evcam.storage.FootageLocks.set(files.get(0).getParentFile(), names, !unlock, ok -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+            lockButton.setEnabled(true);
+            if (!ok) {
+                Toast.makeText(this, R.string.msg_footage_lock_failed, Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (unlock) {
+                lockedVideos.removeAll(names);
+            } else {
+                lockedVideos.addAll(names);
+            }
+            Toast.makeText(this, getResources().getQuantityString(
+                    unlock ? R.plurals.msg_footage_unlocked : R.plurals.msg_footage_locked,
+                    names.size(), names.size()), Toast.LENGTH_SHORT).show();
+            sessionAdapter.setLocked(lockedFlags());
+            refreshLockViews();
+        });
+    }
+
+    /** 换了一条录制、或者锁定的变了：细条和按钮跟着。 */
+    private void refreshLockViews() {
+        updateLockedStrip();
+        updateLockButton();
+    }
+
+    /** 这一条录制里锁定的文件，换算成时间轴上的起止，各路合在一起画。 */
+    private void updateLockedStrip() {
+        if (lockedStrip == null) {
+            return;
+        }
+        if (!lockEnabled || sessions.isEmpty() || sessionIndex >= sessions.size()) {
+            lockedStrip.setVisibility(View.GONE);
+            return;
+        }
+        RecordingTimeline.Session session = sessions.get(sessionIndex);
+        List<Long> ends = new ArrayList<>();
+        for (Lane lane : lanes) {
+            for (LaneTrack.Clip clip : lane.track.clips()) {
+                if (lockedVideos.contains(new File(clip.path).getName())) {
+                    long from = session.positionAt(clip.startEpochMs);
+                    long to = session.positionAt(clip.startEpochMs + clip.durationMs);
+                    ends.add(from);
+                    ends.add(Math.max(from, to));
+                }
+            }
+        }
+        long[] ranges = new long[ends.size()];
+        for (int i = 0; i < ranges.length; i++) {
+            ranges[i] = ends.get(i);
+        }
+        lockedStrip.setRanges(ranges, session.totalDurationMs);
+        // 这一条里没锁东西：位置留着（不让下面的按钮跳），条不显示
+        lockedStrip.setVisibility(ranges.length > 0 ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    /** 按钮说的是这一刻：各路的文件都锁着写「解锁」，否则写「锁定」。 */
+    private void updateLockButton() {
+        if (lockButton == null) {
+            return;
+        }
+        lockButton.setVisibility(lockEnabled && !sessions.isEmpty() ? View.VISIBLE : View.GONE);
+        if (!lockEnabled || sessions.isEmpty()) {
+            return;
+        }
+        List<File> files = filesHere();
+        boolean locked = !files.isEmpty() && lockedVideos.containsAll(namesOf(files));
+        lockButton.setText(locked ? R.string.action_unlock_footage : R.string.action_lock_footage);
+    }
+
+    /** 每一条录制有没有锁定的文件，和 sessions 一一对应。 */
+    private boolean[] lockedFlags() {
+        boolean[] flags = new boolean[sessions.size()];
+        if (!lockEnabled || lockedVideos.isEmpty()) {
+            return flags;
+        }
+        for (int i = 0; i < flags.length; i++) {
+            for (LaneTrack.Clip clip : filesOf(sessions.get(i))) {
+                if (lockedVideos.contains(new File(clip.path).getName())) {
+                    flags[i] = true;
+                    break;
+                }
+            }
+        }
+        return flags;
     }
 
     private static final String STATE_SESSION_INDEX = "sessionIndex";
@@ -1317,7 +1500,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     private void updateSessionInfo(RecordingTimeline.Session session) {
         String started = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault())
                 .format(new Date(session.startEpochMs));
-        infoText.setText(getString(R.string.player_info,
+        infoText.setText(getResources().getQuantityString(R.plurals.player_info,
+                session.segmentCount(),
                 sessionIndex + 1, sessions.size(), started,
                 session.segmentCount(), TimelineFormat.duration(session.totalDurationMs)));
     }
@@ -1368,6 +1552,11 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         if (!sessions.isEmpty()) {
             handler.removeCallbacks(ticker);
             handler.post(ticker);
+        }
+        if (!sessions.isEmpty() && com.kooo.evcam.storage.FootageLocks.enabled(this) != lockEnabled) {
+            // 设置里刚拨过「锁定影像」：重新扫一遍，清单、按钮、细条都跟着
+            pendingSessionIndex = sessionIndex;
+            loadTimelines();
         }
     }
 

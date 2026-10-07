@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -20,6 +21,8 @@ import java.util.regex.Pattern;
  *       「不限制」的含义：不替他决定哪些录像可以丢。</li>
  *   <li>删光本应用自己的旧录像也腾不出余量（盘被别的东西占满了）：<b>不删</b>，直接停。
  *       否则就是白白删掉录像，最后还是录不了。</li>
+ *   <li><b>锁定的</b>（{@code FootageLocks}）：永远不进删除名单，但照样算占用。没锁的都删了还不够
+ *       （上限或余量），就停 —— 锁到腾不出空间就停录（项目所有者 2026-10-03）。</li>
  * </ul>
  *
  * <h3>只认自己的文件</h3>
@@ -91,14 +94,22 @@ public final class StoragePlan {
         public final long marginBytes;
         /** 为什么是 FULL：没设上限，还是删光也不够。 */
         public final boolean capless;
+        /** FULL 是因为剩下的都锁着：没锁的删光了还不够，解锁一些就能接着录。 */
+        public final boolean lockedFull;
 
         Decision(Verdict verdict, List<String> toDelete, long deleteBytes, long marginBytes,
                  boolean capless) {
+            this(verdict, toDelete, deleteBytes, marginBytes, capless, false);
+        }
+
+        Decision(Verdict verdict, List<String> toDelete, long deleteBytes, long marginBytes,
+                 boolean capless, boolean lockedFull) {
             this.verdict = verdict;
             this.toDelete = toDelete;
             this.deleteBytes = deleteBytes;
             this.marginBytes = marginBytes;
             this.capless = capless;
+            this.lockedFull = lockedFull;
         }
     }
 
@@ -128,6 +139,16 @@ public final class StoragePlan {
      * @param segmentBytes 一个分段（所有相机合起来）的大小估计
      */
     public static Decision decide(List<Clip> clips, long capBytes, long freeBytes,
+                                  long segmentBytes) {
+        return decide(clips, Collections.<String>emptySet(), capBytes, freeBytes, segmentBytes);
+    }
+
+    /**
+     * 同上，{@code locked} 里的文件不删（但算占用）。
+     *
+     * @param locked 锁定的文件名（{@code FootageLocks}）；开关关着时是空集合
+     */
+    public static Decision decide(List<Clip> clips, Set<String> locked, long capBytes, long freeBytes,
                                   long segmentBytes) {
         long margin = margin(segmentBytes);
         boolean capless = capBytes <= 0;
@@ -167,10 +188,19 @@ public final class StoragePlan {
         }
 
         long deletable = 0;
+        long lockedOld = 0;
         for (String key : order) {
             for (Clip clip : groups.get(key)) {
-                deletable += Math.max(0, clip.bytes);
+                if (locked.contains(clip.name)) {
+                    lockedOld += Math.max(0, clip.bytes);
+                } else {
+                    deletable += Math.max(0, clip.bytes);
+                }
             }
+        }
+        if (deletable < need && lockedOld > 0 && deletable + lockedOld >= need) {
+            // 锁定的占着：没锁的删光也不够，不锁的话又够 —— 停，让人去解锁
+            return new Decision(Verdict.FULL, Collections.emptyList(), 0, margin, false, true);
         }
         if (deletable < needForFree) {
             // 删光也腾不出余量：盘被别的东西占了。删了也录不了，不删
@@ -184,6 +214,9 @@ public final class StoragePlan {
                 break;
             }
             for (Clip clip : groups.get(key)) {
+                if (locked.contains(clip.name)) {
+                    continue;
+                }
                 toDelete.add(clip.name);
                 freed += Math.max(0, clip.bytes);
             }

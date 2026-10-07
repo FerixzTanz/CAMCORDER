@@ -150,7 +150,7 @@ public final class PreviewDewarp {
             return;
         }
         current.setCorrection(appConfig.isFisheyeCorrection(), appConfig.getFisheyeFov(),
-                appConfig.getFisheyeProjection(), appConfig.getFisheyeStrength() / 100f);
+                appConfig.getFisheyeProjection());
     }
 
     private static void releaseLocked() {

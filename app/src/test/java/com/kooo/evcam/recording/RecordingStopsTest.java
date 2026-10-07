@@ -21,6 +21,8 @@ public class RecordingStopsTest {
         assertTrue("写不进文件：重开一次录制就是新编码器、新文件",
                 RecordingStops.resumesOnSurround(RecordingStops.Reason.WRITE_STALLED));
         assertTrue(RecordingStops.resumesOnSurround(RecordingStops.Reason.CAMERA_LOST));
+        assertTrue("开录时一路都没起来：用户要录，环视好了再试，走同一份额度",
+                RecordingStops.resumesOnSurround(RecordingStops.Reason.START_FAILED));
     }
 
     @Test
@@ -33,6 +35,7 @@ public class RecordingStopsTest {
     public void storageProblemsDoNotWaitForTheSurround() {
         assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_FULL));
         assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_CANNOT_FREE));
+        assertFalse(RecordingStops.resumesOnSurround(RecordingStops.Reason.STORAGE_LOCKED));
     }
 
     /** 熄屏录制不在这一次的范围里，维持原来的做法。 */

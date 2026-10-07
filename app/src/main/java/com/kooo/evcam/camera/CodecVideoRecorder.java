@@ -273,7 +273,7 @@ public class CodecVideoRecorder {
     }
 
     /**
-     * 设置是否启用时间水印
+     * 设置是否启用时间水印。只管右上角时间 + 规格行；左上角应用名（+ 车牌号）每一路都画，不看它。
      * @param enabled true 表示启用水印
      */
     public void setWatermarkEnabled(boolean enabled) {
@@ -358,7 +358,8 @@ public class CodecVideoRecorder {
     private static final long BITRATE_WINDOW_MS = 1000L;
 
     /**
-     * 录像左上角标的那行字：应用名 + 版本号。
+     * 录像左上角标的那行字：应用名 + 版本号，填了车牌号跟在后面。每一路都画，和时间水印开关无关
+     * （只限这条 MediaCodec 录制路径；开发者选项里的 MediaRecorder 模式没有 GL 这一步，什么角标都不盖）。
      *
      * <p>由调用方给 —— 这个类拿不到 Context。录出来的文件常常是拿去当证据
      * 或者发给别人的，落上是哪个应用、哪个版本录的，回头出问题才对得上。</p>
@@ -613,7 +614,7 @@ public class CodecVideoRecorder {
                     // 创建 EGL 渲染器（在编码线程上）
                     eglEncoder = new EglSurfaceEncoder(cameraId, width, height);
                     // 左上角的应用名与版本号。要在 initialize() 之前设好 ——
-                    // 那块贴图在初始化时画一次，之后不再重画
+                    // 那块贴图在 initialize() 里画一次（每一路都画，和时间水印无关），之后不再重画
                     eglEncoder.setBrandLine(brandLine);
                     // 行驶信息条也要在 initialize() 之前：画面区域按它的高让出来
                     eglEncoder.setInfoBar(infoBar);
@@ -715,7 +716,7 @@ public class CodecVideoRecorder {
                         eglEncoder.setFourLanePlan(fourLanePlan, fourLaneOrder);
                     }
 
-                    // 设置时间水印（如果启用）
+                    // 设置时间水印（如果启用）。只建右上角时间那一块；左上角应用名上面 initialize() 已经建好
                     if (watermarkEnabled) {
                         eglEncoder.setWatermarkEnabled(true);
                         // 规格行必须在这里再补一次。createEncoder() 里算好 encoderSpecLine
@@ -936,11 +937,9 @@ public class CodecVideoRecorder {
             stopRecording();
         }
 
-        // 释放 EGL 渲染器
-        if (eglEncoder != null) {
-            eglEncoder.release();
-            eglEncoder = null;
-        }
+        // 释放 EGL 渲染器：排到编码线程上拆，等它拆完（见 releaseGlOnEncoderThread）。
+        // 拆完之后不会再有帧去画，下面收信息条位图才不会跟 drawFrame 撞上
+        releaseGlOnEncoderThread();
         if (infoBar != null) {
             infoBar.recycle();
             infoBar = null;
@@ -1009,6 +1008,52 @@ public class CodecVideoRecorder {
         segmentHandler = null;
 
         AppLog.d(TAG, "Camera " + cameraId + " CodecVideoRecorder released");
+    }
+
+    /** 等编码线程拆完 GL 最多多久。正常一帧之内就拆完；编码线程卡住时多等也没用（和下面等线程退出同一个数）。 */
+    private static final long GL_TEARDOWN_WAIT_MS = 1000L;
+
+    /**
+     * 拆 EGL 渲染器（上下文、着色器、贴图）—— 排到编码线程上拆，这里最多等 {@link #GL_TEARDOWN_WAIT_MS}。
+     *
+     * <p>为什么非得在编码线程上：EGL 上下文是在编码线程上建的，每一帧也在那里画，它只在那个线程上是「当前」的。
+     * 以前在调用者线程上直接 {@code eglEncoder.release()}：那个线程没有当前上下文，里面的 glDelete* 全是空操作；
+     * eglDestroyContext 碰上一个还在编码线程上当前的上下文，也只是记成「待删」，等编码线程放开才真释放。
+     * 而且拆的同时编码线程可能正在 drawFrame，两边一起动同一套 EGL/GL 对象。</p>
+     *
+     * <p>排在编码线程的队列里：前面正在画的那一帧、stopRecording 收文件那一步都先做完；拆完之后再来的帧，
+     * 帧回调看到 isReleased 就返回，不会再画。prepareRecording 失败走到这里时也一样 ——
+     * 初始化那一步就算还没跑完，拆的这一步也排在它后面。</p>
+     *
+     * <p>等不到（编码线程卡在写盘之类的地方）就不等了，接着放后面的东西。拆这一步仍排在编码线程上，
+     * 线程一空就做（下面的 quitSafely 会先把已经排着的做完），不在这里另拆一遍 ——
+     * 在这个线程上拆既拆不干净，又会跟卡住的那一帧抢。</p>
+     */
+    private void releaseGlOnEncoderThread() {
+        Handler handler = encoderHandler;
+        if (handler == null) {
+            return;  // 编码线程没建起来：EGL 渲染器只在编码线程上建，也就没有可拆的
+        }
+        final java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        handler.post(() -> {
+            try {
+                EglSurfaceEncoder egl = eglEncoder;
+                eglEncoder = null;
+                if (egl != null) {
+                    egl.release();
+                }
+            } finally {
+                done.countDown();
+            }
+        });
+        try {
+            if (!done.await(GL_TEARDOWN_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                AppLog.w(TAG, "Camera " + cameraId + " encoder thread busy for " + GL_TEARDOWN_WAIT_MS
+                        + "ms, GL teardown stays queued on it");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
