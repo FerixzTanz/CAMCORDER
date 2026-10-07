@@ -54,6 +54,8 @@ public class SideViewPopupService extends Service {
 
     private static final long RETRY_DELAY_MS = 500L;
     private static final int MAX_RETRY = 20;
+    /** 环视在恢复、录像在开时，过多久再试着接相机。 */
+    private static final long WAIT_FOR_CAMERA_MS = 3_000L;
     /** 离开 D 档多久才把备着的窗口拿掉。 */
     static final long READY_GRACE_MS = 30_000L;
 
@@ -365,6 +367,14 @@ public class SideViewPopupService extends Service {
         SingleCamera camera = manager != null ? manager.getCamera("front") : null;
         if (camera == null) {
             scheduleRetry(surfaceTexture);
+            return;
+        }
+        // 环视正在从连着出错里恢复、或者录像正在开：别在这时候再开相机、再重建会话（CAMCORDER 2026-10-07：
+        // 实车卡死那两次，侧视弹窗在恢复中途又去开相机，每次都多一轮出错）。过一会儿再接
+        if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(this).isWaiting()) {
+            cancelRetry();
+            retryRunnable = () -> bindCamera(surfaceTexture);
+            handler.postDelayed(retryRunnable, WAIT_FOR_CAMERA_MS);
             return;
         }
         Size previewSize = camera.getPreviewSize();

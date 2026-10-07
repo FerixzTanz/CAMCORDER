@@ -11,6 +11,24 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.3-beta] - 2026-10-07
+
+Fixes the 360 camera freezing after getting in (seen twice): recording started, then the camera
+kept failing and restarting until the app was closed.
+
+- When the main screen is in the background, its hidden preview no longer stays attached to the
+  360 feed. A hidden preview takes no frames and could stall the whole feed while recording was
+  starting. A hidden frame receiver keeps the camera running instead.
+- When you get in, recording waits until the screen has been on for 10 seconds and the car has
+  finished with its cameras (face recognition) before starting, at most 30 seconds.
+- Recording no longer starts on a 360 connection the car has already dropped.
+- After three camera errors within two minutes, the app leaves the camera alone for 15 seconds
+  before reconnecting, instead of retrying every few seconds.
+- The turn-signal side view waits while the camera is recovering or recording is starting.
+- The floating record button turns Zeekr orange while the app is retrying after a camera problem.
+- Diagnostics say whether recording started because you sat down, shifted out of P, or the app
+  came up while driving.
+
 ## [2.10.2-beta] - 2026-10-07
 
 Recording follows the driver (Settings → Recording, both on by default):

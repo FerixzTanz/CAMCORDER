@@ -2790,6 +2790,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        // 界面看得见了，预览挂回会话（CAMCORDER：进后台时摘掉，见 SingleCamera.setPreviewSuspended）
+        if (cameraManager != null) {
+            cameraManager.setPreviewSuspended(false);
+        }
         com.kooo.evcam.storage.StorageState.addListener(this, storageListener);
         AppLog.i(TAG, "onStart " + instanceTag() + " surround: " + describeComposite());
     }
@@ -2812,6 +2816,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        // 界面看不见了：它的预览不再取帧，挂在共享的环视流上会把整条流拖住（2026-10-07 两次卡死）。摘掉；
+        // 要录要拍时相机层用不显示的出帧口让相机转着
+        if (cameraManager != null) {
+            cameraManager.setPreviewSuspended(true);
+        }
         com.kooo.evcam.storage.StorageState.removeListener(storageListener);
         // 界面是怎么离开的：关掉？只是切走？还是在重建？三种后果完全不同
         com.kooo.evcam.blackbox.BlackBox.note("主界面 onStop finishing=" + isFinishing()

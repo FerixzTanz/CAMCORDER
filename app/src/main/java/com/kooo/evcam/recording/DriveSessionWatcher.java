@@ -57,6 +57,12 @@ public final class DriveSessionWatcher {
     private final DriveSession session = new DriveSession();
     private boolean running;
     private PowerManager.WakeLock wakeLock;
+    /** 亮屏的时刻（开机起算）；黑着是 0。上车开录前要亮屏满 10 秒（{@link DriveStartGate}）。 */
+    private long screenOnSinceMs;
+    /** 要开录、正在等车机和原厂相机安静下来；0 = 没在等。 */
+    private long startPendingSinceMs;
+    private String startPendingReason;
+    private final Runnable tryStart = this::tryStart;
     private final Runnable letSleepAfterStop = () -> letSleep("stopped");
 
     private final Telemetry.Listener readingsListener = readings -> evaluate();
@@ -64,6 +70,7 @@ public final class DriveSessionWatcher {
     private final ScreenState.Listener screenListener = new ScreenState.Listener() {
         @Override
         public void onScreenOff() {
+            screenOnSinceMs = 0;
             evaluate();
             RecordingCoordinator coordinator = RecordingCoordinator.get(app);
             if (running && config.isDriveAutoStop() && !away && "P".equals(session.gear())
@@ -74,6 +81,7 @@ public final class DriveSessionWatcher {
 
         @Override
         public void onScreenOn() {
+            screenOnSinceMs = SystemClock.elapsedRealtime();
             letSleep("screen-on");
             evaluate();
         }
@@ -105,6 +113,7 @@ public final class DriveSessionWatcher {
         }
         running = want;
         if (want) {
+            screenOnSinceMs = ScreenState.dark() ? 0 : SystemClock.elapsedRealtime();
             Telemetry.get().acquire(app, TELEMETRY_USER);
             Telemetry.get().addListener(readingsListener);
             ScreenState.addListener(screenListener);
@@ -113,6 +122,7 @@ public final class DriveSessionWatcher {
             evaluate();
         } else {
             main.removeCallbacks(recheck);
+            cancelPendingStart();
             letSleep("switched-off");
             ScreenState.removeListener(screenListener);
             Telemetry.get().removeListener(readingsListener);
@@ -146,7 +156,7 @@ public final class DriveSessionWatcher {
         away = in.autoStop && session.driverAway();
         switch (action) {
             case START:
-                start(coordinator);
+                beginStart(session.startReason());
                 break;
             case STOP:
                 BlackBox.noteImportant("下车了（" + session.describe() + "，哨兵 " + in.sentry + "）：停录");
@@ -154,6 +164,7 @@ public final class DriveSessionWatcher {
                     // 熄屏了车机六秒就睡：先拉住，停完、文件收好尾再放
                     holdAwake();
                 }
+                cancelPendingStart();
                 RecordingIntent.current().noteLeftCar();
                 coordinator.stop(RecordingStops.Reason.LEFT_CAR);
                 // 拉着车机的话，等录制器把文件收好尾再放
@@ -162,6 +173,7 @@ public final class DriveSessionWatcher {
                 break;
             case LEFT:
                 BlackBox.noteImportant("下车了（" + session.describe() + "，哨兵 " + in.sentry + "），没在录：这一趟结束");
+                cancelPendingStart();
                 RecordingIntent.current().noteLeftCar();
                 if (in.autoStop) {
                     coordinator.cancelPending("left-car");
@@ -211,12 +223,53 @@ public final class DriveSessionWatcher {
         }
     }
 
-    private void start(RecordingCoordinator coordinator) {
-        if (UserExit.blocks(app, "DriveSession")) {
-            AppLog.i(TAG, "换出 P 挡，但用户退出了应用：不开录");
+    /**
+     * 要开录：先等车机和原厂相机安静下来（{@link DriveStartGate}），再开。
+     * 上车那一刻车机刚醒、人脸识别正拿着相机、触屏在重新配置 —— 实车两次卡死都在这几秒里开录。
+     */
+    private void beginStart(String reason) {
+        if (startPendingSinceMs != 0) {
             return;
         }
-        BlackBox.noteImportant("换出 P 挡：开录");
+        startPendingSinceMs = SystemClock.elapsedRealtime();
+        startPendingReason = reason;
+        BlackBox.noteImportant("要开录（" + reason + "）：先等车机和原厂相机安静下来");
+        tryStart();
+    }
+
+    private void cancelPendingStart() {
+        startPendingSinceMs = 0;
+        main.removeCallbacks(tryStart);
+    }
+
+    private void tryStart() {
+        if (!running || startPendingSinceMs == 0) {
+            return;
+        }
+        RecordingCoordinator coordinator = RecordingCoordinator.get(app);
+        if (coordinator.isRecording() || coordinator.isWaiting() || RecordingIntent.current().stoppedByUser()) {
+            cancelPendingStart();
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        long waited = now - startPendingSinceMs;
+        long screenOnFor = ScreenState.dark() ? 0 : screenOnSinceMs == 0 ? -1 : now - screenOnSinceMs;
+        if (!DriveStartGate.ready(screenOnFor, com.kooo.evcam.camera.CameraAvailabilityWatch.snapshot(),
+                com.kooo.evcam.zeekr.StreamLayoutTable.compositeCameraId(), waited)) {
+            main.postDelayed(tryStart, 1_000L);
+            return;
+        }
+        String reason = startPendingReason;
+        cancelPendingStart();
+        start(coordinator, reason, waited);
+    }
+
+    private void start(RecordingCoordinator coordinator, String reason, long waitedMs) {
+        if (UserExit.blocks(app, "DriveSession")) {
+            AppLog.i(TAG, "start skipped: user exited the app");
+            return;
+        }
+        BlackBox.noteImportant("开录（" + reason + "，等了 " + waitedMs / 1000 + " 秒让车机安静）");
         MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
         if (manager == null || manager.isReleased()) {
             manager = CameraManagerHolder.getInstance().getOrInit(app);

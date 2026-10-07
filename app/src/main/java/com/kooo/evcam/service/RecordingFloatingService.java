@@ -119,6 +119,22 @@ public class RecordingFloatingService extends Service {
 
     // 录制状态
     private boolean isRecording = false;
+    /**
+     * 想录却录不起来、或者环视正在从出错里恢复（CAMCORDER 2026-10-07）：按钮改成极氪橙，看得出「出状况了，在重试」。
+     * 实车卡死那两次，按钮只显示「没在录」，看不出应用正在一轮一轮地重试。
+     */
+    private final Runnable troubleCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (recordingButton != null) {
+                recordingButton.setTrouble(cameraInTrouble());
+            }
+            if (mainHandler != null) {
+                mainHandler.postDelayed(this, TROUBLE_CHECK_MS);
+            }
+        }
+    };
+    private static final long TROUBLE_CHECK_MS = 2_000L;
     private long recordingStartTime = 0;
     private Runnable timeUpdateRunnable;
 
@@ -158,6 +174,7 @@ public class RecordingFloatingService extends Service {
         AppLog.d(TAG, "录制悬浮服务创建");
 
         mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.postDelayed(troubleCheck, TROUBLE_CHECK_MS);
         appConfig = new AppConfig(this);
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
@@ -328,6 +345,9 @@ public class RecordingFloatingService extends Service {
     @Override
     public void onDestroy() {
         com.kooo.evcam.blackbox.BlackBox.noteImportant("RecordingFloatingService onDestroy");
+        if (mainHandler != null) {
+            mainHandler.removeCallbacks(troubleCheck);
+        }
         super.onDestroy();
         hideFloatingWindow();
 
@@ -736,6 +756,23 @@ public class RecordingFloatingService extends Service {
         return AppState.NOT_RUNNING;
     }
 
+    /**
+     * 出状况了：录像被打断 / 没开起来、正在等环视好了重试，或者环视正在从连着出错里恢复。
+     * 人自己停的、盘满这类不重试的不算 —— 那些不是「在挣扎」，是停了。
+     */
+    private boolean cameraInTrouble() {
+        com.kooo.evcam.recording.RecordingCoordinator coordinator =
+                com.kooo.evcam.recording.RecordingCoordinator.get(this);
+        com.kooo.evcam.recording.RecordingStops.Reason reason = coordinator.lastStopReason();
+        boolean retrying = coordinator.isWaiting() && reason != null
+                && com.kooo.evcam.recording.RecordingStops.resumesOnSurround(reason);
+        com.kooo.evcam.camera.MultiCameraManager manager =
+                com.kooo.evcam.camera.CameraManagerHolder.getInstance().getCameraManager();
+        boolean recovering = manager != null && !manager.isReleased() && manager.surroundRecovering()
+                && (coordinator.isWaiting() || coordinator.isRecording());
+        return retrying || recovering;
+    }
+
     private void updateRecordingState(boolean recording) {
         isRecording = recording;
 
@@ -829,6 +866,8 @@ public class RecordingFloatingService extends Service {
     // ========== 自定义录制按钮视图（iOS 扁平化风格）==========
 
     private static class RecordingButtonView extends View {
+        /** 相机出状况、正在重试（见 {@code cameraInTrouble}）。 */
+        private boolean trouble;
         private Paint backgroundPaint;
         private Paint iconPaint;
         private Paint shadowPaint;
@@ -890,6 +929,15 @@ public class RecordingFloatingService extends Service {
             invalidate();
         }
 
+        /** 相机出状况、正在重试：外圈和中间的点改成极氪橙。 */
+        public void setTrouble(boolean trouble) {
+            if (this.trouble == trouble) {
+                return;
+            }
+            this.trouble = trouble;
+            invalidate();
+        }
+
         public void setButtonSize(int size) {
             this.buttonSize = size;
             invalidate();
@@ -947,7 +995,7 @@ public class RecordingFloatingService extends Service {
             ringPaint.setStrokeWidth(stroke);
             progressPaint.setStrokeWidth(stroke);
             ringPaint.setColor(ContextCompat.getColor(getContext(),
-                    isRecording ? R.color.recording_track : R.color.text_tertiary));
+                    trouble ? R.color.energy : isRecording ? R.color.recording_track : R.color.text_tertiary));
             canvas.drawCircle(centerX, centerY, ringRadius, ringPaint);
 
             if (isRecording) {
@@ -973,7 +1021,9 @@ public class RecordingFloatingService extends Service {
                 //
                 // 试过中间不画东西，只剩一个空圈 —— 太素，一眼认不出这是个按钮。
                 // 红色仍然只在录制时出现：说明「正在录」的是颜色，不是有没有点。
-                iconPaint.setColor(ContextCompat.getColor(getContext(), R.color.text_tertiary));
+                // 出状况在重试：点也是极氪橙，和外圈一起说「想录，正在重试」
+                iconPaint.setColor(ContextCompat.getColor(getContext(),
+                        trouble ? R.color.energy : R.color.text_tertiary));
                 canvas.drawCircle(centerX, centerY, radius * 0.32f, iconPaint);
                 iconPaint.setColor(ContextCompat.getColor(getContext(), R.color.recording));
             }

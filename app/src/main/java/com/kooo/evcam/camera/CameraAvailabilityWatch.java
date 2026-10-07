@@ -129,6 +129,14 @@ public final class CameraAvailabilityWatch {
         return false;
     }
 
+    /**
+     * 相机服务最近一次报这一路「空闲」。我们以为开着、它却说空闲，说明我们手里那个设备已经被放掉了。
+     * 没收到过回调（容器没转这条接口）就返回 false —— 不知道就不拦。
+     */
+    public static boolean reportedFree(String cameraId) {
+        return cameraId != null && Boolean.TRUE.equals(AVAILABLE.get(cameraId));
+    }
+
     /** 有没有收到过回调。没有的话，多半是容器没把这条接口转过来。 */
     public static boolean heardAnything() {
         return !AVAILABLE.isEmpty();

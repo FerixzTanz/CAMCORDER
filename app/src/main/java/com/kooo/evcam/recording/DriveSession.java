@@ -79,6 +79,8 @@ public final class DriveSession {
     private long seatEmptySinceMs = -1L;
     /** 人走了，还没换出 P 挡、也没人坐回来。 */
     private boolean away;
+    /** 最近一次 START 为什么：seat（上车）/ shift（换出 P 挡）/ first-gear（读到的第一个挡位就不是 P）。只进日志。 */
+    private String startReason;
 
     public Action update(Input in) {
         // 上车：主驾座位从没人（或还不知道）变成有人，车在 P（或挡位还读不到）
@@ -99,6 +101,7 @@ public final class DriveSession {
             if (in.gear != null) {
                 lastGear = in.gear;
             }
+            startReason = "seat";
             return Action.START;
         }
         if (in.gear == null) {
@@ -111,6 +114,7 @@ public final class DriveSession {
         if ((previous == null || "P".equals(previous)) && !"P".equals(in.gear)) {
             away = false;
             if (in.autoStart && !in.recording && !in.stoppedByUser) {
+                startReason = previous == null ? "first-gear" : "shift";
                 return Action.START;
             }
             return Action.NONE;
@@ -142,6 +146,11 @@ public final class DriveSession {
             return -1L;
         }
         return Math.max(0L, LEAVE_AFTER_MS - (nowElapsedMs - seatEmptySinceMs));
+    }
+
+    /** 最近一次 START 的原因（seat / shift / first-gear）。 */
+    public String startReason() {
+        return startReason;
     }
 
     /** 最近一次读到的挡位；读不到过是 null。 */
