@@ -47,6 +47,17 @@
             android:title="@string/set_auto_record_title"
             android:summary="@string/set_auto_record_summary" />
 
+        <!-- CAMCORDER：录像跟着车走（挡位、主驾座位、哨兵模式），见 recording.DriveSession -->
+        <SwitchPreferenceCompat
+            android:key="pref_drive_auto_start"
+            android:title="@string/set_drive_auto_start_title"
+            android:summary="@string/set_drive_auto_start_summary" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_drive_auto_stop"
+            android:title="@string/set_drive_auto_stop_title"
+            android:summary="@string/set_drive_auto_stop_summary" />
+
         <SwitchPreferenceCompat
             android:key="pref_photo_via_jpeg"
             android:title="@string/set_photo_jpeg_title"

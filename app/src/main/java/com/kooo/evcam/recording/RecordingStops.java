@@ -43,6 +43,11 @@ public final class RecordingStops {
         START_FAILED,
         /** 录制器自己停了，没人告诉我们为什么（含录着的那一份相机管线被释放、换掉）。 */
         UNKNOWN,
+        /**
+         * 人下车了（{@link DriveSession}）：P 挡，主驾座位空了 30 秒或锁车布防。不接回；
+         * 换出 P 挡时由 DriveSession 重新开。
+         */
+        LEFT_CAR,
     }
 
     private RecordingStops() {

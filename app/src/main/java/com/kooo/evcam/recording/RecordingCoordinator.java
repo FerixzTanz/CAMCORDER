@@ -57,7 +57,9 @@ public final class RecordingCoordinator {
 
     /** 谁要录 —— 只进日志。 */
     public enum Why {
-        USER, FLOATING, AUTO_START, RESUME, SCREEN_ON
+        USER, FLOATING, AUTO_START, RESUME, SCREEN_ON,
+        /** 换出了 P 挡（{@link DriveSession}）。 */
+        DRIVE
     }
 
     /** 决策的结果告诉谁（主线程）。实现方负责画面上的反馈。 */
@@ -260,6 +262,13 @@ public final class RecordingCoordinator {
 
     private void request(Why why, boolean counts) {
         if (isRecording()) {
+            return;
+        }
+        // 人已经下车、车还在 P：自己开的（启动自动录制、接回、亮屏接回）都不开 —— 哨兵模式让车机醒来亮屏，
+        // 以前就是这样在人走了之后又录上的。人按的、换挡开的照常
+        if ((why == Why.AUTO_START || why == Why.RESUME || why == Why.SCREEN_ON)
+                && DriveSessionWatcher.driverAway()) {
+            BlackBox.noteImportant("要录像（" + why + "）：人已下车、车在 P，不开");
             return;
         }
         if (pending == null) {
@@ -547,7 +556,8 @@ public final class RecordingCoordinator {
             return;
         }
         // 人停的：不再等。熄屏停的：也不再等（黑着的时候不该自己录起来），亮屏时 screenOn 再判
-        if (reason == RecordingStops.Reason.USER || reason == RecordingStops.Reason.SCREEN_OFF) {
+        if (reason == RecordingStops.Reason.USER || reason == RecordingStops.Reason.SCREEN_OFF
+                || reason == RecordingStops.Reason.LEFT_CAR) {
             cancelPending(reason.name());
             if (!wasRecording) {
                 lastStopReason = reason;

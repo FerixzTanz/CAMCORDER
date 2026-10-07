@@ -103,6 +103,11 @@
     <string name="set_auto_start_summary">车机重启或应用被系统关闭后，恢复已开启的超级后视镜、悬浮按钮和自动录制。需配合「保持后台运行」使用。</string>
     <string name="set_auto_record_title">启动自动录制</string>
     <string name="set_auto_record_summary">应用启动时自动开始录制，因熄屏停止的录制在亮屏后自动恢复；手动停止后不再自动开始</string>
+    <string name="set_drive_auto_start_title">换出 P 挡自动开录</string>
+    <string name="set_drive_auto_start_summary">挂 D、R 或 N 时开始录制，不用开着应用界面。这一趟你自己停过的，不会自动再开。</string>
+    <string name="set_drive_auto_stop_title">下车自动停录</string>
+    <string name="set_drive_auto_stop_summary">挂着 P、主驾座位空了 30 秒，或者开着哨兵模式锁了车，就停止录制，把相机让给哨兵模式。人坐在车里不会停。</string>
+    <string name="msg_left_car_stopped">已下车，录制已停止</string>
     <string name="set_screen_off_title">熄屏录制（阻止休眠）</string>
     <string name="set_screen_off_summary">熄屏时若正在录制，继续录制并阻止车机休眠，最长为下方设定的时长</string>
     <string name="set_screen_off_wake_title">阻止休眠时长上限（小时）</string>

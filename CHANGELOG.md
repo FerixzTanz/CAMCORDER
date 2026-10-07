@@ -11,6 +11,20 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.2-beta] - 2026-10-07
+
+Recording follows the car (Settings → Recording, both on by default):
+
+- **Start recording when you shift out of P**: shifting into D, R or N starts recording, even if the
+  app isn't open. Not if you stopped recording yourself on this trip.
+- **Stop recording when you leave the car**: in P, once the driver's seat has been empty for 30
+  seconds, or Sentry Mode arms after you lock, recording stops and the cameras are free for Sentry
+  Mode. Sitting in the car never stops it. Until you shift out of P again, nothing restarts it by
+  itself, even when Sentry Mode wakes the screen.
+- Without Sentry Mode the car goes to sleep after you leave; the next time it wakes, recording
+  stops at once instead of carrying on.
+- If the car's signals can't be read, the earlier screen-off rules apply.
+
 ## [2.10.1-beta] - 2026-10-07
 
 Brings this fork up to dts88's 2.10.0-alpha. Everything from this fork stays: the turn-signal
