@@ -58,6 +58,13 @@ public class SideViewPopupService extends Service {
     private static final long WAIT_FOR_CAMERA_MS = 3_000L;
     /** 离开 D 档多久才把备着的窗口拿掉。 */
     static final long READY_GRACE_MS = 30_000L;
+    /**
+     * 多久没有新帧就不再当实时画面给人看。最慢的流也有 10fps，半秒是五帧没来：已经不是卡一下，是停了
+     * （2.11.0 驾驶安全审查）。
+     */
+    static final long STALE_AFTER_MS = 500L;
+    /** 显示时多久看一次帧还来不来。 */
+    private static final long STALE_TICK_MS = 250L;
 
     private static volatile SideViewPopupService instance;
 
@@ -77,6 +84,20 @@ public class SideViewPopupService extends Service {
     /** 这一次显示的时刻和第一帧来没来：黑匣子里看「弹了多久才有画面」。 */
     private long shownAtMs;
     private boolean firstFrameSeen;
+    /** 最近一帧新画面的时刻（单调时钟）；这个窗口还一帧都没有是 0。 */
+    private long lastFrameMs;
+
+    /** 显示着的时候每 {@link #STALE_TICK_MS} 看一次：帧停了就盖上，别把停住的那一帧当实时画面。 */
+    private final Runnable staleTick = new Runnable() {
+        @Override
+        public void run() {
+            if (popup == null || !popup.isShowing()) {
+                return;
+            }
+            updateCover();
+            handler.postDelayed(this, STALE_TICK_MS);
+        }
+    };
 
     /** 灯灭后再留几秒：到点收起。 */
     private final Runnable delayedClose = () -> {
@@ -263,7 +284,40 @@ public class SideViewPopupService extends Service {
         lastLane = lane;
         shownAtMs = SystemClock.uptimeMillis();
         firstFrameSeen = false;
+        if (popup != null) {
+            // 拨亮之前先定好盖不盖：备着时帧要是早就停了，拨亮的第一帧就不能是那张旧的
+            popup.setCover(coverNow());
+        }
         attachPopup(lane, true);
+        updateCover();
+        handler.removeCallbacks(staleTick);
+        handler.postDelayed(staleTick, STALE_TICK_MS);
+    }
+
+    /**
+     * 按帧来的时间该怎么盖：最近 {@link #STALE_AFTER_MS} 内来过新帧就不盖；没有的话，刚弹出那一小会儿只是黑着
+     * （冷启动等第一帧是正常的，不必吓人），再久就写「没有实时画面」。
+     */
+    private int coverNow() {
+        long now = SystemClock.uptimeMillis();
+        if (lastFrameMs > 0 && now - lastFrameMs <= STALE_AFTER_MS) {
+            return SideViewPopupView.COVER_NONE;
+        }
+        return now - shownAtMs < STALE_AFTER_MS
+                ? SideViewPopupView.COVER_BLACK : SideViewPopupView.COVER_NO_PICTURE;
+    }
+
+    private void updateCover() {
+        SideViewPopupView view = popup;
+        if (view == null || !view.isShowing()) {
+            return;
+        }
+        int cover = coverNow();
+        if (cover == SideViewPopupView.COVER_NO_PICTURE && view.cover() != cover) {
+            AppLog.w(TAG, "侧视弹窗：" + (lastFrameMs == 0 ? "一帧都还没来"
+                    : (SystemClock.uptimeMillis() - lastFrameMs) + "ms 没有新帧") + "，盖上「没有实时画面」");
+        }
+        view.setCover(cover);
     }
 
     /** 收起：该备着就只拨暗（相机照推），不该就整个拿掉。 */
@@ -298,6 +352,7 @@ public class SideViewPopupService extends Service {
             return;
         }
         popup = new SideViewPopupView(this, appConfig);
+        lastFrameMs = 0;   // 新窗口：上一个窗口的帧不算
         popup.getTextureView().setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture st, int w, int h) {
@@ -334,6 +389,7 @@ public class SideViewPopupService extends Service {
         cancelDelayedClose();
         disarmReadyExpiry();
         cancelRetry();
+        handler.removeCallbacks(staleTick);
         if (popup != null && popup.isShowing()) {
             noteIfNoFrame();
         }
@@ -364,6 +420,10 @@ public class SideViewPopupService extends Service {
         SingleCamera camera = boundCamera;
         if (view == null) {
             return;
+        }
+        lastFrameMs = SystemClock.uptimeMillis();
+        if (view.isShowing()) {
+            view.setCover(SideViewPopupView.COVER_NONE);
         }
         if (!view.hasGeometry() && camera != null) {
             view.setSourceSize(camera.getPreviewSize());
@@ -462,6 +522,7 @@ public class SideViewPopupService extends Service {
 
     private void unbindCamera() {
         cancelRetry();
+        CameraForegroundService.cancelWhenReady("side-popup-open");
         CameraNeeds.current().release(CameraNeeds.Holder.SIDE_POPUP);
         // 录像不用、保活没开，就让前台服务回去；录像在用就留着
         CameraForegroundService.releaseWhenIdle(this);

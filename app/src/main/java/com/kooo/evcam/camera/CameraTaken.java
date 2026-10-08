@@ -1,5 +1,10 @@
 package com.kooo.evcam.camera;
 
+import android.os.Handler;
+import android.os.Looper;
+
+import com.kooo.evcam.zeekr.CarViewGate;
+
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,11 +30,22 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>录像那一侧：录着的一路被断开时立刻停这一段（{@link MultiCameraManager}），不等 15 秒看门狗；
  * 接回之后主界面按「录像被打断」的路子自动继续。</p>
+ *
+ * <h3>原厂画面在用相机时不抢（2.11.0 驾驶安全审查）</h3>
+ *
+ * <p>别的程序占着相机、原厂画面（倒车、360、原厂侧方小窗、泊车辅助，见 {@link CarViewGate}）又在屏幕上：
+ * 拿着相机的多半就是它。这时候去开相机，抢到了就是把倒车影像踢掉 —— 所以优先级变了不趁机试、
+ * 30 秒那一下也跳过，等原厂画面收了再接（它放开相机时照旧立刻接回）。</p>
  */
 public final class CameraTaken {
 
     /** 别的程序占着相机时多久试一次。 */
     static final long RETRY_WHILE_HELD_MS = 30_000L;
+    /** 原厂画面在、先不抢：多久再看一次它收了没有。 */
+    static final long CAR_VIEW_RECHECK_MS = 2_000L;
+
+    private static Handler mainHandler;
+    private static final Runnable AFTER_CAR_VIEW = CameraTaken::prioritiesChanged;
 
     private static final Set<String> HELD_BY_OTHERS = ConcurrentHashMap.newKeySet();
 
@@ -39,6 +55,11 @@ public final class CameraTaken {
     /** 此刻有没有别的程序占着相机。 */
     public static boolean othersHold() {
         return !HELD_BY_OTHERS.isEmpty();
+    }
+
+    /** 别的程序占着相机、原厂画面又在屏幕上：这时候别去开相机。哪个线程都能问。 */
+    static boolean yieldToCarView() {
+        return othersHold() && CarViewGate.isActiveNow();
     }
 
     /** 纯规则：别的程序占着相机就慢慢试，否则按正常退避。 */
@@ -63,11 +84,28 @@ public final class CameraTaken {
         }
     }
 
-    /** 相机服务说访问优先级变了（前后台切换那种）：别的程序还占着的话，趁机试一次。 */
+    /**
+     * 相机服务说访问优先级变了（前后台切换那种）：别的程序还占着的话，趁机试一次。
+     * 原厂画面在的话先不试，每 {@link #CAR_VIEW_RECHECK_MS} 看一次，收了再试（主线程）。
+     */
     static void prioritiesChanged() {
-        if (othersHold()) {
-            retryNow(null);
+        Handler handler = main();
+        handler.removeCallbacks(AFTER_CAR_VIEW);
+        if (!othersHold()) {
+            return;
         }
+        if (CarViewGate.isActiveNow()) {
+            handler.postDelayed(AFTER_CAR_VIEW, CAR_VIEW_RECHECK_MS);
+            return;
+        }
+        retryNow(null);
+    }
+
+    private static synchronized Handler main() {
+        if (mainHandler == null) {
+            mainHandler = new Handler(Looper.getMainLooper());
+        }
+        return mainHandler;
     }
 
     /** @param releasedCameraId 放开的那一路；优先级变了那种传 null */

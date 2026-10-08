@@ -38,6 +38,12 @@ import com.kooo.evcam.R;
  *   <li>显示：alpha 1，在对应那一边。</li>
  * </ul>
  *
+ * <h3>盖板</h3>
+ *
+ * <p>TextureView 没有新帧时会一直留着最后那一帧。相机卡了、被拿走了，窗口照样「显示」着几秒甚至几分钟前的路面，
+ * 看上去和实时的一样 —— 打灯并线时这比黑着更危险（2.11.0 驾驶安全审查）。所以服务按帧来的时间给一块盖板
+ * （{@link #setCover}）：刚弹出还没有新帧时全黑，一直没有就写一句「没有实时画面」。</p>
+ *
  * <p>位置：屏幕中线是两边的分界，左侧那一路的右边缘贴中线，右侧那一路的左边缘贴中线；
  * 默认偏宽的长方形，高度、形状（宽 ÷ 高）和上下位置在设置里调。显示时接点击（为什么见 {@link #applyVisibility}），
  * 备着时点击穿过去。</p>
@@ -45,6 +51,13 @@ import com.kooo.evcam.R;
 public class SideViewPopupView extends ViewGroup {
 
     private static final String TAG = "SideViewPopup";
+
+    /** 盖板：不盖，画面照常。 */
+    public static final int COVER_NONE = 0;
+    /** 盖板：全黑（刚弹出，新帧还没来）。 */
+    public static final int COVER_BLACK = 1;
+    /** 盖板：全黑加一句「没有实时画面」。 */
+    public static final int COVER_NO_PICTURE = 2;
 
     private final WindowManager windowManager;
     private final AppConfig appConfig;
@@ -58,6 +71,9 @@ public class SideViewPopupView extends ViewGroup {
     private final Paint framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF frameRect = new RectF();
     private final float cornerRadius;
+    private final Paint coverTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    /** 新窗口还一帧都没有：先黑着，等服务按帧来的时间改。 */
+    private int cover = COVER_BLACK;
 
     private WindowManager.LayoutParams params;
     private boolean attached;
@@ -90,6 +106,8 @@ public class SideViewPopupView extends ViewGroup {
         framePaint.setStyle(Paint.Style.STROKE);
         framePaint.setStrokeWidth(2f * context.getResources().getDisplayMetrics().density);
         framePaint.setColor(context.getColor(R.color.surface));
+        coverTextPaint.setColor(0xFFF2F2F3);
+        coverTextPaint.setTextAlign(Paint.Align.CENTER);
         textureView = new AutoFitTextureView(context);
         addView(textureView);
         readConfig();
@@ -131,6 +149,18 @@ public class SideViewPopupView extends ViewGroup {
 
     public int lane() {
         return lane;
+    }
+
+    /** 盖不盖、怎么盖（{@link #COVER_NONE} 等）；服务在主线程上按帧来的时间改。 */
+    public void setCover(int cover) {
+        if (this.cover != cover) {
+            this.cover = cover;
+            invalidate();
+        }
+    }
+
+    public int cover() {
+        return cover;
     }
 
     // ------------------------------------------------------------------ 窗口
@@ -300,6 +330,7 @@ public class SideViewPopupView extends ViewGroup {
             // 服务就没机会补上尺寸 —— 窗口会一直黑），再盖成黑的，不露出四路挤在一起的整条合成流
             super.dispatchDraw(canvas);
             canvas.drawColor(0xFF000000);
+            drawCover(canvas, width, height);
             drawFrame(canvas, width, height);
             return;
         }
@@ -332,7 +363,30 @@ public class SideViewPopupView extends ViewGroup {
             drawChild(canvas, textureView, getDrawingTime());
         }
         canvas.restoreToCount(save);
+        drawCover(canvas, width, height);
         drawFrame(canvas, width, height);
+    }
+
+    /**
+     * 盖板压在画面上、镜像之外（字不跟着翻）。子视图上面已经照画过：TextureView 不画就不取帧，
+     * 新帧来不了，盖板就永远揭不掉。
+     */
+    private void drawCover(Canvas canvas, int width, int height) {
+        if (cover == COVER_NONE) {
+            return;
+        }
+        canvas.drawColor(0xFF000000);
+        if (cover != COVER_NO_PICTURE) {
+            return;
+        }
+        String text = getContext().getString(R.string.side_popup_no_picture);
+        if (text.isEmpty()) {
+            return;
+        }
+        coverTextPaint.setTextSize(Math.max(1f,
+                Math.min(height * 0.12f, width / (text.length() * 0.6f))));
+        Paint.FontMetrics fm = coverTextPaint.getFontMetrics();
+        canvas.drawText(text, width / 2f, height / 2f - (fm.ascent + fm.descent) / 2f, coverTextPaint);
     }
 
     /** 细浅边，压在画面最上层；线宽一半落在窗口外会被圆角裁掉，所以往里收半个线宽。 */

@@ -75,6 +75,16 @@ public class CameraForegroundService extends Service {
 
     private static final java.util.Map<Object, Runnable> keyedCallbacks = new java.util.HashMap<>();
 
+    /** 撤掉 {@code key} 排着的那一个：窗口在服务就绪前就拿掉了，别等就绪后替没人要的窗口开相机。 */
+    public static void cancelWhenReady(Object key) {
+        synchronized (pendingReadyCallbacks) {
+            Runnable previous = keyedCallbacks.remove(key);
+            if (previous != null) {
+                pendingReadyCallbacks.remove(previous);
+            }
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();

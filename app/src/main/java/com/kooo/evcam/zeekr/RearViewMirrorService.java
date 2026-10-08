@@ -520,6 +520,7 @@ public class RearViewMirrorService extends Service {
 
     private void unbindCamera() {
         cancelRetry();
+        CameraForegroundService.cancelWhenReady("mirror-open");
         com.kooo.evcam.camera.CameraNeeds.current().release(com.kooo.evcam.camera.CameraNeeds.Holder.MIRROR);
         CameraForegroundService.releaseWhenIdle(this);
         StallWatch.armMirror(false);

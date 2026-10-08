@@ -2957,6 +2957,14 @@ public class SingleCamera {
                 isReconnecting = false;
                 return;   // 等的时候被关了，或者已经换了一轮
             }
+            if (CameraTaken.yieldToCarView()) {
+                // 原厂画面在用相机：这一下不开，抢到了就是把倒车影像踢掉。按「被占着」的节奏再等，
+                // 它放开相机时 retryTaken 会立刻来接（2.11.0 驾驶安全审查）
+                AppLog.d(TAG, "Camera " + cameraId + " reconnect skipped: car view is using the camera");
+                isReconnecting = false;
+                scheduleReconnect();
+                return;
+            }
         }
         try {
             openCameraMarked(handler);

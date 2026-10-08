@@ -126,8 +126,15 @@ public class RearViewMirrorView extends ViewGroup {
      * 是这条流停了。</p>
      */
     private static final long FROZEN_AFTER_MS = 2500L;
+    /**
+     * 多久没有新画面就先盖黑，不再把停住的那一帧当实时画面给人看（2.11.0 驾驶安全审查）。
+     * 以前要等 2.5 秒、而且只压暗到八成 —— 时速 100 公里时那是七十米的路，后面来的车看不见。
+     * 「点击恢复」那句还是 {@link #FROZEN_AFTER_MS} 后才写：录像开始、换路时会话重建本来就要停一下，
+     * 那几百毫秒里不必叫人去点。
+     */
+    private static final long STALE_AFTER_MS = 500L;
     /** 没有画面时靠它定期重画 —— 画面停了就没有帧来驱动重画了。 */
-    private static final long IDLE_TICK_MS = 1000L;
+    private static final long IDLE_TICK_MS = 250L;
 
     /** 按键模式点中一块之后，那块三角闪多久（从半透明橙淡到没有）。 */
     private static final long TAP_FLASH_MS = 350L;
@@ -141,6 +148,12 @@ public class RearViewMirrorView extends ViewGroup {
     private long lastFrameUptimeMs;
     /** 画面停了：盖住那张过时的画面，改成一句「点击恢复」。 */
     private boolean frozen;
+    /** 有一会儿没有新帧了：先盖黑（{@link #STALE_AFTER_MS}）。 */
+    private boolean stale;
+    /** 角标是按哪一路取的字，和那串字：换路时才重取（取字要按应用语言另起一份配置，不该每帧做）。 */
+    private int laneTagLane = -1;
+    private String laneTagText = "";
+    private final RectF laneTagRect = new RectF();
     /** 贴边收起：那一条窄边上不画画面，只写名字。 */
     private boolean docked;
     /** 按键模式：左右划换路换成点窗口的几块（{@link LaneTapZones}）。 */
@@ -301,8 +314,9 @@ public class RearViewMirrorView extends ViewGroup {
     /** 服务每收到一帧新画面调一次。 */
     public void noteFrame() {
         lastFrameUptimeMs = SystemClock.uptimeMillis();
-        if (frozen) {
+        if (frozen || stale) {
             frozen = false;
+            stale = false;
             invalidate();
         }
     }
@@ -337,8 +351,13 @@ public class RearViewMirrorView extends ViewGroup {
             if (!attached) {
                 return;
             }
-            boolean nowFrozen = !docked
-                    && SystemClock.uptimeMillis() - lastFrameUptimeMs > FROZEN_AFTER_MS;
+            long age = SystemClock.uptimeMillis() - lastFrameUptimeMs;
+            boolean nowStale = !docked && age > STALE_AFTER_MS;
+            boolean nowFrozen = !docked && age > FROZEN_AFTER_MS;
+            if (nowStale != stale) {
+                stale = nowStale;
+                invalidate();
+            }
             if (nowFrozen != frozen) {
                 frozen = nowFrozen;
                 AppLog.i(TAG, frozen ? "后视镜画面停了，改显示「点击恢复」" : "后视镜画面回来了");
@@ -372,6 +391,7 @@ public class RearViewMirrorView extends ViewGroup {
         docked = nowDocked;
         if (docked) {
             frozen = false;   // 收起来不算「画面停了」，是我们自己停的
+            stale = false;
         } else {
             lastFrameUptimeMs = SystemClock.uptimeMillis();   // 给重新接上留出时间
         }
@@ -493,6 +513,8 @@ public class RearViewMirrorView extends ViewGroup {
             super.dispatchDraw(canvas);
             if (frozen) {
                 drawFrozenHint(canvas, width, height);
+            } else if (stale) {
+                canvas.drawColor(FROZEN_SCRIM);
             }
             return;
         }
@@ -535,6 +557,10 @@ public class RearViewMirrorView extends ViewGroup {
         // 盖在最上面，而且在镜像之外 —— 提示文字不该跟着画面一起左右翻
         if (frozen) {
             drawFrozenHint(canvas, width, height);
+        } else if (stale) {
+            canvas.drawColor(FROZEN_SCRIM);
+        } else {
+            drawLaneTag(canvas, width, height);
         }
         if (flashLane >= 0 && flashLevel > 0f) {
             drawTapFlash(canvas, width, height);
@@ -966,12 +992,13 @@ public class RearViewMirrorView extends ViewGroup {
     // ------------------------------------------------------------------ 没有画面时画什么
 
     /**
-     * 画面停住时盖上去的一层。压暗而不是盖死 —— 让人看得出底下是张画面，只是不再更新了。
+     * 画面停住时盖上去的一层。<b>盖死</b>：以前压暗到八成、让人看得出底下是张画面，
+     * 可开车时一眼扫过去，暗一点的旧画面和实时画面分不出来（2.11.0 驾驶安全审查）。
      *
      * <p>这一层盖的是摄像头画面，不是应用自己的界面，所以不跟日夜模式走：
-     * 底下永远是视频，压暗 + 浅色字在两种模式下都读得清。</p>
+     * 黑底 + 浅色字在两种模式下都读得清。</p>
      */
-    private static final int FROZEN_SCRIM = 0xCC000000;
+    private static final int FROZEN_SCRIM = 0xFF000000;
     private static final int FROZEN_TEXT = 0xFFF2F2F3;
 
     /**
@@ -1063,6 +1090,42 @@ public class RearViewMirrorView extends ViewGroup {
                 Math.min(height * 0.17f, width / (hint.length() * 0.56f))));
         Paint.FontMetrics fm = labelPaint.getFontMetrics();
         canvas.drawText(hint, width / 2f, height / 2f - (fm.ascent + fm.descent) / 2f, labelPaint);
+    }
+
+    /**
+     * 不在后视那一路时，左上角一个小角标写着是哪一路（2.11.0 驾驶安全审查）。
+     *
+     * <p>窗口长得像后视镜，可一划就能换到前视或侧视，平时又什么字都不画：换过去之后一眼扫过来，
+     * 很容易把前视当成后面。后视那一路不标 —— 那是它本来的样子，不该多一块东西挡路面。
+     * 画在镜像之外，字不跟着翻。</p>
+     */
+    private void drawLaneTag(Canvas canvas, int width, int height) {
+        if (laneIndex == LaneCycle.REAR) {
+            return;
+        }
+        if (laneTagLane != laneIndex) {
+            laneTagLane = laneIndex;
+            laneTagText = com.kooo.evcam.camera.CameraNames.ofLane(
+                    com.kooo.evcam.settings.Languages.localized(getContext()), laneIndex);
+        }
+        if (laneTagText.isEmpty()) {
+            return;
+        }
+        float density = getResources().getDisplayMetrics().density;
+        labelPaint.setColor(FROZEN_TEXT);
+        labelPaint.setTextAlign(Paint.Align.LEFT);
+        labelPaint.setTextSize(Math.max(1f, Math.min(14f * density, height * 0.12f)));
+        float pad = 6f * density;
+        Paint.FontMetrics fm = labelPaint.getFontMetrics();
+        float textWidth = labelPaint.measureText(laneTagText);
+        laneTagRect.set(pad, pad, pad + textWidth + 2 * pad, pad + (fm.descent - fm.ascent) + pad);
+        if (laneTagRect.right > width || laneTagRect.bottom > height) {
+            return;   // 窗口小到放不下就不画，别压住整块画面
+        }
+        scrimPaint.setColor(DOCK_BACKGROUND);
+        canvas.drawRoundRect(laneTagRect, pad, pad, scrimPaint);
+        canvas.drawText(laneTagText, laneTagRect.left + pad,
+                laneTagRect.top + pad / 2f - fm.ascent, labelPaint);
     }
 
     private int screenWidth() {

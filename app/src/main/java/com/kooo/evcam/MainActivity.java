@@ -2522,7 +2522,14 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
-            Toast.makeText(MainActivity.this, text, length).show();
+            // 相机被拿走、等它放开就自动续录：状态条上那一句就够了。拿走相机的多半是倒车影像或 360，
+            // 这时候弹一条长提示正好压在原厂画面上；原厂画面在时别的原因也不弹，用户自己按停的除外
+            //（2.11.0 驾驶安全审查）
+            boolean quiet = (reason == RecordingStops.Reason.CAMERA_LOST && willResume)
+                    || (reason != RecordingStops.Reason.USER && com.kooo.evcam.zeekr.CarViewGate.isActiveNow());
+            if (!quiet) {
+                Toast.makeText(MainActivity.this, text, length).show();
+            }
             // 相机被别的程序拿走、正在等它放开：状态条上说一声
             showCameraTakenHint(reason == RecordingStops.Reason.CAMERA_LOST && willResume);
 
