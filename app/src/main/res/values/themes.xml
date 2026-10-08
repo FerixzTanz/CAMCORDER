@@ -61,7 +61,7 @@
 
     <!-- 次级方块：图标在上、字在下，中性灰底，无阴影 -->
     <style name="Widget.Cam.RailTile" parent="Widget.Material3.Button.TonalButton">
-        <item name="backgroundTint">@color/sunken</item>
+        <item name="backgroundTint">@color/card</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="iconTint">@color/text_primary</item>
         <!-- textTop：图标和字作为一组在方块里上下居中（top 会把图标贴在顶边） -->

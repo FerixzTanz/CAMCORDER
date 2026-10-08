@@ -11,6 +11,11 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.7-beta] - 2026-10-08
+
+- Night mode on the main screen matches the car too: the area around the camera picture is black
+  instead of a grey panel, and the buttons are dark grey like the car's own.
+
 ## [2.10.6-beta] - 2026-10-08
 
 - Night mode matches the car's own settings more closely: the page is almost black, and the setting rows
