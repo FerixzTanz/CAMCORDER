@@ -147,7 +147,8 @@ public final class Mp4Repair {
                         break;
                     }
                 }
-                if (size <= 0) {
+                if (size < 8) {
+                    // 盒子至少 8 字节：更小的是坏数据，照它一步步挪会把几 GB 的文件扫上几个小时（安全审查 2026-10-08）
                     break;
                 }
                 pos += size;
@@ -313,7 +314,7 @@ public final class Mp4Repair {
                     raf.readFully(moov);
                     return moov;
                 }
-                if (size <= 0 || pos + size > length) {
+                if (size < 8 || pos + size > length) {
                     break;
                 }
                 pos += size;

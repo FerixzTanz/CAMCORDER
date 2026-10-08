@@ -166,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
     // 摄像头重连防抖相关
     
     // 悬浮按钮发来的广播
-    private android.content.BroadcastReceiver toggleRecordingReceiver;  // 录制切换广播接收器（来自悬浮窗）
 
     // 熄屏：屏幕状态只有 ScreenState 一份（熄屏广播 + 黑着时每 2 秒问系统一次代替亮屏广播）。
     // 唤醒锁、录像的 10 秒停 / 亮屏接回、1.5 秒没人要就关相机、亮屏把退下去的界面接回来，
@@ -2295,26 +2294,12 @@ public class MainActivity extends AppCompatActivity {
      * 用于接收录制悬浮按钮的录制切换指令
      */
     private void initToggleRecordingReceiver() {
-        toggleRecordingReceiver = new android.content.BroadcastReceiver() {
-            @Override
-            public void onReceive(android.content.Context context, android.content.Intent intent) {
-                String action = intent.getAction();
-                if ("com.kooo.evcam.action.TOGGLE_RECORDING".equals(action)) {
-                    AppLog.d(TAG, "收到录制切换广播（来自悬浮按钮）");
-                    // 在主线程执行录制切换
-                    runOnUiThread(() -> {
-                        toggleRecording();
-                    });
-                }
-            }
-        };
-        
-        android.content.IntentFilter filter = new android.content.IntentFilter();
-        filter.addAction("com.kooo.evcam.action.TOGGLE_RECORDING");
-        registerReceiver(toggleRecordingReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED);
-        
-        AppLog.d(TAG, "录制切换广播接收器已注册");
+        // 进程内直接调，不再注册广播接收器：Android 12 上它对所有应用开放，
+        // 别的应用发一条广播就能悄悄停掉录像（2.11.0 安全审查，见 InAppEvents）
+        com.kooo.evcam.InAppEvents.setToggleListener(toggleListener);
     }
+
+    private final com.kooo.evcam.InAppEvents.ToggleListener toggleListener = this::toggleRecording;
     
     
     /**
@@ -2770,7 +2755,10 @@ public class MainActivity extends AppCompatActivity {
      * 发送当前录制状态广播（供悬浮窗服务查询）
      */
     public void broadcastCurrentRecordingState() {
-        com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(this, isRecording);
+        // 报协调器的：这个界面刚重建时自己的 isRecording 还是 false（相机画面出来前），报它会让悬浮按钮
+        // 显示「没在录」而录像其实在继续（实车 2026-10-08，审查）
+        com.kooo.evcam.service.RecordingFloatingService.sendRecordingStateChanged(this,
+                recordingCoordinator.isRecording());
     }
     
 
@@ -2960,15 +2948,7 @@ public class MainActivity extends AppCompatActivity {
         // 协调器是进程级的，录像和它的等待都不随这个界面走；只把画面反馈摘掉
         recordingCoordinator.removeListener(recordingListener);
 
-        // 清理录制切换广播接收器
-        if (toggleRecordingReceiver != null) {
-            try {
-                unregisterReceiver(toggleRecordingReceiver);
-            } catch (Exception e) {
-                AppLog.w(TAG, "注销录制切换广播接收器时出错: " + e.getMessage());
-            }
-            toggleRecordingReceiver = null;
-        }
+        com.kooo.evcam.InAppEvents.clearToggleListener(toggleListener);
         // 熄屏退后台的那一步：界面都没了，不用退
         com.kooo.evcam.screen.ScreenState.removeListener(screenListener);
         cancelBackgroundTask();

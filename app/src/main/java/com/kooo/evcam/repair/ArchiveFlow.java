@@ -250,8 +250,16 @@ public final class ArchiveFlow {
                 });
                 long length = item.from.length();
                 try {
+                    boolean keepSource = false;
                     if (item.to.isFile() && item.to.length() == length) {
-                        already++;
+                        // 同名同大小不等于同一个文件：内容也对一遍再删源文件，
+                        // 不然目标盘上放一个同名同大小的文件就能让原片被删掉（安全审查 2026-10-08）
+                        if (sameContent(item.from, item.to, buffer)) {
+                            already++;
+                        } else {
+                            keepSource = true;
+                            AppLog.w(TAG, "目标盘上有同名同大小但内容不同的文件，源文件留着: " + item.from.getName());
+                        }
                     } else {
                         copy(item.from, item.to, buffer);
                         if (item.move) {
@@ -260,7 +268,7 @@ public final class ArchiveFlow {
                             copied++;
                         }
                     }
-                    if (item.move && !item.from.delete()) {
+                    if (item.move && !keepSource && !item.from.delete()) {
                         failed.add(activity.getString(R.string.dev_archive_delete_failed, item.from.getName()));
                     }
                 } catch (IOException e) {
@@ -392,6 +400,33 @@ public final class ArchiveFlow {
             dialog.dismiss();
         } catch (Exception ignored) {
             // 界面已经没了
+        }
+    }
+
+    /** 两个文件内容是不是一样（逐字节比，长度调用方已经比过）。 */
+    private static boolean sameContent(java.io.File a, java.io.File b, byte[] buffer) throws java.io.IOException {
+        byte[] other = new byte[buffer.length];
+        try (java.io.InputStream x = new java.io.FileInputStream(a);
+             java.io.InputStream y = new java.io.FileInputStream(b)) {
+            while (true) {
+                int n = x.read(buffer);
+                if (n < 0) {
+                    return y.read() < 0;
+                }
+                int off = 0;
+                while (off < n) {
+                    int m = y.read(other, off, n - off);
+                    if (m < 0) {
+                        return false;
+                    }
+                    off += m;
+                }
+                for (int i = 0; i < n; i++) {
+                    if (buffer[i] != other[i]) {
+                        return false;
+                    }
+                }
+            }
         }
     }
 }

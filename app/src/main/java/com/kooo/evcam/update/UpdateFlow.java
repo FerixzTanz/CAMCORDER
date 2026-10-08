@@ -112,7 +112,8 @@ public final class UpdateFlow {
     private static void download(Activity activity, GithubReleases.Release release) {
         File dir = new File(activity.getCacheDir(), CACHE_DIR);
         clear(dir);
-        File target = new File(dir, release.apkName);
+        // 固定的文件名：不拿发布里的文件名拼路径（安全审查 2026-10-08）
+        File target = new File(dir, "update.apk");
 
         ProgressBar bar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
         bar.setMax(100);

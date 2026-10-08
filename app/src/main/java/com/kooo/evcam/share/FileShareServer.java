@@ -46,6 +46,41 @@ public class FileShareServer extends NanoHTTPD {
     public FileShareServer(Context context) {
         super(AUTO_PORT);
         this.context = context.getApplicationContext();
+        // 同时最多这么几个连接，多的直接关掉：默认一个连接一个线程、不封顶，
+        // 同一个热点上有人狂开连接就能把线程、内存耗光，连带正在录的进程一起崩（安全审查 2026-10-08）
+        setAsyncRunner(new BoundedRunner());
+    }
+
+    /** 同时最多几个连接（手机下载一个文件、再加几个预取，够了）。 */
+    private static final int MAX_CLIENTS = 6;
+
+    private static final class BoundedRunner implements AsyncRunner {
+        private final java.util.List<ClientHandler> running =
+                java.util.Collections.synchronizedList(new java.util.ArrayList<ClientHandler>());
+
+        @Override
+        public void closeAll() {
+            for (ClientHandler handler : new java.util.ArrayList<>(running)) {
+                handler.close();
+            }
+        }
+
+        @Override
+        public void closed(ClientHandler handler) {
+            running.remove(handler);
+        }
+
+        @Override
+        public void exec(ClientHandler handler) {
+            if (running.size() >= MAX_CLIENTS) {
+                handler.close();
+                return;
+            }
+            running.add(handler);
+            Thread thread = new Thread(handler, "share-client");
+            thread.setDaemon(true);
+            thread.start();
+        }
     }
 
     /**
@@ -75,7 +110,8 @@ public class FileShareServer extends NanoHTTPD {
     }
 
     private static String randomToken() {
-        byte[] bytes = new byte[6];
+        // 128 位（以前 48 位）：链接一直有效到分享结束，多几位不花什么（安全审查 2026-10-08）
+        byte[] bytes = new byte[16];
         RANDOM.nextBytes(bytes);
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {

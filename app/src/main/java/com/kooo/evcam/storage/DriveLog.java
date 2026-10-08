@@ -50,6 +50,8 @@ public final class DriveLog {
 
     private static final String TAG = "DriveLog";
     public static final String FILE_NAME = "drives.txt";
+    /** 比这大就不读（一趟几十字节，一万趟也才几百 KB）。 */
+    static final long MAX_BYTES = 2L * 1024 * 1024;
     private static final String HEADER = "# Zeekr Shortcut: drive log. S start, E end (epoch ms, odometer km); "
             + "B hard braking (g); F flash-to-pass lock.";
 
@@ -68,6 +70,11 @@ public final class DriveLog {
     public static List<DriveRecords.Drive> read(File dir) {
         File file = dir == null ? null : new File(dir, FILE_NAME);
         if (file == null || !file.isFile()) {
+            return Collections.emptyList();
+        }
+        if (file.length() > MAX_BYTES) {
+            // 盘坏了、或者有人塞了个大文件：整个读进来会内存不够、进程崩，录像跟着停（安全审查 2026-10-08）
+            AppLog.w(TAG, "行车日志太大，不读: " + file + " " + file.length());
             return Collections.emptyList();
         }
         try (BufferedReader reader = new BufferedReader(

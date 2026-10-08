@@ -1,11 +1,9 @@
 package com.kooo.evcam.service;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -71,10 +69,8 @@ public class RecordingFloatingService extends Service {
     public static final String EXTRA_IS_RECORDING = "is_recording";
 
     public static void sendRecordingStateChanged(Context context, boolean isRecording) {
-        Intent intent = new Intent(ACTION_RECORDING_STATE_CHANGED);
-        intent.setPackage(context.getPackageName());
-        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
-        context.sendBroadcast(intent);
+        // 进程内直接告诉悬浮按钮，不再发广播：Android 12 上接收器挡不住别的应用（2.11.0 安全审查，见 InAppEvents）
+        com.kooo.evcam.InAppEvents.recordingStateChanged(isRecording);
     }
 
     public static final String EXTRA_BUTTON_SIZE = "button_size";
@@ -129,6 +125,11 @@ public class RecordingFloatingService extends Service {
             if (recordingButton != null) {
                 recordingButton.setTrouble(cameraInTrouble());
             }
+            // 按钮显示的状态和真的对一次：主界面重建时它可能被告知了过时的状态（实车 2026-10-08，审查）
+            boolean actual = com.kooo.evcam.recording.RecordingCoordinator.get(RecordingFloatingService.this).isRecording();
+            if (actual != isRecording) {
+                updateRecordingState(actual);
+            }
             if (mainHandler != null) {
                 mainHandler.postDelayed(this, TROUBLE_CHECK_MS);
             }
@@ -139,8 +140,6 @@ public class RecordingFloatingService extends Service {
     private Runnable timeUpdateRunnable;
 
     // 广播接收器
-    private BroadcastReceiver sizeUpdateReceiver;
-    private BroadcastReceiver recordingStateReceiver;
 
     public class LocalBinder extends Binder {
         public RecordingFloatingService getService() {
@@ -194,52 +193,19 @@ public class RecordingFloatingService extends Service {
         registerRecordingStateReceiver();
     }
 
+    /**
+     * 以前在这里注册两个广播接收器（大小、录制状态）。Android 12 上它们对所有应用开放：
+     * 谁都能让按钮显示「在录」，或者塞个读不出来的 extra 把进程弄崩（2.11.0 安全审查）。
+     * 大小改成走 startService（ACTION_UPDATE_STYLE / ACTION_UPDATE_SIZE，服务不对外），状态走 {@link com.kooo.evcam.InAppEvents}。
+     */
     private void registerSizeUpdateReceiver() {
-        sizeUpdateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (ACTION_UPDATE_SIZE.equals(intent.getAction())) {
-                    int buttonSize = intent.getIntExtra(EXTRA_BUTTON_SIZE, -1);
-                    int textSize = intent.getIntExtra(EXTRA_TEXT_SIZE, -1);
-                    AppLog.d(TAG, "收到大小更新广播: button=" + buttonSize + ", text=" + textSize);
-                    updateFloatingSize(buttonSize, textSize);
-                }
-            }
-        };
-
-        IntentFilter filter = new IntentFilter(ACTION_UPDATE_SIZE);
-        // Android 14+ 需要指定 RECEIVER_NOT_EXPORTED
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            registerReceiver(sizeUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(sizeUpdateReceiver, filter);
-        }
     }
-    
-    private void registerRecordingStateReceiver() {
-        recordingStateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // 兼容两种广播 action
-                if ("com.kooo.evcam.RECORDING_STATE_CHANGED".equals(action) ||
-                    "com.kooo.evcam.action.RECORDING_STATE_CHANGED".equals(action)) {
-                    boolean recording = intent.getBooleanExtra("is_recording", false);
-                    AppLog.d(TAG, "收到录制状态广播: isRecording=" + recording);
-                    mainHandler.post(() -> updateRecordingState(recording));
-                }
-            }
-        };
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("com.kooo.evcam.RECORDING_STATE_CHANGED");
-        filter.addAction("com.kooo.evcam.action.RECORDING_STATE_CHANGED");
-        // Android 14+ 需要指定 RECEIVER_NOT_EXPORTED
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(recordingStateReceiver, filter);
-        }
+    private final com.kooo.evcam.InAppEvents.RecordingStateListener recordingStateListener =
+            recording -> updateRecordingState(recording);
+
+    private void registerRecordingStateReceiver() {
+        com.kooo.evcam.InAppEvents.addRecordingStateListener(recordingStateListener);
     }
 
     private void updateFloatingSize(int buttonSizeDp, int textSizeSp) {
@@ -355,13 +321,7 @@ public class RecordingFloatingService extends Service {
             unbindService(serviceConnection);
         }
 
-        // 注销广播接收器
-        if (sizeUpdateReceiver != null) {
-            unregisterReceiver(sizeUpdateReceiver);
-        }
-        if (recordingStateReceiver != null) {
-            unregisterReceiver(recordingStateReceiver);
-        }
+        com.kooo.evcam.InAppEvents.removeRecordingStateListener(recordingStateListener);
 
         stopTimeUpdate();
     }
@@ -641,11 +601,12 @@ public class RecordingFloatingService extends Service {
         switch (appState) {
             case FOREGROUND:
                 // 应用在前台，通过 MainActivity 停止录制
-                AppLog.d(TAG, "App is in foreground, sending stop recording broadcast to MainActivity");
-                Intent stopIntent = new Intent("com.kooo.evcam.action.TOGGLE_RECORDING");
-                stopIntent.setPackage(getPackageName());
-                sendBroadcast(stopIntent);
-                return;
+                AppLog.d(TAG, "App is in foreground, asking MainActivity to toggle recording");
+                if (com.kooo.evcam.InAppEvents.requestToggle()) {
+                    return;
+                }
+                // 主界面其实不在（刚销毁）：按后台的走法来（往下落到 BACKGROUND）
+                // fall through
             case BACKGROUND:
                 // 应用在后台，通过服务启动/停止录制，不拉起 MainActivity
                 AppLog.d(TAG, "App is in background, starting/stopping recording via service...");
@@ -774,6 +735,7 @@ public class RecordingFloatingService extends Service {
     }
 
     private void updateRecordingState(boolean recording) {
+        boolean was = isRecording;
         isRecording = recording;
 
         if (recordingButton != null) {
@@ -781,7 +743,9 @@ public class RecordingFloatingService extends Service {
         }
 
         if (recording) {
-            recordingStartTime = System.currentTimeMillis();
+            if (!was || recordingStartTime == 0) {
+                recordingStartTime = System.currentTimeMillis();
+            }
             startTimeUpdate();
             if (timeTextView != null) {
                 // 时长是个开关：有人只要一个按钮，不要旁边那串数字

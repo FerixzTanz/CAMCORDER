@@ -37,8 +37,15 @@ public class BootReceiver extends BroadcastReceiver {
             "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
             
             AppLog.d(TAG, "系统开机完成！");
-            // 真正开机：用户上一次的「退出」到此为止
-            UserExit.clear(context, "boot");
+            // 真正开机：用户上一次的「退出」到此为止。QUICKBOOT_POWERON 不是受保护的广播，
+            // 别的应用也能发：只有确实重启过才算（安全审查 2026-10-08）
+            if (Intent.ACTION_BOOT_COMPLETED.equals(action)
+                    || com.kooo.evcam.blackbox.BlackBox.rebootedSinceLastRun()) {
+                UserExit.clear(context, "boot");
+            } else if (UserExit.isExited(context)) {
+                AppLog.w(TAG, "收到 " + action + " 但没有真的重启过：用户退出了，不起");
+                return;
+            }
             
             // 保活开着才起前台服务（规格 §3）
             if (new AppConfig(context).isKeepAliveEnabled()) {

@@ -4,7 +4,6 @@
 
     <!-- 摄像头权限 -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_LOGS" />
     <!-- 定位：行驶信息条里的经纬度和 GPS 车速（试验项目，1.68.0） -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -58,7 +57,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.Cam">
 
         <!-- 高优先级保活 Provider：在应用启动的最早阶段初始化服务 -->

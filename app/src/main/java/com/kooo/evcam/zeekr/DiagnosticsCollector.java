@@ -626,7 +626,10 @@ public final class DiagnosticsCollector {
         sb.append("## 9. 最近日志（本进程）").append('\n');
         try {
             Process p = Runtime.getRuntime().exec(new String[]{
-                    "logcat", "-d", "-v", "time", "-t", String.valueOf(LOGCAT_READ_LINES)});
+                    "logcat", "-d", "-v", "time", "--pid=" + android.os.Process.myPid(),
+                    "-t", String.valueOf(LOGCAT_READ_LINES)});
+            // 只读本进程（标题说的就是「本进程」）：不带 --pid 时有 READ_LOGS 就会把别的应用的日志
+            // （导航目的地、蓝牙通讯录、账号……）也收进报告，而报告会被贴到公开的 issue 里（安全审查 2026-10-08）
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
             List<String> kept = new ArrayList<>();
             int dropped = 0;

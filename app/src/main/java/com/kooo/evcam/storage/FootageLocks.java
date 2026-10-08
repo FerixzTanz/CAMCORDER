@@ -54,6 +54,8 @@ public final class FootageLocks {
 
     /** 清单的文件名。 */
     public static final String FILE_NAME = "locked.txt";
+    /** 清单比这大就不读：一行三四十字节，五万个文件也才 2 MB。 */
+    private static final long MAX_LIST_BYTES = 2L * 1024 * 1024;
     private static final String HEADER =
             "# Zeekr Shortcut: locked footage, one file name per line. Never deleted automatically.";
 
@@ -123,6 +125,11 @@ public final class FootageLocks {
         File file = dir == null ? null : new File(dir, fileName);
         if (file == null || !file.isFile()) {
             return new TreeSet<>();
+        }
+        if (file.length() > MAX_LIST_BYTES) {
+            // 不正常的大：当作读不出来（调用方据此这一轮不删、不写），别整个读进内存把进程撑崩（安全审查 2026-10-08）
+            AppLog.w(TAG, "锁定清单太大，不读: " + file + " " + file.length());
+            return null;
         }
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {

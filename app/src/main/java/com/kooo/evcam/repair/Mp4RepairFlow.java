@@ -214,12 +214,13 @@ public final class Mp4RepairFlow {
             if (references == null || references.isEmpty()) {
                 return new Outcome(false, activity.getString(R.string.dev_repair_skip_no_reference));
             }
-            IOException last = null;
+            Exception last = null;
             for (File reference : references) {
                 try {
                     template = Mp4Repair.templateFrom(reference);
                     break;
-                } catch (IOException e) {
+                } catch (IOException | RuntimeException e) {
+                    // 坏文件里的字段越界会抛运行时异常：当它读不出，别让整个应用崩（安全审查 2026-10-08）
                     last = e;
                 }
             }

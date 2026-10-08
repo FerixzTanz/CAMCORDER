@@ -216,6 +216,9 @@ public final class GithubReleases {
      */
     public static void download(Release release, File target, ProgressListener listener)
             throws IOException {
+        if (release.apkUrl == null || !release.apkUrl.startsWith("https://")) {
+            throw new Failure("Refusing a non-https download URL", R.string.upd_err_bad_response);
+        }
         HttpURLConnection connection = open(release.apkUrl);
         try {
             int code = connection.getResponseCode();
@@ -253,6 +256,11 @@ public final class GithubReleases {
             if (total > 0 && done != total) {
                 throw new Failure("Only received " + done + "/" + total + " bytes",
                         R.string.upd_err_truncated, done, total);
+            }
+            // 也要和 GitHub 列出来的文件大小对上（Content-Length 只说这一次传了多少）（安全审查 2026-10-08）
+            if (release.apkBytes > 0 && done != release.apkBytes) {
+                throw new Failure("Received " + done + " bytes, release lists " + release.apkBytes,
+                        R.string.upd_err_truncated, done, release.apkBytes);
             }
             AppLog.d(TAG, "已下载 " + release.apkName + "（" + done + " 字节）");
         } catch (IOException e) {

@@ -35,6 +35,8 @@ import java.util.List;
 public final class PhoneShare {
 
     private static final String TAG = "PhoneShare";
+    /** 分享最多开着多久。 */
+    private static final long MAX_OPEN_MS = 10L * 60 * 1000;
     private static final int QR_SIZE_PX = 420;
 
     private PhoneShare() {
@@ -170,7 +172,30 @@ public final class PhoneShare {
             });
             dialog.show();
             render();
+            // 分享最多开这么久；界面退到后台（按了主页、被别的界面盖住、整页被重建）也关 ——
+            // 只靠「对话框关掉」来停服务的话，界面没正常收尾时服务会一直开着、那个链接一直能下（安全审查 2026-10-08）
+            closer.postDelayed(dialog::dismiss, MAX_OPEN_MS);
+            dialog.setOnDismissListener(d -> {
+                closer.removeCallbacksAndMessages(null);
+                stop();
+            });
+            if (activity instanceof androidx.lifecycle.LifecycleOwner) {
+                ((androidx.lifecycle.LifecycleOwner) activity).getLifecycle().addObserver(
+                        new androidx.lifecycle.DefaultLifecycleObserver() {
+                            @Override
+                            public void onStop(androidx.lifecycle.LifecycleOwner owner) {
+                                owner.getLifecycle().removeObserver(this);
+                                if (dialog.isShowing()) {
+                                    dialog.dismiss();
+                                } else {
+                                    stop();
+                                }
+                            }
+                        });
+            }
         }
+
+        private final android.os.Handler closer = new android.os.Handler(android.os.Looper.getMainLooper());
 
         private void render() {
             LocalNetwork.Endpoint endpoint = endpoints.get(index);
@@ -183,7 +208,9 @@ public final class PhoneShare {
             addressText.setText(activity.getString(R.string.share_phone_address,
                     url == null ? "" : url, file.getName(),
                     FileShareServer.readableSize(file.length())));
-            AppLog.i(TAG, "二维码地址: " + url + "（网卡 " + endpoint.interfaceName + "）"
+            // 日志和诊断报告里不写带随机串的完整地址：那就是下载这个文件的钥匙（安全审查 2026-10-08）
+            AppLog.i(TAG, "二维码地址: http://" + endpoint.address + ":" + server.getListeningPort()
+                    + "/…（网卡 " + endpoint.interfaceName + "）"
                     + (qr == null ? "  << 二维码没画出来" : ""));
         }
 
