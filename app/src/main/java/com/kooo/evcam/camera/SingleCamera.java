@@ -156,6 +156,15 @@ public class SingleCamera {
      */
     private int coolDownRounds;
     private volatile long lastCoolDownMs;
+    /**
+     * 相机服务拒绝我们打开（{@code CAMERA_DISABLED}，「disabled by policy」）连着几次、从什么时候起（开机起算）、
+     * 上一次记黑匣子是什么时候。2026-10-08 11:02 重启车机后第一次起步：从挂 D 档起九十秒里被拒了三十几次，
+     * 停稳之后自己好了 —— 是开机后的窗口、是档位 / 车速、还是后台限制，当时的日志分不出来，所以拒的那一刻连同
+     * 档位、车速、我们的进程状态一起记下。
+     */
+    private int openRefusedCount;
+    private long openRefusedSinceElapsedMs;
+    private long openRefusedLastNoteElapsedMs;
 
     // 鱼眼矫正
     
@@ -1190,6 +1199,7 @@ public class SingleCamera {
         } catch (CameraAccessException e) {
             isOpening = false;
             AppLog.e(TAG, "Failed to open camera " + cameraId, e);
+            noteOpenRefused(e);
             if (callback != null) {
                 callback.onCameraError(cameraId, -1);
             }
@@ -1329,6 +1339,13 @@ public class SingleCamera {
                 cameraDevice = camera;
                 lastErrorName = null;
                 CameraContention.ourCameraOpened(cameraId, reconnectAttempts);
+                if (openRefusedCount > 0) {
+                    long now = SystemClock.elapsedRealtime();
+                    com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 又能打开了：之前被相机服务拒绝 "
+                            + openRefusedCount + " 次、共 " + ((now - openRefusedSinceElapsedMs) / 1000) + " 秒，开机后 "
+                            + (now / 1000) + " 秒；" + vehicleBrief());
+                    openRefusedCount = 0;
+                }
                 // 重连次数不在这里清：设备打开成功不等于相机好了（相机服务卡住时设备照样能打开），
                 // 连着稳稳地出了画面才清（noteFeedRecovered）
                 isReconnecting = false;  // 重连成功，清除重连标志
@@ -1860,6 +1877,41 @@ public class SingleCamera {
             AppLog.e(TAG, "Unexpected exception creating session for camera " + cameraId, e);
             AppLog.e(TAG, "Exception details: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * 打开相机被相机服务拒绝（CAMERA_DISABLED）。第一次起每 30 秒记一行黑匣子，带上当时的车和我们的状态。
+     * 只记不改：重试的节奏照旧（拒绝发生在相机服务这一层，没进 HAL，重试很轻）。
+     */
+    private void noteOpenRefused(CameraAccessException e) {
+        if (e.getReason() != CameraAccessException.CAMERA_DISABLED) {
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (openRefusedCount == 0) {
+            openRefusedSinceElapsedMs = now;
+            openRefusedLastNoteElapsedMs = 0;
+        }
+        openRefusedCount++;
+        if (openRefusedLastNoteElapsedMs != 0 && now - openRefusedLastNoteElapsedMs < 30_000L) {
+            return;
+        }
+        openRefusedLastNoteElapsedMs = now;
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 被相机服务拒绝打开（CAMERA_DISABLED，策略禁用）第 "
+                + openRefusedCount + " 次，开机后 " + (now / 1000) + " 秒，持续 " + ((now - openRefusedSinceElapsedMs) / 1000)
+                + " 秒；" + vehicleBrief() + "；我们此刻 " + CameraContention.describeUs());
+    }
+
+    /** 一行：档位、车速。读不到就写读不到，不能让黑匣子这一行把相机线程带崩。 */
+    private static String vehicleBrief() {
+        try {
+            com.kooo.evcam.telemetry.Telemetry telemetry = com.kooo.evcam.telemetry.Telemetry.get();
+            String gear = telemetry.readings().text(com.kooo.evcam.telemetry.Signal.GEAR);
+            Float speed = telemetry.latest().speedKmh;
+            return "档位 " + (gear == null ? "?" : gear) + " 车速 " + (speed == null ? "?" : Math.round(speed) + " km/h");
+        } catch (Throwable t) {
+            return "档位 / 车速读不到";
         }
     }
 
@@ -2859,6 +2911,7 @@ public class SingleCamera {
         } catch (CameraAccessException e) {
             reopenInFlight = false;
             AppLog.e(TAG, "Failed to force reopen camera " + cameraId, e);
+            noteOpenRefused(e);
             synchronized (reconnectLock) {
                 if (shouldReconnect) {
                     scheduleReconnect();
@@ -2909,6 +2962,7 @@ public class SingleCamera {
             openCameraMarked(handler);
         } catch (CameraAccessException e) {
             AppLog.e(TAG, "Failed to reconnect camera " + cameraId + ": " + e.getMessage());
+            noteOpenRefused(e);
             synchronized (reconnectLock) {
                 isReconnecting = false;
                 if (shouldReconnect) {

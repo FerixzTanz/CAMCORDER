@@ -23,7 +23,9 @@ attempt to start recording fails), the app now backs off instead of retrying all
   start on a camera the car has dropped, wait for the car's own cameras to go quiet) also work
   right after the app launches.
 - A recording that fails to start no longer leaves empty 0 B video files.
-- Diagnostics name this stuck state and show who holds each camera from the start.
+- Diagnostics name this stuck state and show who holds each camera from the start. When the camera
+  service refuses to open a camera ("disabled by policy"), they also record gear, speed and the app's
+  state at that moment, and when it starts working again.
 
 ## [2.10.3-beta] - 2026-10-07
 
