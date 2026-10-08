@@ -351,7 +351,12 @@ public class RecordingFloatingService extends Service {
 
     private void hideFloatingWindow() {
         if (floatingContainer != null && windowManager != null) {
-            windowManager.removeView(floatingContainer);
+            try {
+                windowManager.removeView(floatingContainer);
+            } catch (IllegalArgumentException e) {
+                // addView 当初就失败了（没有悬浮窗权限之类）：窗口不在，别为了摘它把进程（连同在录的录像）弄崩
+                AppLog.w(TAG, "悬浮按钮窗口本来就不在: " + e.getMessage());
+            }
             floatingContainer = null;
             recordingButton = null;
             timeTextView = null;

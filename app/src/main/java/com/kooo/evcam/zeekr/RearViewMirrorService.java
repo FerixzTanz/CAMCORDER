@@ -318,11 +318,13 @@ public class RearViewMirrorService extends Service {
         Surface surface = new Surface(surfaceTexture);
         camera.setMainFloatingSurface(surface, surfaceTexture);
 
+        // 后台的相机要前台服务在才给（同侧视弹窗）；放开时见 unbindCamera
+        CameraForegroundService.ensureRunning(this, "mirror");
         if (camera.isCameraOpened()) {
             camera.recreateSession(false);
         } else {
             final SingleCamera cam = camera;
-            CameraForegroundService.whenReady(this, cam::openCamera);
+            CameraForegroundService.whenReady(this, "mirror-open", cam::openCamera);
         }
         retryCount = 0;
         // 登记：这一路相机后视镜要用。没人登记时别处才会关它
@@ -508,6 +510,7 @@ public class RearViewMirrorService extends Service {
     private void unbindCamera() {
         cancelRetry();
         com.kooo.evcam.camera.CameraNeeds.current().release(com.kooo.evcam.camera.CameraNeeds.Holder.MIRROR);
+        CameraForegroundService.releaseWhenIdle(this);
         StallWatch.armMirror(false);
         if (boundCamera != null) {
             try {

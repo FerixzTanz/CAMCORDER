@@ -55,6 +55,26 @@ public class CameraForegroundService extends Service {
         }
     }
 
+    /**
+     * 同 {@link #whenReady(Context, Runnable)}，但同一个 {@code key} 只排一个：后来的顶掉先排的。
+     * 窗口在等服务时每隔几秒重绑一次，不去重的话排着的回调一小时能堆上千个（审查 2026-10-08）。
+     */
+    public static void whenReady(Context context, Object key, Runnable callback) {
+        if (isForegroundReady) {
+            callback.run();
+            return;
+        }
+        synchronized (pendingReadyCallbacks) {
+            Runnable previous = keyedCallbacks.put(key, callback);
+            if (previous != null) {
+                pendingReadyCallbacks.remove(previous);
+            }
+            pendingReadyCallbacks.add(callback);
+        }
+    }
+
+    private static final java.util.Map<Object, Runnable> keyedCallbacks = new java.util.HashMap<>();
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -158,6 +178,7 @@ public class CameraForegroundService extends Service {
                 mainHandler.post(cb);
             }
             pendingReadyCallbacks.clear();
+            keyedCallbacks.clear();
         }
 
         return stickiness(this);
@@ -397,13 +418,14 @@ public class CameraForegroundService extends Service {
     }
 
     /**
-     * 侧视弹窗此刻占着相机。它用的是后台的相机，只有这个前台服务在才稳稳给。
-     * 超级后视镜（MIRROR）有同样的缺口，但它放开相机时没有对应的 releaseWhenIdle，
-     * 先不算进来，免得它先于录像放开之后通知一直留着。
+     * 侧视弹窗或超级后视镜此刻占着相机。它们用的是后台的相机，只有这个前台服务在才稳稳给；
+     * 两个放开相机时都调 {@link #releaseWhenIdle}（后视镜 2.11.0 起）。
      */
     private static boolean windowHoldsCamera() {
-        return com.kooo.evcam.camera.CameraNeeds.current()
-                .isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_POPUP);
+        // 超级后视镜也算（审查 2026-10-08）：保活关着时，停录或侧视放开后服务一停，正开着的后视镜就黑了
+        com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
+        return needs.isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_POPUP)
+                || needs.isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.MIRROR);
     }
 
     /** 上一次为相机去拉前台服务的时刻（开机起算）：被拒的话别每次绑相机都再试一遍、刷一屏黑匣子。 */

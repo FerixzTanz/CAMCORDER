@@ -86,11 +86,32 @@ public class SideViewPopupService extends Service {
     private boolean closePending;
     /** 离开 D 档宽限期满：拿掉备着的窗口。 */
     private final Runnable readyExpired = () -> {
+        readyExpiryArmed = false;
         if (!lastReady && popup != null && !popup.isShowing()) {
             AppLog.i(TAG, "侧视弹窗：离开 D 档，不再备着");
             detachPopup();
         }
     };
+
+    /**
+     * 「不再备着」的倒计时已经排上了。车辆信号每 200 ms 就推一次，以前每推一次都把 30 秒重新排一遍，
+     * 在 P / N 挡里它几乎走不完 —— 看不见的窗口一直挂着、相机一直开着、前台服务也一直留着（审查 2026-10-08）。
+     */
+    private boolean readyExpiryArmed;
+
+    private void armReadyExpiry(long delayMs) {
+        if (readyExpiryArmed && delayMs > 0) {
+            return;
+        }
+        handler.removeCallbacks(readyExpired);
+        handler.postDelayed(readyExpired, delayMs);
+        readyExpiryArmed = true;
+    }
+
+    private void disarmReadyExpiry() {
+        handler.removeCallbacks(readyExpired);
+        readyExpiryArmed = false;
+    }
 
     public static void start(Context context) {
         context.startService(new Intent(context, SideViewPopupService.class));
@@ -203,7 +224,7 @@ public class SideViewPopupService extends Service {
 
         if (want != SideViewDecision.NONE) {
             cancelDelayedClose();
-            handler.removeCallbacks(readyExpired);
+            disarmReadyExpiry();
             if (want != in.showing) {
                 AppLog.i(TAG, "转向灯：弹出「" + LaneCycle.labelOf(want) + "」路");
                 showPopup(want);
@@ -226,14 +247,13 @@ public class SideViewPopupService extends Service {
 
         // 没在显示：管「备着」
         if (lastReady) {
-            handler.removeCallbacks(readyExpired);
+            disarmReadyExpiry();
             if (popup == null || !popup.isAttached()) {
                 AppLog.i(TAG, "侧视弹窗：D 档，窗口备着");
                 attachPopup(lastLane, false);
             }
         } else if (popup != null && popup.isAttached() && !closePending) {
-            handler.removeCallbacks(readyExpired);
-            handler.postDelayed(readyExpired, blocked ? 0 : READY_GRACE_MS);
+            armReadyExpiry(blocked ? 0 : READY_GRACE_MS);
         }
     }
 
@@ -271,6 +291,7 @@ public class SideViewPopupService extends Service {
         if (popup != null && popup.isAttached()) {
             if (show) {
                 popup.show(lane);
+                rebindIfLost();
             } else {
                 popup.attachHidden(lane);
             }
@@ -290,7 +311,10 @@ public class SideViewPopupService extends Service {
 
             @Override
             public boolean onSurfaceTextureDestroyed(SurfaceTexture st) {
-                unbindCamera();
+                // 只放自己这一块：旧窗口的画面晚一步销毁时，别把新窗口接上的相机摘掉
+                if (st == boundTexture || boundTexture == null) {
+                    unbindCamera();
+                }
                 return true;
             }
 
@@ -308,7 +332,7 @@ public class SideViewPopupService extends Service {
 
     private void detachPopup() {
         cancelDelayedClose();
-        handler.removeCallbacks(readyExpired);
+        disarmReadyExpiry();
         cancelRetry();
         if (popup != null && popup.isShowing()) {
             noteIfNoFrame();
@@ -356,6 +380,29 @@ public class SideViewPopupService extends Service {
 
     // ================================================================= 相机
 
+    /**
+     * 备着的窗口再弹出来时，看一眼它还接着相机没有：相机层可能把画面出口摘掉了（录像时会话配置失败、
+     * 画面出口被丢弃后恢复），或者 bindCamera 重试到头放弃了 —— 那样之后每次打灯都是黑的，一整趟（审查 2026-10-08）。
+     */
+    private void rebindIfLost() {
+        if (popup == null || popup.getTextureView() == null) {
+            return;
+        }
+        SurfaceTexture st = popup.getTextureView().getSurfaceTexture();
+        if (st == null) {
+            return;   // 还没画出来：onSurfaceTextureAvailable 会去接
+        }
+        SingleCamera camera = boundCamera;
+        boolean lost = camera == null || boundTexture != st
+                || camera.getMainFloatingSurfaceTexture() != boundTexture;
+        if (lost) {
+            AppLog.i(TAG, "侧视弹窗：窗口的相机画面丢了，重新接");
+            cancelRetry();
+            retryCount = 0;
+            bindCamera(st);
+        }
+    }
+
     private void bindCamera(SurfaceTexture surfaceTexture) {
         if (popup == null || !popup.isAttached() || surfaceTexture == null || ScreenState.dark()) {
             return;
@@ -393,7 +440,7 @@ public class SideViewPopupService extends Service {
         if (wasOpen) {
             camera.recreateSession(false);
         } else {
-            CameraForegroundService.whenReady(this, camera::openCamera);
+            CameraForegroundService.whenReady(this, "side-popup-open", camera::openCamera);
         }
         retryCount = 0;
         CameraNeeds.current().claim(CameraNeeds.Holder.SIDE_POPUP);
