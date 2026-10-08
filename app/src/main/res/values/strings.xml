@@ -381,6 +381,17 @@
     <string name="dlg_footage_lock_off_ok">关闭</string>
     <string name="set_footage_lock_flash_title">闪远光时自动锁定当前录像</string>
     <string name="set_footage_lock_flash_summary">录制时闪远光，自动锁定此刻前后 10 秒所在的录像片段（每一路画面）。锁定的录像占满空间时停止录制。</string>
+    <string name="set_sub_photo_stamps_summary">照片格式、应用和车牌水印、时间戳、行驶信息条</string>
+    <string name="set_sub_locked_title">锁定影像</string>
+    <string name="set_sub_locked_summary">手动锁定、闪远光和急刹车自动锁定，以及已锁定的文件</string>
+    <string name="set_sub_rearview_title">窗口与画面</string>
+    <string name="set_sub_rearview_summary">鱼眼校正、视野、窗口大小</string>
+    <string name="set_sub_side_title">画面与大小</string>
+    <string name="set_sub_side_summary">拉直、视野、朝向、停留时间、弹窗大小和位置</string>
+    <string name="set_sub_floating_title">外观</string>
+    <string name="set_sub_floating_summary">大小、透明度、固定位置、录制时长显示</string>
+    <string name="set_sub_fisheye_title">鱼眼校正</string>
+    <string name="set_sub_fisheye_summary">投影方式和校正后的视野</string>
     <string name="set_still_save_title">停车时省空间</string>
     <string name="set_still_save_summary">车停稳 5 秒后录像降到 15 fps、码率随之降低，一开动立刻恢复</string>
     <string name="set_group_by_drive_title">回放按行程分组</string>

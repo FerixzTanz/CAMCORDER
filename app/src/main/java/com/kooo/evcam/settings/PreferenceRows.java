@@ -90,6 +90,9 @@ final class PreferenceRows {
                 preference.setWidgetLayoutResource(R.layout.pref_widget_switch);
             } else if (ROW_VALUE.equals(row)) {
                 preference.setLayoutResource(R.layout.pref_row_value);
+            } else if (preference instanceof androidx.preference.PreferenceScreen) {
+                // 子页面（2.11.0）：在本页是一行带箭头的入口，点了在右栏往下开一层
+                preference.setLayoutResource(R.layout.pref_row_nav);
             } else if (preference instanceof PreferenceCategory) {
                 preference.setLayoutResource(R.layout.pref_category);
                 apply((PreferenceGroup) preference);

@@ -48,6 +48,9 @@ from the betas in between is included.
   DCIM/EVCam_Clips that you can send to your phone. Turn grouping off under Settings → Storage.
 - **Night mode matches the car**: black backgrounds and dark grey controls on the main screen and in
   Settings.
+- **Tidier settings**: each page keeps its main switches, and fine adjustments moved one level down
+  (Photos and stamps, Locked footage, the Super mirror's window and view, the side view's picture and
+  size, the floating button's appearance, fisheye correction).
 - Interface touch-ups: a "No picture from the surround view" message instead of a blank preview,
   grouped recording settings, a rounded side-view frame, Settings without the bottom status bar, and
   shorter menu names. All interface text was reviewed in Chinese, English and Malay.

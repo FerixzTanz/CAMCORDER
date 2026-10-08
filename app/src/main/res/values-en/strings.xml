@@ -374,6 +374,17 @@
     <string name="dlg_footage_lock_off_ok">Turn off</string>
     <string name="set_footage_lock_flash_title">Lock footage on flash-to-pass</string>
     <string name="set_footage_lock_flash_summary">While recording, flash the high beams to lock the clips covering 10 seconds before and after, on every camera. If locked footage fills the space, recording stops.</string>
+    <string name="set_sub_photo_stamps_summary">Photo format, app and plate stamps, timestamp, driving info bar</string>
+    <string name="set_sub_locked_title">Locked footage</string>
+    <string name="set_sub_locked_summary">Lock by hand, on flash-to-pass or on hard braking, and what\'s locked</string>
+    <string name="set_sub_rearview_title">Window and view</string>
+    <string name="set_sub_rearview_summary">Fisheye correction, field of view, window size</string>
+    <string name="set_sub_side_title">Picture and size</string>
+    <string name="set_sub_side_summary">Straightening, view width, aim, how long it stays open, pop-up size and position</string>
+    <string name="set_sub_floating_title">Appearance</string>
+    <string name="set_sub_floating_summary">Size, opacity, position lock, recording time</string>
+    <string name="set_sub_fisheye_title">Fisheye correction</string>
+    <string name="set_sub_fisheye_summary">Projection and corrected field of view</string>
     <string name="set_still_save_title">Save space when stopped</string>
     <string name="set_still_save_summary">After 5 seconds stopped, recording drops to 15 fps and a lower bitrate, and goes back to full rate as soon as you move</string>
     <string name="set_group_by_drive_title">Group videos by drive</string>

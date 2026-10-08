@@ -116,8 +116,51 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         }
         bindUpdate();
 
+        linkSubPages();
+
         // 行样式在交给列表之前套上（车机系统式：卡片行、开关在前、值在后）
         PreferenceRows.apply(getPreferenceScreen());
+    }
+
+    /**
+     * 子页面那一行跟着本页的总开关置灰（2.11.0）。不写在 XML 里：子页面单独打开时它自己是根，
+     * 总开关不在它那棵树里，XML 里的 dependency 会在加载时找不到而崩。
+     */
+    private void linkSubPages() {
+        String[][] pairs = {
+                {"sub_rearview_view", "pref_rearview"},
+                {"sub_side_picture", "pref_side_popup"},
+                {"sub_floating_look", "pref_recording_floating"},
+        };
+        for (String[] pair : pairs) {
+            Preference sub = findPreference(pair[0]);
+            if (sub != null && sub != getPreferenceScreen() && findPreference(pair[1]) != null) {
+                sub.setDependency(pair[1]);
+            }
+        }
+    }
+
+    /**
+     * 点了本页里的子页面（嵌套的 PreferenceScreen）：在右栏往下开一层，标题是它的名字，返回键回到本页（2.11.0）。
+     */
+    @Override
+    public void onNavigateToScreen(androidx.preference.PreferenceScreen screen) {
+        if (screen == null || screen.getKey() == null) {
+            return;
+        }
+        androidx.fragment.app.Fragment next = forSection(screen.getKey());
+        CharSequence title = screen.getTitle();
+        if (getParentFragment() instanceof SettingsShellFragment) {
+            ((SettingsShellFragment) getParentFragment()).openDetail(next, title);
+            return;
+        }
+        if (getActivity() != null) {
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, next, next.getClass().getName())
+                    .addToBackStack(null)
+                    .commit();
+        }
     }
 
     @Override

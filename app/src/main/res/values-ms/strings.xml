@@ -372,6 +372,17 @@
     <string name="dlg_footage_lock_off_ok">Matikan</string>
     <string name="set_footage_lock_flash_title">Kunci rakaman semasa kelip lampu tinggi</string>
     <string name="set_footage_lock_flash_summary">Semasa merakam, kelipkan lampu tinggi untuk mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas, pada setiap kamera. Jika rakaman yang dikunci memenuhi ruang, rakaman berhenti.</string>
+    <string name="set_sub_photo_stamps_summary">Format foto, tera aplikasi dan nombor plat, cap masa, bar maklumat pemanduan</string>
+    <string name="set_sub_locked_title">Rakaman berkunci</string>
+    <string name="set_sub_locked_summary">Kunci secara manual, dengan kelip lampu tinggi atau brek mengejut, dan apa yang dikunci</string>
+    <string name="set_sub_rearview_title">Tetingkap dan paparan</string>
+    <string name="set_sub_rearview_summary">Pembetulan mata ikan, medan pandangan, saiz tetingkap</string>
+    <string name="set_sub_side_title">Gambar dan saiz</string>
+    <string name="set_sub_side_summary">Meluruskan, lebar pandangan, arah, tempoh kekal terbuka, saiz dan kedudukan pop timbul</string>
+    <string name="set_sub_floating_title">Penampilan</string>
+    <string name="set_sub_floating_summary">Saiz, kelegapan, kunci kedudukan, masa rakaman</string>
+    <string name="set_sub_fisheye_title">Pembetulan mata ikan</string>
+    <string name="set_sub_fisheye_summary">Unjuran dan medan pandangan selepas pembetulan</string>
     <string name="set_still_save_title">Jimat ruang semasa berhenti</string>
     <string name="set_still_save_summary">Selepas berhenti 5 saat, rakaman turun ke 15 fps dan kadar bit lebih rendah, dan kembali penuh sebaik sahaja kereta bergerak</string>
     <string name="set_group_by_drive_title">Kumpulkan video mengikut perjalanan</string>
