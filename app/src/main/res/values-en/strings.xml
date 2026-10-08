@@ -374,9 +374,10 @@
     <string name="dlg_footage_lock_off_ok">Turn off</string>
     <string name="set_footage_lock_flash_title">Lock footage on flash-to-pass</string>
     <string name="set_footage_lock_flash_summary">While recording, flash the high beams to lock the clips covering 10 seconds before and after, on every camera. If locked footage fills the space, recording stops.</string>
-    <string name="set_footage_lock_horn_title">Lock footage on horn</string>
-    <string name="set_footage_lock_horn_summary">The head unit can\'t read the horn signal yet, so this is unavailable</string>
+    <string name="set_footage_lock_brake_title">Lock footage on hard braking</string>
+    <string name="set_footage_lock_brake_summary" formatted="false">While recording, a hard stop (including the car\'s automatic emergency braking) locks the clips covering 10 seconds before and after. Automatic locks use at most 10% of the recording space; the oldest is released first.</string>
     <string name="msg_flash_locked">Flash-to-pass: locked the clips covering 10 seconds before and after</string>
+    <string name="msg_brake_locked">Hard braking: locked the clips covering 10 seconds before and after</string>
     <string name="msg_storage_locked_stopped">Locked footage has filled the space, so recording stopped. Unlock some in playback</string>
     <string name="msg_storage_locked_refuse">Locked footage has filled the space, so recording can\'t start. Unlock some in playback</string>
     <string name="action_lock_footage">Lock</string>

@@ -283,20 +283,17 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     /**
      * 锁定影像下面的两个自动锁定（项目所有者 2026-10-04），默认关：自动锁的也占空间，锁满了就停录。
      * 「锁定影像」关着时闪远光那一项置灰、不起作用（XML 里的 dependency；{@code AutoLock.flashEnabled} 也看它）。
-     * 鸣笛那一项：车上还读不到喇叭信号，一直置灰、打不开，没有触发它的代码。「打不开」只在这里设
-     * （XML 里不写 enabled，和水印品牌那一行一样）。
+     * 急刹车那一项（2.10.8，默认开）同样跟着「锁定影像」置灰；原来的鸣笛那一项拿掉了（车上读不到喇叭信号）。
      */
     private void bindAutoLock() {
         bindSwitch("pref_footage_lock_flash", appConfig.isFlashLockEnabled(), value -> {
             appConfig.setFlashLockEnabled(value);
             com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
         });
-        SwitchPreferenceCompat horn = findPreference("pref_footage_lock_horn");
-        if (horn != null) {
-            horn.setPersistent(false);
-            horn.setChecked(false);
-            horn.setEnabled(false);
-        }
+        bindSwitch("pref_footage_lock_brake", appConfig.isBrakeLockEnabled(), value -> {
+            appConfig.setBrakeLockEnabled(value);
+            com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
+        });
     }
 
     /**

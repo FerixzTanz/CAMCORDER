@@ -23,6 +23,12 @@ commit message, not here.
   (they stay under Developer options), and existing profiles move to the new quality on their own.
 - When the car has been stopped for 5 seconds, recording drops to 15 fps at about 10 Mbps, and goes
   back to full rate as soon as you move, so traffic lights and queues take less space.
+- Hard braking locks footage automatically: a hard stop above 25 km/h (or the car's own emergency
+  braking) locks the clips covering 10 seconds before and after, like flash-to-pass. It's on by
+  default under Settings → Storage. Automatic locks use at most 10% of the recording space, and the
+  oldest is released first, so a false alarm can never fill the drive. Locking or unlocking a clip
+  yourself in playback makes it yours, and the cap no longer applies to it.
+- The "Lock footage on horn" option, which could never be turned on, is gone.
 
 ## [2.10.7-beta] - 2026-10-08
 

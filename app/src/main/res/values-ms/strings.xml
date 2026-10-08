@@ -372,9 +372,10 @@
     <string name="dlg_footage_lock_off_ok">Matikan</string>
     <string name="set_footage_lock_flash_title">Kunci rakaman semasa kelip lampu tinggi</string>
     <string name="set_footage_lock_flash_summary">Semasa merakam, kelipkan lampu tinggi untuk mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas, pada setiap kamera. Jika rakaman yang dikunci memenuhi ruang, rakaman berhenti.</string>
-    <string name="set_footage_lock_horn_title">Kunci rakaman semasa hon dibunyikan</string>
-    <string name="set_footage_lock_horn_summary">Unit kepala belum dapat membaca isyarat hon, jadi pilihan ini belum tersedia</string>
+    <string name="set_footage_lock_brake_title">Kunci rakaman semasa brek mengejut</string>
+    <string name="set_footage_lock_brake_summary" formatted="false">Semasa merakam, brek mengejut (termasuk brek kecemasan automatik kereta) mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas. Kuncian automatik menggunakan paling banyak 10% ruang rakaman; yang paling lama dilepaskan dahulu.</string>
     <string name="msg_flash_locked">Kelip lampu tinggi: klip yang meliputi 10 saat sebelum dan selepas telah dikunci</string>
+    <string name="msg_brake_locked">Brek mengejut: klip yang meliputi 10 saat sebelum dan selepas telah dikunci</string>
     <string name="msg_storage_locked_stopped">Rakaman yang dikunci telah memenuhi ruang, rakaman dihentikan. Buka kunci sebahagian dalam main semula</string>
     <string name="msg_storage_locked_refuse">Rakaman yang dikunci telah memenuhi ruang, rakaman tidak dapat dimulakan. Buka kunci sebahagian dalam main semula</string>
     <string name="action_lock_footage">Kunci</string>

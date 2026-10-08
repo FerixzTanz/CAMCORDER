@@ -57,8 +57,10 @@ import java.util.TreeSet;
  *       缓存里的先不锁，每 {@link #RELAY_RETRY_MS} 再试一次，等盘回来。</li>
  * </ul>
  *
- * <p>鸣笛自动锁定规则一样，但车上还读不到喇叭信号（Lab 还在找）：设置里那一项一直置灰、打不开，这里没有它的代码。
- * 找到信号后，它就是 {@link #lockAround} 的第二个来源。</p>
+ * <p><b>急刹车</b>（2.10.8）是第二个来源：同一个窗口、同样锁两遍，判断在 {@link HardBrakeDetector}。
+ * 它锁的记成「自动锁的」（{@link FootageLocks#lockAuto}），最多占录像空间的 {@link AutoLockBudget#SHARE}，
+ * 超了先放开最早的；闪远光是人要的，照旧和手动锁一样、不受这个上限管。
+ * 鸣笛那一项拿掉了：车上读不到喇叭信号。</p>
  */
 public final class AutoLock implements Telemetry.Listener {
 
@@ -90,6 +92,7 @@ public final class AutoLock implements Telemetry.Listener {
     private File relayTarget;
     private boolean watching;
     private Boolean lastFlash;
+    private final HardBrakeDetector hardBrake = new HardBrakeDetector();
     private long lastToastAt;
 
     /** 这次录像每一路的分段时长：对外的槽位名 → 毫秒。开录时取；只在 {@link #worker} 上读写。 */
@@ -108,6 +111,28 @@ public final class AutoLock implements Telemetry.Listener {
     /** 闪远光自动锁定此刻起不起作用：「锁定影像」开着，而且这一项开着。 */
     public static boolean flashEnabled(Context context) {
         return FootageLocks.enabled(context) && new AppConfig(context).isFlashLockEnabled();
+    }
+
+    /** 急刹车自动锁定此刻起不起作用：「锁定影像」开着，而且这一项开着（默认开）。 */
+    public static boolean brakeEnabled(Context context) {
+        return FootageLocks.enabled(context) && new AppConfig(context).isBrakeLockEnabled();
+    }
+
+    /** 这一次锁定是谁触发的。 */
+    enum Source {
+        /** 闪远光：人要的，和回放里手动锁一样，不受自动锁定的上限管。 */
+        FLASH,
+        /** 急刹车：车自己判断的，记成「自动锁的」，超了上限先放开（{@link AutoLockBudget}）。 */
+        BRAKE
+    }
+
+    private static boolean enabled(Context context, Source source) {
+        return source == Source.BRAKE ? brakeEnabled(context) : flashEnabled(context);
+    }
+
+    /** 黑匣子里那一行的开头。 */
+    private static String label(Source source) {
+        return "auto-lock[" + (source == Source.BRAKE ? "brake" : "flash") + "]";
     }
 
     // ================================================================= 什么时候看信号
@@ -156,7 +181,7 @@ public final class AutoLock implements Telemetry.Listener {
 
     /** 该不该看信号，和现在看没看对一下。主线程。 */
     private void update() {
-        boolean want = recording && app != null && flashEnabled(app);
+        boolean want = recording && app != null && (flashEnabled(app) || brakeEnabled(app));
         if (want == watching) {
             return;
         }
@@ -165,14 +190,17 @@ public final class AutoLock implements Telemetry.Listener {
         if (want) {
             // 信号已经在收（信息条开着）时从此刻的读数起算：拨杆一直拨着不算新的一下
             lastFlash = telemetry.readings().bool(Signal.HIGH_BEAM_FLASH);
+            hardBrake.reset();
             telemetry.addListener(this);
             telemetry.acquire(app, USER);
-            BlackBox.note("闪远光自动锁定：录像期间看闪远光信号");
+            BlackBox.note("自动锁定：录像期间看车辆信号（闪远光 " + (flashEnabled(app) ? "开" : "关")
+                    + "，急刹车 " + (brakeEnabled(app) ? "开" : "关") + "）");
         } else {
             telemetry.removeListener(this);
             telemetry.release(USER);
             lastFlash = null;
-            BlackBox.note("闪远光自动锁定：不再看闪远光信号（" + (recording ? "开关关了" : "录像停了") + "）");
+            hardBrake.reset();
+            BlackBox.note("自动锁定：不再看车辆信号（" + (recording ? "开关关了" : "录像停了") + "）");
         }
     }
 
@@ -185,20 +213,35 @@ public final class AutoLock implements Telemetry.Listener {
         Boolean flash = readings.bool(Signal.HIGH_BEAM_FLASH);
         boolean rising = Boolean.TRUE.equals(flash) && !Boolean.TRUE.equals(lastFlash);
         lastFlash = flash;
-        if (rising) {
-            lockAround(app, System.currentTimeMillis());
+        if (rising && flashEnabled(app)) {
+            lockAround(app, System.currentTimeMillis(), Source.FLASH);
+        }
+        if (brakeEnabled(app)) {
+            Float brakePercent = readings.number(Signal.BRAKE_DEPTH);
+            boolean braking = Boolean.TRUE.equals(readings.bool(Signal.BRAKE_PEDAL))
+                    || (brakePercent != null && brakePercent >= BRAKING_PERCENT);
+            HardBrakeDetector.Event event = hardBrake.update(SystemClock.elapsedRealtime(),
+                    readings.number(Signal.SPEED), braking);
+            if (event != null) {
+                BlackBox.noteImportant(String.format(Locale.US, "急刹车：%.2f g，从 %.0f km/h，%s",
+                        event.g, event.fromKmh, event.braking ? "踩着刹车" : "没踩刹车（多半是自动紧急制动）"));
+                lockAround(app, System.currentTimeMillis(), Source.BRAKE);
+            }
         }
     }
+
+    /** 刹车深度（行程 %）到这么多算踩着 —— 刹车开关读不到时的后备。 */
+    private static final float BRAKING_PERCENT = 10f;
 
     // ================================================================= 锁
 
     /** 这一刻前后 10 秒：现在锁一遍，窗口结束后再锁一遍。主线程。 */
-    private void lockAround(Context context, long momentMs) {
+    private void lockAround(Context context, long momentMs, Source source) {
         final LockWindow window = LockWindow.around(momentMs);
         // 这次录像的中转目标跟着这一下走：第二遍时可能已经停了录、又开了一次
         final File target = relayTarget;
-        worker.post(() -> pass(context, window, target, 0));
-        worker.postDelayed(() -> pass(context, window, target, 1),
+        worker.post(() -> pass(context, window, target, 0, source));
+        worker.postDelayed(() -> pass(context, window, target, 1, source),
                 window.endMs - momentMs + SECOND_PASS_DELAY_MS);
     }
 
@@ -208,9 +251,9 @@ public final class AutoLock implements Telemetry.Listener {
      * @param relayTarget 中转写入的目标目录（见 {@link #scan}）；不是中转写入为 null
      * @param round       0 = 当时，1 = 补锁（窗口结束后），2 起 = 等中转目标目录回来再试
      */
-    private void pass(Context context, LockWindow window, File relayTarget, int round) {
-        if (!flashEnabled(context)) {
-            BlackBox.noteImportant("闪远光自动锁定" + (round == 0 ? "（当时）" : round == 1 ? "（补锁）" : "（等盘回来）")
+    private void pass(Context context, LockWindow window, File relayTarget, int round, Source source) {
+        if (!enabled(context, source)) {
+            BlackBox.noteImportant(label(source) + (round == 0 ? "（当时）" : round == 1 ? "（补锁）" : "（等盘回来）")
                     + " " + describe(window) + "：开关已关，不锁");
             return;
         }
@@ -241,16 +284,25 @@ public final class AutoLock implements Telemetry.Listener {
                 continue;
             }
             locking.addAll(names);
-            FootageLocks.set(entry.getKey(), names, true, round == 0 ? toastWhenLocked : null);
+            FootageLocks.Result toast = round == 0
+                    ? (source == Source.BRAKE ? toastWhenBrakeLocked : toastWhenLocked) : null;
+            if (source == Source.BRAKE) {
+                File dir = entry.getKey();
+                long cap = AutoLockBudget.capBytes(new AppConfig(context).getVideoStorageLimitGb(),
+                        dir.getTotalSpace());
+                FootageLocks.lockAuto(dir, names, cap, toast);
+            } else {
+                FootageLocks.set(entry.getKey(), names, true, toast);
+            }
         }
         // 第二遍起还有锁不了的：隔一阵再试，等盘回来（第一遍不用，第二遍本来就排着）
         boolean retry = !waiting.isEmpty() && round >= 1 && round < RELAY_RETRY_LIMIT;
         if (retry) {
-            worker.postDelayed(() -> pass(context, window, relayTarget, round + 1), RELAY_RETRY_MS);
+            worker.postDelayed(() -> pass(context, window, relayTarget, round + 1, source), RELAY_RETRY_MS);
         }
         // 等盘回来的那几遍只在锁上了、或者不再等时记一行，不然一小时能记一百多行
         if (round <= 1 || !locking.isEmpty() || !retry) {
-            BlackBox.noteImportant("闪远光自动锁定" + (round == 0 ? "（当时）" : round == 1 ? "（补锁）" : "（等盘回来）")
+            BlackBox.noteImportant(label(source) + (round == 0 ? "（当时）" : round == 1 ? "（补锁）" : "（等盘回来）")
                     + " " + describe(window)
                     + "：" + (locking.isEmpty() ? "没有新的要锁" : "锁上 " + locking.size() + " 个 " + locking)
                     + (alreadyLocked > 0 ? "，已经锁着 " + alreadyLocked + " 个" : "")
@@ -268,19 +320,25 @@ public final class AutoLock implements Telemetry.Listener {
      */
     private final FootageLocks.Result toastWhenLocked = ok -> {
         if (ok) {
-            toastLocked();
+            toastLocked(R.string.msg_flash_locked);
+        }
+    };
+
+    private final FootageLocks.Result toastWhenBrakeLocked = ok -> {
+        if (ok) {
+            toastLocked(R.string.msg_brake_locked);
         }
     };
 
     /** 「已锁定前后 10 秒所在的录像片段」。离上一次弹不到 {@link #TOAST_GAP_MS} 就不再弹。主线程。 */
-    private void toastLocked() {
+    private void toastLocked(int messageRes) {
         Context context = app;
         long now = SystemClock.uptimeMillis();
         if (context == null || (lastToastAt > 0 && now - lastToastAt < TOAST_GAP_MS)) {
             return;
         }
         lastToastAt = now;
-        Toast.makeText(context, Languages.localized(context).getString(R.string.msg_flash_locked),
+        Toast.makeText(context, Languages.localized(context).getString(messageRes),
                 Toast.LENGTH_SHORT).show();
     }
 

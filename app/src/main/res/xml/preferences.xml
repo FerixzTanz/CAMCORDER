@@ -159,11 +159,13 @@
             android:title="@string/set_footage_lock_flash_title"
             android:summary="@string/set_footage_lock_flash_summary" />
 
-        <!-- 鸣笛：车上还读不到喇叭信号，一直置灰、打不开（只在 SettingsPreferenceFragment.bindAutoLock 里设，和水印品牌那一行一样） -->
+        <!-- 急刹车自动锁定（AutoLock + HardBrakeDetector，2.10.8），默认开：自动锁的有上限（AutoLockBudget），超了先放开最早的。
+             原来这里是「鸣笛时自动锁定」：车上读不到喇叭信号，一直置灰，拿掉了 -->
         <SwitchPreferenceCompat
-            android:key="pref_footage_lock_horn"
-            android:title="@string/set_footage_lock_horn_title"
-            android:summary="@string/set_footage_lock_horn_summary" />
+            android:key="pref_footage_lock_brake"
+            android:dependency="pref_footage_lock"
+            android:title="@string/set_footage_lock_brake_title"
+            android:summary="@string/set_footage_lock_brake_summary" />
 
         <Preference
             android:key="pref_footage_locked"
