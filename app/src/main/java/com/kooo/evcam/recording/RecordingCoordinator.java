@@ -281,7 +281,7 @@ public final class RecordingCoordinator {
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
         // 等的时候就要前台服务：没有它后台的相机被拒（CAMERA_DISABLED），环视永远出不了画面。
         // 以前开录那一刻才起它 —— 2026-10-08 两次上车都等了两分钟（见 CameraForegroundService.ensureRunning）
-        CameraForegroundService.ensureRunning(context, "录像在等环视");
+        CameraForegroundService.ensureRunning(context, "recording-wait");
         main.removeCallbacks(poll);
         main.post(poll);
     }

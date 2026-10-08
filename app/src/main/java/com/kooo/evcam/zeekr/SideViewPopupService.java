@@ -372,7 +372,7 @@ public class SideViewPopupService extends Service {
         // 后台的相机只有前台服务在才给；录像不在时没人为侧视拉它，下面的 whenReady 只是排队等
         // （2026-10-08：不录像时侧视是空白的，开了录像才有画面）。要在下面「等一会儿再接」之前拉：
         // 那一条以前把这一步也跳过了，录像在等环视、环视在等前台服务，侧视跟着空白两分钟。放开时见 unbindCamera
-        CameraForegroundService.ensureRunning(this, "侧视弹窗要用相机");
+        CameraForegroundService.ensureRunning(this, "side-popup");
         // 环视正在从连着出错里恢复、或者录像正在开：别在这时候再开相机、再重建会话（CAMCORDER 2026-10-07：
         // 实车卡死那两次，侧视弹窗在恢复中途又去开相机，每次都多一轮出错）。过一会儿再接
         if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(this).isWaiting()) {

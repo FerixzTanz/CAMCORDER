@@ -430,7 +430,7 @@ public class CameraForegroundService extends Service {
                 return;
             }
             lastEnsureAtMs = now;
-            com.kooo.evcam.blackbox.BlackBox.noteImportant(why + "，前台服务不在：拉起来");
+            com.kooo.evcam.blackbox.BlackBox.noteImportant("要用相机，前台服务不在：拉起来（" + why + "）");
             start(app, app.getString(R.string.notif_background_title),
                     app.getString(R.string.notif_tap_to_return));
         });
