@@ -9,37 +9,58 @@ commit message, not here.
 
 ## [Unreleased]
 
-- The turn-signal side view no longer stays blank for a whole drive when recording can't start (no
-  USB drive, or the drive is full).
-- When a recording is interrupted, it now comes back on its own: the app no longer stops its camera
-  service first and then can't restart it in time.
-- Indicating again a few seconds after the side view closed (a lane change and back) shows the picture
-  straight away.
-- Diagnostics reports no longer include your number plate.
-- One recording quality for everyone, chosen for dashcam use: 30 fps at about 14 Mbps while driving
-  (around 105 MB a minute for the 360 view). Until now Balanced was set to 20 fps but actually
-  recorded 15, because the camera sends 30 and only whole frames can be dropped. The Save space /
-  Balanced / Sharpest choice and the frame rate and bitrate controls are gone from normal settings
-  (they stay under Developer options), and existing profiles move to the new quality on their own.
-- When the car has been stopped for 5 seconds, recording drops to 15 fps at about 10 Mbps, and goes
-  back to full rate as soon as you move, so traffic lights and queues take less space. You can turn
-  this off under Settings → Recording ("Save space when stopped").
-- Hard braking locks footage automatically: a hard stop above 25 km/h (or the car's own emergency
-  braking) locks the clips covering 10 seconds before and after, like flash-to-pass. It's on by
-  default under Settings → Storage. Automatic locks use at most 10% of the recording space, and the
-  oldest is released first, so a false alarm can never fill the drive. Locking or unlocking a clip
-  yourself in playback makes it yours, and the cap no longer applies to it.
-- The "Lock footage on horn" option, which could never be turned on, is gone.
-- Videos are grouped by drive. A drive runs from when recording starts as you get in until you leave
-  the car, so a recording that was interrupted and resumed, or a stop with the screen off, stays one
-  entry instead of several. Each entry shows how far you drove. Hard braking and flash-to-pass show
-  as dots on the bar under the timeline, so you can jump straight to them. Older recordings without
-  drive information are grouped as before, joining gaps of up to 3 minutes. You can turn this off
-  under Settings → Storage ("Group videos by drive").
-- In playback, when one camera fills the screen, swipe left or right to move to the next camera.
-- New "Save clip" button in playback: saves 15 seconds before and after the current moment as a normal
-  video in DCIM/EVCam_Clips (instantly, at full quality, and never deleted by automatic cleanup), then
-  offers to send it to your phone.
+Nothing yet.
+
+## [2.11.0] - 2026-10-08
+
+The first stable release of this fork. Changes since 2.0.0, dts88's last stable release; everything
+from the betas in between is included.
+
+### Upgrade notes
+
+- When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise the head
+  unit's installer gets stuck and later installs or updates fail.
+- **Recording now follows the driver**: it starts when you sit in the driver's seat or shift out of
+  P, and stops when you leave the car. Both are on by default; turn them off in Settings → Recording.
+- **One recording quality**: 30 fps at about 14 Mbps, around 105 MB a minute while driving. The Save
+  space / Balanced / Sharpest choice moved to Developer options, and your profile switches over on
+  its own. If you want to keep more history, raise the video storage limit (Settings → Storage).
+- **Lock footage on hard braking** is on by default and uses at most 10% of the recording space.
+  "Lock footage on horn", which could never be turned on, is gone.
+- Updates come from this repo. Stable releases are offered to everyone; turn on *Include beta
+  releases* under Settings → Updates to get betas too.
+
+### New and improved
+
+- **Turn-signal side view** (Settings → Super mirror, off by default): signalling pops up that
+  side's camera, straightened and aimed at the blind spot, and closes after the signal. It works
+  whether or not you're recording, and the car's own views always take priority.
+- **Recording starts as soon as you get in**, instead of after a delay of up to two minutes.
+- **Smoother video**: 30 fps instead of 15. After 5 seconds stopped, recording drops to 15 fps and a
+  lower bitrate to save space, and goes back to full rate as soon as you move (Settings → Recording →
+  Save space when stopped).
+- **Lock footage** so loop recording never removes it: by hand in playback, by flashing the high
+  beams, or automatically on a hard stop, including the car's own emergency braking. Each locks the
+  clips covering 10 seconds before and after.
+- **Playback by drive**: one entry from getting in to leaving the car, with the distance driven and
+  dots on the timeline for hard braking and flash-to-pass. Swipe between cameras when one fills the
+  screen, and **Save clip** keeps the 30 seconds around a moment as a normal video in
+  DCIM/EVCam_Clips that you can send to your phone. Turn grouping off under Settings → Storage.
+- **Night mode matches the car**: black backgrounds and dark grey controls on the main screen and in
+  Settings.
+- Interface touch-ups: a "No picture from the surround view" message instead of a blank preview,
+  grouped recording settings, a rounded side-view frame, Settings without the bottom status bar, and
+  shorter menu names. All interface text was reviewed in Chinese, English and Malay.
+- Much steadier camera handling: the app waits for a steady 360 picture before recording, backs off
+  when the car's camera gets stuck instead of retrying all day, resumes interrupted recordings on its
+  own, and no longer leaves empty video files.
+- Driving info bar redesigned, Sentry Mode shown and used for recording decisions, and photos saved to
+  the USB drive only (from dts88).
+- Diagnostics explain more about camera problems and no longer include your number plate.
+
+### Experimental
+
+- Vehicle status panel on the main screen (off by default) and System info (Settings → System).
 
 ## [2.10.7-beta] - 2026-10-08
 

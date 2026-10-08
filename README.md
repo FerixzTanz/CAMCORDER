@@ -37,9 +37,15 @@ of P) and stops when you leave the car (driver's seat empty for 30 seconds in P,
 Mode can take over. Sitting in the car keeps it recording. Both can be turned off in Settings →
 Recording.
 
+**Recording and playback.** Recording is 30 fps, dropping to 15 fps when the car has been stopped
+for a while to save space. A hard stop locks the footage around it automatically. Playback groups
+videos by drive, shows the distance and marks hard braking on the timeline, and **Save clip**
+keeps the 30 seconds around any moment as a normal video. Each of these can be turned off in
+Settings.
+
 **Updates come from this repo.** The in-app update check looks at this repo's releases, not
-dts88's. Releases here are marked `-beta`, so turn on *Include beta releases* under
-**Settings → Check for updates** to get them.
+dts88's. Stable releases are offered to everyone; turn on *Include beta releases* under
+**Settings → Updates** to get betas too.
 
 Install: download the `.apk` from this repo's [Releases](../../releases) and sideload it through App Lab.
 It installs over dts88's version and keeps your settings.
