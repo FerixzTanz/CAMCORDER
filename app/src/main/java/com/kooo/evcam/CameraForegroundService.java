@@ -389,6 +389,8 @@ public class CameraForegroundService extends Service {
             return;
         }
         isForegroundReady = false;
+        // 真停了：下一次要用相机就该马上能拉起来，不受 10 秒节流（换道打灯又打回来，第二次弹窗会空白）
+        lastEnsureAtMs = 0;
         Intent intent = new Intent(context, CameraForegroundService.class);
         context.stopService(intent);
         AppLog.d(TAG, "Stopping foreground service");

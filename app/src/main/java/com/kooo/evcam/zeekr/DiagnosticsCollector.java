@@ -533,6 +533,10 @@ public final class DiagnosticsCollector {
                     .getSharedPreferences("app_config", Context.MODE_PRIVATE).getAll();
             for (java.util.Map.Entry<String, ?> e : new java.util.TreeMap<>(all).entrySet()) {
                 String value = String.valueOf(e.getValue());
+                if ("license_plate".equals(e.getKey()) && !value.isEmpty()) {
+                    // 报告会被贴到公开的 issue 里：车牌只说设没设
+                    value = "（已设置，" + value.length() + " 字，不导出）";
+                }
                 if (value.length() > 80) {
                     value = value.substring(0, 80) + "…（" + value.length() + " 字）";
                 }

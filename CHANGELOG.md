@@ -9,7 +9,13 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- The turn-signal side view no longer stays blank for a whole drive when recording can't start (no
+  USB drive, or the drive is full).
+- When a recording is interrupted, it now comes back on its own: the app no longer stops its camera
+  service first and then can't restart it in time.
+- Indicating again a few seconds after the side view closed (a lane change and back) shows the picture
+  straight away.
+- Diagnostics reports no longer include your number plate.
 
 ## [2.10.7-beta] - 2026-10-08
 

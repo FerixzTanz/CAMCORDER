@@ -244,6 +244,14 @@ public final class RecordingCoordinator {
         return pending != null;
     }
 
+    /**
+     * 在等、而且等的是开录本身（环视出画面就开）—— 不是被拒了（没插 U 盘、盘满、没选相机）隔 30 秒再看的那种。
+     * 侧视弹窗只给前一种让路：后一种可能一整趟都在「等」，弹窗跟着让一整趟就是一整趟空白。
+     */
+    public boolean isAboutToStart() {
+        return pending != null && !pendingRefused;
+    }
+
     /** 录制管线还有人要：在录、在等开录、或者上一次还在收拾。主界面销毁时据此决定留不留管线。 */
     public boolean needsPipeline() {
         return !lifecycle.isIdle() || pending != null;
@@ -277,6 +285,7 @@ public final class RecordingCoordinator {
         }
         pending = why;
         pendingCounts = counts;
+        pendingRefused = false;
         // 等的时候相机算「录像要用」：登记了相机层就会开着它，熄屏那一步也不会把它放掉
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
         // 等的时候就要前台服务：没有它后台的相机被拒（CAMERA_DISABLED），环视永远出不了画面。
@@ -537,11 +546,15 @@ public final class RecordingCoordinator {
         return false;
     }
 
+    /** 这一次「在等」是被拒之后的隔一会儿再看（见 {@link #isAboutToStart}）。主线程读写。 */
+    private boolean pendingRefused;
+
     /** 条件不满足：告诉界面，然后留在「要录」的状态里，过一会儿再看（U 盘插上、盘清出来了都算）。 */
     private void refused(Why why, boolean counts, String reason) {
         notifyRefused(reason);
         pending = why;
         pendingCounts = counts;
+        pendingRefused = true;
         main.removeCallbacks(poll);
         main.postDelayed(poll, REFUSED_RETRY_MS);
     }
@@ -592,7 +605,6 @@ public final class RecordingCoordinator {
         }
         main.removeCallbacks(stopDeadline);
         main.postDelayed(stopDeadline, RecordingLifecycle.STOP_DEADLINE_MS);
-        CameraForegroundService.stop(context);
         RecordingFloatingService.sendRecordingStateChanged(context, false);
         // 熄屏录制的唤醒锁只在录像期间拿（规格 §3.1）
         ScreenOffRecording.release("recording-stopped");
@@ -605,11 +617,17 @@ public final class RecordingCoordinator {
         }
         budget.noteRecordingLasted(lasted);
         BlackBox.noteImportant("录像停止原因: " + reason + "，这一段录了 " + (lasted / 1000) + " 秒");
-        AppLog.d(TAG, "录制已停止（" + reason + "），前台服务已关闭");
+        AppLog.d(TAG, "录制已停止（" + reason + "）");
 
         boolean willResume = resumeAfter(reason);
         if (!willResume && pending == null) {
             CameraNeeds.current().release(CameraNeeds.Holder.RECORDING);
+            CameraForegroundService.stop(context);
+        } else {
+            // 要接回：前台服务留着，只把通知换回「在后台运行」。先停再接的话，接回那一下会被拉服务的 10 秒节流挡掉，
+            // 后台的相机一直被拒，接回永远等不到环视（代码审查 2026-10-08）
+            CameraForegroundService.start(context, context.getString(R.string.notif_background_title),
+                    context.getString(R.string.notif_tap_to_return));
         }
         for (Listener listener : new ArrayList<>(listeners)) {
             listener.onRecordingStopped(reason, lasted, willResume);
