@@ -21,6 +21,10 @@
     <!-- 设置界面 -->
     <string name="set_back_to_recording">返回主界面</string>
     <string name="set_check_update_title">检查更新</string>
+    <!-- 设置左栏菜单的短名（2026-10-08）：正文里提到这些页面仍用全称 -->
+    <string name="set_nav_back_to_recording">返回主界面</string>
+    <string name="set_nav_developer">开发者选项</string>
+    <string name="set_nav_update">检查更新</string>
     <string name="set_check_update_summary">当前版本 %1$s</string>
     <string name="set_update_beta_title">接收 Beta 版</string>
     <string name="set_update_beta_summary">关闭后，仅检查正式版</string>

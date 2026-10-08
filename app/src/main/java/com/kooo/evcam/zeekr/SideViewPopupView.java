@@ -3,17 +3,22 @@ package com.kooo.evcam.zeekr;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Outline;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.os.Build;
 import android.util.Size;
 import android.view.Gravity;
+import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import com.kooo.evcam.AppConfig;
 import com.kooo.evcam.AppLog;
 import com.kooo.evcam.AutoFitTextureView;
+import com.kooo.evcam.R;
 
 /**
  * 打转向灯弹出的侧视窗：只显示左或右那一路，不能拖、不能点。
@@ -49,6 +54,10 @@ public class SideViewPopupView extends ViewGroup {
     private final RectF destRect = new RectF();
     private final FisheyeMesh mesh = new FisheyeMesh();
     private final FisheyeMesh.Painter paintTexture = this::drawTextureOnce;
+    /** 外框：和车机原厂 360 画面的分格一样，圆角加一道细浅边（CAMCORDER 2026-10-08 界面审查）。 */
+    private final Paint framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF frameRect = new RectF();
+    private final float cornerRadius;
 
     private WindowManager.LayoutParams params;
     private boolean attached;
@@ -69,6 +78,18 @@ public class SideViewPopupView extends ViewGroup {
         this.appConfig = appConfig;
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         setBackgroundColor(0xFF000000);
+        // 原来是直角黑框，像一块贴上去的视频；车机自己的 360 画面每一格都是圆角、带一道浅色分隔
+        cornerRadius = context.getResources().getDimension(R.dimen.corner_radius);
+        setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadius);
+            }
+        });
+        setClipToOutline(true);
+        framePaint.setStyle(Paint.Style.STROKE);
+        framePaint.setStrokeWidth(2f * context.getResources().getDisplayMetrics().density);
+        framePaint.setColor(context.getColor(R.color.surface));
         textureView = new AutoFitTextureView(context);
         addView(textureView);
         readConfig();
@@ -279,6 +300,7 @@ public class SideViewPopupView extends ViewGroup {
             // 服务就没机会补上尺寸 —— 窗口会一直黑），再盖成黑的，不露出四路挤在一起的整条合成流
             super.dispatchDraw(canvas);
             canvas.drawColor(0xFF000000);
+            drawFrame(canvas, width, height);
             return;
         }
         aspect = (float) width / height;
@@ -310,6 +332,14 @@ public class SideViewPopupView extends ViewGroup {
             drawChild(canvas, textureView, getDrawingTime());
         }
         canvas.restoreToCount(save);
+        drawFrame(canvas, width, height);
+    }
+
+    /** 细浅边，压在画面最上层；线宽一半落在窗口外会被圆角裁掉，所以往里收半个线宽。 */
+    private void drawFrame(Canvas canvas, int width, int height) {
+        float inset = framePaint.getStrokeWidth() / 2f;
+        frameRect.set(inset, inset, width - inset, height - inset);
+        canvas.drawRoundRect(frameRect, cornerRadius - inset, cornerRadius - inset, framePaint);
     }
 
     private void drawTextureOnce(Canvas canvas) {

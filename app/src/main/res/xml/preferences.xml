@@ -23,7 +23,7 @@
     -->
     <Preference
         android:key="pref_back_to_recording"
-        android:title="@string/set_back_to_recording" />
+        android:title="@string/set_nav_back_to_recording" />
 
     <!-- ==================== 录制 ==================== -->
     <PreferenceScreen
@@ -461,7 +461,7 @@
     -->
     <PreferenceScreen
         android:key="screen_developer"
-        android:title="@string/set_section_developer">
+        android:title="@string/set_nav_developer">
 
         <!-- 原来「高级」里的那几项：录制管线、编码、画面调节、相机映射、调试日志 ——
              都是排查问题时才动的东西，和开发者工具放在一起 -->
@@ -543,7 +543,7 @@
     -->
     <PreferenceScreen
         android:key="screen_update"
-        android:title="@string/set_check_update_title">
+        android:title="@string/set_nav_update">
 
         <Preference
             android:key="pref_check_update"

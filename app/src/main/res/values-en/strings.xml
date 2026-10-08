@@ -7,6 +7,10 @@
     <!-- Settings screen -->
     <string name="set_back_to_recording">Back to main screen</string>
     <string name="set_check_update_title">Check for updates</string>
+    <!-- 设置左栏菜单的短名（2026-10-08）：正文里提到这些页面仍用全称 -->
+    <string name="set_nav_back_to_recording">Main screen</string>
+    <string name="set_nav_developer">Developer</string>
+    <string name="set_nav_update">Updates</string>
     <string name="set_check_update_summary">Current version %1$s</string>
     <string name="set_update_beta_title">Include beta releases</string>
     <string name="set_update_beta_summary">When off, checks stable releases only</string>

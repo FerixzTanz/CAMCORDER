@@ -7,6 +7,10 @@
     <!-- Tetapan -->
     <string name="set_back_to_recording">Kembali ke skrin utama</string>
     <string name="set_check_update_title">Semak kemas kini</string>
+    <!-- 设置左栏菜单的短名（2026-10-08）：正文里提到这些页面仍用全称 -->
+    <string name="set_nav_back_to_recording">Skrin utama</string>
+    <string name="set_nav_developer">Pembangun</string>
+    <string name="set_nav_update">Kemas kini</string>
     <string name="set_check_update_summary">Versi semasa %1$s</string>
     <string name="set_update_beta_title">Termasuk keluaran beta</string>
     <string name="set_update_beta_summary">Jika dimatikan, hanya keluaran stabil disemak</string>
