@@ -72,7 +72,9 @@ public class ImageAdjustFloatingWindow {
     private OnDismissListener dismissListener;
 
     /** 原厂画面（倒车、360、泊车）出来时让开：全透明、不接触摸；收了再回来（2.11.0 驾驶安全审查）。 */
-    private final com.kooo.evcam.zeekr.CarViewGate.Listener carViewListener = active -> {
+    private final com.kooo.evcam.zeekr.CarViewGate.Listener carViewListener = this::onCarViewChanged;
+
+    private void onCarViewChanged(boolean active) {
         if (layoutParams == null || floatingView == null || !isShowing) {
             return;
         }
@@ -87,8 +89,8 @@ public class ImageAdjustFloatingWindow {
         } catch (Exception e) {
             AppLog.w(TAG, "Failed to update floating window for car view: " + e);
         }
-    };
-    
+    }
+
     public ImageAdjustFloatingWindow(Context context, ImageAdjustManager adjustManager) {
         this.context = context;
         this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
