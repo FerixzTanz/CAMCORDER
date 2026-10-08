@@ -224,6 +224,31 @@ public class RearViewMirrorView extends ViewGroup {
 
     // ------------------------------------------------------------------ 窗口
 
+    /** 原厂画面在时让开：全透明、不接触摸（{@link CarViewGate}）。 */
+    private boolean standingDown;
+
+    public void setStandDown(boolean down) {
+        standingDown = down;
+        applyStandDown();
+    }
+
+    private void applyStandDown() {
+        if (!attached || params == null) {
+            return;
+        }
+        params.alpha = standingDown ? 0f : 1f;
+        if (standingDown) {
+            params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        } else {
+            params.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        }
+        try {
+            windowManager.updateViewLayout(this, params);
+        } catch (Exception e) {
+            AppLog.w(TAG, "后视镜让开 / 回来失败: " + e.getMessage());
+        }
+    }
+
     public void show() {
         if (attached) {
             return;
@@ -253,6 +278,7 @@ public class RearViewMirrorView extends ViewGroup {
         try {
             windowManager.addView(this, params);
             attached = true;
+            applyStandDown();
             lastFrameUptimeMs = SystemClock.uptimeMillis();
             buttonMode = appConfig.isRearViewButtonMode();
             docked = RearViewTouchModel.dockedAt(params.x, params.width, screenWidth())

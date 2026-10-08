@@ -54,6 +54,9 @@ public final class DriveSessionWatcher {
     private final Context app;
     private final AppConfig config;
     private final Handler main = new Handler(Looper.getMainLooper());
+    /** 原厂画面在时，隔多久再看一次能不能拉主界面开录；最多等多久。 */
+    private static final long CAR_VIEW_RETRY_MS = 2_000L;
+    private static final long CAR_VIEW_WAIT_MAX_MS = 5L * 60 * 1000;
     private final DriveSession session = new DriveSession();
     private boolean running;
     private PowerManager.WakeLock wakeLock;
@@ -283,6 +286,25 @@ public final class DriveSessionWatcher {
             return;
         }
         // 相机管线得是主界面开好的：像悬浮按钮那样把主界面拉起来开录，录起来之后它自己退回后台
+        if (com.kooo.evcam.zeekr.CarViewGate.isActiveNow()) {
+            // 原厂画面（倒车、360、泊车）在屏幕上：不拉主界面盖住它，每 2 秒再看，收了再拉（最多等 5 分钟）
+            // （2.11.0 驾驶安全审查）
+            if (waitedMs < CAR_VIEW_WAIT_MAX_MS) {
+                AppLog.i(TAG, "相机管线不在，但原厂画面在：先不拉主界面，2 秒后再看");
+                final long waitedSoFar = waitedMs + CAR_VIEW_RETRY_MS;
+                main.postDelayed(() -> {
+                    // 等的这一阵人下车了、或者自己停了录像：不再开
+                    if (driverAway() || RecordingIntent.current().stoppedByUser()
+                            || coordinator.isRecording() || coordinator.isWaiting()) {
+                        return;
+                    }
+                    start(coordinator, reason, waitedSoFar);
+                }, CAR_VIEW_RETRY_MS);
+            } else {
+                BlackBox.noteImportant("原厂画面一直在，放弃这一次上车开录");
+            }
+            return;
+        }
         AppLog.i(TAG, "相机管线不在，拉起主界面开录");
         Intent intent = new Intent(app, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);

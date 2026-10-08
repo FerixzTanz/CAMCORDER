@@ -175,6 +175,8 @@ public class RecordingFloatingService extends Service {
         mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.postDelayed(troubleCheck, TROUBLE_CHECK_MS);
         appConfig = new AppConfig(this);
+        // 原厂画面（倒车、360、泊车）在时按钮让开：全透明、不接触摸（2.11.0 驾驶安全审查）
+        com.kooo.evcam.zeekr.CarViewGate.get().addListener(this, carViewListener);
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
         // 获取屏幕尺寸
@@ -311,6 +313,7 @@ public class RecordingFloatingService extends Service {
     @Override
     public void onDestroy() {
         com.kooo.evcam.blackbox.BlackBox.noteImportant("RecordingFloatingService onDestroy");
+        com.kooo.evcam.zeekr.CarViewGate.get().removeListener(carViewListener);
         if (mainHandler != null) {
             mainHandler.removeCallbacks(troubleCheck);
         }
@@ -347,6 +350,30 @@ public class RecordingFloatingService extends Service {
         }
 
         createFloatingWindow();
+    }
+
+    private boolean carViewActive;
+    private final com.kooo.evcam.zeekr.CarViewGate.Listener carViewListener = active -> {
+        carViewActive = active;
+        applyStandDown();
+    };
+
+    /** 原厂画面在时：按钮全透明、不接触摸；收了再回来。 */
+    private void applyStandDown() {
+        if (floatingContainer == null || layoutParams == null || windowManager == null) {
+            return;
+        }
+        layoutParams.alpha = carViewActive ? 0f : 1f;
+        if (carViewActive) {
+            layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        } else {
+            layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        }
+        try {
+            windowManager.updateViewLayout(floatingContainer, layoutParams);
+        } catch (Exception e) {
+            AppLog.w(TAG, "悬浮按钮让开 / 回来失败: " + e.getMessage());
+        }
     }
 
     private void hideFloatingWindow() {
@@ -534,6 +561,7 @@ public class RecordingFloatingService extends Service {
         try {
             windowManager.addView(floatingContainer, layoutParams);
             applyStyle();
+            applyStandDown();
             AppLog.d(TAG, "录制悬浮窗创建成功");
         } catch (Exception e) {
             AppLog.e(TAG, "添加悬浮窗失败", e);

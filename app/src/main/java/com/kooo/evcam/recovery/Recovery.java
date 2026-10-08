@@ -61,6 +61,11 @@ public final class Recovery {
             if (!config.didUiLeaveForScreenOff() || UserExit.isExited(context)) {
                 return;
             }
+            if (com.kooo.evcam.zeekr.CarViewGate.isActiveNow()) {
+                // 原厂画面（倒车、360、泊车）在屏幕上：不把主界面拉到前台盖住它（2.11.0 驾驶安全审查）
+                BlackBox.note("亮屏：原厂画面在，先不把主界面接回前台");
+                return;
+            }
             config.setUiLeftForScreenOff(false);
             boolean alive = MainActivity.getInstance() != null;
             Intent intent = new Intent(context, MainActivity.class);
@@ -109,7 +114,7 @@ public final class Recovery {
         RecordingIntent intent = RecordingIntent.current();
         boolean wantRecording = config.isAutoStartRecording() && !recording
                 && (intent.shouldRestore(true) || intent.shouldAutoStart(true));
-        if (wantRecording && !mainScreenAlive) {
+        if (wantRecording && !mainScreenAlive && !com.kooo.evcam.zeekr.CarViewGate.isActiveNow()) {
             Intent main = new Intent(context, MainActivity.class);
             main.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
             main.putExtra("auto_start_from_boot", true);

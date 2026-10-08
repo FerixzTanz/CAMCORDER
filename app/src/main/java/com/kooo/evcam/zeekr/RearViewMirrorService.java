@@ -186,7 +186,17 @@ public class RearViewMirrorService extends Service {
         instance = this;
         // 熄屏摘、亮屏接：听进程里唯一那份屏幕状态（主线程回调）
         com.kooo.evcam.screen.ScreenState.addListener(screenListener);
+        // 原厂画面（倒车、360、泊车）在时让开，不挡（2.11.0 驾驶安全审查）
+        CarViewGate.get().addListener(this, carViewListener);
     }
+
+    private boolean carViewActive;
+    private final CarViewGate.Listener carViewListener = active -> {
+        carViewActive = active;
+        if (mirrorView != null) {
+            mirrorView.setStandDown(active);
+        }
+    };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -221,6 +231,7 @@ public class RearViewMirrorService extends Service {
             return;
         }
         mirrorView = new RearViewMirrorView(this, appConfig);
+        mirrorView.setStandDown(carViewActive);
         mirrorView.getTextureView().setSurfaceTextureListener(
                 new TextureView.SurfaceTextureListener() {
                     @Override
@@ -528,6 +539,7 @@ public class RearViewMirrorService extends Service {
         com.kooo.evcam.blackbox.BlackBox.noteImportant("RearViewMirrorService onDestroy");
         instance = null;
         com.kooo.evcam.screen.ScreenState.removeListener(screenListener);
+        CarViewGate.get().removeListener(carViewListener);
         cancelRetry();
         cancelWatchdog();
         unbindCamera();
