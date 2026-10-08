@@ -46,6 +46,22 @@ public final class CameraAvailabilityWatch {
     private CameraAvailabilityWatch() {
     }
 
+    /**
+     * 进程一起就调：在后台线程上注册，立刻返回。
+     *
+     * <p>注册是进相机服务的 binder 调用，相机服务卡住时会卡好几秒；主线程不等相机服务
+     * （zeekr-platform-notes §3.1.2），否则卡的就是整个应用的启动。</p>
+     */
+    public static void startAsync(Context context) {
+        if (callback != null || context == null) {
+            return;
+        }
+        final Context app = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        Thread thread = new Thread(() -> start(app), "CameraAvailabilityWatch-init");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     /** 开始听。重复调用无害。 */
     public static synchronized void start(Context context) {
         if (callback != null || context == null) {

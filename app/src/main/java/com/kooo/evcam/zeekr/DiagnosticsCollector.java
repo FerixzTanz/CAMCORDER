@@ -234,7 +234,7 @@ public final class DiagnosticsCollector {
     private static void appendCameraAvailability(StringBuilder sb) {
         sb.append("## 2.3.1 相机可用性（相机服务视角）").append('\n');
         if (!com.kooo.evcam.camera.CameraAvailabilityWatch.heardAnything()) {
-            sb.append("没收到过可用性回调（前台服务没起来，或者容器没转这条接口）").append('\n').append('\n');
+            sb.append("没收到过可用性回调（容器没转这条接口，或者进程刚起来）").append('\n').append('\n');
             return;
         }
         for (java.util.Map.Entry<String, long[]> e

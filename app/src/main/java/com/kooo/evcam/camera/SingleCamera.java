@@ -143,6 +143,19 @@ public class SingleCamera {
     static final long COOL_DOWN_WINDOW_MS = 120_000L;
     /** 连着出错之后，等这么久再重开 —— 2026-10-07 那次退出应用、停了十几秒再开就好了。 */
     static final long COOL_DOWN_MS = 15_000L;
+    /**
+     * 建会话时 waitUntilIdle 排不空（-110）连着几次了、从什么时候起（开机起算）；会话配好就清零。
+     * 这是相机服务那一侧卡住的指纹：2026-10-07 19:35 起十五个小时、应用重启几次都一样。
+     */
+    private int drainTimeoutStreak;
+    private long drainTimeoutSinceElapsedMs;
+    /**
+     * 连着冷却到第几轮了、上一轮放开多久（相机线程写，主线程读 {@link #isRecovering}）。
+     * 只有连着稳稳地出了画面才清零 —— 设备「打开成功」不算：卡住时设备总是能打开的，
+     * 那样每一轮都从头算，永远升不上去（见 {@link CameraCoolDown#coolDownForRound}）。
+     */
+    private int coolDownRounds;
+    private volatile long lastCoolDownMs;
 
     // 鱼眼矫正
     
@@ -183,6 +196,8 @@ public class SingleCamera {
     private volatile long lastProgressUptimeMs = 0;
     /** 最近一次真的收到画面（capture 完成）—— 开相机、建会话不算。 */
     private volatile long lastCaptureUptimeMs = 0;
+    /** 最近几帧的时刻：判断「在稳定出画面」还是「在爬」（见 {@link FeedSteadiness}）。 */
+    private final FeedSteadiness feedSteadiness = new FeedSteadiness();
     /** 最后一次相机报错的短名，给界面说明「为什么点了没反应」。 */
     private volatile String lastErrorName;
 
@@ -850,6 +865,24 @@ public class SingleCamera {
         return last != 0 && SystemClock.uptimeMillis() - last < ms;
     }
 
+    /**
+     * 最近两秒里是不是稳稳地在出画面，而不只是「来过一帧」。
+     *
+     * <p>相机服务卡死时，环视照样一秒一帧地爬（0.8 fps），{@link #hasFramesWithin} 一直答「有」，
+     * 开录就在这样的流上重建会话、排不空、起不来。「环视好了没有」要问这个。</p>
+     */
+    public boolean hasSteadyFrames() {
+        return feedSteadiness.steady(SystemClock.uptimeMillis());
+    }
+
+    /**
+     * 连着稳稳地出了十秒以上画面：这一路真的好了（见 {@link FeedSteadiness#recovered}）。
+     * 兜底看门狗拿它决定要不要把攒下的失败一笔勾销。
+     */
+    public boolean hasRecoveredFeed() {
+        return feedSteadiness.recovered(SystemClock.uptimeMillis());
+    }
+
     public long progressAgeMs() {
         long last = lastProgressUptimeMs;
         return last == 0 ? 0 : Math.max(0, SystemClock.uptimeMillis() - last);
@@ -888,7 +921,8 @@ public class SingleCamera {
     /** 正在从连着出错里恢复：冷却期内、或者正在重连。侧视弹窗和录制键的提示看它。 */
     public boolean isRecovering() {
         long last = lastDeviceErrorElapsedMs;
-        boolean recentError = last != 0 && SystemClock.elapsedRealtime() - last < COOL_DOWN_MS + 10_000L;
+        boolean recentError = last != 0
+                && SystemClock.elapsedRealtime() - last < Math.max(COOL_DOWN_MS, lastCoolDownMs) + 10_000L;
         return recentError || isReconnecting;
     }
 
@@ -899,11 +933,36 @@ public class SingleCamera {
         long now = SystemClock.elapsedRealtime();
         lastDeviceErrorElapsedMs = now;
         long delay = CameraCoolDown.delayAfterError(deviceErrorTimes, now);
-        if (delay >= COOL_DOWN_MS) {
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 两分钟内连着出错 "
-                    + deviceErrorTimes.size() + " 次：放开 " + (delay / 1000) + " 秒再重开");
+        if (delay >= COOL_DOWN_MS || coolDownRounds > 0) {
+            // 进了冷却就一直在冷却里，直到稳稳地出了画面：一轮比一轮放开得久，不再每轮固定 15 秒
+            coolDownRounds++;
+            delay = CameraCoolDown.coolDownForRound(coolDownRounds);
+            lastCoolDownMs = delay;
+            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 连着出错（第 "
+                    + coolDownRounds + " 轮冷却，两分钟内 " + deviceErrorTimes.size() + " 次）：放开 "
+                    + (delay / 1000) + " 秒再重开");
         }
         return delay;
+    }
+
+    /**
+     * 连着稳稳地出了十秒画面 —— 这才算恢复：重连次数、冷却轮数、连着出错的记录都清掉。
+     *
+     * <p>以前设备一「打开成功」就清重连次数，而相机服务卡住时设备总是能打开，
+     * 于是指数退避、冷却升级都从头算（2026-10-08）。开了又断的相机每次只稳一两秒，也不算好。
+     * 相机线程上调，每一帧只多一次字段比较。</p>
+     */
+    private void noteFeedRecovered() {
+        if (reconnectAttempts == 0 && coolDownRounds == 0 && deviceErrorTimes.isEmpty()) {
+            return;
+        }
+        synchronized (reconnectLock) {
+            reconnectAttempts = 0;
+        }
+        coolDownRounds = 0;
+        lastCoolDownMs = 0;
+        lastDeviceErrorElapsedMs = 0;
+        deviceErrorTimes.clear();
     }
 
     /** 有人在等拍照（登记表上的 PHOTO）。 */
@@ -1270,7 +1329,8 @@ public class SingleCamera {
                 cameraDevice = camera;
                 lastErrorName = null;
                 CameraContention.ourCameraOpened(cameraId, reconnectAttempts);
-                reconnectAttempts = 0;  // 重置重连计数
+                // 重连次数不在这里清：设备打开成功不等于相机好了（相机服务卡住时设备照样能打开），
+                // 连着稳稳地出了画面才清（noteFeedRecovered）
                 isReconnecting = false;  // 重连成功，清除重连标志
                 reconnectDelayFloorMs = 0;
                 takenByOthers = false;
@@ -1638,6 +1698,7 @@ public class SingleCamera {
                     }
                     AppLog.d(TAG, "Camera " + cameraId + " Session configured! gen=" + generation);
                     configFailRetryCount = 0; // 成功，重置重试计数
+                    drainTimeoutStreak = 0;
 
                     if (cameraDevice == null) {
                         AppLog.e(TAG, "Camera " + cameraId + " cameraDevice is null in onConfigured");
@@ -1768,6 +1829,7 @@ public class SingleCamera {
             synchronized (sessionLock) { isConfiguring = false; isSessionClosing = false; }
             AppLog.e(TAG, "Failed to create preview session for camera " + cameraId, e);
             AppLog.e(TAG, "Exception details: " + e.getMessage());
+            noteDrainTimeout(e);
             e.printStackTrace();
         } catch (IllegalArgumentException e) {
             synchronized (sessionLock) { isConfiguring = false; isSessionClosing = false; }
@@ -1798,6 +1860,29 @@ public class SingleCamera {
             AppLog.e(TAG, "Unexpected exception creating session for camera " + cameraId, e);
             AppLog.e(TAG, "Exception details: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * 建会话抛「Error waiting to drain（-110）」：相机服务在等 HAL 把在途的请求排空，HAL 不还。
+     * 这是 HAL / 相机服务那一侧卡住，不是我们的会话配得不对 —— 重启应用、重装都解不开，
+     * 2026-10-07 19:35 起一直到第二天上午。第二次起记进黑匣子，让导出的报告直接说出来，
+     * 之后每五次再提一次（别刷屏）。
+     */
+    private void noteDrainTimeout(CameraAccessException e) {
+        String message = e.getMessage();
+        if (message == null || !message.contains("waiting to drain")) {
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (drainTimeoutStreak == 0) {
+            drainTimeoutSinceElapsedMs = now;
+        }
+        drainTimeoutStreak++;
+        if (drainTimeoutStreak == 2 || drainTimeoutStreak % 5 == 0) {
+            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 的会话排不空（waitUntilIdle 超时 -110）"
+                    + "连着 " + drainTimeoutStreak + " 次，已经 " + ((now - drainTimeoutSinceElapsedMs) / 1000)
+                    + " 秒：卡在相机服务 / HAL 那一侧，不是会话配得不对；重启应用解不开");
         }
     }
 
@@ -1893,6 +1978,10 @@ public class SingleCamera {
             captureBeat.beat(StallWatch.now());
             lastProgressUptimeMs = SystemClock.uptimeMillis();
             lastCaptureUptimeMs = lastProgressUptimeMs;
+            feedSteadiness.onFrame(lastCaptureUptimeMs);
+            if (feedSteadiness.recovered(lastCaptureUptimeMs)) {
+                noteFeedRecovered();
+            }
             frameCount++;
             long now = System.currentTimeMillis();
             lastFrameTimestampMs = now;

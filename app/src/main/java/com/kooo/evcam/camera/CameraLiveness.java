@@ -123,9 +123,28 @@ public final class CameraLiveness {
      * @param now         单调时钟，不含深度睡眠（车停着睡一夜，醒来不该算卡了一整夜）
      */
     public static Action step(State state, boolean wantsFrames, long frameAgeMs, long now) {
-        if (!wantsFrames || frameAgeMs < STUCK_MS) {
-            // 没人用，或者帧回来了 —— 前面攒的次数一笔勾销
+        return step(state, wantsFrames, frameAgeMs < STUCK_MS, frameAgeMs, now);
+    }
+
+    /**
+     * 往前走一步，把「画面回来了」和「刚有动静」分开问。
+     *
+     * <p>以前只问一个年龄，开相机、建会话也算动静 —— 相机服务卡死时设备总是能打开，于是每重开一次
+     * 就把攒下的次数和轮数清零，「连着救三次停手、三轮彻底停手」永远走不到
+     * （2026-10-08 的现场：重开从没数过第三次，每个现场五分钟里捶了十几轮）。
+     * 现在只有画面真的稳了才一笔勾销；刚开相机、刚建好会话只是先等着，次数照旧留着。</p>
+     *
+     * @param feedSteady    这一路稳稳地在出帧（{@link FeedSteadiness}），不是来过一帧
+     * @param progressAgeMs 距上一次「有动静」多久：出了一帧、开了相机、建好会话，都算
+     */
+    public static Action step(State state, boolean wantsFrames, boolean feedSteady, long progressAgeMs, long now) {
+        if (!wantsFrames || feedSteady) {
+            // 没人用，或者画面真回来了 —— 前面攒的次数一笔勾销
             state.clear();
+            return Action.NONE;
+        }
+        if (progressAgeMs < STUCK_MS) {
+            // 刚开相机 / 刚建好会话，帧还没来：先等，别动手，也别忘了前面失败过几次
             return Action.NONE;
         }
         if (state.stopped) {

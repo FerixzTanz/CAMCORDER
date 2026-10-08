@@ -9,7 +9,21 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+When the car's 360 camera service gets stuck (the feed crawls at about one frame per second and every
+attempt to start recording fails), the app now backs off instead of retrying all morning:
+
+- Recording only starts on a steady 360 feed, at least 3 frames per second. A feed that trickles in
+  no longer counts as healthy, so the app keeps waiting instead of failing three starts in a row
+  and giving up.
+- The app stops poking a stuck camera. Pauses between reconnects grow from 15 seconds to 30, 60 and
+  then 2 minutes, and the camera watchdog now really stops after a few rounds. Before, every
+  successful reopen reset both, so it kept retrying every 20 seconds or so for as long as the app was open. The camera counts
+  as recovered only after 10 seconds of steady frames.
+- The app listens to the camera service from the moment it starts, so the 2.10.3 safeguards (don't
+  start on a camera the car has dropped, wait for the car's own cameras to go quiet) also work
+  right after the app launches.
+- A recording that fails to start no longer leaves empty 0 B video files.
+- Diagnostics name this stuck state and show who holds each camera from the start.
 
 ## [2.10.3-beta] - 2026-10-07
 
