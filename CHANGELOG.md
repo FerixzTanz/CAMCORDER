@@ -13,53 +13,45 @@ Nothing yet.
 
 ## [2.11.0] - 2026-10-08
 
-The first stable release of this fork. Changes since 2.0.0, dts88's last stable release; everything
-from the betas in between is included.
+The first stable release of this fork, with everything since dts88's last stable release (2.0.0),
+betas included.
 
 ### Upgrade notes
 
-- When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise the head
-  unit's installer gets stuck and later installs or updates fail.
-- **Recording now follows the driver**: it starts when you sit in the driver's seat or shift out of
-  P, and stops when you leave the car. Both are on by default; turn them off in Settings → Recording.
-- **One recording quality**: 30 fps at about 14 Mbps, around 105 MB a minute while driving. The Save
-  space / Balanced / Sharpest choice moved to Developer options, and your profile switches over on
-  its own. If you want to keep more history, raise the video storage limit (Settings → Storage).
+- When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise later installs
+  and updates can fail.
+- **Recording follows the driver**: it starts when you sit in the driver's seat or shift out of P,
+  and stops when you leave the car. Turn either off in Settings → Recording.
+- **One recording quality**: 30 fps at about 14 Mbps, around 105 MB a minute while driving. The
+  presets moved to Developer options and your profile switches over on its own. To keep more
+  history, raise the video storage limit (Settings → Storage).
 - **Lock footage on hard braking** is on by default and uses at most 10% of the recording space.
   "Lock footage on horn", which could never be turned on, is gone.
-- Updates come from this repo. Stable releases are offered to everyone; turn on *Include beta
-  releases* under Settings → Updates to get betas too.
+- Updates come from this repo. Turn on *Include beta releases* under Settings → Updates to get
+  betas too.
 
 ### New and improved
 
 - **Turn-signal side view** (Settings → Super mirror, off by default): signalling pops up that
-  side's camera, straightened and aimed at the blind spot, and closes after the signal. It works
-  whether or not you're recording, and the car's own views always take priority.
-- **Recording starts as soon as you get in**, instead of after a delay of up to two minutes.
-- **Smoother video**: 30 fps instead of 15. After 5 seconds stopped, recording drops to 15 fps and a
-  lower bitrate to save space, and goes back to full rate as soon as you move (Settings → Recording →
-  Save space when stopped).
+  side's camera and closes after the signal, whether or not you're recording.
+- **Recording starts as soon as you get in**, instead of up to two minutes later.
+- **Smoother video**: 30 fps instead of 15. After 5 seconds stopped it drops to 15 fps to save
+  space, and goes back to full rate as soon as you move.
 - **Lock footage** so loop recording never removes it: by hand in playback, by flashing the high
-  beams, or automatically on a hard stop, including the car's own emergency braking. Each locks the
-  clips covering 10 seconds before and after.
-- **Playback by drive**: one entry from getting in to leaving the car, with the distance driven and
-  dots on the timeline for hard braking and flash-to-pass. Swipe between cameras when one fills the
-  screen, and **Save clip** keeps the 30 seconds around a moment as a normal video in
-  DCIM/EVCam_Clips that you can send to your phone. Turn grouping off under Settings → Storage.
-- **Night mode matches the car**: black backgrounds and dark grey controls on the main screen and in
-  Settings.
-- **Tidier settings**: each page keeps its main switches, and fine adjustments moved one level down
-  (Photos and stamps, Locked footage, the Super mirror's window and view, the side view's picture and
-  size, the floating button's appearance, fisheye correction).
-- Interface touch-ups: a "No picture from the surround view" message instead of a blank preview,
-  grouped recording settings, a rounded side-view frame, Settings without the bottom status bar, and
-  shorter menu names. All interface text was reviewed in Chinese, English and Malay.
-- Much steadier camera handling: the app waits for a steady 360 picture before recording, backs off
-  when the car's camera gets stuck instead of retrying all day, resumes interrupted recordings on its
-  own, and no longer leaves empty video files.
-- Driving info bar redesigned, Sentry Mode shown and used for recording decisions, and photos saved to
-  the USB drive only (from dts88).
-- Diagnostics explain more about camera problems and no longer include your number plate.
+  beams, or automatically on a hard stop. Each lock keeps 10 seconds either side.
+- **Playback by drive**, with the distance driven and dots for hard braking and flashes. Swipe
+  between cameras, and **Save clip** keeps 30 seconds as a normal video in DCIM/EVCam_Clips.
+- **The car's own views come first**: the super mirror and floating button step aside while the
+  reversing camera, 360 view or park assist is showing, and the app never takes the camera from
+  them. A picture that stops is blanked or marked "No live picture" instead of looking live.
+- **Security and privacy**: other apps can no longer start or stop recording, the phone-sharing link
+  uses a longer key and closes when you leave the screen, the accessibility service no longer reads
+  screen content, and diagnostics contain only the app's own logs and no number plate.
+- **Night mode matches the car**, and **tidier settings**: fine adjustments moved one level down.
+- Steadier camera handling: the app waits for a steady 360 picture, backs off when the car's camera
+  is stuck, resumes interrupted recordings and no longer leaves empty video files.
+- Redesigned driving info bar, Sentry Mode awareness, and photos saved to the USB drive only (from
+  dts88).
 
 ### Experimental
 
