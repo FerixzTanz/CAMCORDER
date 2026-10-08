@@ -11,6 +11,29 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.5-beta] - 2026-10-08
+
+- Recording starts right away when you get in, instead of after about two minutes. The camera
+  service refuses the 360 camera to an app in the background unless the app's camera service is
+  running, and that service only started once recording had begun, while recording waited for the
+  360 camera. Nothing moved until something else woke it up. The service now starts as soon as
+  recording is waiting for the camera.
+- The turn-signal side view now also works in those first two minutes. While recording was waiting,
+  the side view held back from taking the camera and skipped starting the camera service too. It now
+  starts the service either way.
+- When the 360 camera sends no picture, the main screen says "No picture from the surround view"
+  instead of showing a blank area with the Front, Rear, Left and Right labels floating over it.
+- The hide-to-background button has a new icon. The old down-arrow looked like a download.
+- Recording settings are grouped under Stream, Automatic recording, and Photos and stamps. The
+  descriptions for starting and stopping recording with the driver are shorter.
+- Descriptions in light mode are slightly darker and easier to read.
+- The side view pop-up has rounded corners and a thin frame, so it looks like the car's own 360
+  view instead of two plain boxes.
+- Settings no longer has a status bar along the bottom, like the car's own settings. The
+  recording status is still on the main screen.
+- Shorter menu names in Settings in English and Malay (Main screen, Developer, Updates), so they
+  fit on one line.
+
 ## [2.10.4-beta] - 2026-10-08
 
 When the car's 360 camera service gets stuck (the feed crawls at about one frame per second and every

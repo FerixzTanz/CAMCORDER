@@ -23,12 +23,17 @@
     -->
     <Preference
         android:key="pref_back_to_recording"
-        android:title="@string/set_back_to_recording" />
+        android:title="@string/set_nav_back_to_recording" />
 
     <!-- ==================== 录制 ==================== -->
     <PreferenceScreen
         android:key="screen_recording"
         android:title="@string/set_section_recording">
+
+        <!-- 分组标题（CAMCORDER 2026-10-08 界面审查）：原来是一长串平铺的行，配置、自动录制、照片水印混在一起 -->
+        <PreferenceCategory
+            android:key="cat_recording_stream"
+            android:title="@string/set_cat_stream">
 
         <ListPreference
             android:key="pref_car_model"
@@ -40,6 +45,11 @@
             android:key="pref_profile_editor"
             android:title="@string/set_profile_editor_title"
             android:summary="@string/set_profile_editor_summary" />
+        </PreferenceCategory>
+
+        <PreferenceCategory
+            android:key="cat_recording_auto"
+            android:title="@string/set_cat_auto_record">
 
         <!-- 「我要它一直在录」是设定状态的一部分，不是规则，所以在录制分区（规格 §2） -->
         <SwitchPreferenceCompat
@@ -57,6 +67,11 @@
             android:key="pref_drive_auto_stop"
             android:title="@string/set_drive_auto_stop_title"
             android:summary="@string/set_drive_auto_stop_summary" />
+        </PreferenceCategory>
+
+        <PreferenceCategory
+            android:key="cat_recording_stamps"
+            android:title="@string/set_cat_photo_stamp">
 
         <SwitchPreferenceCompat
             android:key="pref_photo_via_jpeg"
@@ -95,6 +110,7 @@
             android:key="pref_info_bar"
             android:title="@string/set_info_bar_title"
             android:summary="@string/set_info_bar_summary" />
+        </PreferenceCategory>
     </PreferenceScreen>
 
     <!-- ==================== 存储 ==================== -->
@@ -445,7 +461,7 @@
     -->
     <PreferenceScreen
         android:key="screen_developer"
-        android:title="@string/set_section_developer">
+        android:title="@string/set_nav_developer">
 
         <!-- 原来「高级」里的那几项：录制管线、编码、画面调节、相机映射、调试日志 ——
              都是排查问题时才动的东西，和开发者工具放在一起 -->
@@ -527,7 +543,7 @@
     -->
     <PreferenceScreen
         android:key="screen_update"
-        android:title="@string/set_check_update_title">
+        android:title="@string/set_nav_update">
 
         <Preference
             android:key="pref_check_update"

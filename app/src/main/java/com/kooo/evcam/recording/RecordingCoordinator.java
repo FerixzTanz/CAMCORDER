@@ -279,6 +279,9 @@ public final class RecordingCoordinator {
         pendingCounts = counts;
         // 等的时候相机算「录像要用」：登记了相机层就会开着它，熄屏那一步也不会把它放掉
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
+        // 等的时候就要前台服务：没有它后台的相机被拒（CAMERA_DISABLED），环视永远出不了画面。
+        // 以前开录那一刻才起它 —— 2026-10-08 两次上车都等了两分钟（见 CameraForegroundService.ensureRunning）
+        CameraForegroundService.ensureRunning(context, "录像在等环视");
         main.removeCallbacks(poll);
         main.post(poll);
     }
@@ -293,6 +296,8 @@ public final class RecordingCoordinator {
         main.removeCallbacks(poll);
         if (!isRecording()) {
             CameraNeeds.current().release(CameraNeeds.Holder.RECORDING);
+            // 为等环视拉起的前台服务：没人要了就回去（侧视弹窗占着、保活开着照旧留着）
+            CameraForegroundService.releaseWhenIdle(context);
         }
     }
 

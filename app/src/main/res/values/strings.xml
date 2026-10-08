@@ -21,11 +21,18 @@
     <!-- 设置界面 -->
     <string name="set_back_to_recording">返回主界面</string>
     <string name="set_check_update_title">检查更新</string>
+    <!-- 设置左栏菜单的短名（2026-10-08）：正文里提到这些页面仍用全称 -->
+    <string name="set_nav_back_to_recording">返回主界面</string>
+    <string name="set_nav_developer">开发者选项</string>
+    <string name="set_nav_update">检查更新</string>
     <string name="set_check_update_summary">当前版本 %1$s</string>
     <string name="set_update_beta_title">接收 Beta 版</string>
     <string name="set_update_beta_summary">关闭后，仅检查正式版</string>
     <string name="upd_none_release">未找到可安装的正式版</string>
     <string name="set_section_recording">录制</string>
+    <string name="set_cat_stream">视频流</string>
+    <string name="set_cat_auto_record">自动录制</string>
+    <string name="set_cat_photo_stamp">照片与水印</string>
     <string name="set_section_storage">存储</string>
     <string name="set_section_rearview">超级后视镜</string>
     <string name="set_section_floating">悬浮按钮</string>
@@ -104,9 +111,9 @@
     <string name="set_auto_record_title">启动自动录制</string>
     <string name="set_auto_record_summary">应用启动时自动开始录制，因熄屏停止的录制在亮屏后自动恢复；手动停止后不再自动开始</string>
     <string name="set_drive_auto_start_title">上车自动开录</string>
-    <string name="set_drive_auto_start_summary">坐上主驾座位就开始录制（车在 P 挡），坐着不开走也录；换出 P 挡或应用在开车途中才起来时也会开。不用开着应用界面。这一趟你自己停过的，不会自动再开。</string>
+    <string name="set_drive_auto_start_summary">坐上主驾座位（P 挡）、换出 P 挡，或应用在行驶途中启动时开始录制，无需打开应用界面。本次行程中手动停止过的，不再自动开始。</string>
     <string name="set_drive_auto_stop_title">下车自动停录</string>
-    <string name="set_drive_auto_stop_summary">挂着 P、主驾座位空了 30 秒，或者开着哨兵模式锁了车，就停止录制，把相机让给哨兵模式。人坐在车里不会停。</string>
+    <string name="set_drive_auto_stop_summary">车在 P 挡且主驾座位空置 30 秒，或锁车后哨兵模式布防时停止录制，相机交给哨兵模式。人在车内不会停止。</string>
     <string name="msg_left_car_stopped">已下车，录制已停止</string>
     <string name="set_screen_off_title">熄屏录制（阻止休眠）</string>
     <string name="set_screen_off_summary">熄屏时若正在录制，继续录制并阻止车机休眠，最长为下方设定的时长</string>
@@ -634,6 +641,7 @@
     <string name="status_storage_none">未检测到 U 盘</string>
     <string name="status_recording_fallback">已改为录制到 %1$s（%2$s 不可用）</string>
     <string name="status_camera_taken">摄像头被占用，释放后自动继续录制</string>
+    <string name="preview_no_picture">未收到环视画面</string>
     <string name="status_internal_storage">内置存储</string>
     <string name="nav_group_switches">开关</string>
 

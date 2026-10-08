@@ -2785,6 +2785,43 @@ public class MainActivity extends AppCompatActivity {
         // 录像那一项由协调器登记（在录、在等环视都算），这里不替它填
         // 关不关由相机层按登记表判（没人要 1.5 秒后关），这里不再自己关
         com.kooo.evcam.camera.CameraNeeds.current().release(com.kooo.evcam.camera.CameraNeeds.Holder.PREVIEW);
+        noPictureHandler.removeCallbacks(noPictureTick);
+    }
+
+    // ------------------------------------------------------------------ 没有画面时的说明
+
+    /** 回到前台之后先给相机这么久出第一帧，才说「没有画面」—— 正常打开要一两秒。 */
+    private static final long NO_PICTURE_GRACE_MS = 4_000L;
+    /** 多久没来一帧算「没有画面」。 */
+    private static final long NO_PICTURE_AFTER_MS = 3_000L;
+    private final android.os.Handler noPictureHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private long previewShownSinceMs;
+    private final Runnable noPictureTick = new Runnable() {
+        @Override
+        public void run() {
+            updateNoPicture();
+            noPictureHandler.postDelayed(this, 1_000L);
+        }
+    };
+
+    /**
+     * 环视一直没来帧（相机卡住、被相机服务拒绝）：画面区盖一层「未收到环视画面」，
+     * 不再是一片空白加四个浮着的角标（CAMCORDER 2026-10-08）。来帧了就收起。
+     * 只说现象，不替人下结论（项目拥有者 2026-10-06：不提示重启车机）。
+     */
+    private void updateNoPicture() {
+        View overlay = findViewById(R.id.tv_no_picture);
+        if (overlay == null) {
+            return;
+        }
+        SingleCamera surround = cameraManager != null
+                ? cameraManager.getCamera(com.kooo.evcam.camera.CameraSlots.KEY_SURROUND) : null;
+        boolean frames = surround != null && surround.hasFramesWithin(NO_PICTURE_AFTER_MS);
+        boolean settling = android.os.SystemClock.uptimeMillis() - previewShownSinceMs < NO_PICTURE_GRACE_MS;
+        int want = frames || settling ? View.GONE : View.VISIBLE;
+        if (overlay.getVisibility() != want) {
+            overlay.setVisibility(want);
+        }
     }
 
     @Override
@@ -2843,6 +2880,9 @@ public class MainActivity extends AppCompatActivity {
         boolean wasInBackground = isInBackground;
         isInBackground = false;
         com.kooo.evcam.camera.StallWatch.setForeground(true);
+        previewShownSinceMs = android.os.SystemClock.uptimeMillis();
+        noPictureHandler.removeCallbacks(noPictureTick);
+        noPictureHandler.post(noPictureTick);
         AppLog.i(TAG, "onResume " + instanceTag() + " surround: " + describeComposite());
         
         AppLog.d(TAG, "onResume called, wasInBackground=" + wasInBackground + ", isRecording=" + isRecording);
