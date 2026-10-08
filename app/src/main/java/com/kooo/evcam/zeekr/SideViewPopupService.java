@@ -386,6 +386,9 @@ public class SideViewPopupService extends Service {
         restoreBufferSize(surfaceTexture);
         camera.setMainFloatingSurface(new Surface(surfaceTexture), surfaceTexture);
         boolean wasOpen = camera.isCameraOpened();
+        // 后台的相机只有前台服务在才稳稳给；录像不在时没人为侧视拉它，下面的 whenReady 只是排队等
+        // （2026-10-08：不录像时侧视是空白的，开了录像才有画面）。放开时见 unbindCamera
+        CameraForegroundService.ensureRunning(this);
         if (wasOpen) {
             camera.recreateSession(false);
         } else {
@@ -412,6 +415,8 @@ public class SideViewPopupService extends Service {
     private void unbindCamera() {
         cancelRetry();
         CameraNeeds.current().release(CameraNeeds.Holder.SIDE_POPUP);
+        // 录像不用、保活没开，就让前台服务回去；录像在用就留着
+        CameraForegroundService.releaseWhenIdle(this);
         if (boundCamera != null) {
             // 槽位要是已经被超级后视镜接走了，就别动它 —— 摘掉的会是后视镜的画面
             if (boundCamera.getMainFloatingSurfaceTexture() == boundTexture) {

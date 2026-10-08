@@ -380,7 +380,8 @@ public class CameraForegroundService extends Service {
      * 每次停录都停一次、起一次，通知闪一下，冷启动的恢复再跑一遍。</p>
      */
     public static void stop(Context context) {
-        if (!UserExit.isExited(context) && new AppConfig(context).isKeepAliveEnabled()) {
+        if (com.kooo.evcam.recording.ForegroundLifetime.staysUpAfterStop(UserExit.isExited(context),
+                new AppConfig(context).isKeepAliveEnabled(), windowHoldsCamera())) {
             if (isForegroundReady) {
                 start(context, context.getString(R.string.notif_background_title),
                         context.getString(R.string.notif_tap_to_return));
@@ -392,4 +393,58 @@ public class CameraForegroundService extends Service {
         context.stopService(intent);
         AppLog.d(TAG, "Stopping foreground service");
     }
+
+    /**
+     * 侧视弹窗此刻占着相机。它用的是后台的相机，只有这个前台服务在才稳稳给。
+     * 超级后视镜（MIRROR）有同样的缺口，但它放开相机时没有对应的 releaseWhenIdle，
+     * 先不算进来，免得它先于录像放开之后通知一直留着。
+     */
+    private static boolean windowHoldsCamera() {
+        return com.kooo.evcam.camera.CameraNeeds.current()
+                .isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_POPUP);
+    }
+
+    /** 上一次为窗口去拉前台服务的时刻（开机起算）：被拒的话别每次绑相机都再试一遍、刷一屏黑匣子。 */
+    private static long lastEnsureAtMs;
+    private static final long ENSURE_RETRY_MS = 10_000L;
+
+    /**
+     * 窗口（侧视弹窗）要用相机：前台服务不在就拉起来。{@link #whenReady} 只是排队等它，
+     * 以前没有谁为窗口去拉，只有录像和「保持后台运行」会 —— 不录像时侧视弹窗就一直在等、或者被相机服务拒绝
+     * （2026-10-08：重启车机后第一次起步、之后每次上车都是这样，开了录像才好）。
+     * 用户退出后 {@link #start} 自己不会起。
+     */
+    public static void ensureRunning(Context context) {
+        if (isForegroundReady) {
+            return;
+        }
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (lastEnsureAtMs != 0 && now - lastEnsureAtMs < ENSURE_RETRY_MS) {
+            return;
+        }
+        lastEnsureAtMs = now;
+        com.kooo.evcam.blackbox.BlackBox.noteImportant("窗口要用相机，前台服务不在：拉起来");
+        start(context, context.getString(R.string.notif_background_title),
+                context.getString(R.string.notif_tap_to_return));
+    }
+
+    /**
+     * 窗口放开了相机：录像还在用（在录、在等、在收拾）就留着；其余按 {@link #stop} 的规矩
+     * （保活开着、别的窗口还占着、用户退出了，各有各的去留）。
+     */
+    public static void releaseWhenIdle(Context context) {
+        final Context app = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        // 缓几秒再看：换边时旧窗口的画面先销毁、新窗口随后就接上，马上停会停一次起一次、通知闪一下
+        releaseHandler.removeCallbacksAndMessages(null);
+        releaseHandler.postDelayed(() -> {
+            if (windowHoldsCamera()
+                    || com.kooo.evcam.recording.RecordingCoordinator.get(app).needsPipeline()) {
+                return;
+            }
+            stop(app);
+        }, RELEASE_GRACE_MS);
+    }
+
+    private static final Handler releaseHandler = new Handler(Looper.getMainLooper());
+    private static final long RELEASE_GRACE_MS = 5_000L;
 }

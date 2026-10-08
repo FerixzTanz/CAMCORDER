@@ -22,6 +22,11 @@ attempt to start recording fails), the app now backs off instead of retrying all
 - The app listens to the camera service from the moment it starts, so the 2.10.3 safeguards (don't
   start on a camera the car has dropped, wait for the car's own cameras to go quiet) also work
   right after the app launches.
+- The turn-signal side view no longer depends on recording. It was blank unless a recording was running,
+  and turning recording off while driving took its picture away: the camera is only available in the
+  background while the app's camera service is running, and only recording started it. The side view
+  now starts it when it takes the camera and lets it go a few seconds after it is done, unless a
+  recording or Keep running in background needs it. A notification shows while it runs.
 - A recording that fails to start no longer leaves empty 0 B video files.
 - Diagnostics name this stuck state and show who holds each camera from the start. When the camera
   service refuses to open a camera ("disabled by policy"), they also record gear, speed and the app's
