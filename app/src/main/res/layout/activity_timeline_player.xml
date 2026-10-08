@@ -403,6 +403,16 @@
                         android:text="@string/action_lock_footage"
                         android:visibility="gone" />
 
+                    <!-- 保存片段（2.10.8）：此刻前后各 15 秒抄成一个普通 MP4，存到 EVCam_Clips，然后可以发到手机 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/timeline_save_clip"
+                        style="@style/Widget.Cam.RailSmall"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:text="@string/action_save_clip" />
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/timeline_send"
                         style="@style/Widget.Cam.RailSmall"

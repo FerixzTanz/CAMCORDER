@@ -36,6 +36,10 @@ commit message, not here.
   as dots on the bar under the timeline, so you can jump straight to them. Older recordings without
   drive information are grouped as before, joining gaps of up to 3 minutes. You can turn this off
   under Settings → Storage ("Group videos by drive").
+- In playback, when one camera fills the screen, swipe left or right to move to the next camera.
+- New "Save clip" button in playback: saves 15 seconds before and after the current moment as a normal
+  video in DCIM/EVCam_Clips (instantly, at full quality, and never deleted by automatic cleanup), then
+  offers to send it to your phone.
 
 ## [2.10.7-beta] - 2026-10-08
 

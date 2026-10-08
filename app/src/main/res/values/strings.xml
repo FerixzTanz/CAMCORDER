@@ -563,6 +563,11 @@
 
     <!-- 发送到手机 -->
     <string name="action_send_to_phone">发送到手机</string>
+    <string name="action_save_clip">保存片段</string>
+    <string name="msg_clip_saving">正在保存此刻前后 15 秒…</string>
+    <string name="msg_clip_saved">片段已保存：%1$s</string>
+    <string name="msg_clip_failed">片段没能保存</string>
+    <string name="clip_share_note">此刻前后约 30 秒的片段，已存到 DCIM/EVCam_Clips，不会被自动清理。</string>
     <string name="share_phone_title">发送到手机</string>
     <string name="share_phone_steps">用手机扫描二维码 → 浏览器打开该文件 → 长按图片或视频并保存</string>
     <string name="share_phone_steps_file">用手机扫描二维码 → 浏览器打开下载页 → 点击「下载」保存到手机</string>

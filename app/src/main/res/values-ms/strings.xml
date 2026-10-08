@@ -554,6 +554,11 @@
 
     <!-- Hantar ke telefon -->
     <string name="action_send_to_phone">Hantar ke telefon</string>
+    <string name="action_save_clip">Simpan klip</string>
+    <string name="msg_clip_saving">Menyimpan 15 saat sebelum dan selepas…</string>
+    <string name="msg_clip_saved">Klip disimpan: %1$s</string>
+    <string name="msg_clip_failed">Klip tidak dapat disimpan</string>
+    <string name="clip_share_note">Kira-kira 30 saat sekitar detik ini, disimpan ke DCIM/EVCam_Clips. Pembersihan automatik tidak memadamnya.</string>
     <string name="share_phone_title">Hantar ke telefon</string>
     <string name="share_phone_steps">Imbas kod QR dengan telefon → fail dibuka dalam pelayar → tekan lama dan pilih Simpan</string>
     <string name="share_phone_steps_file">Imbas kod QR dengan telefon → halaman muat turun dibuka → ketik Muat turun untuk menyimpan fail</string>

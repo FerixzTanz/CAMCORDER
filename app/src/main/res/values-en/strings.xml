@@ -565,6 +565,11 @@
 
     <!-- Send to phone -->
     <string name="action_send_to_phone">Send to phone</string>
+    <string name="action_save_clip">Save clip</string>
+    <string name="msg_clip_saving">Saving 15 seconds before and after…</string>
+    <string name="msg_clip_saved">Clip saved: %1$s</string>
+    <string name="msg_clip_failed">Couldn\'t save the clip</string>
+    <string name="clip_share_note">About 30 seconds around this moment, saved to DCIM/EVCam_Clips. Automatic cleanup doesn\'t delete it.</string>
     <string name="share_phone_title">Send to phone</string>
     <string name="share_phone_steps">Scan the QR code with your phone → the file opens in the browser → long-press it and choose Save</string>
     <string name="share_phone_steps_file">Scan the QR code with your phone → the download page opens → tap Download to save the file</string>
