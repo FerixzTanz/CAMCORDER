@@ -1007,6 +1007,18 @@ public class CodecVideoRecorder {
         }
         segmentHandler = null;
 
+        // 开录没走到底就放掉（会话没配上、一路都没起来）：prepareRecording 里建好的那个空文件没人收，
+        // 2026-10-08 导出时目录里留着三个 0 B 的 .mp4，播放列表里点开就是「解析失败」。
+        // 只收一帧都没录过的；录过的走停录那一条，那里已经验过了
+        if (recordedFrameCount == 0 && !recordedFilePaths.isEmpty()) {
+            List<String> removed = validateAndCleanupAllFiles();
+            if (!removed.isEmpty()) {
+                AppLog.w(TAG, "Camera " + cameraId + " removed " + removed.size()
+                        + " empty file(s) from a recording that never started: " + removed);
+            }
+            recordedFilePaths.clear();
+        }
+
         AppLog.d(TAG, "Camera " + cameraId + " CodecVideoRecorder released");
     }
 

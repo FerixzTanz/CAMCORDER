@@ -142,6 +142,46 @@ public class CameraLivenessTest {
                         now + 12 * CameraLiveness.COOL_OFF_MS));
     }
 
+    /**
+     * 2026-10-08 的现场：相机服务卡死时设备总能重新打开，重开一次就刷新一次「动静」，
+     * 画面却始终不稳。以前这会把攒下的次数和轮数清零，所以重开从没数过第三次、
+     * 「彻底停手」永远走不到，一个上午捶了几十轮。
+     */
+    @Test
+    public void aReopenThatNeverYieldsSteadyFramesStillCountsTowardsStopping() {
+        long now = 10_000;
+        int guard = 0;
+        while (!state.stopped() && guard++ < 100) {
+            // 该救就救
+            CameraLiveness.step(state, true, false, CameraLiveness.STUCK_MS, now);
+            // 救完设备总能重新打开：刚有动静，但画面不稳 —— 这一下不该清零，也不该再动手
+            int before = state.attempts();
+            int cycles = state.cycles();
+            assertEquals(CameraLiveness.Action.NONE,
+                    CameraLiveness.step(state, true, false, 0, now + 50));
+            assertEquals("重开成功不能清掉失败次数", before, state.attempts());
+            assertEquals("也不能清掉轮数", cycles, state.cycles());
+            now += state.gaveUp() ? CameraLiveness.COOL_OFF_MS : CameraLiveness.RETRY_GAP_MS;
+        }
+        assertTrue("该走到彻底停手", state.stopped());
+        assertEquals(CameraLiveness.MAX_CYCLES, state.cycles());
+    }
+
+    /** 画面真的稳了，才把前面的失败一笔勾销。 */
+    @Test
+    public void onlySteadyFramesWipeTheFailures() {
+        CameraLiveness.step(state, true, false, CameraLiveness.STUCK_MS, 10_000);
+        CameraLiveness.step(state, true, false, CameraLiveness.STUCK_MS,
+                10_000 + CameraLiveness.RETRY_GAP_MS);
+        assertEquals(2, state.attempts());
+
+        assertEquals(CameraLiveness.Action.NONE, CameraLiveness.step(state, true, false, 0, 30_000));
+        assertEquals("刚有动静不算好了", 2, state.attempts());
+
+        assertEquals(CameraLiveness.Action.NONE, CameraLiveness.step(state, true, true, 0, 31_000));
+        assertEquals(0, state.attempts());
+    }
+
     /** 兜底的门槛必须明显宽于 SingleCamera 自己那套，否则两层会抢着动手。 */
     @Test
     public void thresholdStaysWellAboveTheInnerRecovery() {

@@ -289,7 +289,7 @@ public class MultiCameraManager {
             // 有人要画面就盯着 —— 包括「打开发出去了、一直没回音」的那种（以前靠前台服务每 10 秒
             // 一次的修复循环兜着，那个循环会把退避和放弃全部作废，1.62.0 删了）
             boolean watch = camera.wantsFrames();
-            CameraLiveness.Action action = CameraLiveness.step(state, watch, age, now);
+            CameraLiveness.Action action = CameraLiveness.step(state, watch, camera.hasRecoveredFeed(), age, now);
             if (action == CameraLiveness.Action.RESET) {
                 if (state.attempts() == 1 && camera.isConnected()) {
                     // 第一次先只重建会话（便宜、快）；再不行才重开相机。
@@ -2684,16 +2684,16 @@ public class MultiCameraManager {
         return keys;
     }
 
-    /** 环视此刻出画面到多久以内算「正常」。 */
-    private static final long SURROUND_FRESH_MS = 2_000L;
-
     /**
      * 环视此刻是不是在正常出画面 —— 「能获得视频流」以环视为准（规格 §2.2）。
      * 开录、接回都只看它（RecordingCoordinator）。
+     *
+     * <p>「正常」是最近两秒稳稳地来帧（{@link FeedSteadiness}），不是来过一帧：相机服务卡死时
+     * 环视一秒一帧地爬，只看有没有帧会一直答「有」（10-07 晚到 10-08 上午六次开录都栽在这上面）。</p>
      */
     public boolean surroundHealthy() {
         SingleCamera surround = getCamera(CameraSlots.KEY_SURROUND);
-        if (surround == null || !surround.isCameraOpened() || !surround.hasFramesWithin(SURROUND_FRESH_MS)) {
+        if (surround == null || !surround.isCameraOpened() || !surround.hasSteadyFrames()) {
             return false;
         }
         // 相机服务已经说这一路空了，我们手里的就是死的：别在它上面开录（CAMCORDER 2026-10-07：

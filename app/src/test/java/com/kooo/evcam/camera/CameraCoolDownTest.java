@@ -25,6 +25,18 @@ public class CameraCoolDownTest {
         assertEquals(SingleCamera.COOL_DOWN_MS, CameraCoolDown.delayAfterError(times, 70_000L));
     }
 
+    /** 连着冷却：15、30、60、120 秒，封顶；不再是每轮固定 15 秒。 */
+    @Test
+    public void eachCoolDownRoundLastsLongerUpToACap() {
+        assertEquals(15_000L, CameraCoolDown.coolDownForRound(1));
+        assertEquals(30_000L, CameraCoolDown.coolDownForRound(2));
+        assertEquals(60_000L, CameraCoolDown.coolDownForRound(3));
+        assertEquals(120_000L, CameraCoolDown.coolDownForRound(4));
+        assertEquals("封顶，不再往上翻", 120_000L, CameraCoolDown.coolDownForRound(5));
+        assertEquals(120_000L, CameraCoolDown.coolDownForRound(500));
+        assertEquals("不会比第一轮还短", SingleCamera.COOL_DOWN_MS, CameraCoolDown.coolDownForRound(0));
+    }
+
     @Test
     public void oldErrorsDropOutOfTheWindow() {
         ArrayDeque<Long> times = new ArrayDeque<>();

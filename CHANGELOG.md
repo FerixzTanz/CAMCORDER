@@ -11,6 +11,31 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.4-beta] - 2026-10-08
+
+When the car's 360 camera service gets stuck (the feed crawls at about one frame per second and every
+attempt to start recording fails), the app now backs off instead of retrying all morning:
+
+- Recording only starts on a steady 360 feed, at least 3 frames per second. A feed that trickles in
+  no longer counts as healthy, so the app keeps waiting instead of failing three starts in a row
+  and giving up.
+- The app stops poking a stuck camera. Pauses between reconnects grow from 15 seconds to 30, 60 and
+  then 2 minutes, and the camera watchdog now really stops after a few rounds. Before, every
+  successful reopen reset both, so it kept retrying every 20 seconds or so for as long as the app
+  was open. The camera counts as recovered only after 10 seconds of steady frames.
+- The app listens to the camera service from the moment it starts, so the 2.10.3 safeguards (don't
+  start on a camera the car has dropped, wait for the car's own cameras to go quiet) also work
+  right after the app launches.
+- The turn-signal side view no longer depends on recording. It was blank unless a recording was
+  running, and turning recording off while driving took its picture away: the camera is only available in the
+  background while the app's camera service is running, and only recording started it. The side view
+  now starts it when it takes the camera and lets it go a few seconds after it is done, unless a
+  recording or Keep running in background needs it. A notification shows while it runs.
+- A recording that fails to start no longer leaves empty 0 B video files.
+- Diagnostics name this stuck state and show who holds each camera from the start. When the camera
+  service refuses to open a camera ("disabled by policy"), they also record gear, speed and the app's
+  state at that moment, and when it starts working again.
+
 ## [2.10.3-beta] - 2026-10-07
 
 Fixes the 360 camera freezing after getting in (seen twice): recording started, then the camera

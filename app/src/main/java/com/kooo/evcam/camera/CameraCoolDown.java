@@ -12,8 +12,23 @@ import java.util.Deque;
 public final class CameraCoolDown {
 
     static final long NORMAL_DELAY_MS = 8_000L;
+    /** 连着冷却时，一轮比一轮放开得久，最久放开这么久。 */
+    static final long MAX_COOL_DOWN_MS = 120_000L;
 
     private CameraCoolDown() {
+    }
+
+    /**
+     * 连着冷却的第 {@code round} 轮（从 1 数）该放开多久：15、30、60、120 秒，封顶。
+     *
+     * <p>一直没稳定出过画面，再勤地重开也只是不停地打扰已经卡住的相机服务
+     * （zeekr-platform-notes §3.1.1「不要一直捶」）。2026-10-08 的现场是每 22 秒一轮，
+     * 五分钟里十几轮，应用重启后又从头来 —— 因为设备「打开成功」就把轮数清零，而卡住时设备总是能打开的。
+     * 现在只有稳稳地出了画面才清零（{@code SingleCamera}）。</p>
+     */
+    public static long coolDownForRound(int round) {
+        int doublings = Math.min(Math.max(round, 1) - 1, 3);
+        return Math.min(SingleCamera.COOL_DOWN_MS << doublings, MAX_COOL_DOWN_MS);
     }
 
     /**

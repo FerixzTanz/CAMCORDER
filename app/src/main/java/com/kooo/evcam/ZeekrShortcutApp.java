@@ -53,6 +53,10 @@ public class ZeekrShortcutApp extends Application {
         }
         Languages.apply(new AppConfig(this).getLanguageMode());
         StallWatch.start(this);
+        // 相机服务眼里每一路空不空：进程一起就听。以前只在前台服务起来时才听，而开录的决定
+        // （环视有没有被放掉、原厂是不是刚用完相机）恰恰在前台服务起来之前做 —— 新起的进程里
+        // 这两道闸都是瞎的（2026-10-08 上午那几次开录都在新起的进程里）
+        com.kooo.evcam.camera.CameraAvailabilityWatch.startAsync(this);
         // 录像跟着车走（CAMCORDER）：活在进程上，主界面在不在都听挡位和主驾座位
         com.kooo.evcam.recording.DriveSessionWatcher.get(this).apply();
     }
