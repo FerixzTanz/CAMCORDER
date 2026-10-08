@@ -476,7 +476,10 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             final List<com.kooo.evcam.storage.DriveRecords.Drive> drives =
                     com.kooo.evcam.storage.DriveLog.read(StorageHelper.getVideoDir(getApplicationContext()));
             final DriveGrouping grouping = new DriveGrouping(drives);
-            final List<RecordingTimeline.Session> built = RecordingTimeline.build(sources, grouping);
+            // 关了「按行程分组」：按以前的规矩，录像连着才算一条（里程、事件照样按落在哪一趟算）
+            final boolean byDrive = new com.kooo.evcam.AppConfig(getApplicationContext()).isGroupByDriveEnabled();
+            final List<RecordingTimeline.Session> built = byDrive
+                    ? RecordingTimeline.build(sources, grouping) : RecordingTimeline.build(sources);
             final double[] km = new double[built.size()];
             final List<long[]> markers = new ArrayList<>();
             for (int i = 0; i < built.size(); i++) {

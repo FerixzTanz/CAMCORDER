@@ -374,6 +374,10 @@
     <string name="dlg_footage_lock_off_ok">Turn off</string>
     <string name="set_footage_lock_flash_title">Lock footage on flash-to-pass</string>
     <string name="set_footage_lock_flash_summary">While recording, flash the high beams to lock the clips covering 10 seconds before and after, on every camera. If locked footage fills the space, recording stops.</string>
+    <string name="set_still_save_title">Save space when stopped</string>
+    <string name="set_still_save_summary">After 5 seconds stopped, recording drops to 15 fps and a lower bitrate, and goes back to full rate as soon as you move</string>
+    <string name="set_group_by_drive_title">Group videos by drive</string>
+    <string name="set_group_by_drive_summary">One entry from getting in to leaving the car, even if recording was interrupted or the screen went off, with the distance driven and events like hard braking</string>
     <string name="set_footage_lock_brake_title">Lock footage on hard braking</string>
     <string name="set_footage_lock_brake_summary" formatted="false">While recording, a hard stop (including the car\'s automatic emergency braking) locks the clips covering 10 seconds before and after. Automatic locks use at most 10% of the recording space; the oldest is released first.</string>
     <string name="msg_flash_locked">Flash-to-pass: locked the clips covering 10 seconds before and after</string>

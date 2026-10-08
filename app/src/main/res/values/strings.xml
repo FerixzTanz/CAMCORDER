@@ -381,6 +381,10 @@
     <string name="dlg_footage_lock_off_ok">关闭</string>
     <string name="set_footage_lock_flash_title">闪远光时自动锁定当前录像</string>
     <string name="set_footage_lock_flash_summary">录制时闪远光，自动锁定此刻前后 10 秒所在的录像片段（每一路画面）。锁定的录像占满空间时停止录制。</string>
+    <string name="set_still_save_title">停车时省空间</string>
+    <string name="set_still_save_summary">车停稳 5 秒后录像降到 15 fps、码率随之降低，一开动立刻恢复</string>
+    <string name="set_group_by_drive_title">回放按行程分组</string>
+    <string name="set_group_by_drive_summary">从上车到下车算一趟：中途录像断开、停车熄屏都还是同一条，并显示行驶里程和急刹车等事件</string>
     <string name="set_footage_lock_brake_title">急刹车时自动锁定当前录像</string>
     <string name="set_footage_lock_brake_summary" formatted="false">录制时急刹车（包括车辆自动紧急制动），自动锁定此刻前后 10 秒所在的录像片段。自动锁定最多占录像空间的 10%，超出时先放开最早的。</string>
     <string name="msg_flash_locked">闪远光：已锁定前后 10 秒所在的录像片段</string>

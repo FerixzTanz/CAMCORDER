@@ -372,6 +372,10 @@
     <string name="dlg_footage_lock_off_ok">Matikan</string>
     <string name="set_footage_lock_flash_title">Kunci rakaman semasa kelip lampu tinggi</string>
     <string name="set_footage_lock_flash_summary">Semasa merakam, kelipkan lampu tinggi untuk mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas, pada setiap kamera. Jika rakaman yang dikunci memenuhi ruang, rakaman berhenti.</string>
+    <string name="set_still_save_title">Jimat ruang semasa berhenti</string>
+    <string name="set_still_save_summary">Selepas berhenti 5 saat, rakaman turun ke 15 fps dan kadar bit lebih rendah, dan kembali penuh sebaik sahaja kereta bergerak</string>
+    <string name="set_group_by_drive_title">Kumpulkan video mengikut perjalanan</string>
+    <string name="set_group_by_drive_summary">Satu entri dari masuk hingga keluar kereta, walaupun rakaman terganggu atau skrin padam, dengan jarak dipandu dan peristiwa seperti brek mengejut</string>
     <string name="set_footage_lock_brake_title">Kunci rakaman semasa brek mengejut</string>
     <string name="set_footage_lock_brake_summary" formatted="false">Semasa merakam, brek mengejut (termasuk brek kecemasan automatik kereta) mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas. Kuncian automatik menggunakan paling banyak 10% ruang rakaman; yang paling lama dilepaskan dahulu.</string>
     <string name="msg_flash_locked">Kelip lampu tinggi: klip yang meliputi 10 saat sebelum dan selepas telah dikunci</string>

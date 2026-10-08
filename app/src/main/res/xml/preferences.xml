@@ -45,6 +45,12 @@
             android:key="pref_profile_editor"
             android:title="@string/set_profile_editor_title"
             android:summary="@string/set_profile_editor_summary" />
+
+        <!-- 停车省空间（2.10.8，默认开）：MultiCameraManager 的停稳降帧看它 -->
+        <SwitchPreferenceCompat
+            android:key="pref_still_save"
+            android:title="@string/set_still_save_title"
+            android:summary="@string/set_still_save_summary" />
         </PreferenceCategory>
 
         <PreferenceCategory
@@ -166,6 +172,12 @@
             android:dependency="pref_footage_lock"
             android:title="@string/set_footage_lock_brake_title"
             android:summary="@string/set_footage_lock_brake_summary" />
+
+        <!-- 回放按一趟一趟分（2.10.8，默认开）：TimelinePlayerActivity 看它 -->
+        <SwitchPreferenceCompat
+            android:key="pref_group_by_drive"
+            android:title="@string/set_group_by_drive_title"
+            android:summary="@string/set_group_by_drive_summary" />
 
         <Preference
             android:key="pref_footage_locked"

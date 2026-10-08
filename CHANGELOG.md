@@ -22,7 +22,8 @@ commit message, not here.
   Balanced / Sharpest choice and the frame rate and bitrate controls are gone from normal settings
   (they stay under Developer options), and existing profiles move to the new quality on their own.
 - When the car has been stopped for 5 seconds, recording drops to 15 fps at about 10 Mbps, and goes
-  back to full rate as soon as you move, so traffic lights and queues take less space.
+  back to full rate as soon as you move, so traffic lights and queues take less space. You can turn
+  this off under Settings → Recording ("Save space when stopped").
 - Hard braking locks footage automatically: a hard stop above 25 km/h (or the car's own emergency
   braking) locks the clips covering 10 seconds before and after, like flash-to-pass. It's on by
   default under Settings → Storage. Automatic locks use at most 10% of the recording space, and the
@@ -33,7 +34,8 @@ commit message, not here.
   the car, so a recording that was interrupted and resumed, or a stop with the screen off, stays one
   entry instead of several. Each entry shows how far you drove. Hard braking and flash-to-pass show
   as dots on the bar under the timeline, so you can jump straight to them. Older recordings without
-  drive information are grouped as before, joining gaps of up to 3 minutes.
+  drive information are grouped as before, joining gaps of up to 3 minutes. You can turn this off
+  under Settings → Storage ("Group videos by drive").
 
 ## [2.10.7-beta] - 2026-10-08
 

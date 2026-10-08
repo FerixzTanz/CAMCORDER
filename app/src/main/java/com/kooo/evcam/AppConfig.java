@@ -27,6 +27,8 @@ public class AppConfig {
     private static final String KEY_AUTO_START_RECORDING = "auto_start_recording";  // 启动自动录制
     private static final String KEY_DRIVE_AUTO_START = "drive_auto_start";  // CAMCORDER：换出 P 挡自动开录
     private static final String KEY_DRIVE_AUTO_STOP = "drive_auto_stop";  // CAMCORDER：下车自动停录
+    private static final String KEY_STILL_SAVE = "record_still_save";  // 停车时省空间（15 fps、低码率，2.10.8）
+    private static final String KEY_GROUP_BY_DRIVE = "playback_group_by_drive";  // 回放按一趟一趟分（2.10.8）
     private static final String KEY_SCREEN_OFF_RECORDING = "screen_off_recording";  // 息屏录制（锁车录制）
     private static final String KEY_SCREEN_OFF_KEEP_RECORDING = "screen_off_keep_recording";  // 熄屏持续录制
     private static final String KEY_FOOTAGE_LOCK = "footage_lock";  // 锁定影像
@@ -307,6 +309,24 @@ public class AppConfig {
     /** 下车自动停录（DriveSession），默认开（用户 2026-10-07）。 */
     public boolean isDriveAutoStop() {
         return prefs.getBoolean(KEY_DRIVE_AUTO_STOP, true);
+    }
+
+    /** 车停稳 5 秒后录像降到 15 fps、码率跟着降（录制页，默认开）。关了一直按原帧率录。 */
+    public boolean isStillSaveEnabled() {
+        return prefs.getBoolean(KEY_STILL_SAVE, true);
+    }
+
+    public void setStillSaveEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_STILL_SAVE, enabled).apply();
+    }
+
+    /** 回放按行车日志一趟一趟分（存储页，默认开）。关了按以前的规矩：录像连着才算一条。 */
+    public boolean isGroupByDriveEnabled() {
+        return prefs.getBoolean(KEY_GROUP_BY_DRIVE, true);
+    }
+
+    public void setGroupByDriveEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_GROUP_BY_DRIVE, enabled).apply();
     }
 
     public void setDriveAutoStop(boolean on) {

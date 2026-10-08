@@ -169,6 +169,10 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setDriveAutoStop(value);
             com.kooo.evcam.recording.DriveSessionWatcher.get(requireContext()).apply();
         });
+        // 停车省空间：录着的时候改也立刻生效（MultiCameraManager 每半秒看一次）
+        bindSwitch("pref_still_save", appConfig.isStillSaveEnabled(), appConfig::setStillSaveEnabled);
+        // 回放下次打开时按新的分
+        bindSwitch("pref_group_by_drive", appConfig.isGroupByDriveEnabled(), appConfig::setGroupByDriveEnabled);
 
         bindSwitch("pref_photo_via_jpeg", appConfig.isPhotoViaJpegEnabled(),
                 enabled -> {

@@ -1225,6 +1225,8 @@ public class MultiCameraManager {
     private static final long STILL_TICK_MS = 500L;
     private final StillDetector stillDetector = new StillDetector();
     private boolean stillWatching;
+    /** 录制器此刻是不是在停稳降帧（开关关了时检测器可能说停稳了，但没降）。主线程。 */
+    private boolean stillApplied;
 
     /** 录上了：开始看车速，停稳 5 秒降到 15 fps、码率跟着降，开起来立刻回去（2.10.8）。 */
     private void startStillWatch() {
@@ -1234,6 +1236,7 @@ public class MultiCameraManager {
             }
             stillWatching = true;
             stillDetector.reset();
+            stillApplied = false;
             com.kooo.evcam.telemetry.Telemetry.get().acquire(context, STILL_USER);
             mainHandler.removeCallbacks(stillTick);
             mainHandler.postDelayed(stillTick, STILL_TICK_MS);
@@ -1258,22 +1261,23 @@ public class MultiCameraManager {
             if (!stillWatching) {
                 return;
             }
-            boolean was = stillDetector.isStill();
+            boolean was = stillApplied;
             boolean now = stillDetector.update(android.os.SystemClock.elapsedRealtime(),
-                    com.kooo.evcam.telemetry.Telemetry.get().latest().speedKmh);
+                    com.kooo.evcam.telemetry.Telemetry.get().latest().speedKmh)
+                    && new com.kooo.evcam.AppConfig(context).isStillSaveEnabled();
             if (now != was) {
                 List<CodecVideoRecorder> current;
                 try {
                     current = new ArrayList<>(codecRecorders.values());
                 } catch (RuntimeException e) {
-                    // 录制器正在别的线程上换：下一拍再来，状态别记成已切
-                    stillDetector.reset();
+                    // 录制器正在别的线程上换：下一拍再来（stillApplied 没改，下一拍还会再切）
                     mainHandler.postDelayed(this, STILL_TICK_MS);
                     return;
                 }
                 for (CodecVideoRecorder recorder : current) {
                     recorder.setStill(now);
                 }
+                stillApplied = now;
                 com.kooo.evcam.blackbox.BlackBox.note(now ? "车停稳了：录像降到 15 fps" : "车开起来了：录像回到原帧率");
             }
             mainHandler.postDelayed(this, STILL_TICK_MS);
