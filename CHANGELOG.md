@@ -11,6 +11,17 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.10.5-beta] - 2026-10-08
+
+- Recording starts right away when you get in, instead of after about two minutes. The camera
+  service refuses the 360 camera to an app in the background unless the app's camera service is
+  running, and that service only started once recording had begun, while recording waited for the
+  360 camera. Nothing moved until something else woke it up. The service now starts as soon as
+  recording is waiting for the camera.
+- The turn-signal side view now also works in those first two minutes. While recording was waiting,
+  the side view held back from taking the camera and skipped starting the camera service too. It now
+  starts the service either way.
+
 ## [2.10.4-beta] - 2026-10-08
 
 When the car's 360 camera service gets stuck (the feed crawls at about one frame per second and every

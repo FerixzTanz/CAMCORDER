@@ -404,28 +404,36 @@ public class CameraForegroundService extends Service {
                 .isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_POPUP);
     }
 
-    /** 上一次为窗口去拉前台服务的时刻（开机起算）：被拒的话别每次绑相机都再试一遍、刷一屏黑匣子。 */
+    /** 上一次为相机去拉前台服务的时刻（开机起算）：被拒的话别每次绑相机都再试一遍、刷一屏黑匣子。 */
     private static long lastEnsureAtMs;
     private static final long ENSURE_RETRY_MS = 10_000L;
 
     /**
-     * 窗口（侧视弹窗）要用相机：前台服务不在就拉起来。{@link #whenReady} 只是排队等它，
-     * 以前没有谁为窗口去拉，只有录像和「保持后台运行」会 —— 不录像时侧视弹窗就一直在等、或者被相机服务拒绝
-     * （2026-10-08：重启车机后第一次起步、之后每次上车都是这样，开了录像才好）。
-     * 用户退出后 {@link #start} 自己不会起。
+     * 后台要用相机（侧视弹窗、录像在等环视）：前台服务不在就拉起来。{@link #whenReady} 只是排队等它。
+     *
+     * <p>Android 12 起，后台的应用没有 camera 类型的前台服务，相机服务一律回 CAMERA_DISABLED
+     * （「disabled by policy」）。前台服务要在我们有窗口显示着的时候（录制悬浮按钮、侧视弹窗）起，
+     * 才拿得到用相机的资格。2026-10-08 两次上车都是：录像「等环视出画面」→ 相机被拒约两分钟 →
+     * 侧视弹窗看录像在等就不接相机、也就不拉服务 —— 前台服务要等环视出画面才起，环视要等前台服务才给，
+     * 谁都不先动。现在等环视的时候就起。</p>
+     *
+     * <p>用户退出后 {@link #start} 自己不会起。任何线程都能调。</p>
      */
-    public static void ensureRunning(Context context) {
-        if (isForegroundReady) {
-            return;
-        }
-        long now = android.os.SystemClock.elapsedRealtime();
-        if (lastEnsureAtMs != 0 && now - lastEnsureAtMs < ENSURE_RETRY_MS) {
-            return;
-        }
-        lastEnsureAtMs = now;
-        com.kooo.evcam.blackbox.BlackBox.noteImportant("窗口要用相机，前台服务不在：拉起来");
-        start(context, context.getString(R.string.notif_background_title),
-                context.getString(R.string.notif_tap_to_return));
+    public static void ensureRunning(Context context, String why) {
+        final Context app = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        ensureHandler.post(() -> {
+            if (isForegroundReady) {
+                return;
+            }
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (lastEnsureAtMs != 0 && now - lastEnsureAtMs < ENSURE_RETRY_MS) {
+                return;
+            }
+            lastEnsureAtMs = now;
+            com.kooo.evcam.blackbox.BlackBox.noteImportant(why + "，前台服务不在：拉起来");
+            start(app, app.getString(R.string.notif_background_title),
+                    app.getString(R.string.notif_tap_to_return));
+        });
     }
 
     /**
@@ -446,5 +454,7 @@ public class CameraForegroundService extends Service {
     }
 
     private static final Handler releaseHandler = new Handler(Looper.getMainLooper());
+    /** 和 releaseHandler 分开：那边一排新的就把旧的全清掉，不能连带清掉还没跑的拉起。 */
+    private static final Handler ensureHandler = new Handler(Looper.getMainLooper());
     private static final long RELEASE_GRACE_MS = 5_000L;
 }
