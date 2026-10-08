@@ -701,6 +701,9 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         return true;
     }
 
+    /** 「保存片段」正在存（主线程读写）。 */
+    private boolean savingClip;
+
     /** 划多远才算换一路。 */
     private static final float SWIPE_DP = 60f;
 
@@ -1133,6 +1136,9 @@ public class TimelinePlayerActivity extends AppCompatActivity {
      * 存到 EVCam_Clips，存好后打开「发送到手机」。不重新编码，几秒钟。
      */
     private void saveClipHere() {
+        if (savingClip) {
+            return;   // 上一次还在存：连点不另起一个（审查 2026-10-08）
+        }
         Lane lane = expanded != null ? expanded : surround;
         if (sessions.isEmpty() || lane.track.isEmpty()) {
             Toast.makeText(this, R.string.share_phone_no_file, Toast.LENGTH_SHORT).show();
@@ -1148,9 +1154,11 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         final File outDir = com.kooo.evcam.playback.ClipExporter.clipsDir(
                 StorageHelper.getVideoDir(getApplicationContext()));
         Toast.makeText(this, R.string.msg_clip_saving, Toast.LENGTH_SHORT).show();
+        savingClip = true;
         new Thread(() -> {
             File saved = com.kooo.evcam.playback.ClipExporter.export(parts, moment, outDir, label);
             runOnUiThread(() -> {
+                savingClip = false;
                 if (isFinishing() || isDestroyed()) {
                     return;
                 }

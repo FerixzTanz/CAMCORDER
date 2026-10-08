@@ -1470,7 +1470,8 @@ public class AppConfig {
     public void setLicensePlate(String value) {
         String clean = LicensePlate.sanitize(value);
         prefs.edit().putString(KEY_LICENSE_PLATE, clean).apply();
-        AppLog.i(TAG, "车牌号设为 " + (clean.isEmpty() ? "（空）" : clean));
+        // 只记设没设、几个字：日志会进诊断报告（审查 2026-10-08）
+        AppLog.i(TAG, "车牌号" + (clean.isEmpty() ? "清空了" : "设了（" + clean.length() + " 字）"));
     }
 
     /**

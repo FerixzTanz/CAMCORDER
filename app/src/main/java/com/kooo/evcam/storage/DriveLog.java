@@ -99,10 +99,12 @@ public final class DriveLog {
      * @param gotIn 是上车 / 换出 P 挡开的：一定是新的一趟
      */
     public static void recordingStarted(Context context, boolean gotIn) {
-        final File dir = StorageHelper.getVideoDir(context);
+        final Context app = context.getApplicationContext();
         final Double odo = odometer();
         final long now = System.currentTimeMillis();
         IO.execute(() -> {
+            // 找录像目录会碰盘（查 U 盘、建目录）：放在自己的线程上，不卡主线程（审查 2026-10-08）
+            final File dir = StorageHelper.getVideoDir(app);
             if (!gotIn && DriveRecords.continuesLast(read(dir), now)) {
                 return;   // 接着上一趟
             }
@@ -112,12 +114,14 @@ public final class DriveLog {
 
     /** 人下车了（{@code DriveSessionWatcher}，主线程）：这一趟结束。没有开着的一趟就什么都不写。 */
     public static void driverLeft(Context context) {
-        final File dir = StorageHelper.getVideoDir(context);
+        final Context app = context.getApplicationContext();
         final Double odo = odometer();
         final long now = System.currentTimeMillis();
         IO.execute(() -> {
-            // 只结束「还算数」的那一趟：几小时前进程没了留下的那一趟没结束，这里补上结束会把它拉成好几天（审查 2026-10-08）
-            if (DriveRecords.continuesLast(read(dir), now)) {
+            final File dir = StorageHelper.getVideoDir(app);
+            // 只结束「还算数」的那一趟：很久以前进程没了留下的那一趟没结束，这里补上结束会把它拉成好几天（审查 2026-10-08）。
+            // 结束的门槛比「接着算」宽（24 小时）：开了 6 个小时以上的长途照样记得到结束、算得出里程
+            if (DriveRecords.closesLast(read(dir), now)) {
                 append(dir, "E " + now + " " + odoText(odo));
             }
         });
@@ -125,12 +129,12 @@ public final class DriveLog {
 
     /** 一件事（急刹车、闪远光锁定）。没有开着的一趟时也写：读的时候会丢掉，写的时候不用先读。 */
     public static void event(Context context, char type, double value) {
-        final File dir = StorageHelper.getVideoDir(context);
+        final Context app = context.getApplicationContext();
         final long now = System.currentTimeMillis();
         final String line = type == DriveRecords.Event.BRAKE
                 ? String.format(Locale.US, "%c %d %.2f", type, now, value)
                 : type + " " + now;
-        IO.execute(() -> append(dir, line));
+        IO.execute(() -> append(StorageHelper.getVideoDir(app), line));
     }
 
     private static Double odometer() {

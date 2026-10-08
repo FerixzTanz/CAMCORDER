@@ -169,6 +169,10 @@ public final class ArchiveFlow {
             if (!file.isFile()) {
                 continue;
             }
+            // 锁定清单、行车日志这些 .txt 不搬：目标盘上已有一份时会被覆盖（锁丢了）或者被当成「已经有了」删掉源的（审查 2026-10-08）
+            if (file.getName().endsWith(".txt") || file.getName().endsWith(".tmp")) {
+                continue;
+            }
             if (now - file.lastModified() < FRESH_MS) {
                 plan.skippedFresh++;
                 continue;

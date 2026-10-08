@@ -123,6 +123,18 @@ public final class DriveRecords {
     /** 没结束的一趟开始超过这么久，就不再「接着算」：多半是进程没了、没记到下车。 */
     static final long OPEN_DRIVE_MAX_MS = 6L * 60 * 60 * 1000;
 
+    /** 没结束的一趟开始超过这么久，下车时也不再给它补结束（多半是很久以前进程没了）。 */
+    static final long CLOSE_DRIVE_MAX_MS = 24L * 60 * 60 * 1000;
+
+    /** 人下车了：该不该给最后那一趟记上结束。 */
+    static boolean closesLast(List<Drive> drives, long nowMs) {
+        if (!lastIsOpen(drives)) {
+            return false;
+        }
+        long started = drives.get(drives.size() - 1).startMs;
+        return nowMs >= started && nowMs - started < CLOSE_DRIVE_MAX_MS;
+    }
+
     /** 这一刻开起来的录像该不该接着最后那一趟。 */
     static boolean continuesLast(List<Drive> drives, long nowMs) {
         if (!lastIsOpen(drives)) {

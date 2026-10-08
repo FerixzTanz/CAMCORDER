@@ -115,6 +115,12 @@ public class SettingsShellFragment extends Fragment {
         if (order >= 0) {
             currentOrder = order;
         }
+        // 换分区前先把二级界面（子页面、配置编辑…）退干净：不退的话标题和返回键还停在二级界面，
+        // 按返回会把旧分区叠到新分区上面（审查 2026-10-08；有了子页面以后常见了）
+        if (getChildFragmentManager().getBackStackEntryCount() > 0) {
+            getChildFragmentManager().popBackStackImmediate(null,
+                    androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        }
         Fragment next = SettingsPreferenceFragment.forSection(screenKey);
         Fragment shown = getChildFragmentManager().findFragmentById(R.id.settings_detail);
         if (shown != null && MotionPolicy.decorative(requireContext())) {

@@ -69,27 +69,34 @@ public final class ClipExporter {
         }
         long fromMs = momentMs - HALF_MS;
         long toMs = momentMs + HALF_MS;
-        String name = "clip_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(momentMs))
-                + "_" + label + ".mp4";
-        File out = new File(outDir, name);
+        String base = "clip_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(momentMs))
+                + "_" + label;
+        // 同一刻存两次不覆盖上一次的：加序号（审查 2026-10-08）
+        File out = new File(outDir, base + ".mp4");
+        for (int n = 2; out.exists() && n < 100; n++) {
+            out = new File(outDir, base + "_" + n + ".mp4");
+        }
+        // 先写到 .part，写完再改名：失败了只删自己的半截，不会碰到已经存好的片段
+        File part = new File(outDir, out.getName() + ".part");
         MediaMuxer muxer = null;
+        boolean started = false;
         boolean wrote = false;
         try {
-            muxer = new MediaMuxer(out.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            muxer = new MediaMuxer(part.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
             int track = -1;
             ByteBuffer firstCsd = null;
             long baseUs = Long.MIN_VALUE;
             long lastPtsUs = -1;
             ByteBuffer buffer = ByteBuffer.allocate(8 * 1024 * 1024);
             MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            for (Part part : parts) {
-                long partEnd = part.startEpochMs + part.durationMs;
-                if (partEnd <= fromMs || part.startEpochMs >= toMs) {
+            for (Part clip : parts) {
+                long partEnd = clip.startEpochMs + clip.durationMs;
+                if (partEnd <= fromMs || clip.startEpochMs >= toMs) {
                     continue;
                 }
                 MediaExtractor extractor = new MediaExtractor();
                 try {
-                    extractor.setDataSource(part.file.getAbsolutePath());
+                    extractor.setDataSource(clip.file.getAbsolutePath());
                     int videoTrack = videoTrackOf(extractor);
                     if (videoTrack < 0) {
                         continue;
@@ -99,16 +106,17 @@ public final class ClipExporter {
                     if (track < 0) {
                         track = muxer.addTrack(format);
                         muxer.start();
+                        started = true;
                         firstCsd = csd;
                     } else if (firstCsd != null && csd != null && !firstCsd.equals(csd)) {
-                        AppLog.w(TAG, "下一段编码参数变了，片段停在 " + part.file.getName() + " 之前");
+                        AppLog.w(TAG, "下一段编码参数变了，片段停在 " + clip.file.getName() + " 之前");
                         break;
                     }
                     extractor.selectTrack(videoTrack);
-                    long startUs = Math.max(0L, (fromMs - part.startEpochMs) * 1000L);
-                    long endUs = (toMs - part.startEpochMs) * 1000L;
+                    long startUs = Math.max(0L, (fromMs - clip.startEpochMs) * 1000L);
+                    long endUs = (toMs - clip.startEpochMs) * 1000L;
                     extractor.seekTo(startUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
-                    long partOffsetUs = (part.startEpochMs - fromMs) * 1000L;
+                    long partOffsetUs = (clip.startEpochMs - fromMs) * 1000L;
                     while (true) {
                         int size = extractor.readSampleData(buffer, 0);
                         if (size < 0) {
@@ -133,29 +141,38 @@ public final class ClipExporter {
                         wrote = true;
                         extractor.advance();
                     }
+                } catch (Exception e) {
+                    // 后面某一段坏了：前面已经写进去的照样留着（审查 2026-10-08）
+                    AppLog.w(TAG, "这一段读不出来，片段到此为止: " + clip.file.getName() + " " + e.getMessage());
+                    if (wrote) {
+                        break;
+                    }
                 } finally {
                     extractor.release();
                 }
             }
         } catch (Exception e) {
             AppLog.e(TAG, "保存片段失败: " + e.getMessage(), e);
-            wrote = false;
         } finally {
             if (muxer != null) {
-                try {
-                    if (wrote) {
+                if (started) {
+                    try {
                         muxer.stop();
+                    } catch (Exception e) {
+                        AppLog.w(TAG, "收尾失败: " + e.getMessage());
+                        wrote = false;
                     }
+                }
+                try {
                     muxer.release();
                 } catch (Exception e) {
-                    AppLog.w(TAG, "收尾失败: " + e.getMessage());
-                    wrote = false;
+                    AppLog.w(TAG, "释放失败: " + e.getMessage());
                 }
             }
         }
-        if (!wrote) {
-            if (out.exists()) {
-                out.delete();
+        if (!wrote || !part.renameTo(out)) {
+            if (part.exists()) {
+                part.delete();
             }
             return null;
         }

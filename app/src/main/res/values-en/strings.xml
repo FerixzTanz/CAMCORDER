@@ -124,7 +124,7 @@
     <!-- System info (experimental): groups, signal names, values -->
     <string name="set_vehicle_info_title">System info (experimental)</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; ticked items appear on the Driving info bar</string>
-    <string name="vi_legend">Ticked items appear on the Driving info bar (requires Settings → Recording → Driving info bar): as an icon where one exists, otherwise as text for now, as noted under each row; items that don\'t fit are left out. Label color shows how well a signal is verified: normal text color, consistent in on-car tests (still cross-checked); grey, usable with details pending; faint grey, readable but unverified, can be ticked only with developer options on.</string>
+    <string name="vi_legend">Ticked items appear on the Driving info bar (requires Settings → Recording → Photos and stamps → Driving info bar): as an icon where one exists, otherwise as text for now, as noted under each row; items that don\'t fit are left out. Label color shows how well a signal is verified: normal text color, consistent in on-car tests (still cross-checked); grey, usable with details pending; faint grey, readable but unverified, can be ticked only with developer options on.</string>
     <string name="vi_position">Position (lat/long)</string>
     <string name="vi_position_source">System location</string>
     <!-- System info status line under the legend (VehicleInfoFragment.status); how each signal ID is read (VehicleInfoFragment.address; IDs and zones stay hex) -->

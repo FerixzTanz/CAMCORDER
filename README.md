@@ -52,7 +52,7 @@ It installs over dts88's version and keeps your settings.
 
 ---
 
-*Everything below is dts88's original README, unchanged apart from the credits.*
+*Everything below is dts88's original README, unchanged apart from the credits and the few places where this fork works differently.*
 
 # Zeekr Shortcut (Car Version)
 
@@ -125,7 +125,7 @@ This page does not cover that.
 
 - **Recommended — the [latest stable release](../../releases/latest).**
 - **Happy to try things early — the newest `-beta` on the [Releases](../../releases) page.** Or
-  turn on *Include beta releases* under Settings → Check for updates and let the app fetch it.
+  turn on *Include beta releases* under Settings → Updates and let the app fetch it.
 
 Download the `ZeekrShortcut-*.apk` asset from the release page and sideload it through App Lab.
 When the installer finishes, tap **Back** at the top left, not **Open**. Otherwise the head unit's
@@ -149,9 +149,11 @@ through `ZEEKR_KEYSTORE`, `ZEEKR_KEYSTORE_PASSWORD`, `ZEEKR_KEY_ALIAS` and `ZEEK
 
 If recording stops working properly on the USB drive because the files have grown too large:
 
-1. **Lower the frame rate to 10 fps first.** In **Settings → Recording → Edit stream profile**, tap
-   each camera under *Cameras on* and set **Frame rate** to *10 fps (cap)*.
-2. **Still not working? Then lower the bitrate** for those cameras.
+1. **Use a faster drive first.** A USB 3 drive or a high-endurance card reader handles 30 fps
+   recording much better than an old USB 2 stick.
+2. **Still not working? Lower the frame rate or bitrate.** In this fork these controls are under
+   Developer options: once they are on, **Settings → Recording → Edit stream profile** shows the
+   quality presets and the **Frame rate** and **Bitrate** controls for each camera.
 
 Changes apply from the next recording.
 
