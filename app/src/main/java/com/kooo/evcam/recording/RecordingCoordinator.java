@@ -680,7 +680,8 @@ public final class RecordingCoordinator {
         BlackBox.noteImportant("录像被打断（" + reason + "），等环视恢复后自动接回（已试 "
                 + budget.attempts() + " 次）");
         request(Why.RESUME, counts);
-        return true;
+        // request 可能什么都没做（人已下车、车在 P）：那就不算要接回，前台服务和相机该放就放（审查 2026-10-08）
+        return pending != null;
     }
 
     /** 人自己开了：前面的失败都不算了。 */

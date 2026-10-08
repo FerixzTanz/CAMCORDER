@@ -326,8 +326,7 @@
                 <com.kooo.evcam.ui.LockedRangeStrip
                     android:id="@+id/timeline_locked_strip"
                     android:layout_width="match_parent"
-                    android:layout_height="4dp"
-                    android:layout_marginTop="2dp"
+                    android:layout_height="8dp"
                     android:visibility="gone" />
 
                 <TextView

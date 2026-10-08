@@ -276,6 +276,8 @@ public final class AutoLock implements Telemetry.Listener {
             if (names.isEmpty()) {
                 continue;
             }
+            // 这一次事件碰到的全部文件（第一遍已经锁上的也在内）：放开超额时一个都不能放（审查 2026-10-08）
+            final Set<String> eventNames = new TreeSet<>(names);
             Set<String> listed = FootageLocks.read(entry.getKey());
             if (listed != null) {
                 int before = names.size();
@@ -292,7 +294,7 @@ public final class AutoLock implements Telemetry.Listener {
                 File dir = entry.getKey();
                 long cap = AutoLockBudget.capBytes(new AppConfig(context).getVideoStorageLimitGb(),
                         dir.getTotalSpace());
-                FootageLocks.lockAuto(dir, names, cap, toast);
+                FootageLocks.lockAuto(dir, names, eventNames, cap, toast);
             } else {
                 FootageLocks.set(entry.getKey(), names, true, toast);
             }

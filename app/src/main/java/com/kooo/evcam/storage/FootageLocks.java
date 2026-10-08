@@ -235,10 +235,18 @@ public final class FootageLocks {
      * 车自己锁（急刹车）：锁上，记进自动那一份，再按 {@link AutoLockBudget} 的上限从最早的自动锁放开。
      * 本来就锁着的（人锁的）不记成自动的。后台写，结果回主线程。
      *
+     * @param protectedNames 这一次事件碰到的全部文件（含已经锁着的），超额时不放开
      * @param capBytes 自动锁定最多占多少
      */
-    public static void lockAuto(File dir, Collection<String> names, long capBytes, Result result) {
+    public static void lockAuto(File dir, Collection<String> names, Collection<String> protectedNames,
+                                long capBytes, Result result) {
         final List<String> copy = new ArrayList<>(names);
+        // 这一次事件的全部文件都不放：第二遍补锁时，第一遍锁上的（刹车那一刻）不在 names 里，
+        // 不护着的话超了上限会先把它们放开（审查 2026-10-08）
+        final java.util.Set<String> keep = new java.util.TreeSet<>(names);
+        if (protectedNames != null) {
+            keep.addAll(protectedNames);
+        }
         IO.execute(() -> {
             boolean ok;
             List<String> released = new ArrayList<>();
@@ -258,7 +266,7 @@ public final class FootageLocks {
                                 sizes.put(name, file.length());
                             }
                         }
-                        released.addAll(AutoLockBudget.toRelease(auto, sizes, copy, capBytes));
+                        released.addAll(AutoLockBudget.toRelease(auto, sizes, keep, capBytes));
                         if (!released.isEmpty() && update(dir, released, false)) {
                             updateList(dir, AUTO_FILE_NAME, AUTO_HEADER, released, false);
                         }

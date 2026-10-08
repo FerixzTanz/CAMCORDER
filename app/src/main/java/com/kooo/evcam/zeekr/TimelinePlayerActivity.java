@@ -496,7 +496,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                 com.kooo.evcam.storage.DriveRecords.Drive drive =
                         grouping.drive(grouping.driveAt(session.startEpochMs));
                 Double distance = drive != null ? drive.distanceKm() : null;
-                km[i] = distance != null ? distance : Double.NaN;
+                // 不按行程分组时一趟会拆成好几条，每条都写整趟的里程是错的：不写
+                km[i] = distance != null && byDrive ? distance : Double.NaN;
                 List<Long> at = new ArrayList<>();
                 if (drive != null) {
                     for (com.kooo.evcam.storage.DriveRecords.Event event : drive.events) {

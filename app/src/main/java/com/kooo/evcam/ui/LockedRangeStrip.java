@@ -71,21 +71,24 @@ public class LockedRangeStrip extends View {
         if (width <= 0 || height <= 0) {
             return;
         }
-        float radius = height / 2f;
-        canvas.drawRoundRect(left, 0, left + width, height, radius, radius, track);
+        // 条只占中间一半高，上下留给事件的点（2.11.0：点要比条高，看得见）
+        float top = height / 4f;
+        float bottom = height - top;
+        float bar = bottom - top;
+        float radius = bar / 2f;
+        canvas.drawRoundRect(left, top, left + width, bottom, radius, radius, track);
         for (int i = 0; i + 1 < ranges.length; i += 2) {
             float x0 = left + width * clamp(ranges[i]) / total;
             float x1 = left + width * clamp(ranges[i + 1]) / total;
             // 很短的一段也至少画出一个点那么宽，不然一分钟里的一个文件在长时间轴上看不见
-            if (x1 - x0 < height) {
-                x1 = Math.min(left + width, x0 + height);
+            if (x1 - x0 < bar) {
+                x1 = Math.min(left + width, x0 + bar);
             }
-            canvas.drawRoundRect(x0, 0, x1, height, radius, radius, locked);
+            canvas.drawRoundRect(x0, top, x1, bottom, radius, radius, locked);
         }
-        // 事件压在最上面：比条略高的一个点，锁定的琥珀色上也看得见
         for (long position : markers) {
             float x = left + width * clamp(position) / total;
-            canvas.drawCircle(x, height / 2f, Math.max(radius * 1.6f, 3f), marker);
+            canvas.drawCircle(x, height / 2f, height / 2f, marker);
         }
     }
 

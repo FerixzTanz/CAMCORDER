@@ -109,7 +109,8 @@ public final class DriveLog {
         final Double odo = odometer();
         final long now = System.currentTimeMillis();
         IO.execute(() -> {
-            if (DriveRecords.lastIsOpen(read(dir))) {
+            // 只结束「还算数」的那一趟：几小时前进程没了留下的那一趟没结束，这里补上结束会把它拉成好几天（审查 2026-10-08）
+            if (DriveRecords.continuesLast(read(dir), now)) {
                 append(dir, "E " + now + " " + odoText(odo));
             }
         });
