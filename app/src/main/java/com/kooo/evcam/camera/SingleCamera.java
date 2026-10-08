@@ -134,28 +134,15 @@ public class SingleCamera {
      * 回前台再挂上；要录、要拍时由不显示的出帧口（一定取帧）让相机转着。
      */
     private volatile boolean previewSuspended;
-    /** 最近几次 ERROR_CAMERA_DEVICE 的时刻（开机起算，含深睡），判断「连着出错」用。 */
-    private final java.util.ArrayDeque<Long> deviceErrorTimes = new java.util.ArrayDeque<>();
-    /** 连着出错时，最后一次出错的时刻；冷却期内算「在恢复」。 */
+    /** 最后一次设备报错的时刻（开机起算，含深睡）；之后这么久算「在恢复」（侧视弹窗、录制键的提示）。 */
     private volatile long lastDeviceErrorElapsedMs;
-    /** 两分钟内第几次 ERROR_CAMERA_DEVICE 起改成长冷却。 */
-    static final int COOL_DOWN_AFTER_ERRORS = 3;
-    static final long COOL_DOWN_WINDOW_MS = 120_000L;
-    /** 连着出错之后，等这么久再重开 —— 2026-10-07 那次退出应用、停了十几秒再开就好了。 */
-    static final long COOL_DOWN_MS = 15_000L;
+    static final long RECOVERING_AFTER_ERROR_MS = 25_000L;
     /**
      * 建会话时 waitUntilIdle 排不空（-110）连着几次了、从什么时候起（开机起算）；会话配好就清零。
      * 这是相机服务那一侧卡住的指纹：2026-10-07 19:35 起十五个小时、应用重启几次都一样。
      */
     private int drainTimeoutStreak;
     private long drainTimeoutSinceElapsedMs;
-    /**
-     * 连着冷却到第几轮了、上一轮放开多久（相机线程写，主线程读 {@link #isRecovering}）。
-     * 只有连着稳稳地出了画面才清零 —— 设备「打开成功」不算：卡住时设备总是能打开的，
-     * 那样每一轮都从头算，永远升不上去（见 {@link CameraCoolDown#coolDownForRound}）。
-     */
-    private int coolDownRounds;
-    private volatile long lastCoolDownMs;
     /**
      * 相机服务拒绝我们打开（{@code CAMERA_DISABLED}，「disabled by policy」）连着几次、从什么时候起（开机起算）、
      * 上一次记黑匣子是什么时候。2026-10-08 11:02 重启车机后第一次起步：从挂 D 档起九十秒里被拒了三十几次，
@@ -210,27 +197,21 @@ public class SingleCamera {
     /** 最后一次相机报错的短名，给界面说明「为什么点了没反应」。 */
     private volatile String lastErrorName;
 
-    private boolean shouldReconnect = false;  // 是否应该重连
-    private int reconnectAttempts = 0;  // 重连尝试次数
-    private static final long RECONNECT_DELAY_MS = 2000;  // 重连延迟（毫秒）
-    private long reconnectDelayFloorMs = 0;
-    /** 被别的程序拿走了（{@link CameraTaken}）：只慢慢试；它放开或我们回到前台时 MultiCameraManager 会来接。 */
-    private volatile boolean takenByOthers;
+    /**
+     * 设备报错或被断开之后、还没重开：有人要画面的话，看门狗下一次检查就动手，不用等 8 秒。
+     * 这一路不再自己重连（2.10.10 之前有一套按错误码退避的重连阶梯，和看门狗互相顶，2026-10-08 自己顶自己 7 次）：
+     * 报错就关掉自己、标成「没开」，要不要再开、什么节奏，只有 MultiCameraManager 的看门狗一个地方判。
+     */
+    private volatile boolean deviceLost;
     /** 一次强制重开还在路上（关旧的、等 300 ms、开新的、等回调）：这期间再来的重开请求合并掉，不双开。 */
     private volatile boolean reopenInFlight;
-    /** 最近一个动作（开 / 关 / 重连 / 配会话）上路的时刻（uptime）；0 = 没有过。见 {@link #isBusy()}。 */
+    /** 最近一个动作（开 / 关 / 重开 / 配会话）上路的时刻（uptime）；0 = 没有过。见 {@link #isBusy()}。 */
     private volatile long inFlightSinceMs;
     /** 现在这份会话配好的时刻（uptime）；0 = 还没有会话。见 {@link #sessionHasStreamed()}。 */
     private volatile long sessionStartedUptimeMs;
-    /**
-     * 重连任务跑起来了（在关旧设备 / 要开新设备）。只排着队等延迟的重连不算在途：
-     * 别的程序放开相机时要立刻接回（CameraTaken），强制重开得能把排着队的那次取消掉、自己上。
-     */
-    private volatile boolean reconnectRunning;
-    private Runnable reconnectRunnable;  // 重连任务
-    private boolean isReconnecting = false;  // 是否正在重连中（防止多个重连任务同时运行）
     private volatile boolean isOpening = false;  // 是否正在打开中（防止并行触发时重复调用 openCamera）
-    private final Object reconnectLock = new Object();  // 重连锁；拿着它时不调相机服务，见 closeCamera
+    /** 设备、会话、相机线程这几个字段的锁；拿着它时不调相机服务，见 closeCamera。 */
+    private final Object deviceLock = new Object();
 
     /**
      * 每台相机正在关、还没关完的那一次，按相机 id 记。
@@ -479,14 +460,14 @@ public class SingleCamera {
     }
 
     /**
-     * 这一路此刻有没有动作在途：在开、在关、在重连、在配会话。
+     * 这一路此刻有没有动作在途：在开、在关、在重开、在配会话。
      *
      * <p>在途的时候不叠第二个动作 —— 看门狗不重开，强制重开合并。2026-10-08 的七次
      * 「被相机服务断开」全是自己顶自己：重连那一次打开还没回来，看门狗又开了一次，
      * 相机服务把先开的那份踢掉。在途超过 {@link #IN_FLIGHT_MAX_MS} 才当回调不会来了，不再算在途。</p>
      */
     public boolean isBusy() {
-        boolean inFlight = isOpening || reconnectRunning || reopenInFlight || CLOSING.containsKey(cameraId);
+        boolean inFlight = isOpening || reopenInFlight || CLOSING.containsKey(cameraId);
         if (!inFlight) {
             synchronized (sessionLock) {
                 inFlight = isConfiguring || isSessionClosing;
@@ -503,8 +484,6 @@ public class SingleCamera {
     public String describeBusy() {
         StringBuilder sb = new StringBuilder();
         if (isOpening) sb.append("opening ");
-        if (reconnectRunning) sb.append("reconnecting ");
-        else if (isReconnecting) sb.append("reconnect-pending ");
         if (reopenInFlight) sb.append("reopen ");
         if (CLOSING.containsKey(cameraId)) sb.append("closing ");
         synchronized (sessionLock) {
@@ -537,7 +516,7 @@ public class SingleCamera {
      *
      * <p>{@code CameraDevice.close()} 是一次进相机服务的 binder 调用。醒来之后它卡过一秒多
      * （2026-09-23，Camera-2 线程停在 {@code ICameraDeviceUser.disconnect()}）；
-     * 而这几处调用都拿着 {@link #reconnectLock}，主线程上的 {@link #closeCamera()} 也要这把锁 ——
+     * 而这几处调用都拿着 {@link #deviceLock}，主线程上的 {@link #closeCamera()} 也要这把锁 ——
      * 一边卡在 binder 里，另一边就在锁上等。超过半秒的都记进黑匣子，带上线程名：
      * 是不是卡在主线程上，看这一行就知道。</p>
      */
@@ -887,7 +866,7 @@ public class SingleCamera {
                 + " opening=" + isOpening
                 + " configuring=" + isConfiguring
                 + " closing=" + isSessionClosing
-                + " reconnecting=" + isReconnecting
+                + " lost=" + deviceLost
                 + " outputs[main-preview=" + surfaceState(previewSurface)
                 + " mirror=" + surfaceState(mainFloatingSurface)
                 + " record=" + surfaceState(recordSurface)
@@ -1007,51 +986,15 @@ public class SingleCamera {
         }
     }
 
-    /** 正在从连着出错里恢复：冷却期内、或者正在重连。侧视弹窗和录制键的提示看它。 */
+    /**
+     * 正在从出错里恢复：设备报错 / 被断开、等看门狗重开（2.10.10 起相机自己不重连），
+     * 或者刚报过错还没满 {@link #RECOVERING_AFTER_ERROR_MS}。侧视弹窗和录制键的提示看它。
+     */
     public boolean isRecovering() {
         long last = lastDeviceErrorElapsedMs;
         boolean recentError = last != 0
-                && SystemClock.elapsedRealtime() - last < Math.max(COOL_DOWN_MS, lastCoolDownMs) + 10_000L;
-        return recentError || isReconnecting;
-    }
-
-    /**
-     * 记一次 ERROR_CAMERA_DEVICE，返回这一次之后该等多久再重开。纯函数部分见 {@link CameraCoolDown}。
-     */
-    private long noteDeviceError() {
-        long now = SystemClock.elapsedRealtime();
-        lastDeviceErrorElapsedMs = now;
-        long delay = CameraCoolDown.delayAfterError(deviceErrorTimes, now);
-        if (delay >= COOL_DOWN_MS || coolDownRounds > 0) {
-            // 进了冷却就一直在冷却里，直到稳稳地出了画面：一轮比一轮放开得久，不再每轮固定 15 秒
-            coolDownRounds++;
-            delay = CameraCoolDown.coolDownForRound(coolDownRounds);
-            lastCoolDownMs = delay;
-            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 连着出错（第 "
-                    + coolDownRounds + " 轮冷却，两分钟内 " + deviceErrorTimes.size() + " 次）：放开 "
-                    + (delay / 1000) + " 秒再重开");
-        }
-        return delay;
-    }
-
-    /**
-     * 连着稳稳地出了十秒画面 —— 这才算恢复：重连次数、冷却轮数、连着出错的记录都清掉。
-     *
-     * <p>以前设备一「打开成功」就清重连次数，而相机服务卡住时设备总是能打开，
-     * 于是指数退避、冷却升级都从头算（2026-10-08）。开了又断的相机每次只稳一两秒，也不算好。
-     * 相机线程上调，每一帧只多一次字段比较。</p>
-     */
-    private void noteFeedRecovered() {
-        if (reconnectAttempts == 0 && coolDownRounds == 0 && deviceErrorTimes.isEmpty()) {
-            return;
-        }
-        synchronized (reconnectLock) {
-            reconnectAttempts = 0;
-        }
-        coolDownRounds = 0;
-        lastCoolDownMs = 0;
-        lastDeviceErrorElapsedMs = 0;
-        deviceErrorTimes.clear();
+                && SystemClock.elapsedRealtime() - last < RECOVERING_AFTER_ERROR_MS;
+        return recentError || deviceLost;
     }
 
     /** 有人在等拍照（登记表上的 PHOTO）。 */
@@ -1087,6 +1030,11 @@ public class SingleCamera {
         return lastErrorName;
     }
 
+    /** 设备报错 / 被断开之后还没重开。看门狗据此不等 8 秒就动手（有人要画面的话）。 */
+    public boolean deviceLost() {
+        return deviceLost;
+    }
+
     /**
      * 获取当前实时 FPS（1秒滚动窗口）
      */
@@ -1112,24 +1060,15 @@ public class SingleCamera {
         isOpening = true;
         markInFlight();
 
-        synchronized (reconnectLock) {
+        synchronized (deviceLock) {
             // 安全措施：清理可能残留的录制 Surface 引用（防止 Surface abandoned 错误）
             // 放在同步块内，避免与 setRecordSurface() 的竞态条件
             if (recordSurface != null) {
                 AppLog.w(TAG, "Camera " + cameraId + " found stale recordSurface on open, clearing it");
                 recordSurface = null;
             }
-            
-            // 如果已经在重连中，忽略新的打开请求
-            if (isReconnecting) {
-                AppLog.d(TAG, "Camera " + cameraId + " already reconnecting, ignoring openCamera call");
-                isOpening = false;
-                return;
-            }
-            
-            AppLog.d(TAG, "openCamera: Starting for camera " + cameraId + "");
-            shouldReconnect = true;  // 启用自动重连
-            reconnectAttempts = 0;  // 重置重连计数
+            deviceLost = false;
+            AppLog.d(TAG, "openCamera: Starting for camera " + cameraId);
         }
         
         // 相机服务的调用（查设备、查参数、打开）都放到这一路自己的相机线程上：
@@ -1203,9 +1142,7 @@ public class SingleCamera {
                 if (callback != null) {
                     callback.onCameraError(cameraId, CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
                 }
-                synchronized (reconnectLock) {
-                    shouldReconnect = false;  // 无效摄像头不应重连
-                }
+                deviceLost = true;
                 isOpening = false;
                 return;
             }
@@ -1225,9 +1162,7 @@ public class SingleCamera {
                     if (callback != null) {
                         callback.onCameraError(cameraId, CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
                     }
-                    synchronized (reconnectLock) {
-                        shouldReconnect = false;  // 无效摄像头不应重连
-                    }
+                    deviceLost = true;
                     isOpening = false;
                     return;
                 }
@@ -1259,9 +1194,7 @@ public class SingleCamera {
                 if (callback != null) {
                     callback.onCameraError(cameraId, CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
                 }
-                synchronized (reconnectLock) {
-                    shouldReconnect = false;  // 无效摄像头不应重连
-                }
+                deviceLost = true;
                 isOpening = false;
                 return;
             }
@@ -1276,134 +1209,18 @@ public class SingleCamera {
             AppLog.d(TAG, "Camera " + cameraId + " calling openCamera...");
             cameraManager.openCamera(cameraId, stateCallback, handler);
 
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | RuntimeException e) {
+            // 打开没发出去（相机服务不可用、没权限、无效相机）：标成「没开」，有人要画面的话看门狗按它的节奏再试
             isOpening = false;
+            deviceLost = true;
+            lastErrorName = e.getClass().getSimpleName();
             AppLog.e(TAG, "Failed to open camera " + cameraId, e);
             noteOpenRefused(e);
             if (callback != null) {
-                callback.onCameraError(cameraId, -1);
-            }
-            // 尝试重连（检查是否已经在重连中）
-            synchronized (reconnectLock) {
-                if (shouldReconnect && !isReconnecting) {
-                    scheduleReconnect();
-                }
-            }
-        } catch (SecurityException e) {
-            isOpening = false;
-            AppLog.e(TAG, "No camera permission", e);
-            if (callback != null) {
-                callback.onCameraError(cameraId, -2);
-            }
-        } catch (IllegalArgumentException e) {
-            isOpening = false;
-            // 某些设备在打开无效摄像头时会抛出 IllegalArgumentException
-            AppLog.e(TAG, "Camera " + cameraId + " invalid argument - camera may be virtual/invalid", e);
-            if (callback != null) {
-                callback.onCameraError(cameraId, CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
-            }
-            synchronized (reconnectLock) {
-                shouldReconnect = false;  // 无效摄像头不应重连
-            }
-        } catch (RuntimeException e) {
-            isOpening = false;
-            // 捕获所有其他运行时异常，防止应用崩溃
-            AppLog.e(TAG, "Camera " + cameraId + " runtime exception - camera may be virtual/invalid", e);
-            if (callback != null) {
-                callback.onCameraError(cameraId, CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
-            }
-            synchronized (reconnectLock) {
-                shouldReconnect = false;  // 异常情况下不应重连
+                callback.onCameraError(cameraId, e instanceof SecurityException ? -2
+                        : e instanceof CameraAccessException ? -1 : CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
             }
         }
-    }
-
-    /**
-     * 调度重连任务
-     */
-    private void scheduleReconnect() {
-        synchronized (reconnectLock) {
-            // 检查是否允许重连
-            if (!shouldReconnect) {
-                AppLog.d(TAG, "Camera " + cameraId + " reconnect disabled, skipping");
-                return;
-            }
-            
-            // 如果已经在重连中，忽略新的重连请求
-            if (isReconnecting) {
-                AppLog.d(TAG, "Camera " + cameraId + " already reconnecting, skipping new request");
-                return;
-            }
-
-            // 别的程序拿着相机（CameraTaken）：每次重开都会失败，只每 30 秒试一次；
-            // 它放开或我们回到前台时 MultiCameraManager.retryTaken 会立刻来接
-            boolean held = CameraTaken.othersHold();
-            if (held && !takenByOthers) {
-                takenByOthers = true;
-                com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 被拿走：别的程序在用相机 "
-                        + CameraTaken.describe() + "，每 " + (CameraTaken.RETRY_WHILE_HELD_MS / 1000)
-                        + " 秒试一次，它放开或我们回到前台就立刻接");
-            }
-
-            reconnectAttempts++;
-            isReconnecting = true;
-            markInFlight();
-            // 只计数不逐条记：一路相机被反复重连时，这个数会在汇总里冒出来
-            com.kooo.evcam.blackbox.BlackBox.count("相机 " + cameraId + " 自动重连");
-            long delayMs = CameraTaken.reconnectDelayMs(held,
-                    Math.max(getReconnectDelayMs(reconnectAttempts), reconnectDelayFloorMs));
-            AppLog.d(TAG, "Camera " + cameraId + " scheduling reconnect attempt " + reconnectAttempts + " in " + delayMs + "ms");
-
-            // 取消之前的重连任务
-            if (reconnectRunnable != null && backgroundHandler != null) {
-                backgroundHandler.removeCallbacks(reconnectRunnable);
-            }
-
-            // 创建新的重连任务
-            reconnectRunnable = () -> {
-                reconnectRunning = true;
-                markInFlight();
-                // 旧的会话和设备先从字段上摘下来，在锁外关：关是进相机服务的调用，可能卡住，
-                // 拿着锁关的话，主线程上任何要这把锁的操作都得陪着等
-                CameraCaptureSession oldSession;
-                CameraDevice oldDevice;
-                synchronized (reconnectLock) {
-                    oldSession = captureSession;
-                    captureSession = null;
-                    oldDevice = cameraDevice;
-                    cameraDevice = null;
-                }
-                voidSessionWork();
-                closeSessionQuietly(oldSession);
-                closeDeviceTimed(oldDevice, "reconnect");
-                Handler handler = backgroundHandler;
-                if (handler == null) {
-                    synchronized (reconnectLock) {
-                        isReconnecting = false;
-                    }
-                    reconnectRunning = false;
-                    return;
-                }
-                handler.postDelayed(() -> reopenOnCameraThread(handler), 150);
-            };
-
-            // 延迟执行重连
-            if (backgroundHandler != null) {
-                backgroundHandler.postDelayed(reconnectRunnable, delayMs);
-            } else {
-                isReconnecting = false;
-            }
-        }
-    }
-
-    private long getReconnectDelayMs(int attempt) {
-        long baseDelayMs = 500;
-        long maxDelayMs = 30000;
-        long expMultiplier = 1L << Math.min(attempt - 1, 6);
-        long delay = Math.min(baseDelayMs * expMultiplier, maxDelayMs);
-        long jitter = (long) (delay * 0.2 * (Math.random() - 0.5) * 2);
-        long result = delay + jitter;
-        return Math.max(500, result);
     }
 
     /**
@@ -1419,10 +1236,11 @@ public class SingleCamera {
             }
             isOpening = false;
             reopenInFlight = false;
-            synchronized (reconnectLock) {
+            synchronized (deviceLock) {
                 cameraDevice = camera;
                 lastErrorName = null;
-                CameraContention.ourCameraOpened(cameraId, reconnectAttempts);
+                deviceLost = false;
+                CameraContention.ourCameraOpened(cameraId);
                 if (openRefusedCount > 0) {
                     long now = SystemClock.elapsedRealtime();
                     com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 又能打开了：之前被相机服务拒绝 "
@@ -1430,11 +1248,6 @@ public class SingleCamera {
                             + (now / 1000) + " 秒；" + vehicleBrief());
                     openRefusedCount = 0;
                 }
-                // 重连次数不在这里清：设备打开成功不等于相机好了（相机服务卡住时设备照样能打开），
-                // 连着稳稳地出了画面才清（noteFeedRecovered）
-                isReconnecting = false;  // 重连成功，清除重连标志
-                reconnectDelayFloorMs = 0;
-                takenByOthers = false;
                 AppLog.d(TAG, "Camera " + cameraId + " opened");
                 if (callback != null) {
                     callback.onCameraOpened(cameraId);
@@ -1457,25 +1270,15 @@ public class SingleCamera {
             CameraContention.ourCameraDisconnected(cameraId);
             // 锁外关：它进相机服务，可能卡住（见 closeDeviceTimed）
             closeDeviceTimed(camera, "onDisconnected");
-            synchronized (reconnectLock) {
+            synchronized (deviceLock) {
                 if (cameraDevice == camera) {
                     cameraDevice = null;
                 }
-                AppLog.w(TAG, "Camera " + cameraId + " DISCONNECTED - will attempt to reconnect...");
+                lastErrorName = "DISCONNECTED";
+                deviceLost = true;   // 要不要再开、什么节奏：看门狗判（别的程序占着时每 30 秒一次）
+                AppLog.w(TAG, "Camera " + cameraId + " DISCONNECTED");
                 if (callback != null) {
                     callback.onCameraError(cameraId, -4); // 自定义错误码：断开连接
-                }
-
-                // 断开连接可能发生在重连过程中（openCamera 后但配置 session 前）
-                // 需要重置 isReconnecting 标志以允许继续重试
-                if (isReconnecting) {
-                    AppLog.d(TAG, "Camera " + cameraId + " disconnected during reconnect, resetting flag");
-                    isReconnecting = false;
-                }
-                
-                // 启动自动重连
-                if (shouldReconnect) {
-                    scheduleReconnect();
                 }
             }
         }
@@ -1491,72 +1294,38 @@ public class SingleCamera {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId + " 出错 error=" + error);
             // 锁外关：它进相机服务，可能卡住（见 closeDeviceTimed）
             closeDeviceTimed(camera, "onError");
-            synchronized (reconnectLock) {
+            synchronized (deviceLock) {
                 if (cameraDevice == camera) {
                     cameraDevice = null;
                 }
-                String errorMsg = "UNKNOWN";
-                boolean shouldRetry = false;
-                boolean shouldStopReconnect = false;
-
+                String errorMsg;
                 switch (error) {
                     case CameraDevice.StateCallback.ERROR_CAMERA_IN_USE:
                         errorMsg = "ERROR_CAMERA_IN_USE (1) - Camera is being used by another app";
-                        shouldRetry = true;  // 摄像头被占用，可以重试
-                        reconnectDelayFloorMs = 500;
                         break;
                     case CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE:
                         errorMsg = "ERROR_MAX_CAMERAS_IN_USE (2) - Too many cameras open";
-                        shouldRetry = true;  // 摄像头数量超限，可以重试
-                        reconnectDelayFloorMs = 1000;
                         break;
                     case CameraDevice.StateCallback.ERROR_CAMERA_DISABLED:
                         errorMsg = "ERROR_CAMERA_DISABLED (3) - Camera disabled by policy (likely background restriction)";
-                        shouldRetry = true;
-                        // 冷启动时前台服务可能刚启动还未完全建立，1.5秒后重试通常已就绪
-                        reconnectDelayFloorMs = 1500;
                         break;
                     case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
                         errorMsg = "ERROR_CAMERA_DEVICE (4) - Device error (may be temporary due to resource contention)";
-                        // 一次两次照旧 8 秒；两分钟内第三次起放开 15 秒再开，给相机服务缓过来（CAMCORDER）
-                        reconnectDelayFloorMs = noteDeviceError();
-                        shouldRetry = true;
-                        shouldStopReconnect = false;
                         break;
                     case CameraDevice.StateCallback.ERROR_CAMERA_SERVICE:
                         errorMsg = "ERROR_CAMERA_SERVICE (5) - Camera service error";
-                        shouldRetry = true;  // 服务错误，可以重试
-                        reconnectDelayFloorMs = 2000;
+                        break;
+                    default:
+                        errorMsg = "UNKNOWN (" + error + ")";
                         break;
                 }
-
                 AppLog.e(TAG, "Camera " + cameraId + " error: " + errorMsg);
                 lastErrorName = errorMsg;
+                deviceLost = true;   // 再开不再在这里按错误码退避：看门狗一处判
+                lastDeviceErrorElapsedMs = SystemClock.elapsedRealtime();
                 CameraContention.ourOpenFailed(cameraId, errorMsg);
                 if (callback != null) {
                     callback.onCameraError(cameraId, error);
-                }
-
-                if (shouldStopReconnect) {
-                    shouldReconnect = false;
-                    isReconnecting = false;
-                    if (reconnectRunnable != null && backgroundHandler != null) {
-                        backgroundHandler.removeCallbacks(reconnectRunnable);
-                        reconnectRunnable = null;
-                    }
-                    return;
-                }
-
-                // 重连过程中收到错误，说明 openCamera 已经执行完毕（通过回调返回了错误）
-                // 需要重置 isReconnecting 标志，以便可以继续下一次重连尝试
-                if (isReconnecting) {
-                    AppLog.d(TAG, "Camera " + cameraId + " reconnect attempt completed with error, resetting flag");
-                    isReconnecting = false;
-                }
-                
-                // 如果应该重试且允许重连，则启动自动重连
-                if (shouldRetry && shouldReconnect) {
-                    scheduleReconnect();
                 }
             }
         }
@@ -2118,8 +1887,8 @@ public class SingleCamera {
             lastProgressUptimeMs = SystemClock.uptimeMillis();
             lastCaptureUptimeMs = lastProgressUptimeMs;
             feedSteadiness.onFrame(lastCaptureUptimeMs);
-            if (feedSteadiness.recovered(lastCaptureUptimeMs)) {
-                noteFeedRecovered();
+            if (lastDeviceErrorElapsedMs != 0 && feedSteadiness.recovered(lastCaptureUptimeMs)) {
+                lastDeviceErrorElapsedMs = 0;   // 连着稳稳地出了十秒画面才算好了
             }
             frameCount++;
             long now = System.currentTimeMillis();
@@ -2716,7 +2485,7 @@ public class SingleCamera {
      * 关闭摄像头：调用方不等。
      *
      * <p>关相机是一次进相机服务的调用，实测卡过 13.6 秒（2026-09-26，主线程）。以前它在调用方的
-     * 线程上做 —— 多半就是主线程 —— 而且拿着 {@link #reconnectLock}：主线程一卡，主界面、
+     * 线程上做 —— 多半就是主线程 —— 而且拿着 {@link #deviceLock}：主线程一卡，主界面、
      * 超级后视镜、悬浮按钮全都跟着不动，分不清是界面的问题还是相机的问题。</p>
      *
      * <p>现在调用方这边只做不进相机服务的事：改标志、摘掉待办、把要关的会话和设备从字段上摘下来。
@@ -2733,23 +2502,12 @@ public class SingleCamera {
         final HandlerThread thread;
         final Handler handler;
         final boolean openInFlight;
-        synchronized (reconnectLock) {
-            shouldReconnect = false;  // 禁用自动重连
-            reconnectAttempts = 0;
-            isReconnecting = false;
-            reconnectRunning = false;
+        synchronized (deviceLock) {
             openInFlight = isOpening && cameraDevice == null;
             isOpening = false;
-            // 这一趟的标记都归零：被拿走、报错抬高的重连底线、路上的强制重开
-            takenByOthers = false;
-            reconnectDelayFloorMs = 0;
+            // 这一趟的标记都归零：路上的强制重开、设备报错的记号
             reopenInFlight = false;
-
-            // 取消待处理的重连（防止关了之后还去 createCaptureSession）
-            if (backgroundHandler != null && reconnectRunnable != null) {
-                backgroundHandler.removeCallbacks(reconnectRunnable);
-            }
-            reconnectRunnable = null;
+            deviceLost = false;
             voidSessionWork();
 
             // 要关的从字段上摘下来，交给相机线程去关
@@ -2897,21 +2655,12 @@ public class SingleCamera {
         return cameraDevice != null;
     }
 
-    /** 是不是被别的程序拿走了、正在慢慢试（见 {@link CameraTaken}）。 */
-    public boolean isTakenByOthers() {
-        return takenByOthers;
-    }
-
-    public void clearTaken() {
-        takenByOthers = false;
-    }
-
     /**
      * 强制重新打开摄像头（用于从后台返回前台时）
      * 即使摄像头当前是连接状态，也会重新打开
      *
      * <p>关旧的、开新的都在这一路的相机线程上按顺序做，主线程只是把活派过去 ——
-     * 以前旧的是在调用方线程上、拿着 {@link #reconnectLock} 关的。</p>
+     * 以前旧的是在调用方线程上、拿着 {@link #deviceLock} 关的。</p>
      */
     public void forceReopen() {
         if (reopenInFlight) {
@@ -2929,24 +2678,13 @@ public class SingleCamera {
         final CameraCaptureSession oldSession;
         final CameraDevice oldDevice;
         final Handler handler;
-        synchronized (reconnectLock) {
+        synchronized (deviceLock) {
             AppLog.d(TAG, "Camera " + cameraId + " force reopen requested");
-
-            // 取消所有待执行的重连任务
-            if (reconnectRunnable != null && backgroundHandler != null) {
-                backgroundHandler.removeCallbacks(reconnectRunnable);
-                reconnectRunnable = null;
-            }
-
             // 重置状态。isOpening / isConfiguring / isSessionClosing 这三个也要清 ——
             // 它们只在相机回调里复位，而回调不来正是这条路被走到的原因。
             // 不清的话：isOpening 会挡掉之后每一次 openCamera，
             // isConfiguring 会让自愈的每次检查都直接跳过。设备和会话下面就关掉了，
             // 在途的那一次配置已经作废，清掉不会和谁打架。
-            reconnectAttempts = 0;
-            shouldReconnect = true;
-            isReconnecting = false;
-            reconnectRunning = false;
             isOpening = false;
             voidSessionWork();
 
@@ -2971,10 +2709,10 @@ public class SingleCamera {
         handler.postDelayed(() -> forceReopenOnCameraThread(handler), 300);
     }
 
-    /** 强制重开的那一下打开：先确认这台相机还在、还该开，打开在锁外。 */
+    /** 强制重开的那一下打开：先确认这一轮还没被关掉、这台相机还在，打开在锁外。 */
     private void forceReopenOnCameraThread(Handler handler) {
-        synchronized (reconnectLock) {
-            if (handler != backgroundHandler || !shouldReconnect) {
+        synchronized (deviceLock) {
+            if (handler != backgroundHandler) {
                 reopenInFlight = false;
                 return;   // 等的时候被关了，或者已经换了一轮
             }
@@ -2992,9 +2730,7 @@ public class SingleCamera {
             if (!cameraExists) {
                 AppLog.e(TAG, "Camera ID " + cameraId + " does not exist anymore. Available IDs: " +
                         java.util.Arrays.toString(availableCameraIds));
-                synchronized (reconnectLock) {
-                    shouldReconnect = false;
-                }
+                deviceLost = true;
                 reopenInFlight = false;
                 return;
             }
@@ -3003,40 +2739,26 @@ public class SingleCamera {
                 cameraManager.getCameraCharacteristics(cameraId);
             } catch (Exception e) {
                 AppLog.e(TAG, "Camera " + cameraId + " failed to get characteristics - camera may be invalid", e);
-                synchronized (reconnectLock) {
-                    shouldReconnect = false;
-                }
+                deviceLost = true;
                 reopenInFlight = false;
                 return;
             }
             openCameraMarked(handler);
             AppLog.d(TAG, "Camera " + cameraId + " force reopen initiated");
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | RuntimeException e) {
+            // 没发出去：标成「没开」，看门狗按它的节奏再试
             reopenInFlight = false;
+            deviceLost = true;
+            lastErrorName = e.getClass().getSimpleName();
             AppLog.e(TAG, "Failed to force reopen camera " + cameraId, e);
-            noteOpenRefused(e);
-            synchronized (reconnectLock) {
-                if (shouldReconnect) {
-                    scheduleReconnect();
-                }
-            }
-        } catch (SecurityException e) {
-            AppLog.e(TAG, "No camera permission during force reopen", e);
-        } catch (IllegalArgumentException e) {
-            AppLog.e(TAG, "Camera " + cameraId + " invalid argument - camera may be virtual/invalid", e);
-            synchronized (reconnectLock) {
-                shouldReconnect = false;
-            }
-        } catch (RuntimeException e) {
-            AppLog.e(TAG, "Camera " + cameraId + " runtime exception - camera may be virtual/invalid", e);
-            synchronized (reconnectLock) {
-                shouldReconnect = false;
+            if (e instanceof CameraAccessException) {
+                noteOpenRefused((CameraAccessException) e);
             }
         }
     }
 
     /**
-     * 重连 / 强制重开那一下的 openCamera：进相机服务之前先标上「正在打开」。
+     * 强制重开那一下的 openCamera：进相机服务之前先标上「正在打开」。
      *
      * <p>相机服务随后报这一路「被占用」时，{@link CameraAvailabilityWatch} 靠 {@link #holdsOrIsOpening()}
      * 认我们；重开时 {@code cameraDevice} 还是 null，不标的话每次重开都被记成「不是我们」——
@@ -3045,7 +2767,6 @@ public class SingleCamera {
      */
     private void openCameraMarked(Handler handler) throws CameraAccessException {
         isOpening = true;
-        reconnectRunning = false;
         markInFlight();
         try {
             cameraManager.openCamera(cameraId, stateCallback, handler);
@@ -3055,61 +2776,6 @@ public class SingleCamera {
         }
     }
 
-    /** 自动重连的那一下打开：先在锁里看还该不该开，打开在锁外。 */
-    private void reopenOnCameraThread(Handler handler) {
-        synchronized (reconnectLock) {
-            if (handler != backgroundHandler || !shouldReconnect) {
-                isReconnecting = false;
-                reconnectRunning = false;
-                return;   // 等的时候被关了，或者已经换了一轮
-            }
-            if (CameraTaken.yieldToCarView()) {
-                // 原厂画面在用相机：这一下不开，抢到了就是把倒车影像踢掉。按「被占着」的节奏再等，
-                // 它放开相机时 retryTaken 会立刻来接（2.11.0 驾驶安全审查）
-                AppLog.d(TAG, "Camera " + cameraId + " reconnect skipped: car view is using the camera");
-                isReconnecting = false;
-                scheduleReconnect();
-                return;
-            }
-        }
-        try {
-            openCameraMarked(handler);
-        } catch (CameraAccessException e) {
-            AppLog.e(TAG, "Failed to reconnect camera " + cameraId + ": " + e.getMessage());
-            noteOpenRefused(e);
-            synchronized (reconnectLock) {
-                isReconnecting = false;
-                reconnectRunning = false;
-                if (shouldReconnect) {
-                    scheduleReconnect();
-                }
-            }
-        } catch (SecurityException e) {
-            AppLog.e(TAG, "No camera permission during reconnect", e);
-            synchronized (reconnectLock) {
-                shouldReconnect = false;
-                isReconnecting = false;
-                reconnectRunning = false;
-            }
-        } catch (IllegalArgumentException e) {
-            AppLog.e(TAG, "Camera " + cameraId + " unknown during reconnect (camera service may have restarted): " + e.getMessage());
-            synchronized (reconnectLock) {
-                shouldReconnect = false;
-                isReconnecting = false;
-                reconnectRunning = false;
-            }
-        } catch (RuntimeException e) {
-            AppLog.e(TAG, "Camera " + cameraId + " runtime exception during reconnect: " + e.getMessage());
-            synchronized (reconnectLock) {
-                isReconnecting = false;
-                reconnectRunning = false;
-                if (shouldReconnect) {
-                    scheduleReconnect();
-                }
-            }
-        }
-    }
-    
     // ==================== 亮度/降噪调节相关方法 ====================
     
     /**
