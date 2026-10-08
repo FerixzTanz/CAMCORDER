@@ -9,7 +9,8 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- Night mode matches the car's own settings more closely: the page is darker, and the setting rows
+  and the selected menu item are a darker grey instead of standing out as light grey blocks.
 
 ## [2.10.5-beta] - 2026-10-08
 

@@ -9,6 +9,7 @@
     <color name="bg">#FFF2F2F3</color>  <!-- 整屏底色：不带蓝，近白 / 近黑 -->
     <color name="surface">#FFFAFAFB</color>  <!-- 承载内容的面（夜间是中灰卡片，和系统一致） -->
     <color name="sunken">#FFE6E6E8</color>  <!-- 次级按钮、选中项的中性灰块 -->
+    <color name="card">#FFE6E6E8</color>  <!-- 设置行的卡片（日间和 sunken 同值；夜间更暗，见夜间那份） -->
     <color name="line">#FFDDDDE0</color>  <!-- 1px 分隔线 -->
     <color name="text_primary">#FF2A2B2E</color>  <!-- 正文：不用纯黑 / 纯白 -->
     <color name="text_secondary">#FF6B6D72</color>  <!-- 说明、状态 -->

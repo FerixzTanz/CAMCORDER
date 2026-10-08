@@ -6,9 +6,10 @@
 -->
 <resources>
     <!-- 语义色 -->
-    <color name="bg">#FF121314</color>  <!-- 整屏底色：不带蓝，近白 / 近黑 -->
+    <color name="bg">#FF0B0C0D</color>  <!-- 整屏底色：不带蓝，近白 / 近黑（夜间贴近车机的纯黑） -->
     <color name="surface">#FF2A2C30</color>  <!-- 承载内容的面（夜间是中灰卡片，和系统一致） -->
-    <color name="sunken">#FF3A3D42</color>  <!-- 次级按钮、选中项的中性灰块 -->
+    <color name="sunken">#FF2E3034</color>  <!-- 次级按钮、选中项的中性灰块 -->
+    <color name="card">#FF1F2023</color>  <!-- 设置行的卡片：夜间比底色只亮一点，和车机设置的卡片一样；选中项（sunken）再亮一级 -->
     <color name="line">#FF34373B</color>  <!-- 1px 分隔线 -->
     <color name="text_primary">#FFF0F1F2</color>  <!-- 正文：不用纯黑 / 纯白 -->
     <color name="text_secondary">#FFA3A6AB</color>  <!-- 说明、状态 -->
