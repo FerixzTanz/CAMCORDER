@@ -86,6 +86,27 @@ public enum QualityPreset {
         }
     }
 
+    /**
+     * 整份配置挪到这一档：每一路的帧率、码率都改成它，记下档位。
+     *
+     * @return 改了没有（全都已经是这一档时什么都不动，免得每次读配置都写一遍）
+     */
+    public boolean moveOnto(Profile profile) {
+        if (profile == null) {
+            return false;
+        }
+        boolean changed = profile.quality != this;
+        for (CameraProfile camera : profile.cameras) {
+            if (camera.record != null && !matches(camera.record)) {
+                changed = true;
+            }
+        }
+        if (changed) {
+            applyTo(profile);
+        }
+        return changed;
+    }
+
     /** 这一路的录制参数是不是正好是这一档。不是就该标「自定义」。 */
     public boolean matches(StreamSpec record) {
         if (record == null) {

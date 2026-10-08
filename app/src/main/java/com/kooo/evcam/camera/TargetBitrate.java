@@ -88,7 +88,8 @@ public final class TargetBitrate {
      * <pre>
      *   0 极低   2.7 Mbps   0.016 bpp   只求留下「发生了什么」
      *   1 低     5.4 Mbps   0.033 bpp   0.43 及以前的「中」就是这个数
-     *   2 中    10.0 Mbps   0.061 bpp   默认档
+     *   2 中    12.4 Mbps   0.075 bpp   默认档，也是唯一的录制画质（2.10.8 起从 10.0 抬上来：
+     *                                     30fps 时约 14 Mbps，停稳 15fps 时约 10 Mbps）
      *   3 高    20.0 Mbps   0.122 bpp   普通行车记录仪 1080p 的画质密度
      * </pre>
      *
@@ -108,7 +109,8 @@ public final class TargetBitrate {
                 return 0.260;
             case 2:
             default:
-                return 0.130;
+                // 2.10.8 由 0.130 抬到 0.161：项目拥有者定的唯一画质是「30fps 约 14 Mbps」
+                return 0.161;
         }
     }
 

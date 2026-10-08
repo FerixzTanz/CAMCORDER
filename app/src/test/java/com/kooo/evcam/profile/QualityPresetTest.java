@@ -63,6 +63,21 @@ public class QualityPresetTest {
         assertEquals(StreamSpec.FPS_UNLIMITED, QualityPreset.SHARPEST.fps);
     }
 
+    /** 2.10.8 画质只有一种：没开开发者选项时，选过别的档、改过某一路的都挪过来；已经是的不再写。 */
+    @Test
+    public void moveOntoBringsEveryCameraToTheOneQualityOnce() {
+        Profile profile = new Profile();
+        CameraProfile sharp = new CameraProfile("surround");
+        sharp.record = StreamSpec.record("auto", StreamSpec.FPS_UNLIMITED, StreamSpec.BITRATE_HIGH, "auto", 1);
+        profile.cameras.add(sharp);
+        profile.quality = QualityPreset.SHARPEST;
+
+        assertTrue(QualityPreset.BALANCED.moveOnto(profile));
+        assertEquals(QualityPreset.BALANCED, profile.quality);
+        assertTrue(QualityPreset.BALANCED.matches(sharp.record));
+        assertFalse(QualityPreset.BALANCED.moveOnto(profile));
+    }
+
     /** 存着旧「均衡」（20 + 中码率）的那几路升到 30；自己改过的不动。 */
     @Test
     public void oldBalancedIsUpgradedButCustomIsLeftAlone() {

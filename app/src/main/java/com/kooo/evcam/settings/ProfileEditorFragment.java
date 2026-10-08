@@ -240,6 +240,17 @@ public class ProfileEditorFragment extends Fragment {
 
     private void renderPresets() {
         Context context = requireContext();
+        // 画质只有一种（2.10.8，项目拥有者定）：三档和帧率、码率两个旋钮只给开发者选项里调试用
+        boolean dev = DeveloperMode.isUnlocked();
+        presetRow.setVisibility(dev ? View.VISIBLE : View.GONE);
+        View root = getView();
+        if (root != null) {
+            root.findViewById(R.id.editor_quality_title_text).setVisibility(dev ? View.VISIBLE : View.GONE);
+            root.findViewById(R.id.editor_quality_summary_text).setVisibility(dev ? View.VISIBLE : View.GONE);
+        }
+        if (!dev) {
+            return;
+        }
         LayoutInflater inflater = LayoutInflater.from(context);
         // 亮的是选过的那一档，单独改过某一路也一样 —— 改过的那一路在它自己的卡上标出来
         QualityPreset current = profile.quality;
@@ -417,17 +428,19 @@ public class ProfileEditorFragment extends Fragment {
         header.addView(which);
         detailBox.addView(header);
 
-        knob(context, R.string.editor_knob_fps,
-                new String[]{getString(R.string.editor_fps_unlimited), "30", "24", "20", "15", "10"},
-                new String[]{StreamSpec.FPS_UNLIMITED, "30", "24", "20", "15", "10"},
-                record.fps, value -> { record.fps = value; commit(); });
+        if (DeveloperMode.isUnlocked()) {
+            knob(context, R.string.editor_knob_fps,
+                    new String[]{getString(R.string.editor_fps_unlimited), "30", "24", "20", "15", "10"},
+                    new String[]{StreamSpec.FPS_UNLIMITED, "30", "24", "20", "15", "10"},
+                    record.fps, value -> { record.fps = value; commit(); });
 
-        knob(context, R.string.editor_knob_bitrate,
-                new String[]{getString(R.string.editor_very_low), getString(R.string.editor_low),
-                        getString(R.string.editor_medium), getString(R.string.editor_high)},
-                new String[]{StreamSpec.BITRATE_VERY_LOW, StreamSpec.BITRATE_LOW,
-                        StreamSpec.BITRATE_MEDIUM, StreamSpec.BITRATE_HIGH},
-                record.bitrate, value -> { record.bitrate = value; commit(); });
+            knob(context, R.string.editor_knob_bitrate,
+                    new String[]{getString(R.string.editor_very_low), getString(R.string.editor_low),
+                            getString(R.string.editor_medium), getString(R.string.editor_high)},
+                    new String[]{StreamSpec.BITRATE_VERY_LOW, StreamSpec.BITRATE_LOW,
+                            StreamSpec.BITRATE_MEDIUM, StreamSpec.BITRATE_HIGH},
+                    record.bitrate, value -> { record.bitrate = value; commit(); });
+        }
 
         knob(context, R.string.editor_knob_segment,
                 new String[]{"1", "3", "5", "10"}, new String[]{"1", "3", "5", "10"},

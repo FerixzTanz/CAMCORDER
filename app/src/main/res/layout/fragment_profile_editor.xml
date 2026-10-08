@@ -51,12 +51,14 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/editor_quality_title_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/editor_quality_title"
                         android:textAppearance="@style/TextAppearance.Cam.Row" />
 
                     <TextView
+                        android:id="@+id/editor_quality_summary_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"

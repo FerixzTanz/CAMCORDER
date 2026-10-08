@@ -60,7 +60,8 @@ public class TargetBitrateTest {
         int height = 2570;
         assertEquals(2_700_000, TargetBitrate.compute(0, width, height, 25, true));
         assertEquals(5_400_000, TargetBitrate.compute(1, width, height, 25, true));
-        assertEquals(10_000_000, TargetBitrate.compute(2, width, height, 25, true));
+        // 2.10.8：中档抬到 30fps 约 14 Mbps（项目拥有者定的唯一画质）
+        assertEquals(12_400_000, TargetBitrate.compute(2, width, height, 25, true));
         assertEquals(20_000_000, TargetBitrate.compute(3, width, height, 25, true));
     }
 

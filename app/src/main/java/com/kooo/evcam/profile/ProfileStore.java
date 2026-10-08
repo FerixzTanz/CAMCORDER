@@ -67,6 +67,15 @@ public final class ProfileStore {
     public Profile byId(String id) {
         Profile stored = load(id);
         if (!stored.cameras.isEmpty()) {
+            // 画质只有一种（2.10.8）：没开开发者选项的，各路的帧率和码率一律是它。以前选过别的档、改过某一路的，
+            // 读到时就挪过来存好 —— 界面上已经没有地方能改回去了
+            com.kooo.evcam.settings.DeveloperMode.init(context);
+            if (!com.kooo.evcam.settings.DeveloperMode.isUnlocked()
+                    && QualityPreset.BALANCED.moveOnto(stored)) {
+                save(stored);
+                AppLog.i(TAG, "配置 " + id + " 挪到唯一的录制画质（" + QualityPreset.BALANCED.fps + " fps，"
+                        + QualityPreset.BALANCED.bitrate + "）");
+            }
             return stored;
         }
         ProfileMigration.Snapshot snapshot = snapshot(context);
