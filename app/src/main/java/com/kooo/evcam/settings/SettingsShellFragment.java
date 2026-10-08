@@ -67,7 +67,6 @@ public class SettingsShellFragment extends Fragment {
         }
         // 进出二级界面时标题区要跟着变
         getChildFragmentManager().addOnBackStackChangedListener(this::refreshTitle);
-        com.kooo.evcam.ui.StatusLine.fill(view);
 
         if (savedInstanceState != null) {
             String saved = savedInstanceState.getString(STATE_SECTION);

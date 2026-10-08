@@ -147,6 +147,21 @@
                                     android:text="@string/zeekr_lane_right"
                                     android:textColor="#FFFFFF"
                                     android:textAppearance="@style/TextAppearance.Cam.Body" />
+
+                                <!--
+                                  没有画面时的说明（CAMCORDER 2026-10-08）：相机卡住或被拒时，这一块以前就是一片空白，
+                                  四个角标浮在空白上，看起来像还在加载。盖在角标上面，有画面就收起（MainActivity.updateNoPicture）。
+                                -->
+                                <TextView
+                                    android:id="@+id/tv_no_picture"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/preview_frame_background"
+                                    android:gravity="center"
+                                    android:text="@string/preview_no_picture"
+                                    android:textAppearance="@style/TextAppearance.Cam.Row"
+                                    android:textColor="@color/text_secondary"
+                                    android:visibility="gone" />
                             </FrameLayout>
                         </LinearLayout>
 
