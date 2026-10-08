@@ -35,6 +35,9 @@ public final class TargetBitrate {
     public static final int MIN_H264 = 1_500_000;
     public static final int MIN_HEVC = 1_000_000;
 
+    /** 下面那张表是按这个帧率定的；别的帧率按平方根折算（见 {@link #compute}）。 */
+    static final int REFERENCE_FPS = 25;
+
     private TargetBitrate() {
     }
 
@@ -65,7 +68,10 @@ public final class TargetBitrate {
             bpp *= 0.55;
         }
 
-        long bitrate = (long) ((double) width * height * frameRate * bpp);
+        // 帧率不按正比算：HEVC / H.264 存的主要是相邻帧之间的差，帧越密、相邻帧越像、每帧越便宜。
+        // 按平方根：表是在 25fps 定的，25 时和以前一样；30fps 只多 10%（正比要多 20%），15fps 少 23%
+        double fpsFactor = REFERENCE_FPS * Math.sqrt(frameRate / (double) REFERENCE_FPS);
+        long bitrate = (long) ((double) width * height * fpsFactor * bpp);
         bitrate = Math.min(bitrate, MAX);
         bitrate = Math.max(bitrate, hevc ? MIN_HEVC : MIN_H264);
         // 取整到 100Kbps，日志和界面都好读

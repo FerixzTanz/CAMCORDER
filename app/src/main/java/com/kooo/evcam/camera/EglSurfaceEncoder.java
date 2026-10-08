@@ -294,7 +294,14 @@ public class EglSurfaceEncoder {
         float seconds = elapsed / 1_000_000_000f;
         float delivered = deliveredFrames / seconds;
         float rendered = renderedFrames / seconds;
-        boolean behind = delivered - rendered > 1f;
+        // 节流本身就会把帧率砍到「源 / 整数」（30 → 30、15、10），那不是跟不上；
+        // 只有比节流该给的还少，才是我们渲染 / 编码的开销问题
+        float expected = delivered;
+        if (minFrameIntervalNs > 0 && delivered > 0f) {
+            float allowed = (1_000_000_000f / minFrameIntervalNs) / FrameThrottle.EARLY_TOLERANCE;
+            expected = delivered / (float) Math.ceil(delivered / allowed);
+        }
+        boolean behind = expected - rendered > 1f;
         if (behind || ++windowsSinceLog >= QUIET_WINDOWS) {
             windowsSinceLog = 0;
             AppLog.i(TAG, String.format(java.util.Locale.US,

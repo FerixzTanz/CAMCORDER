@@ -121,6 +121,9 @@ public final class Profile {
         }
         // 这个键是后加的：早先存下的配置里没有它，只能按各路的参数倒推
         String quality = values.get("quality");
+        if (quality == null || QualityPreset.BALANCED.key.equals(quality)) {
+            QualityPreset.upgradeOldBalanced(profile);
+        }
         profile.quality = quality != null
                 ? QualityPreset.fromKey(quality) : QualityPreset.inferredFrom(profile);
         return profile;

@@ -36,11 +36,19 @@ public enum QualityPreset {
     /** 省空间：10 fps + 低码率，继续记录全过程，细节有所压缩。 */
     SAVE_SPACE("space", "10", StreamSpec.BITRATE_LOW),
 
-    /** 均衡：20 fps + 中码率。默认。 */
-    BALANCED("balanced", "20", StreamSpec.BITRATE_MEDIUM),
+    /**
+     * 均衡：30 fps + 中码率。默认。
+     *
+     * <p>2.10.8 以前是 20 —— 可相机给的是 30，整帧丢弃只拿得到 30、15、10，「20」实际录出来是 15
+     * （{@link com.kooo.evcam.camera.FrameThrottle}）。旧的「20 + 中」在读配置时升上来，见 {@link #OLD_BALANCED_FPS}。</p>
+     */
+    BALANCED("balanced", "30", StreamSpec.BITRATE_MEDIUM),
 
     /** 最清晰：不限帧率 + 高码率，编码器接近满负荷。 */
     SHARPEST("sharp", StreamSpec.FPS_UNLIMITED, StreamSpec.BITRATE_HIGH);
+
+    /** 2.10.8 以前「均衡」存的帧率。 */
+    static final String OLD_BALANCED_FPS = "20";
 
     /** 存进配置里的那个词。存词不存序号：序号会随枚举顺序变。 */
     public final String key;
@@ -61,6 +69,21 @@ public enum QualityPreset {
             }
         }
         return BALANCED;
+    }
+
+    /**
+     * 2.10.8：「均衡」从 20 fps 改成 30 fps。存着旧「均衡」（20 + 中码率）的那几路跟着升上来 ——
+     * 不升的话它们既不是新的均衡、界面上就成了「自定义」，还一直录 15 fps。自己改过的（别的帧率、别的码率）不动。
+     * 只在配置记的是「均衡」、或者没记档位时调。
+     */
+    static void upgradeOldBalanced(Profile profile) {
+        for (CameraProfile camera : profile.cameras) {
+            StreamSpec record = camera.record;
+            if (record != null && OLD_BALANCED_FPS.equals(record.fps)
+                    && BALANCED.bitrate.equals(record.bitrate)) {
+                record.fps = BALANCED.fps;
+            }
+        }
     }
 
     /** 这一路的录制参数是不是正好是这一档。不是就该标「自定义」。 */

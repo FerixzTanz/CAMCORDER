@@ -1208,12 +1208,77 @@ public class MultiCameraManager {
         if (recording && !was) {
             com.kooo.evcam.storage.AutoLock.get().recordingStarted(context,
                     useRelayWrite ? finalSaveDir : null);
+            startStillWatch();
         } else if (!recording) {
+            stopStillWatch();
             // 信息条那份在开录时就登记了（还没真正录上），开录失败也要撤；没登记过时无害
             com.kooo.evcam.telemetry.Telemetry.get().release("recording");
             com.kooo.evcam.storage.AutoLock.get().recordingStopped();
         }
     }
+
+    // ================================================================= 停稳降帧
+
+    /** 在 {@link com.kooo.evcam.telemetry.Telemetry} 登记用的名字。 */
+    private static final String STILL_USER = "still-fps";
+    /** 多久看一次车速。车速不变时车辆信号不推，所以自己按点看。 */
+    private static final long STILL_TICK_MS = 500L;
+    private final StillDetector stillDetector = new StillDetector();
+    private boolean stillWatching;
+
+    /** 录上了：开始看车速，停稳 5 秒降到 15 fps、码率跟着降，开起来立刻回去（2.10.8）。 */
+    private void startStillWatch() {
+        mainHandler.post(() -> {
+            if (stillWatching) {
+                return;
+            }
+            stillWatching = true;
+            stillDetector.reset();
+            com.kooo.evcam.telemetry.Telemetry.get().acquire(context, STILL_USER);
+            mainHandler.removeCallbacks(stillTick);
+            mainHandler.postDelayed(stillTick, STILL_TICK_MS);
+        });
+    }
+
+    private void stopStillWatch() {
+        mainHandler.post(() -> {
+            if (!stillWatching) {
+                return;
+            }
+            stillWatching = false;
+            mainHandler.removeCallbacks(stillTick);
+            stillDetector.reset();
+            com.kooo.evcam.telemetry.Telemetry.get().release(STILL_USER);
+        });
+    }
+
+    private final Runnable stillTick = new Runnable() {
+        @Override
+        public void run() {
+            if (!stillWatching) {
+                return;
+            }
+            boolean was = stillDetector.isStill();
+            boolean now = stillDetector.update(android.os.SystemClock.elapsedRealtime(),
+                    com.kooo.evcam.telemetry.Telemetry.get().latest().speedKmh);
+            if (now != was) {
+                List<CodecVideoRecorder> current;
+                try {
+                    current = new ArrayList<>(codecRecorders.values());
+                } catch (RuntimeException e) {
+                    // 录制器正在别的线程上换：下一拍再来，状态别记成已切
+                    stillDetector.reset();
+                    mainHandler.postDelayed(this, STILL_TICK_MS);
+                    return;
+                }
+                for (CodecVideoRecorder recorder : current) {
+                    recorder.setStill(now);
+                }
+                com.kooo.evcam.blackbox.BlackBox.note(now ? "车停稳了：录像降到 15 fps" : "车开起来了：录像回到原帧率");
+            }
+            mainHandler.postDelayed(this, STILL_TICK_MS);
+        }
+    };
 
     /**
      * 管一次录像空间：设了上限就按上限删最旧的，录不下去了就停。

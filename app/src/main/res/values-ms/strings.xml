@@ -674,7 +674,7 @@
     <string name="editor_quality_space">Jimat ruang</string>
     <string name="editor_quality_space_note">10 fps, kadar bit rendah; paling mampat</string>
     <string name="editor_quality_balanced">Seimbang</string>
-    <string name="editor_quality_balanced_note">20 fps, kadar bit sederhana; seimbang antara perincian dan storan</string>
+    <string name="editor_quality_balanced_note">30 fps, kadar bit sederhana; seimbang antara perincian dan storan</string>
     <string name="editor_quality_sharp">Paling tajam</string>
     <string name="editor_quality_sharp_note">Tiada had kadar bingkai, kadar bit tinggi; paling terperinci</string>
     <string name="editor_cameras_title">Kamera dihidupkan: %1$d</string>

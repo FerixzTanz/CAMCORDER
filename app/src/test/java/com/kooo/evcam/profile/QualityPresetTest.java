@@ -58,8 +58,31 @@ public class QualityPresetTest {
     @Test
     public void theFrameRatesAreFixed() {
         assertEquals("10", QualityPreset.SAVE_SPACE.fps);
-        assertEquals("20", QualityPreset.BALANCED.fps);
+        // 2026-10-08 项目拥有者定：均衡从 20 改 30（相机给 30，「20」实际只录得出 15）
+        assertEquals("30", QualityPreset.BALANCED.fps);
         assertEquals(StreamSpec.FPS_UNLIMITED, QualityPreset.SHARPEST.fps);
+    }
+
+    /** 存着旧「均衡」（20 + 中码率）的那几路升到 30；自己改过的不动。 */
+    @Test
+    public void oldBalancedIsUpgradedButCustomIsLeftAlone() {
+        Profile profile = new Profile();
+        CameraProfile oldBalanced = new CameraProfile("surround");
+        oldBalanced.record = StreamSpec.record("auto", "20", StreamSpec.BITRATE_MEDIUM, "auto", 1);
+        CameraProfile customFps = new CameraProfile("cabin");
+        customFps.record = StreamSpec.record("auto", "25", StreamSpec.BITRATE_MEDIUM, "auto", 1);
+        CameraProfile customBitrate = new CameraProfile("fourth");
+        customBitrate.record = StreamSpec.record("auto", "20", StreamSpec.BITRATE_HIGH, "auto", 1);
+        profile.cameras.add(oldBalanced);
+        profile.cameras.add(customFps);
+        profile.cameras.add(customBitrate);
+
+        QualityPreset.upgradeOldBalanced(profile);
+
+        assertEquals("30", oldBalanced.record.fps);
+        assertEquals("25", customFps.record.fps);
+        assertEquals("20", customBitrate.record.fps);
+        assertTrue(QualityPreset.BALANCED.matches(oldBalanced.record));
     }
 
     /**

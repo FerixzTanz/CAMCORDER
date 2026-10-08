@@ -682,7 +682,7 @@
     <string name="editor_quality_space">省空间</string>
     <string name="editor_quality_space_note">10 fps、低码率；记录完整，细节压缩较多</string>
     <string name="editor_quality_balanced">均衡</string>
-    <string name="editor_quality_balanced_note">20 fps、中码率；清晰度与占用兼顾</string>
+    <string name="editor_quality_balanced_note">30 fps、中码率；清晰度与占用兼顾</string>
     <string name="editor_quality_sharp">最清晰</string>
     <string name="editor_quality_sharp_note">不限帧率、高码率；细节保留最充分</string>
     <string name="editor_cameras_title">已开启 %1$d 路摄像头</string>

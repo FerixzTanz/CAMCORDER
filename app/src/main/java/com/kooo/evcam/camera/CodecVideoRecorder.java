@@ -59,6 +59,10 @@ public class CodecVideoRecorder {
 
     /** 渲染节流上限；0 = 不限制。和 {@link #frameRate}（标称值）不是同一件事。 */
     private int frameRateCap;
+    /** 车停稳了（{@link StillDetector}）：帧率降到 {@link #STILL_FPS}、码率按它算。 */
+    private volatile boolean still;
+    /** 停稳时的帧率。相机给 30，整帧丢弃得到的是 30 / 2 = 15。 */
+    public static final int STILL_FPS = 15;
     
     // 自适应 drain 间隔控制（优化版 - 减少CPU占用）
     private volatile long currentDrainIntervalMs = 20;  // 当前 drain 间隔（毫秒）- 提高到20ms减少CPU占用
@@ -503,8 +507,44 @@ public class CodecVideoRecorder {
         if (encoder == null) {
             return;  // 还没创建，创建时会再套用一次
         }
-        // 节流用上限（可以是 0 = 不限制），不是标称值
-        encoder.setFrameRate(frameRateCap);
+        // 节流用上限（可以是 0 = 不限制），不是标称值；停稳时用停稳的
+        encoder.setFrameRate(still ? stillCap() : frameRateCap);
+    }
+
+    /** 停稳时的节流上限：本来就不高于 {@link #STILL_FPS} 的不动。 */
+    private int stillCap() {
+        return frameRateCap == 0 || frameRateCap > STILL_FPS ? STILL_FPS : frameRateCap;
+    }
+
+    /**
+     * 车停稳了 / 开起来了（主线程调，{@code MultiCameraManager} 看车速）。帧率马上换；
+     * 码率在编码线程上改给正在用的编码器（不用重建，下一段新建时也按这个算）。
+     */
+    public void setStill(boolean value) {
+        if (still == value) {
+            return;
+        }
+        still = value;
+        applyEncoderFrameRate();
+        Handler handler = encoderHandler;
+        if (handler != null) {
+            handler.post(() -> {
+                MediaCodec codec = encoder;
+                if (codec == null) {
+                    return;
+                }
+                try {
+                    android.os.Bundle params = new android.os.Bundle();
+                    params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, calculateOptimalBitrate());
+                    codec.setParameters(params);
+                } catch (Exception e) {
+                    AppLog.w(TAG, "Camera " + cameraId + " 改码率失败: " + e.getMessage());
+                }
+            });
+        }
+        AppLog.i(TAG, "Camera " + cameraId + (value ? " 车停稳了：" : " 车开起来了：")
+                + (value ? stillCap() : (frameRateCap == 0 ? "不限" : String.valueOf(frameRateCap)))
+                + " fps，码率 " + TargetBitrate.format(calculateOptimalBitrate()));
     }
 
     /**
@@ -1307,7 +1347,8 @@ public class CodecVideoRecorder {
 
     /** 公式在 {@link TargetBitrate} 里，设置界面显示的也是它算出来的同一个数。 */
     private int calculateOptimalBitrate() {
-        return TargetBitrate.compute(qualityLevel, width, height, frameRate,
+        int fps = still ? Math.min(frameRate, STILL_FPS) : frameRate;
+        return TargetBitrate.compute(qualityLevel, width, height, fps,
                 mimeType.equals(MIME_TYPE_HEVC));
     }
 

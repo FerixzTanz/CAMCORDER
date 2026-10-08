@@ -684,7 +684,7 @@
     <string name="editor_quality_space">Save space</string>
     <string name="editor_quality_space_note">10 fps, low bitrate; most compression</string>
     <string name="editor_quality_balanced">Balanced</string>
-    <string name="editor_quality_balanced_note">20 fps, medium bitrate; balances detail and storage</string>
+    <string name="editor_quality_balanced_note">30 fps, medium bitrate; balances detail and storage</string>
     <string name="editor_quality_sharp">Sharpest</string>
     <string name="editor_quality_sharp_note">No frame rate cap, high bitrate; most detail</string>
     <string name="editor_cameras_title">Cameras on: %1$d</string>

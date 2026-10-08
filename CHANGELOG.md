@@ -16,6 +16,13 @@ commit message, not here.
 - Indicating again a few seconds after the side view closed (a lane change and back) shows the picture
   straight away.
 - Diagnostics reports no longer include your number plate.
+- Recording is smoother: the default (Balanced) is now 30 fps. Until now it was set to 20 but actually
+  recorded 15, because the camera sends 30 and only whole frames can be dropped. Profiles on the old
+  Balanced setting move to 30 on their own.
+- 30 fps doesn't double the file size: the bitrate now grows much less than the frame rate (Balanced at
+  30 fps is about 11 Mbps, around 85 MB a minute for the 360 view).
+- When the car has been stopped for 5 seconds, recording drops to 15 fps and a lower bitrate, and goes
+  back to full rate as soon as you move, so traffic lights and queues take less space.
 
 ## [2.10.7-beta] - 2026-10-08
 
