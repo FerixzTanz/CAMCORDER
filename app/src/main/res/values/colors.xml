@@ -11,7 +11,7 @@
     <color name="sunken">#FFE6E6E8</color>  <!-- 次级按钮、选中项的中性灰块 -->
     <color name="line">#FFDDDDE0</color>  <!-- 1px 分隔线 -->
     <color name="text_primary">#FF2A2B2E</color>  <!-- 正文：不用纯黑 / 纯白 -->
-    <color name="text_secondary">#FF76787D</color>  <!-- 说明、状态 -->
+    <color name="text_secondary">#FF6B6D72</color>  <!-- 说明、状态 -->
     <color name="text_tertiary">#FF9EA0A5</color>  <!-- 最弱一级 -->
     <color name="energy">#FFF0622D</color>  <!-- 能量色 = 极氪橙：开关、指示、选中下划线 -->
     <color name="energy_text">#FFC9491A</color>  <!-- 橙色文字用它；实心按钮一律用 energy -->

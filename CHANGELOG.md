@@ -9,7 +9,12 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- When the 360 camera sends no picture, the main screen says "No picture from the surround view"
+  instead of showing a blank area with the Front, Rear, Left and Right labels floating over it.
+- The hide-to-background button has a new icon. The old down-arrow looked like a download.
+- Recording settings are grouped under Stream, Automatic recording, and Photos and stamps. The
+  descriptions for starting and stopping recording with the driver are shorter.
+- Descriptions in light mode are slightly darker and easier to read.
 
 ## [2.10.4-beta] - 2026-10-08
 

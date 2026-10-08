@@ -12,6 +12,9 @@
     <string name="set_update_beta_summary">Jika dimatikan, hanya keluaran stabil disemak</string>
     <string name="upd_none_release">Tiada keluaran stabil yang boleh dipasang</string>
     <string name="set_section_recording">Rakaman</string>
+    <string name="set_cat_stream">Strim</string>
+    <string name="set_cat_auto_record">Rakaman automatik</string>
+    <string name="set_cat_photo_stamp">Foto dan tera</string>
     <string name="set_section_storage">Storan</string>
     <string name="set_section_rearview">Cermin super</string>
     <string name="set_section_floating">Butang terapung</string>
@@ -86,9 +89,9 @@
     <string name="set_auto_record_title">Rakam semasa dibuka</string>
     <string name="set_auto_record_summary">Mula merakam apabila apl dibuka, dan menyambung rakaman yang berhenti kerana skrin padam apabila skrin hidup semula; rakaman yang anda hentikan tidak dimulakan semula</string>
     <string name="set_drive_auto_start_title">Mula merakam apabila anda masuk</string>
-    <string name="set_drive_auto_start_summary">Mula merakam apabila anda duduk di tempat duduk pemandu dengan kereta dalam P, walaupun anda tidak memandu pergi. Juga bermula apabila anda menukar keluar dari P, atau jika aplikasi bermula semasa anda sudah memandu. Aplikasi tidak perlu dibuka. Tidak jika anda sendiri menghentikan rakaman dalam perjalanan ini.</string>
+    <string name="set_drive_auto_start_summary">Mula merakam apabila anda duduk di tempat duduk pemandu dalam P, menukar keluar dari P, atau apl bermula semasa memandu. Berfungsi walaupun apl ditutup; tidak selepas anda sendiri menghentikan rakaman dalam perjalanan ini.</string>
     <string name="set_drive_auto_stop_title">Henti merakam apabila anda meninggalkan kereta</string>
-    <string name="set_drive_auto_stop_summary">Berhenti apabila kereta dalam P dan tempat duduk pemandu kosong selama 30 saat, atau Mod Sentry bersedia selepas anda mengunci. Kamera kemudian bebas untuk Mod Sentry. Duduk di dalam kereta tidak akan menghentikannya.</string>
+    <string name="set_drive_auto_stop_summary">Berhenti apabila kereta dalam P dan tempat duduk pemandu kosong selama 30 saat, atau Mod Sentry bersedia selepas anda mengunci, supaya kamera bebas untuk Mod Sentry. Duduk di dalam kereta tidak menghentikannya.</string>
     <string name="msg_left_car_stopped">Anda telah meninggalkan kereta. Rakaman dihentikan.</string>
     <string name="set_screen_off_title">Rakaman skrin padam (kekal berjaga)</string>
     <string name="set_screen_off_summary">Jika sedang merakam semasa skrin padam, terus merakam dan kekalkan unit kepala berjaga sehingga tempoh yang ditetapkan di bawah</string>
@@ -626,6 +629,7 @@
     <string name="status_storage_none">Tiada pemacu USB</string>
     <string name="status_recording_fallback">Merakam ke %1$s (%2$s tidak tersedia)</string>
     <string name="status_camera_taken">Kamera sedang digunakan. Rakaman disambung semula apabila ia dilepaskan.</string>
+    <string name="preview_no_picture">Tiada gambar daripada paparan sekeliling</string>
     <string name="status_internal_storage">storan dalaman</string>
     <string name="nav_group_switches">Suis</string>
 
