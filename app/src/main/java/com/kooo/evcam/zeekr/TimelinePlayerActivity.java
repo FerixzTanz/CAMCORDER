@@ -128,6 +128,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private List<RecordingTimeline.Session> sessions = new ArrayList<>();
+    /** 每一趟里的事件（急刹车、闪远光）在时间轴上的位置，和 sessions 一一对应（2.10.8）。 */
+    private List<long[]> sessionMarkers = new ArrayList<>();
     private int sessionIndex = 0;
     /** 扫描出来的其余几路的文件，按槽位（归一之后的名字）分。 */
     private final Map<String, List<RecordingTimeline.Source>> laneSources = new HashMap<>();
@@ -470,12 +472,40 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                 AppLog.e(TAG, "扫描录像失败", e);
             }
 
-            final List<RecordingTimeline.Session> built = RecordingTimeline.build(sources);
+            // 一趟一趟按行车日志分（2.10.8）：一趟里录像断过也是一条；日志里没有的按空隙分
+            final List<com.kooo.evcam.storage.DriveRecords.Drive> drives =
+                    com.kooo.evcam.storage.DriveLog.read(StorageHelper.getVideoDir(getApplicationContext()));
+            final DriveGrouping grouping = new DriveGrouping(drives);
+            final List<RecordingTimeline.Session> built = RecordingTimeline.build(sources, grouping);
+            final double[] km = new double[built.size()];
+            final List<long[]> markers = new ArrayList<>();
+            for (int i = 0; i < built.size(); i++) {
+                RecordingTimeline.Session session = built.get(i);
+                com.kooo.evcam.storage.DriveRecords.Drive drive =
+                        grouping.drive(grouping.driveAt(session.startEpochMs));
+                Double distance = drive != null ? drive.distanceKm() : null;
+                km[i] = distance != null ? distance : Double.NaN;
+                List<Long> at = new ArrayList<>();
+                if (drive != null) {
+                    for (com.kooo.evcam.storage.DriveRecords.Event event : drive.events) {
+                        if (event.epochMs >= session.startEpochMs && event.epochMs <= session.endEpochMs()) {
+                            at.add(session.positionAt(event.epochMs));
+                        }
+                    }
+                }
+                long[] positions = new long[at.size()];
+                for (int j = 0; j < positions.length; j++) {
+                    positions[j] = at.get(j);
+                }
+                markers.add(positions);
+            }
             final boolean locksOn = com.kooo.evcam.storage.FootageLocks.enabled(getApplicationContext());
             final java.util.Set<String> locked = com.kooo.evcam.storage.FootageLocks.shown(
                     getApplicationContext(), StorageHelper.getVideoDir(getApplicationContext()));
             runOnUiThread(() -> {
                 sessions = built;
+                sessionMarkers = markers;
+                sessionAdapter.setDistances(km);
                 laneSources.clear();
                 laneSources.putAll(others);
                 lockEnabled = locksOn;
@@ -1415,8 +1445,16 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         if (lockedStrip == null) {
             return;
         }
-        if (!lockEnabled || sessions.isEmpty() || sessionIndex >= sessions.size()) {
+        if (sessions.isEmpty() || sessionIndex >= sessions.size()) {
             lockedStrip.setVisibility(View.GONE);
+            return;
+        }
+        long[] events = sessionIndex < sessionMarkers.size() ? sessionMarkers.get(sessionIndex) : new long[0];
+        if (!lockEnabled) {
+            // 锁定影像关着：条上只画事件
+            lockedStrip.setRanges(new long[0], sessions.get(sessionIndex).totalDurationMs);
+            lockedStrip.setMarkers(events);
+            lockedStrip.setVisibility(events.length > 0 ? View.VISIBLE : View.INVISIBLE);
             return;
         }
         RecordingTimeline.Session session = sessions.get(sessionIndex);
@@ -1436,8 +1474,9 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             ranges[i] = ends.get(i);
         }
         lockedStrip.setRanges(ranges, session.totalDurationMs);
-        // 这一条里没锁东西：位置留着（不让下面的按钮跳），条不显示
-        lockedStrip.setVisibility(ranges.length > 0 ? View.VISIBLE : View.INVISIBLE);
+        lockedStrip.setMarkers(events);
+        // 这一条里没锁东西、也没出过事：位置留着（不让下面的按钮跳），条不显示
+        lockedStrip.setVisibility(lockedStrip.hasContent() ? View.VISIBLE : View.INVISIBLE);
     }
 
     /** 按钮说的是这一刻：各路的文件都锁着写「解锁」，否则写「锁定」。 */

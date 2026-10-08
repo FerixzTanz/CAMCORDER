@@ -29,6 +29,11 @@ commit message, not here.
   oldest is released first, so a false alarm can never fill the drive. Locking or unlocking a clip
   yourself in playback makes it yours, and the cap no longer applies to it.
 - The "Lock footage on horn" option, which could never be turned on, is gone.
+- Videos are grouped by drive. A drive runs from when recording starts as you get in until you leave
+  the car, so a recording that was interrupted and resumed, or a stop with the screen off, stays one
+  entry instead of several. Each entry shows how far you drove. Hard braking and flash-to-pass show
+  as dots on the bar under the timeline, so you can jump straight to them. Older recordings without
+  drive information are grouped as before, joining gaps of up to 3 minutes.
 
 ## [2.10.7-beta] - 2026-10-08
 

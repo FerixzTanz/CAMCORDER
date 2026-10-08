@@ -166,6 +166,7 @@ public final class DriveSessionWatcher {
                 }
                 cancelPendingStart();
                 RecordingIntent.current().noteLeftCar();
+                com.kooo.evcam.storage.DriveLog.driverLeft(app);
                 coordinator.stop(RecordingStops.Reason.LEFT_CAR);
                 // 拉着车机的话，等录制器把文件收好尾再放
                 main.removeCallbacks(letSleepAfterStop);
@@ -175,6 +176,7 @@ public final class DriveSessionWatcher {
                 BlackBox.noteImportant("下车了（" + session.describe() + "，哨兵 " + in.sentry + "），没在录：这一趟结束");
                 cancelPendingStart();
                 RecordingIntent.current().noteLeftCar();
+                com.kooo.evcam.storage.DriveLog.driverLeft(app);
                 if (in.autoStop) {
                     coordinator.cancelPending("left-car");
                 }

@@ -499,6 +499,8 @@ public final class RecordingCoordinator {
             return;
         }
         BlackBox.noteImportant("录像开始: " + cameras + "（" + why + "）");
+        // 行车日志：上车 / 换出 P 挡开的一定是新的一趟，别的接着没结束的那一趟（回放按它分趟）
+        com.kooo.evcam.storage.DriveLog.recordingStarted(context, why == Why.DRIVE);
         // 前台服务：没有它，系统会在应用退到后台后把录制掐掉
         CameraForegroundService.start(context,
                 context.getString(R.string.notif_recording_title),

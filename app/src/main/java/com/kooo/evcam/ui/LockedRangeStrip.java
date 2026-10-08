@@ -22,6 +22,9 @@ public class LockedRangeStrip extends View {
     private final Paint locked = new Paint(Paint.ANTI_ALIAS_FLAG);
     /** 时间轴上的起止（毫秒），成对：[起, 止, 起, 止 …]。 */
     private long[] ranges = new long[0];
+    /** 事件（急刹车、闪远光）在时间轴上的位置（毫秒），画成能量色的点（2.10.8）。 */
+    private long[] markers = new long[0];
+    private final Paint marker = new Paint(Paint.ANTI_ALIAS_FLAG);
     private long total = 1;
 
     public LockedRangeStrip(Context context) {
@@ -32,6 +35,7 @@ public class LockedRangeStrip extends View {
         super(context, attrs);
         track.setColor(ContextCompat.getColor(context, R.color.line));
         locked.setColor(ContextCompat.getColor(context, R.color.locked));
+        marker.setColor(ContextCompat.getColor(context, R.color.energy));
     }
 
     /** 两端和这根进度条的轨道对齐。 */
@@ -47,6 +51,16 @@ public class LockedRangeStrip extends View {
         this.ranges = ranges != null ? ranges : new long[0];
         this.total = Math.max(1, total);
         invalidate();
+    }
+
+    /** 事件的位置（时间轴毫秒）；和 {@link #setRanges} 用同一个总长。 */
+    public void setMarkers(long[] positions) {
+        this.markers = positions != null ? positions : new long[0];
+        invalidate();
+    }
+
+    public boolean hasContent() {
+        return ranges.length > 0 || markers.length > 0;
     }
 
     @Override
@@ -67,6 +81,11 @@ public class LockedRangeStrip extends View {
                 x1 = Math.min(left + width, x0 + height);
             }
             canvas.drawRoundRect(x0, 0, x1, height, radius, radius, locked);
+        }
+        // 事件压在最上面：比条略高的一个点，锁定的琥珀色上也看得见
+        for (long position : markers) {
+            float x = left + width * clamp(position) / total;
+            canvas.drawCircle(x, height / 2f, Math.max(radius * 1.6f, 3f), marker);
         }
     }
 

@@ -102,6 +102,15 @@ public class TimelineSessionAdapter
     /** 每一条有没有锁定的文件（锁定影像），和 sessions 一一对应。 */
     private boolean[] sessionLocked = new boolean[0];
 
+    /** 每一趟开了多远（km，行车日志里两头的里程，见 {@code DriveLog}）；读不到为 NaN。和 sessions 一一对应。 */
+    private double[] sessionKm = new double[0];
+
+    /** 每一趟开了多远；读不到的写 NaN。 */
+    public void setDistances(double[] km) {
+        sessionKm = km != null ? km : new double[0];
+        notifyDataSetChanged();
+    }
+
     /** 哪几条含锁定的文件：行尾多写一句「含已锁定文件」。 */
     public void setLocked(boolean[] locked) {
         sessionLocked = locked != null ? locked : new boolean[0];
@@ -255,7 +264,8 @@ public class TimelineSessionAdapter
         long bytes = row.sessionIndex < sessionBytes.length
                 ? sessionBytes[row.sessionIndex] : row.session.totalSizeBytes;
         boolean locked = row.sessionIndex < sessionLocked.length && sessionLocked[row.sessionIndex];
-        sessionHolder.bind(row.session, bytes, locked, row.sessionIndex == selectedSessionIndex,
+        double km = row.sessionIndex < sessionKm.length ? sessionKm[row.sessionIndex] : Double.NaN;
+        sessionHolder.bind(row.session, bytes, km, locked, row.sessionIndex == selectedSessionIndex,
                 selectionMode, chosen.contains(row.sessionIndex));
         sessionHolder.itemView.setOnClickListener(v -> {
             int clicked = sessionHolder.getAdapterPosition();
@@ -312,16 +322,18 @@ public class TimelineSessionAdapter
             check = itemView.findViewById(R.id.session_check);
         }
 
-        void bind(RecordingTimeline.Session session, long bytes, boolean locked, boolean selected,
+        void bind(RecordingTimeline.Session session, long bytes, double km, boolean locked, boolean selected,
                   boolean selecting, boolean chosen) {
             Date start = new Date(session.startEpochMs);
-            Date end = new Date(session.startEpochMs + session.totalDurationMs);
+            // 一趟里录像断过的话时间轴比真实时间短：结束写最后一段真正结束的时刻
+            Date end = new Date(session.endEpochMs());
 
             // 日期由分组标题给出，这里突出时间跨度
             SimpleDateFormat clock = new SimpleDateFormat("HH:mm", Locale.getDefault());
             timeText.setText(clock.format(start) + " – " + clock.format(end));
 
             metaText.setText(TimelineFormat.duration(session.totalDurationMs)
+                    + (Double.isNaN(km) ? "" : String.format(Locale.US, " · %.0f km", km))
                     + " · " + TimelineFormat.size(bytes)
                     + " · " + itemView.getContext().getResources().getQuantityString(
                             R.plurals.player_clip_count, session.segmentCount(), session.segmentCount())

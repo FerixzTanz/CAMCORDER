@@ -210,11 +210,25 @@ public final class RecordingTimeline {
      * @return 按时间先后排列的会话；输入为空时返回空列表
      */
     public static List<Session> build(List<Source> sources, long maxGapMs) {
+        final long gapLimit = maxGapMs > 0 ? maxGapMs : DEFAULT_MAX_GAP_MS;
+        return build(sources, (previousEndEpochMs, nextStartEpochMs) ->
+                nextStartEpochMs - previousEndEpochMs <= gapLimit);
+    }
+
+    /** 前一段结束、后一段开始：两段接不接在同一条时间轴上。 */
+    public interface Joiner {
+        boolean joins(long previousEndEpochMs, long nextStartEpochMs);
+    }
+
+    /**
+     * 同 {@link #build(List, long)}，接不接由 {@code joiner} 定（按行车日志分趟，见 {@link DriveGrouping}）。
+     * 中间的空隙不占时间轴：跳过去接着放。
+     */
+    public static List<Session> build(List<Source> sources, Joiner joiner) {
         List<Session> sessions = new ArrayList<>();
         if (sources == null || sources.isEmpty()) {
             return sessions;
         }
-        final long gapLimit = maxGapMs > 0 ? maxGapMs : DEFAULT_MAX_GAP_MS;
 
         List<Source> sorted = new ArrayList<>(sources);
         Collections.sort(sorted, new Comparator<Source>() {
@@ -234,7 +248,7 @@ public final class RecordingTimeline {
                 continue;  // 时长读不出来的文件跳过，宁可少一段也不要把时间轴算错
             }
             boolean startsNewSession = current.isEmpty()
-                    || (src.startEpochMs - previousEndEpoch) > gapLimit;
+                    || !joiner.joins(previousEndEpoch, src.startEpochMs);
 
             if (startsNewSession && !current.isEmpty()) {
                 sessions.add(new Session(current, offset, sessionStart));

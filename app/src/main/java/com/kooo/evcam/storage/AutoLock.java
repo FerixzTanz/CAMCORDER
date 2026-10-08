@@ -215,6 +215,7 @@ public final class AutoLock implements Telemetry.Listener {
         lastFlash = flash;
         if (rising && flashEnabled(app)) {
             lockAround(app, System.currentTimeMillis(), Source.FLASH);
+            DriveLog.event(app, DriveRecords.Event.FLASH, 0);
         }
         if (brakeEnabled(app)) {
             Float brakePercent = readings.number(Signal.BRAKE_DEPTH);
@@ -226,6 +227,7 @@ public final class AutoLock implements Telemetry.Listener {
                 BlackBox.noteImportant(String.format(Locale.US, "急刹车：%.2f g，从 %.0f km/h，%s",
                         event.g, event.fromKmh, event.braking ? "踩着刹车" : "没踩刹车（多半是自动紧急制动）"));
                 lockAround(app, System.currentTimeMillis(), Source.BRAKE);
+                DriveLog.event(app, DriveRecords.Event.BRAKE, event.g);
             }
         }
     }
