@@ -83,6 +83,13 @@ public final class RecordingCoordinator {
 
         /** 条件不满足，压根没开始。 */
         void onRecordingRefused(String reason);
+
+        /**
+         * U 盘写入跟不上：录像照常在录，但写入排队满了，相机这一侧开始丢帧。
+         * 已经限过频（{@link RecordingCoordinator#SLOW_WRITE_NOTICE_GAP_MS}），收到就提示。
+         */
+        default void onWriteSlow() {
+        }
     }
 
     private static RecordingCoordinator instance;
@@ -117,6 +124,17 @@ public final class RecordingCoordinator {
     private long pendingSinceMs;
     private RecordingStops.Reason lastStopReason;
     private long startedAtMs;
+
+    /**
+     * 「U 盘写入跟不上」提示的限频：一次录像最多提示一次，两次提示之间至少隔这么久
+     * （录像被打断、自动接回算新的一次录像，也受这个间隔管）。U 盘一直跟不上时一段接一段地满，
+     * 每段都提示会变成一串关不掉的 Toast；黑匣子那边照样每段都有数。
+     */
+    static final long SLOW_WRITE_NOTICE_GAP_MS = 30 * 60 * 1000L;
+    /** 上一次提示「U 盘写入跟不上」的时刻（elapsedRealtime）；0 = 这个进程里还没提示过。 */
+    private long slowWriteNoticedAtMs;
+    /** 这一次录像里提示过没有。开录时清。 */
+    private boolean slowWriteNoticedThisRecording;
 
     /** 熄屏持续录制关着时，熄屏后多久停录 —— 唯一的一个缓冲（项目所有者 2026-09-27）。 */
     static final long SCREEN_OFF_STOP_MS = 10_000L;
@@ -176,6 +194,12 @@ public final class RecordingCoordinator {
         manager.setCameraLostCallback(cameraId -> main.post(() -> {
             if (manager == attemptManager) {
                 stop(RecordingStops.Reason.CAMERA_LOST);
+            }
+        }));
+        // 写盘跟不上：不停录（录像照常，只是开始丢帧），提示一句，限频
+        manager.setWriteBacklogCallback(cameraId -> main.post(() -> {
+            if (manager == attemptManager) {
+                onWriteBacklog(cameraId);
             }
         }));
         manager.setPipelineCallback(new MultiCameraManager.PipelineCallback() {
@@ -488,6 +512,7 @@ public final class RecordingCoordinator {
         attemptManager = manager;
         startedAtMs = android.os.SystemClock.elapsedRealtime();
         lastStopReason = null;
+        slowWriteNoticedThisRecording = false;
         CameraNeeds.current().claim(CameraNeeds.Holder.RECORDING);
         // 这一趟要录过了：开录失败也算，失败了照样接回（规格 2.3）
         RecordingIntent.current().noteRecordingStarted();
@@ -682,6 +707,28 @@ public final class RecordingCoordinator {
         request(Why.RESUME, counts);
         // request 可能什么都没做（人已下车、车在 P）：那就不算要接回，前台服务和相机该放就放（审查 2026-10-08）
         return pending != null;
+    }
+
+    /**
+     * 录制器报写盘跟不上（主线程）：某一路的写入排队满了，相机这一侧开始丢帧。不停录 —— 录像照常，
+     * 只是可能丢帧；提示一句（{@link Listener#onWriteSlow}），一次录像最多一次，两次至少隔
+     * {@link #SLOW_WRITE_NOTICE_GAP_MS}。满了多久、丢了几帧，录制器自己记黑匣子。
+     */
+    private void onWriteBacklog(String cameraId) {
+        if (!isRecording()) {
+            return;
+        }
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (slowWriteNoticedThisRecording
+                || (slowWriteNoticedAtMs != 0 && now - slowWriteNoticedAtMs < SLOW_WRITE_NOTICE_GAP_MS)) {
+            return;
+        }
+        slowWriteNoticedThisRecording = true;
+        slowWriteNoticedAtMs = now;
+        BlackBox.noteImportant("提示用户：U 盘写入跟不上（相机 " + cameraId + " 的写入排队满了，开始丢帧）");
+        for (Listener listener : new ArrayList<>(listeners)) {
+            listener.onWriteSlow();
+        }
     }
 
     /** 人自己开了：前面的失败都不算了。 */
