@@ -62,8 +62,11 @@ public final class Recovery {
                 return;
             }
             if (com.kooo.evcam.zeekr.CarViewGate.isActiveNow()) {
-                // 原厂画面（倒车、360、泊车）在屏幕上：不把主界面拉到前台盖住它（2.11.0 驾驶安全审查）
-                BlackBox.note("亮屏：原厂画面在，先不把主界面接回前台");
+                // 原厂画面（倒车、360、泊车）在屏幕上：不把主界面拉到前台盖住它（2.11.0 驾驶安全审查）。
+                // 这一趟就不接了，记号也清掉：留着的话，之后任何一次恢复（录像开始、停下续录都会触发）
+                // 会在已经挂 D 挡行驶时把主界面拉到导航前面
+                config.setUiLeftForScreenOff(false);
+                BlackBox.note("亮屏：原厂画面在，这一趟不把主界面接回前台");
                 return;
             }
             config.setUiLeftForScreenOff(false);

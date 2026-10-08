@@ -245,6 +245,17 @@ public final class DriveSessionWatcher {
     private void cancelPendingStart() {
         startPendingSinceMs = 0;
         main.removeCallbacks(tryStart);
+        cancelCarViewRetry();
+    }
+
+    /** 等原厂画面收掉的那一下重试（{@link #start}）；排着就只有这一个，开关关了 / 人下车了都撤掉。 */
+    private Runnable carViewRetry;
+
+    private void cancelCarViewRetry() {
+        if (carViewRetry != null) {
+            main.removeCallbacks(carViewRetry);
+            carViewRetry = null;
+        }
     }
 
     private void tryStart() {
@@ -266,15 +277,17 @@ public final class DriveSessionWatcher {
         }
         String reason = startPendingReason;
         cancelPendingStart();
-        start(coordinator, reason, waited);
+        start(coordinator, reason, waited, false);
     }
 
-    private void start(RecordingCoordinator coordinator, String reason, long waitedMs) {
+    private void start(RecordingCoordinator coordinator, String reason, long waitedMs, boolean retry) {
         if (UserExit.blocks(app, "DriveSession")) {
             AppLog.i(TAG, "start skipped: user exited the app");
             return;
         }
-        BlackBox.noteImportant("开录（" + reason + "，等了 " + waitedMs / 1000 + " 秒让车机安静）");
+        if (!retry) {
+            BlackBox.noteImportant("开录（" + reason + "，等了 " + waitedMs / 1000 + " 秒让车机安静）");
+        }
         MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
         if (manager == null || manager.isReleased()) {
             manager = CameraManagerHolder.getInstance().getOrInit(app);
@@ -292,14 +305,18 @@ public final class DriveSessionWatcher {
             if (waitedMs < CAR_VIEW_WAIT_MAX_MS) {
                 AppLog.i(TAG, "相机管线不在，但原厂画面在：先不拉主界面，2 秒后再看");
                 final long waitedSoFar = waitedMs + CAR_VIEW_RETRY_MS;
-                main.postDelayed(() -> {
-                    // 等的这一阵人下车了、或者自己停了录像：不再开
-                    if (driverAway() || RecordingIntent.current().stoppedByUser()
+                cancelCarViewRetry();
+                carViewRetry = () -> {
+                    carViewRetry = null;
+                    // 等的这一阵开关关了、熄屏了、人下车了、或者自己停了 / 已经在录：不再开
+                    if (!running || ScreenState.dark() || session.driverAway()
+                            || RecordingIntent.current().stoppedByUser()
                             || coordinator.isRecording() || coordinator.isWaiting()) {
                         return;
                     }
-                    start(coordinator, reason, waitedSoFar);
-                }, CAR_VIEW_RETRY_MS);
+                    start(coordinator, reason, waitedSoFar, true);
+                };
+                main.postDelayed(carViewRetry, CAR_VIEW_RETRY_MS);
             } else {
                 BlackBox.noteImportant("原厂画面一直在，放弃这一次上车开录");
             }

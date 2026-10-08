@@ -42,6 +42,7 @@ public final class CameraAvailabilityWatch {
     private static final Map<String, Boolean> OURS = new ConcurrentHashMap<>();
 
     private static CameraManager.AvailabilityCallback callback;
+    private static Context appContext;
 
     private CameraAvailabilityWatch() {
     }
@@ -71,6 +72,7 @@ public final class CameraAvailabilityWatch {
         if (cm == null) {
             return;
         }
+        appContext = context.getApplicationContext() != null ? context.getApplicationContext() : context;
         callback = new CameraManager.AvailabilityCallback() {
             @Override
             public void onCameraAccessPrioritiesChanged() {
@@ -113,7 +115,7 @@ public final class CameraAvailabilityWatch {
             CameraTaken.othersReleased(cameraId);
         } else if (!ours) {
             CameraContention.othersTook(cameraId);
-            CameraTaken.othersTook(cameraId);
+            CameraTaken.othersTook(cameraId, appContext);
         }
         if (available) {
             BlackBox.noteImportant("相机服务: " + cameraId + " 空闲" + (before == null ? "（初始状态）" : ""));

@@ -73,13 +73,16 @@ public final class CameraTaken {
     }
 
     /** 相机服务报：这一路被别的程序拿了。 */
-    static void othersTook(String cameraId) {
+    static void othersTook(String cameraId, android.content.Context context) {
         HELD_BY_OTHERS.add(cameraId);
+        // 要靠车辆信号判断原厂画面在不在，那就在拿走期间读着（主线程）
+        CarViewGate.get().watchWhileCameraTaken(context);
     }
 
     /** 相机服务报：这一路空出来了。别的程序一路都不占了，就把被拿走时断掉的接回来。 */
     static void othersReleased(String cameraId) {
         if (HELD_BY_OTHERS.remove(cameraId) && HELD_BY_OTHERS.isEmpty()) {
+            CarViewGate.get().stopWatchingCameraTaken();
             retryNow(cameraId);
         }
     }

@@ -64,7 +64,7 @@ public class SideViewPopupService extends Service {
      */
     static final long STALE_AFTER_MS = 500L;
     /** 显示时多久看一次帧还来不来。 */
-    private static final long STALE_TICK_MS = 250L;
+    private static final long STALE_TICK_MS = 100L;
 
     private static volatile SideViewPopupService instance;
 

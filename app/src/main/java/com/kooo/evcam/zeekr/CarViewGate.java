@@ -3,6 +3,7 @@ package com.kooo.evcam.zeekr;
 import android.content.Context;
 
 import com.kooo.evcam.blackbox.BlackBox;
+import com.kooo.evcam.screen.ScreenState;
 import com.kooo.evcam.telemetry.Readings;
 import com.kooo.evcam.telemetry.Signal;
 import com.kooo.evcam.telemetry.Telemetry;
@@ -28,11 +29,24 @@ public final class CarViewGate implements Telemetry.Listener {
     }
 
     private static final String USER = "car-view-gate";
+    private static final String USER_CAMERA = "car-view-gate-camera";
     private static final CarViewGate INSTANCE = new CarViewGate();
 
     private final List<Listener> listeners = new CopyOnWriteArrayList<>();
     private boolean watching;
     private boolean active;
+    /** 别的程序拿着相机期间，为 {@link #isActiveNow()} 单独读着车辆信号。 */
+    private boolean cameraWatch;
+    private final ScreenState.Listener cameraWatchScreen = new ScreenState.Listener() {
+        @Override
+        public void onScreenOff() {
+            stopWatchingCameraTaken();
+        }
+
+        @Override
+        public void onScreenOn() {
+        }
+    };
 
     private CarViewGate() {
     }
@@ -61,6 +75,30 @@ public final class CarViewGate implements Telemetry.Listener {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    /**
+     * 别的程序拿走了相机时调（主线程）：这正是 {@link #isActiveNow()} 要回答「原厂画面在不在」的时候，
+     * 可那时没人在读车辆信号的话读数是空的，答案就永远是「不在」。所以拿走期间单独读着，放开就还。
+     * 熄屏就还（熄屏后车机六秒就睡，不该留着监听）。
+     */
+    public void watchWhileCameraTaken(Context context) {
+        if (cameraWatch || context == null || ScreenState.dark()) {
+            return;
+        }
+        cameraWatch = true;
+        ScreenState.addListener(cameraWatchScreen);
+        Telemetry.get().acquire(context.getApplicationContext(), USER_CAMERA);
+    }
+
+    /** 相机放开了 / 熄屏了：把为它读着的车辆信号还回去（主线程）。 */
+    public void stopWatchingCameraTaken() {
+        if (!cameraWatch) {
+            return;
+        }
+        cameraWatch = false;
+        ScreenState.removeListener(cameraWatchScreen);
+        Telemetry.get().release(USER_CAMERA);
     }
 
     /** 登记（主线程）。第一个登记的开始看车辆信号；登记时马上按此刻的状态回调一次。 */
