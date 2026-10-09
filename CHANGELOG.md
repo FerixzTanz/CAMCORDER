@@ -9,6 +9,12 @@ commit message, not here.
 
 ## [Unreleased]
 
+- Cameras (from dts88's 2.10.5–2.10.10): one action at a time per camera, so the app no longer opens
+  a camera twice and knocks itself off; the surround camera opens first and closes first; one recovery
+  path (the watchdog) instead of two competing ones; no freeze when starting a recording. Kept from this
+  fork: a camera only counts as recovered after steady video, and the app never takes the camera back
+  while the reversing camera or another car view is on screen.
+- Diagnostics: Send to phone no longer needs developer options (from dts88's 2.10.10).
 - Playback: **Save clip** can now save a range you choose (up to 10 minutes): pick "Choose a range
   starting here", move to the end, tap **Save to here**. "15 seconds before and after" is still there.
 - Recording (from dts88's 2.10.3): writing to the USB drive has its own thread, so a slow drive no longer
