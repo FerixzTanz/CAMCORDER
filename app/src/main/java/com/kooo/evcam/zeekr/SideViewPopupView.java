@@ -82,8 +82,13 @@ public class SideViewPopupView extends ViewGroup {
     private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint arrowBackdropPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final android.graphics.Path arrowPath = new android.graphics.Path();
-    /** 仪表盘转向灯的绿。 */
+    /** 仪表盘转向灯的绿：灯亮的那一下。 */
     private static final int ARROW_GREEN = 0xFF2BD15B;
+    /**
+     * 灯灭的那一下是灰的，不是暗一点的绿：两档绿看起来都像「亮着」（用户 2026-10-09）。
+     * 灰得够亮，深色底上看得出箭头还在那儿。
+     */
+    private static final int ARROW_OFF_GREY = 0xFF8A8D92;
 
     private WindowManager.LayoutParams params;
     private boolean attached;
@@ -391,7 +396,7 @@ public class SideViewPopupView extends ViewGroup {
 
     /**
      * 打灯那一边的上角一个转向箭头：左边的窗在左上角、朝左，右边的在右上角、朝右，
-     * 跟着车上的转向灯一亮一暗（读不到就常亮）。压在最上层、镜像之外，箭头方向不跟着画面翻。
+     * 跟着车上的转向灯绿、灰交替（读不到就一直绿）。压在最上层、镜像之外，箭头方向不跟着画面翻。
      * 底下垫一块半透明黑，亮天、草地上也看得清。
      */
     private void drawIndicator(Canvas canvas, int width, int height) {
@@ -419,7 +424,7 @@ public class SideViewPopupView extends ViewGroup {
         arrowPath.lineTo(-half, shaftHalf);
         arrowPath.close();
         boolean lit = indicatorLit == null || indicatorLit;
-        arrowPaint.setColor(lit ? ARROW_GREEN : 0x4D2BD15B);
+        arrowPaint.setColor(lit ? ARROW_GREEN : ARROW_OFF_GREY);
         int save = canvas.save();
         canvas.translate(cx, cy);
         if (left) {

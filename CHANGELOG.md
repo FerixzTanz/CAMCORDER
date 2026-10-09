@@ -16,7 +16,8 @@ Nothing yet.
 ### New and improved
 
 - **Turn arrow on the side view.** The pop-up shows a green arrow in its top corner on the side you are
-  signalling (top left for left, top right for right), flashing in time with the car's indicator.
+  signalling (top left for left, top right for right). It turns green and grey in time with the car's
+  indicator.
 - **Floating record button looks like the car's own buttons.** Smaller dark icon with the same line
   weight, no shadow. While recording the button stays grey; only the ring and the stop square turn red.
 - **Send to phone in Diagnostics** no longer needs developer options.
