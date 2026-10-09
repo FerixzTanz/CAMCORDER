@@ -27,6 +27,8 @@ public class ZeekrShortcutApp extends Application {
     public void onCreate() {
         super.onCreate();
         com.kooo.evcam.settings.DeveloperMode.init(this);
+        // 信号普查开着的话接着记（进程被杀过、车机重启过）；到点了就关
+        com.kooo.evcam.telemetry.SignalScanControl.apply(this);
         lastConfig = new Configuration(getResources().getConfiguration());
         // 黑匣子尽早接上。ContentProvider 比这里还早，那边也会接一次，谁先谁算
         com.kooo.evcam.blackbox.BlackBox.attach(this, "Application");

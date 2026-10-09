@@ -78,6 +78,7 @@ public final class DiagnosticsCollector {
         timings.run("lane transforms", () -> appendLaneTransforms(sb, context));
         timings.run("share", () -> com.kooo.evcam.share.ShareDiagnostics.appendTo(sb, context));
         timings.run("recordings", () -> RecentRecordings.appendTo(sb, context));
+        timings.run("signal scan", () -> com.kooo.evcam.telemetry.SignalScan.appendTo(sb, context));
         timings.run("logcat", () -> appendLogcat(sb));
         timings.run("app warnings", () -> appendAppWarnings(sb, context));
 

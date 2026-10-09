@@ -158,27 +158,46 @@ final class EcarxSource {
         return link;
     }
 
+    /**
+     * 车辆对象：整个进程只建一次（{@code Car.create} 要一秒），信号普查（{@link SignalScan}）也用这一个。
+     * 建不出来返回 null。别在主线程上调。
+     */
+    static Object carFor(Context context) {
+        Object car = cachedCar;
+        if (car != null) {
+            return car;
+        }
+        synchronized (EcarxSource.class) {
+            if (cachedCar != null) {
+                return cachedCar;
+            }
+            try {
+                Class<?> carClass = Class.forName(CAR_CLASS);
+                Method create = match(carClass.getMethods(), "create", Context.class);
+                car = create == null ? null : create.invoke(null, context.getApplicationContext());
+            } catch (Throwable t) {
+                AppLog.w(TAG, "Car.create failed: " + describe(t));
+                car = null;
+            }
+            if (car != null) {
+                cachedCar = car;
+            }
+            return car;
+        }
+    }
+
     // ================================================================= 连接（在自己的线程上）
 
     private void connect(Context context) {
         long start = SystemClock.elapsedRealtime();
         try {
-            Class<?> carClass = Class.forName(CAR_CLASS);
-            Object car = cachedCar;
+            Class.forName(CAR_CLASS);   // 车机上没有这一套就走下面的 ClassNotFoundException
+            // 和信号普查共用一个车辆对象（carFor 里加了锁，两边不会各建一个）
+            Object car = carFor(context);
             if (car == null) {
-                Method create = match(carClass.getMethods(), "create", Context.class);
-                if (create == null) {
-                    status = "no Car.create(Context)";
-                    report(Telemetry.CarLink.UNAVAILABLE);
-                    return;
-                }
-                car = create.invoke(null, context);
-                if (car == null) {
-                    status = "Car.create returned null";
-                    report(Telemetry.CarLink.UNAVAILABLE);
-                    return;
-                }
-                cachedCar = car;
+                status = "Car.create unavailable or returned null";
+                report(Telemetry.CarLink.UNAVAILABLE);
+                return;
             }
             function = call(car, "getICarFunction");
             sensor = call(car, "getSensorManager");
@@ -413,7 +432,7 @@ final class EcarxSource {
     }
 
     /** 代理上其余的方法：Object 的三个照常，别的回个零值。 */
-    private static Object proxyDefault(Object proxy, Method method, Object[] args, String label) {
+    static Object proxyDefault(Object proxy, Method method, Object[] args, String label) {
         String name = method.getName();
         if ("toString".equals(name)) {
             return label;
@@ -600,7 +619,7 @@ final class EcarxSource {
 
     // ================================================================= 反射小工具
 
-    private static Object call(Object target, String name) {
+    static Object call(Object target, String name) {
         Method m = findMethod(target, name);
         if (m == null) {
             return null;
@@ -614,7 +633,7 @@ final class EcarxSource {
     }
 
     /** 调一下算不算成功：没抛异常，而且（返回 boolean 的话）返回 true。 */
-    private static boolean invokeOk(Method m, Object target, Object... args) {
+    static boolean invokeOk(Method m, Object target, Object... args) {
         try {
             Object r = m.invoke(target, args);
             return !(r instanceof Boolean) || (Boolean) r;
@@ -647,7 +666,7 @@ final class EcarxSource {
     }
 
     /** 找「(first, 某个接口)」形状的方法：注册 / 注销监听的那种，接口类型从签名上取。 */
-    private static Method findMethodWithInterface(Object target, String name, Class<?> first) {
+    static Method findMethodWithInterface(Object target, String name, Class<?> first) {
         for (Class<?> type : publicInterfaces(target)) {
             for (Method m : type.getMethods()) {
                 Class<?>[] p = m.getParameterTypes();
@@ -660,7 +679,7 @@ final class EcarxSource {
     }
 
     /** 找「(某个接口)」形状的方法。 */
-    private static Method findMethodWithInterface(Object target, String name) {
+    static Method findMethodWithInterface(Object target, String name) {
         for (Class<?> type : publicInterfaces(target)) {
             for (Method m : type.getMethods()) {
                 Class<?>[] p = m.getParameterTypes();
@@ -708,7 +727,7 @@ final class EcarxSource {
         }
     }
 
-    private static Method match(Method[] methods, String name, Class<?>... params) {
+    static Method match(Method[] methods, String name, Class<?>... params) {
         for (Method m : methods) {
             if (!m.getName().equals(name)) {
                 continue;
@@ -732,7 +751,7 @@ final class EcarxSource {
     }
 
     /** 反射那一层剥掉，露出真正的原因。 */
-    private static String describe(Throwable e) {
+    static String describe(Throwable e) {
         Throwable t = e;
         while ((t instanceof InvocationTargetException || t instanceof UndeclaredThrowableException)
                 && t.getCause() != null) {

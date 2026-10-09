@@ -67,6 +67,8 @@ public class AppConfig {
     private static final String KEY_REARVIEW_FISHEYE = "rearview_fisheye";        // 鱼眼校正开关
     private static final String KEY_PHOTO_FISHEYE = "photo_fisheye";              // 图片回看的鱼眼校正开关
     private static final String KEY_RAW_FRAME_DUMP = "raw_frame_dump";            // 拍照时另存原始整帧（工程模式）
+    private static final String KEY_SIGNAL_SCAN = "signal_scan";                  // 信号普查：挂全部功能号记变化（开发者选项）
+    private static final String KEY_SIGNAL_SCAN_SINCE = "signal_scan_since";      // 这一次普查从什么时候开始（墙钟毫秒）
     private static final String KEY_GPU_FISHEYE_PREVIEW = "gpu_fisheye_preview";  // 预览鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_GPU_FISHEYE_VIDEO = "gpu_fisheye_video";      // 视频回看鱼眼校正走 GPU 逐像素（开发者选项）
     private static final String KEY_PHOTO_FISHEYE_FOV = "photo_fisheye_fov";      // 图片回看的校正视野
@@ -686,6 +688,7 @@ public class AppConfig {
                 KEY_SCREEN_OFF_WAKE_MINUTES,          // 熄屏录制的最长时长 → 默认（熄屏录制关着，用不到）
                 KEY_IMAGE_ADJUST_ENABLED,             // 画面调节 → 关
                 KEY_RAW_FRAME_DUMP,                   // 拍照另存原始整帧 → 关
+                KEY_SIGNAL_SCAN,                      // 信号普查 → 关
                 KEY_GPU_FISHEYE_PREVIEW,              // 预览鱼眼校正走 GPU → 关
                 KEY_GPU_FISHEYE_VIDEO,                // 视频回看鱼眼校正走 GPU → 关
                 KEY_STORAGE_LOCATION,                 // 存储位置 → U 盘（内置存储只有开发者选得了）
@@ -918,6 +921,27 @@ public class AppConfig {
      *
      * <p>工程模式用：拿去量画面几何和鱼眼参数。平时没有理由开着 —— 每拍一张多占一份空间。</p>
      */
+    /** 信号普查开着没有（开发者选项；关着时按没存过算）。 */
+    public boolean isSignalScanEnabled() {
+        return readBoolean(KEY_SIGNAL_SCAN, false);
+    }
+
+    /** 开普查时记下开始时刻；关掉时清掉。 */
+    public void setSignalScanEnabled(boolean on) {
+        prefs.edit().putBoolean(KEY_SIGNAL_SCAN, on)
+                .putLong(KEY_SIGNAL_SCAN_SINCE, on ? System.currentTimeMillis() : 0L).apply();
+    }
+
+    /** 这一次普查还能跑多久（进程重启后接着跑用）；没开或已经到点是 0。 */
+    public long signalScanRemainingMs(long maxMs) {
+        if (!isSignalScanEnabled()) {
+            return 0L;
+        }
+        long since = prefs.getLong(KEY_SIGNAL_SCAN_SINCE, 0L);
+        long left = since <= 0 ? 0L : maxMs - (System.currentTimeMillis() - since);
+        return Math.max(0L, Math.min(maxMs, left));
+    }
+
     public boolean isRawFrameDumpEnabled() {
         return readBoolean(KEY_RAW_FRAME_DUMP, false);
     }

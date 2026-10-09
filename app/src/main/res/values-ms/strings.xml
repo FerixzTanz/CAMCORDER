@@ -909,6 +909,8 @@
     <string name="dev_perm_settings_unavailable">Unit kepala ini tidak dapat membuka halaman tetapan sistem itu</string>
     <string name="dev_raw_frame_title">Simpan juga bingkai asal</string>
     <string name="dev_raw_frame_summary">Disimpan tanpa dipotong, disusun semula atau ditera dalam photos/raw bersama nota geometri bingkai, untuk mengukur susunan strim komposit dan parameter kanta</string>
+    <string name="dev_signal_scan_title">Rakam semua isyarat kenderaan</string>
+    <string name="dev_signal_scan_summary">Apabila dihidupkan, mendengar setiap isyarat yang diberikan unit kepala dan merekod setiap perubahan (masa, kelajuan, kod, nilai, nama), untuk mencari isyarat yang belum dipetakan seperti amaran titik buta. Baca sahaja. Keputusan dalam Diagnostik di bawah \"Signal scan\". Berjalan sehingga 3 jam, kemudian dimatikan sendiri.</string>
     <string name="dev_gpu_fisheye_preview_title">Pratonton: pembetulan mata ikan per piksel dengan GPU</string>
     <string name="dev_gpu_fisheye_preview_summary">Membetulkan pratonton langsung sekeliling piksel demi piksel dengan GPU, melalui GL apl, selurus main semula foto dan bukan secara tampalan. Ini memilih kaedah sahaja; butang Luruskan masih menghidupkan dan mematikan pembetulan. Berkuat kuasa selepas apl dimulakan semula.</string>
     <string name="dev_gpu_fisheye_video_title">Main semula video: pembetulan mata ikan per piksel dengan GPU</string>

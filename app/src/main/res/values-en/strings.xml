@@ -928,6 +928,8 @@
     <string name="dev_perm_settings_unavailable">This head unit can\'t open that system settings page</string>
     <string name="dev_raw_frame_title">Also save the raw frame</string>
     <string name="dev_raw_frame_summary">Saves the frame as captured (not split, rearranged or stamped) to photos/raw with a geometry note, for measuring the composite stream layout and fisheye parameters</string>
+    <string name="dev_signal_scan_title">Record all vehicle signals</string>
+    <string name="dev_signal_scan_summary">While on, listens to every signal the head unit offers and logs each change (time, speed, code, value, name), to find signals not mapped yet, such as the blind-spot warning. Read only. Results are in Diagnostics under \"Signal scan\". Runs up to 3 hours, then switches itself off.</string>
     <string name="dev_gpu_fisheye_preview_title">Preview: per-pixel fisheye correction on the GPU</string>
     <string name="dev_gpu_fisheye_preview_summary">Corrects the live surround view pixel by pixel on the GPU, rendered through the app GL pipeline, as straight as photo playback instead of in patches. Picks the method only; the Straighten button still turns correction on and off. Takes effect after restarting the app.</string>
     <string name="dev_gpu_fisheye_video_title">Video playback: per-pixel fisheye correction on the GPU</string>

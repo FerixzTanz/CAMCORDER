@@ -1228,6 +1228,12 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_raw_frame_dump", appConfig.isRawFrameDumpEnabled(),
                 appConfig::setRawFrameDumpEnabled);
 
+        // 信号普查：开就挂全部功能号记变化，关就停；到点自己停时开关也关（见 SignalScanControl）
+        bindSwitch("pref_signal_scan", appConfig.isSignalScanEnabled(), on -> {
+            appConfig.setSignalScanEnabled(on);
+            com.kooo.evcam.telemetry.SignalScanControl.apply(requireContext().getApplicationContext());
+        });
+
         // 鱼眼校正换成 GPU 逐像素算。只换算法，开不开还是看屏幕上那个鱼眼按钮
         bindSwitch("pref_gpu_fisheye_preview", appConfig.isGpuFisheyePreview(),
                 appConfig::setGpuFisheyePreview);

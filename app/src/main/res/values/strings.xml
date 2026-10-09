@@ -919,6 +919,8 @@
     <string name="dev_perm_settings_unavailable">此车机无法打开对应的系统设置页</string>
     <string name="dev_raw_frame_title">拍照时另存原始整帧</string>
     <string name="dev_raw_frame_summary">不切分、不重排、不加水印，与画面几何说明一并保存至 photos/raw，用于分析环视合成流的排布和鱼眼参数</string>
+    <string name="dev_signal_scan_title">记录全部车辆信号</string>
+    <string name="dev_signal_scan_summary">开着时车机给的全部功能号都听着，哪个变了就记一行（时刻、车速、号、值、常量名），用来找盲区报警这类还没对上的信号。只读。诊断信息「信号普查」一节里看结果；最多记 3 小时，到点自己关。</string>
     <string name="dev_gpu_fisheye_preview_title">预览：GPU 逐像素鱼眼校正</string>
     <string name="dev_gpu_fisheye_preview_summary">主界面环视预览改用 GPU 逐像素校正（画面经应用内 GL 渲染后显示），效果与照片回放一致，不再分块近似。仅切换算法，是否校正仍由「鱼眼校正」按钮控制。重启应用后生效。</string>
     <string name="dev_gpu_fisheye_video_title">录像回放：GPU 逐像素鱼眼校正</string>

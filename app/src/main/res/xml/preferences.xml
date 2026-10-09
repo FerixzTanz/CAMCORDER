@@ -552,6 +552,11 @@
             android:summary="@string/dev_raw_frame_summary" />
 
         <SwitchPreferenceCompat
+            android:key="pref_signal_scan"
+            android:title="@string/dev_signal_scan_title"
+            android:summary="@string/dev_signal_scan_summary" />
+
+        <SwitchPreferenceCompat
             android:key="pref_gpu_fisheye_preview"
             android:title="@string/dev_gpu_fisheye_preview_title"
             android:summary="@string/dev_gpu_fisheye_preview_summary" />
