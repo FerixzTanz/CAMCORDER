@@ -951,11 +951,9 @@ public class RecordingFloatingService extends Service {
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 
-            // 和主界面那个录制键一样：底色只在两档之间走（待机 sunken、
-            // 录制中 recording_quiet），红色始终只出现在中间那个点上。
-            // 整块变红等于把「这个按钮」和「正在录」混为一谈。
-            backgroundPaint.setColor(ContextCompat.getColor(getContext(),
-                    isRecording ? R.color.recording_quiet : R.color.sunken));
+            // 底色一直是车机按钮那块灰，录不录都一样（用户 2026-10-09：「录的时候只让圈和点变红」）。
+            // 「正在录」只靠图标说：红圈（走着的进度）加红方块
+            backgroundPaint.setColor(ContextCompat.getColor(getContext(), R.color.sunken));
 
             // 不画阴影：车机自己的悬浮按钮（截屏键、车辆按钮）都是平的，带个影子就显得是外来的
             // （实车照片 2026-10-09）

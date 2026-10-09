@@ -238,6 +238,9 @@ public class SideViewPopupService extends Service {
         in.speedKmh = s.speedKmh;
         in.minSpeedKmh = appConfig.getSidePopupMinSpeed();
         in.showing = popup != null && popup.isShowing() ? popup.lane() : SideViewDecision.NONE;
+        if (popup != null) {
+            popup.setIndicatorLit(SideViewDecision.indicatorLit(r.code(Signal.INDICATOR_DISPLAY), popup.lane()));
+        }
 
         boolean blocked = ScreenState.dark() || RearViewMirrorService.isRunning();
         int want = blocked ? SideViewDecision.NONE : SideViewDecision.decide(in);

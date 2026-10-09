@@ -9,8 +9,17 @@ commit message, not here.
 
 ## [Unreleased]
 
-- Floating record button: smaller dark icon with the same line weight as the car's own buttons, no shadow.
-- Diagnostics: Send to phone no longer needs developer options.
+Nothing yet.
+
+## [2.11.2] - 2026-10-09
+
+### New and improved
+
+- **Turn arrow on the side view.** The pop-up shows a green arrow in its top corner on the side you are
+  signalling (top left for left, top right for right), flashing in time with the car's indicator.
+- **Floating record button looks like the car's own buttons.** Smaller dark icon with the same line
+  weight, no shadow. While recording the button stays grey; only the ring and the stop square turn red.
+- **Send to phone in Diagnostics** no longer needs developer options.
 
 ## [2.11.1] - 2026-10-09
 

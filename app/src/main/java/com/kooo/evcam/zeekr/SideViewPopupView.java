@@ -74,6 +74,16 @@ public class SideViewPopupView extends ViewGroup {
     private final Paint coverTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     /** 新窗口还一帧都没有：先黑着，等服务按帧来的时间改。 */
     private int cover = COVER_BLACK;
+    /**
+     * 角上的转向箭头此刻亮不亮：跟着车上转向灯的闪（转向指示显示 0x2A091400）。
+     * null = 读不到闪的节奏，一直亮着（2.11.2，用户 2026-10-09：「看得出在打哪边」）。
+     */
+    private Boolean indicatorLit;
+    private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint arrowBackdropPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final android.graphics.Path arrowPath = new android.graphics.Path();
+    /** 仪表盘转向灯的绿。 */
+    private static final int ARROW_GREEN = 0xFF2BD15B;
 
     private WindowManager.LayoutParams params;
     private boolean attached;
@@ -107,6 +117,9 @@ public class SideViewPopupView extends ViewGroup {
         framePaint.setStrokeWidth(2f * context.getResources().getDisplayMetrics().density);
         framePaint.setColor(context.getColor(R.color.surface));
         coverTextPaint.setColor(0xFFF2F2F3);
+        arrowPaint.setStyle(Paint.Style.FILL);
+        arrowBackdropPaint.setStyle(Paint.Style.FILL);
+        arrowBackdropPaint.setColor(0x80000000);
         coverTextPaint.setTextAlign(Paint.Align.CENTER);
         textureView = new AutoFitTextureView(context);
         addView(textureView);
@@ -161,6 +174,14 @@ public class SideViewPopupView extends ViewGroup {
 
     public int cover() {
         return cover;
+    }
+
+    /** 转向灯这一下亮着没有（null = 不知道，箭头常亮）；服务在主线程上跟着车辆信号改。 */
+    public void setIndicatorLit(Boolean lit) {
+        if (lit == null ? indicatorLit != null : !lit.equals(indicatorLit)) {
+            indicatorLit = lit;
+            invalidate();
+        }
     }
 
     // ------------------------------------------------------------------ 窗口
@@ -365,6 +386,48 @@ public class SideViewPopupView extends ViewGroup {
         canvas.restoreToCount(save);
         drawCover(canvas, width, height);
         drawFrame(canvas, width, height);
+        drawIndicator(canvas, width, height);
+    }
+
+    /**
+     * 打灯那一边的上角一个转向箭头：左边的窗在左上角、朝左，右边的在右上角、朝右，
+     * 跟着车上的转向灯一亮一暗（读不到就常亮）。压在最上层、镜像之外，箭头方向不跟着画面翻。
+     * 底下垫一块半透明黑，亮天、草地上也看得清。
+     */
+    private void drawIndicator(Canvas canvas, int width, int height) {
+        boolean left = lane == LaneCycle.LEFT;
+        if (!left && lane != LaneCycle.RIGHT) {
+            return;
+        }
+        float size = Math.max(height * 0.16f, 24f * getResources().getDisplayMetrics().density);
+        float margin = size * 0.35f;
+        float cx = left ? margin + size / 2f : width - margin - size / 2f;
+        float cy = margin + size / 2f;
+        canvas.drawCircle(cx, cy, size * 0.62f, arrowBackdropPaint);
+
+        // 朝右画好，朝左时左右翻一下：箭头 + 一截箭杆，和仪表盘上的转向灯一个样子
+        float half = size / 2f;
+        float shaftHalf = size * 0.16f;
+        float headStart = size * 0.02f;
+        arrowPath.reset();
+        arrowPath.moveTo(-half, -shaftHalf);
+        arrowPath.lineTo(headStart, -shaftHalf);
+        arrowPath.lineTo(headStart, -half * 0.8f);
+        arrowPath.lineTo(half, 0f);
+        arrowPath.lineTo(headStart, half * 0.8f);
+        arrowPath.lineTo(headStart, shaftHalf);
+        arrowPath.lineTo(-half, shaftHalf);
+        arrowPath.close();
+        boolean lit = indicatorLit == null || indicatorLit;
+        arrowPaint.setColor(lit ? ARROW_GREEN : 0x4D2BD15B);
+        int save = canvas.save();
+        canvas.translate(cx, cy);
+        if (left) {
+            canvas.scale(-1f, 1f);
+        }
+        canvas.scale(0.78f, 0.78f);
+        canvas.drawPath(arrowPath, arrowPaint);
+        canvas.restoreToCount(save);
     }
 
     /**

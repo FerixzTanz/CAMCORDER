@@ -85,4 +85,24 @@ public final class SideViewDecision {
                 || Boolean.TRUE.equals(in.stockPopupShown)
                 || Boolean.TRUE.equals(in.parkAssistOn);
     }
+
+    /**
+     * 窗口角上的箭头这一下亮不亮：转向指示显示跟着灯闪，左 0 / 1、右 0 / 2、双闪 0 / 3。
+     * 读不到返回 null（箭头常亮）。
+     */
+    public static Boolean indicatorLit(Integer display, int lane) {
+        if (display == null) {
+            return null;
+        }
+        if (display == 3) {
+            return true;
+        }
+        if (lane == LaneCycle.LEFT) {
+            return display == 1;
+        }
+        if (lane == LaneCycle.RIGHT) {
+            return display == 2;
+        }
+        return null;
+    }
 }
