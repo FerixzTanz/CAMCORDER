@@ -57,6 +57,7 @@ public class DeveloperSettingsTest {
                 "zeekr_camera_override_back", "zeekr_camera_override_left"));
         ROWS.put("pref_permissions", NONE);
         ROWS.put("pref_raw_frame_dump", Arrays.asList("raw_frame_dump"));
+        ROWS.put("pref_signal_scan", Arrays.asList("signal_scan"));
         ROWS.put("pref_gpu_fisheye_preview", Arrays.asList("gpu_fisheye_preview"));
         ROWS.put("pref_gpu_fisheye_video", Arrays.asList("gpu_fisheye_video"));
         ROWS.put("pref_repair_mp4", NONE);
