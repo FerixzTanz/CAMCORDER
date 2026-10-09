@@ -9,7 +9,8 @@ commit message, not here.
 
 ## [Unreleased]
 
-- Floating record button: dark icon at the same size and line weight as the car's own buttons, no shadow.
+- Floating record button: smaller dark icon with the same line weight as the car's own buttons, no shadow.
+- Diagnostics: Send to phone no longer needs developer options.
 
 ## [2.11.1] - 2026-10-09
 

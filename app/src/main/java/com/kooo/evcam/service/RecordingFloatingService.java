@@ -976,10 +976,10 @@ public class RecordingFloatingService extends Service {
             // 待机时是<b>灰的空心圈</b> —— 合并之前那个「打开主界面」的悬浮按钮
             // 就长这样，而这个按钮默认干的也正是那件事。红色留给「正在录」。
             //
-            // 图标的大小和笔画照车机自己的按钮来（实车照片 2026-10-09）：图标占按钮一半宽、细线条。
+            // 图标的大小和笔画照车机自己的按钮来（实车照片 2026-10-09）：图标占按钮四成宽、细线条（第二张照片后又缩了一档）。
             // 以前圈占四分之三、线粗，放在原厂截屏键旁边像另一套界面
-            float stroke = radius * 0.09f;
-            float ringRadius = radius * 0.5f;
+            float stroke = radius * 0.08f;
+            float ringRadius = radius * 0.4f;
             ringPaint.setStrokeWidth(stroke);
             progressPaint.setStrokeWidth(stroke);
             ringPaint.setColor(ContextCompat.getColor(getContext(),
@@ -993,7 +993,7 @@ public class RecordingFloatingService extends Service {
                 canvas.drawArc(ringRect, -90f, 360f * progress, false, progressPaint);
 
                 // 停止方块
-                float rectSize = radius * 0.36f;
+                float rectSize = radius * 0.28f;
                 float iconCornerRadius = rectSize * 0.2f;
                 canvas.drawRoundRect(
                         centerX - rectSize / 2,
@@ -1013,7 +1013,7 @@ public class RecordingFloatingService extends Service {
                 // 出状况在重试：点也是极氪橙，和外圈一起说「想录，正在重试」
                 iconPaint.setColor(ContextCompat.getColor(getContext(),
                         trouble ? R.color.energy : R.color.text_primary));
-                canvas.drawCircle(centerX, centerY, radius * 0.24f, iconPaint);
+                canvas.drawCircle(centerX, centerY, radius * 0.17f, iconPaint);
                 iconPaint.setColor(ContextCompat.getColor(getContext(), R.color.recording));
             }
         }
