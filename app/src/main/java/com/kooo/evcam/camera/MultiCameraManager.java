@@ -2002,8 +2002,6 @@ public class MultiCameraManager {
             }
         };
         mainHandler.postDelayed(sessionTimeoutRunnable, 3000);
-
-        return true;
     }
 
     /** 放掉没用上的录制器：放一个要等编码线程，不在主线程上做。 */
