@@ -9,15 +9,27 @@ commit message, not here.
 
 ## [Unreleased]
 
-- Playback: **Save clip** can now save a range you choose (up to 10 minutes): pick "Choose a range
-  starting here", move to the end, tap **Save to here**. "15 seconds before and after" is still there.
-- Recording (from dts88's 2.10.3): writing to the USB drive has its own thread, so a slow drive no longer
-  drops picture, including the 1–2 second gap at each new one-minute file. Rescuing the last seconds
-  to another drive when the USB drive drops out works again.
-- Floating button (from dts88's 2.10.2): no longer turns grey while still recording after a day/night
-  switch; recording time no longer jumps when the car corrects its clock.
-- Playback: deleting recordings no longer freezes the screen for a few seconds.
-- Recording start no longer briefly freezes the screen.
+Nothing yet.
+
+## [2.11.1] - 2026-10-09
+
+### New and improved
+
+- **Save a clip of any length** in playback, up to 10 minutes. Tap **Save clip**, choose *Choose a range
+  starting here*, move to where it should end and tap **Save to here**. *15 seconds before and after*
+  is still there. Clips are copied without re-encoding, so they keep the original quality and save in
+  seconds.
+
+### Fixed
+
+- **No more gaps in the video on slow USB drives** (from dts88's 2.10.3). Writing to the drive now has
+  its own thread, so a slow drive no longer drops picture, including the 1–2 second gap at the start of
+  each new one-minute file. If the USB drive drops out, the last seconds are now saved to another drive;
+  that never worked before.
+- **The floating record button stays red while recording** after the screen switches between day and
+  night (from dts88's 2.10.2), and its timer no longer jumps when the car corrects its clock.
+- **Deleting recordings in playback no longer freezes the screen.**
+- **Starting a recording no longer briefly freezes the screen.**
 
 ## [2.11.0] - 2026-10-08
 
