@@ -1460,7 +1460,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             }
         }
         setSelecting(false);
-        deleteInBackground(files, "多选删除");
+        deleteInBackground(files, "multi-select delete");
     }
 
     private void confirmDeleteSession(int index, RecordingTimeline.Session session) {
@@ -1481,7 +1481,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                 resetLane(lane);
             }
         }
-        deleteInBackground(filesOf(session), "删除时间轴 " + index);
+        deleteInBackground(filesOf(session), "delete timeline " + index);
     }
 
     /**
