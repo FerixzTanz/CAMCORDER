@@ -987,14 +987,15 @@ public class SingleCamera {
     }
 
     /**
-     * 正在从出错里恢复：设备报错 / 被断开、等看门狗重开（2.10.10 起相机自己不重连），
-     * 或者刚报过错还没满 {@link #RECOVERING_AFTER_ERROR_MS}。侧视弹窗和录制键的提示看它。
+     * 正在从出错里恢复：刚报过错还没满 {@link #RECOVERING_AFTER_ERROR_MS}，看门狗在这期间重开。
+     * 侧视弹窗和录制键的提示看它。
+     *
+     * <p>只按时间算，不看「设备丢了」：没人要画面时看门狗不重开，要是把「丢了」也算恢复中，
+     * 侧视弹窗会一直等它恢复，而它要等侧视弹窗来要画面才会重开 —— 两边互相等，侧视一直是空白。</p>
      */
     public boolean isRecovering() {
         long last = lastDeviceErrorElapsedMs;
-        boolean recentError = last != 0
-                && SystemClock.elapsedRealtime() - last < RECOVERING_AFTER_ERROR_MS;
-        return recentError || deviceLost;
+        return last != 0 && SystemClock.elapsedRealtime() - last < RECOVERING_AFTER_ERROR_MS;
     }
 
     /** 有人在等拍照（登记表上的 PHOTO）。 */
@@ -1324,7 +1325,10 @@ public class SingleCamera {
                 AppLog.e(TAG, "Camera " + cameraId + " error: " + errorMsg);
                 lastErrorName = errorMsg;
                 deviceLost = true;   // 再开不再在这里按错误码退避：看门狗一处判
-                lastDeviceErrorElapsedMs = SystemClock.elapsedRealtime();
+                if (error == CameraDevice.StateCallback.ERROR_CAMERA_DEVICE) {
+                    // 只有设备错误算「在恢复」（和以前一样）：被拒绝（3）、被占用不算，侧视照常去接
+                    lastDeviceErrorElapsedMs = SystemClock.elapsedRealtime();
+                }
                 CameraContention.ourOpenFailed(cameraId, errorMsg);
                 if (callback != null) {
                     callback.onCameraError(cameraId, error);
