@@ -1215,7 +1215,9 @@ public class SingleCamera {
             deviceLost = true;
             lastErrorName = e.getClass().getSimpleName();
             AppLog.e(TAG, "Failed to open camera " + cameraId, e);
-            noteOpenRefused(e);
+            if (e instanceof CameraAccessException) {
+                noteOpenRefused((CameraAccessException) e);
+            }
             if (callback != null) {
                 callback.onCameraError(cameraId, e instanceof SecurityException ? -2
                         : e instanceof CameraAccessException ? -1 : CameraDevice.StateCallback.ERROR_CAMERA_DEVICE);
