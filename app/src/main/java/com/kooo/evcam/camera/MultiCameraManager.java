@@ -1795,8 +1795,9 @@ public class MultiCameraManager {
         }
         codecRecorders.clear();
 
-        // 为每个摄像头创建软编码录制器并准备
-        boolean prepareSuccess = true;
+        // 为每个摄像头创建软编码录制器（在这里设参数、回调），准备放到后台（见下面）
+        final Map<String, CodecVideoRecorder> created = new LinkedHashMap<>();
+        final Map<String, String> paths = new LinkedHashMap<>();
         for (String key : keys) {
             SingleCamera camera = cameras.get(key);
             if (camera == null) {
@@ -1899,31 +1900,72 @@ public class MultiCameraManager {
                 }
             });
 
-            // 准备录制
-            String path = new File(saveDir, timestamp + "_"
-                    + CameraSlots.suffixFor(key) + ".mp4").getAbsolutePath();
-            AppLog.d(TAG, "Preparing codec recording for " + key);
+            created.put(key, codecRecorder);
+            paths.put(key, new File(saveDir, timestamp + "_"
+                    + CameraSlots.suffixFor(key) + ".mp4").getAbsolutePath());
+        }
 
-            android.graphics.SurfaceTexture surfaceTexture = codecRecorder.prepareRecording(path);
-            if (surfaceTexture == null) {
-                AppLog.e(TAG, "Failed to prepare codec recording for " + key);
-                prepareSuccess = false;
-                break;
+        // 准备（建编码器、开文件、在编码线程上建 EGL 并等它建好）要碰盘、要等，在主线程上做
+        // 每次开录都报「prepareRecording() called on MAIN THREAD」，U 盘慢时主线程卡一两秒。
+        // 放到停录收拾的那个线程上：上一次停录的编码器放完了才建这一次的，两套硬件编码器不同时在
+        teardown.execute(() -> {
+            final Map<String, android.graphics.SurfaceTexture> prepared = new LinkedHashMap<>();
+            for (Map.Entry<String, CodecVideoRecorder> entry : created.entrySet()) {
+                if (gen != recordGeneration) {
+                    break;  // 已经停了（或又开了一次）：后面几路不用再准备
+                }
+                String key = entry.getKey();
+                AppLog.d(TAG, "Preparing codec recording for " + key);
+                android.graphics.SurfaceTexture surfaceTexture = null;
+                try {
+                    surfaceTexture = entry.getValue().prepareRecording(paths.get(key));
+                } catch (Exception e) {
+                    AppLog.e(TAG, "Error preparing codec recording for " + key, e);
+                }
+                if (surfaceTexture == null) {
+                    AppLog.e(TAG, "Failed to prepare codec recording for " + key);
+                    break;
+                }
+                prepared.put(key, surfaceTexture);
             }
+            mainHandler.post(() -> continueCodecRecordingStart(gen, keys, created, prepared));
+        });
+        return true;
+    }
 
+    /**
+     * 开录的后一半（主线程）：录制器在后台准备好了，挂到相机上、重建会话、等会话配好再启动。
+     *
+     * <p>准备期间停过录（代数变了）：这些录制器不归停录收拾（它们还没登记进 codecRecorders），
+     * 在这里放掉。有一路没准备成：准备好的照样登记、挂上，报开录失败 —— 协调器走停录，
+     * stopRecording 一并收拾（以前只放录制器，相机上挂着的录像输出没人摘，之后的会话一直带着一个死掉的输出去配）。</p>
+     */
+    private void continueCodecRecordingStart(int gen, List<String> keys,
+            Map<String, CodecVideoRecorder> created,
+            Map<String, android.graphics.SurfaceTexture> prepared) {
+        if (gen != recordGeneration) {
+            AppLog.w(TAG, "准备期间停过录（第 " + gen + " 代，现在第 " + recordGeneration + " 代），放掉准备好的录制器");
+            releaseInBackground(created.values());
+            return;
+        }
+        List<CodecVideoRecorder> unused = new ArrayList<>();
+        for (Map.Entry<String, CodecVideoRecorder> entry : created.entrySet()) {
+            String key = entry.getKey();
+            android.graphics.SurfaceTexture surfaceTexture = prepared.get(key);
+            SingleCamera camera = cameras.get(key);
+            if (surfaceTexture == null || camera == null) {
+                unused.add(entry.getValue());
+                continue;
+            }
             // 将 SurfaceTexture 设置给 Camera（通过 Surface）
             android.view.Surface recordSurface = new android.view.Surface(surfaceTexture);
             camera.setRecordSurface(recordSurface, true);  // Codec 模式
-
-            codecRecorders.put(key, codecRecorder);
+            codecRecorders.put(key, entry.getValue());
         }
-
-        if (!prepareSuccess) {
-            // 准备好的那几路（录制器、已经挂到相机上的录像输出）这里不放：
-            // 协调器按开录失败走停录，stopRecording 一并收拾。以前这里只放了录制器，
-            // 前面几路相机上挂着的录像输出没人摘，之后的会话一直带着一个死掉的输出去配
-            AppLog.e(TAG, "Failed to prepare codec recording");
-            return false;
+        releaseInBackground(unused);
+        if (prepared.size() < created.size()) {
+            reportStartFailed(gen, "编码录制准备失败（准备好 " + prepared.keySet() + " / 共 " + created.keySet() + "）");
+            return;
         }
 
         // 重新创建摄像头会话
@@ -1962,6 +2004,23 @@ public class MultiCameraManager {
         mainHandler.postDelayed(sessionTimeoutRunnable, 3000);
 
         return true;
+    }
+
+    /** 放掉没用上的录制器：放一个要等编码线程，不在主线程上做。 */
+    private void releaseInBackground(java.util.Collection<CodecVideoRecorder> recorders) {
+        if (recorders.isEmpty()) {
+            return;
+        }
+        final List<CodecVideoRecorder> toRelease = new ArrayList<>(recorders);
+        teardown.execute(() -> {
+            for (CodecVideoRecorder recorder : toRelease) {
+                try {
+                    recorder.release();
+                } catch (Exception e) {
+                    AppLog.e(TAG, "Error releasing unused codec recorder", e);
+                }
+            }
+        });
     }
 
     /** @param gen 排这个任务时是哪一代；停过、又开过就作废 */

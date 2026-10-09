@@ -9,7 +9,11 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- Playback: **Save clip** can now save a range you choose (up to 10 minutes): pick "Choose a range
+  starting here", move to the end, tap **Save to here**. "15 seconds before and after" is still there.
+- Recording: no more 1–2 second gap in the video at each new one-minute file on slow USB drives.
+- Playback: deleting recordings no longer freezes the screen for a few seconds.
+- Recording start no longer briefly freezes the screen.
 
 ## [2.11.0] - 2026-10-08
 

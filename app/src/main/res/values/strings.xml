@@ -464,6 +464,7 @@
     <string name="player_lane_no_footage">该路此时无录像</string>
     <string name="player_lane_unplayable">此片段无法播放</string>
     <string name="msg_scanning">正在扫描录像…</string>
+    <string name="msg_deleting">正在删除…</string>
     <string name="msg_scanning_short">正在扫描…</string>
     <string name="msg_no_surround_clips">暂无环视录像</string>
     <string name="msg_no_surround_clips_long">暂无环视录像（录像回放按环视录像排列时间轴）</string>
@@ -580,6 +581,14 @@
     <string name="msg_clip_saved">片段已保存：%1$s</string>
     <string name="msg_clip_failed">片段没能保存</string>
     <string name="clip_share_note">此刻前后约 30 秒的片段，已存到 DCIM/EVCam_Clips，不会被自动清理。</string>
+    <string name="clip_mark_start">从此刻开始选一段</string>
+    <string name="clip_save_around">此刻前后 15 秒</string>
+    <string name="clip_save_range">保存 %1$s – %2$s（%3$s）</string>
+    <string name="clip_cancel_range">取消选段</string>
+    <string name="clip_save_to_here">保存到此处</string>
+    <string name="clip_start_marked">起点定在 %1$s。拖到终点，再点「保存到此处」（最长 10 分钟）</string>
+    <string name="msg_clip_saving_range">正在保存这一段（%1$s）…</string>
+    <string name="clip_share_note_range">自己选的一段（%1$s），已存到 DCIM/EVCam_Clips，不会被自动清理。</string>
     <string name="share_phone_title">发送到手机</string>
     <string name="share_phone_steps">用手机扫描二维码 → 浏览器打开该文件 → 长按图片或视频并保存</string>
     <string name="share_phone_steps_file">用手机扫描二维码 → 浏览器打开下载页 → 点击「下载」保存到手机</string>

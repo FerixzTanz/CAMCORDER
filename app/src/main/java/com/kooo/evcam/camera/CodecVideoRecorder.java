@@ -941,6 +941,10 @@ public class CodecVideoRecorder {
             }
         }
 
+        // 上一个分段可能还在分段线程上收（见 closeMuxerInBackground）：等它收完再验文件，
+        // 否则验的是一个还没写完文件尾的文件
+        awaitSegmentThread();
+
         // 文件没确认落盘（盘掉了、或者编码线程卡住没收成）：内存里的最后一段抢救出来
         settleRing(closed[0] && confirmed[0], "stop");
 
@@ -958,6 +962,28 @@ public class CodecVideoRecorder {
         }
         
         recordedFilePaths.clear();
+    }
+
+    /** 等分段线程上已经排着的活做完多久。收一个文件正常一两秒；盘掉了的话多等也没用。 */
+    private static final long SEGMENT_THREAD_WAIT_MS = 4000L;
+
+    private void awaitSegmentThread() {
+        Handler handler = segmentHandler;
+        if (handler == null || handler.getLooper().isCurrentThread()) {
+            return;
+        }
+        final java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        if (!handler.post(done::countDown)) {
+            return;
+        }
+        try {
+            if (!done.await(SEGMENT_THREAD_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                AppLog.w(TAG, "Camera " + cameraId + " segment thread still busy after "
+                        + SEGMENT_THREAD_WAIT_MS + "ms, validating anyway");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -1759,9 +1785,11 @@ public class CodecVideoRecorder {
             }
         }
         
-        // 3. 收文件。没确认落盘的话（盘掉了），内存环里的最后一段先抢救出来 ——
-        //    下面要换编码器，两代样本不能混在一个文件里
-        settleRing(closeMuxer("segment-switch"), "segment-switch");
+        // 3. 收文件，交给分段线程去收。写文件尾 + fsync 在 U 盘上要一两秒（2026-10-09 实测
+        //    几乎每次分段都卡 1~2.4 秒）；在编码线程上收的话，这期间相机的帧没人取，
+        //    每一分钟的录像里就缺这一两秒。没确认落盘的话（盘掉了），内存环里的最后一段照样抢救 ——
+        //    下面要换编码器，两代样本不能混在一个文件里，所以环在交出去时就清
+        closeMuxerInBackground("segment-switch");
         
         // 4. 释放旧编码器（即使失败也继续）
         if (encoder != null) {
@@ -1949,12 +1977,57 @@ public class CodecVideoRecorder {
      *         内存环里的是它最后那段的唯一副本（见 {@link #settleRing}）
      */
     private boolean closeMuxer(String stage) {
+        MediaMuxer closing = muxer;
+        boolean started = muxerStarted;
+        RandomAccessFile file = muxerFile;
+        muxer = null;
+        muxerStarted = false;
+        videoTrackIndex = -1;
+        muxerFile = null;
+        return finishMuxer(closing, started, file, stage);
+    }
+
+    /**
+     * 分段切换时收文件：muxer、文件、环里的副本一起交给分段线程，编码线程马上回去取帧。
+     *
+     * <p>分段线程是串行的：switchToNextSegment 随后排上去的「验文件」「分段切换回调」（中转搬文件）
+     * 都排在收文件后面，碰到的一定是收好的文件。stopRecording 也会先等分段线程把它收完再验全部文件。
+     * 没确认落盘时，抢救排回编码线程做 —— 抢救要动的目录、坏盘名单、文件列表都归编码线程管。</p>
+     */
+    private void closeMuxerInBackground(String stage) {
+        final MediaMuxer closing = muxer;
+        final boolean started = muxerStarted;
+        final RandomAccessFile file = muxerFile;
+        final List<SampleRing.Sample> pending = ring.snapshot();
+        final MediaFormat format = ringFormat;
+        muxer = null;
+        muxerStarted = false;
+        videoTrackIndex = -1;
+        muxerFile = null;
+        ring.clear();
+        Runnable close = () -> {
+            if (finishMuxer(closing, started, file, stage) || pending.isEmpty()) {
+                return;
+            }
+            Handler encoderThreadHandler = encoderHandler;
+            if (encoderThreadHandler == null || !encoderThreadHandler.post(
+                    () -> rescueSamples(pending, format, stage))) {
+                AppLog.w(TAG, "Camera " + cameraId + " encoder thread gone, cannot rescue " + stage);
+            }
+        };
+        Handler handler = segmentHandler;
+        if (handler == null || !handler.post(close)) {
+            close.run();
+        }
+    }
+
+    /** 写文件尾、fsync、放掉 muxer 和文件。@return 确认落盘了没（没有 muxer 算确认）。 */
+    private boolean finishMuxer(MediaMuxer closing, boolean started, RandomAccessFile file, String stage) {
         boolean confirmed = true;
-        if (muxer != null) {
+        if (closing != null) {
             try {
-                if (muxerStarted) {
-                    muxer.stop();
-                    RandomAccessFile file = muxerFile;
+                if (started) {
+                    closing.stop();
                     if (file != null) {
                         file.getFD().sync();
                     }
@@ -1965,15 +2038,18 @@ public class CodecVideoRecorder {
                 noteTrouble(stage + "-close", e);
             }
             try {
-                muxer.release();
+                closing.release();
             } catch (Exception e) {
                 AppLog.w(TAG, "Camera " + cameraId + " Error releasing muxer: " + e.getMessage());
             }
-            muxer = null;
-            muxerStarted = false;
-            videoTrackIndex = -1;
         }
-        closeMuxerFile();
+        if (file != null) {
+            try {
+                file.close();
+            } catch (IOException e) {
+                AppLog.w(TAG, "Camera " + cameraId + " Error closing muxer file: " + e.getMessage());
+            }
+        }
         return confirmed;
     }
 
@@ -2031,8 +2107,12 @@ public class CodecVideoRecorder {
      * 写成一个就够。</p>
      */
     private void rescueRing(String stage) {
-        List<SampleRing.Sample> pending = ring.snapshot();
-        if (pending.isEmpty() || ringFormat == null) {
+        rescueSamples(ring.snapshot(), ringFormat, stage);
+    }
+
+    /** 把这些样本（一代编码器的，格式是 format）单独写成一个文件。在编码线程上。 */
+    private void rescueSamples(List<SampleRing.Sample> pending, MediaFormat format, String stage) {
+        if (pending.isEmpty() || format == null) {
             return;
         }
         long spanMs = pending.get(pending.size() - 1).wallMs - pending.get(0).wallMs;
@@ -2040,7 +2120,7 @@ public class CodecVideoRecorder {
         dirs.add(new File(saveDirectory));
         for (File dir : dirs) {
             try {
-                String path = writeRescueFile(dir, pending);
+                String path = writeRescueFile(dir, pending, format);
                 com.kooo.evcam.blackbox.BlackBox.noteImportant("上一个文件没确认落盘（相机 " + cameraId + "，"
                         + stage + "），把内存里的 " + (spanMs / 1000) + " 秒抢救到 " + path);
                 return;
@@ -2062,7 +2142,8 @@ public class CodecVideoRecorder {
      *
      * <p>写完 fsync：没确认落盘的抢救文件和没抢救一样。不成功就删掉并抛出。</p>
      */
-    private String writeRescueFile(File dir, List<SampleRing.Sample> samples) throws IOException {
+    private String writeRescueFile(File dir, List<SampleRing.Sample> samples, MediaFormat format)
+            throws IOException {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new IOException("cannot create " + dir);
         }
@@ -2073,7 +2154,7 @@ public class CodecVideoRecorder {
         try {
             file.setLength(0);
             rescue = new MediaMuxer(file.getFD(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int track = rescue.addTrack(ringFormat);
+            int track = rescue.addTrack(format);
             rescue.start();
             writeSamples(rescue, track, samples);
             rescue.stop();
@@ -2191,7 +2272,7 @@ public class CodecVideoRecorder {
         long rescuedMs = pending.isEmpty() ? 0 : pending.get(pending.size() - 1).wallMs - pending.get(0).wallMs;
         if (!pending.isEmpty() && !sameEncoder) {
             // 环里是上一代编码器的：单独落一个抢救文件；这个盘不行的话这里就抛出了
-            writeRescueFile(dir, pending);
+            writeRescueFile(dir, pending, ringFormat);
             ring.clear();
             pending = new ArrayList<>();
         }

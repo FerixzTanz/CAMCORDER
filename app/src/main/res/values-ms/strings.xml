@@ -455,6 +455,7 @@
     <string name="player_lane_no_footage">Tiada rakaman daripada kamera ini pada saat ini</string>
     <string name="player_lane_unplayable">Klip ini tidak boleh dimainkan</string>
     <string name="msg_scanning">Mengimbas rakaman…</string>
+    <string name="msg_deleting">Memadam…</string>
     <string name="msg_scanning_short">Mengimbas…</string>
     <string name="msg_no_surround_clips">Tiada rakaman sekeliling</string>
     <string name="msg_no_surround_clips_long">Tiada rakaman sekeliling (garis masa main semula dibina daripada rakaman sekeliling)</string>
@@ -571,6 +572,14 @@
     <string name="msg_clip_saved">Klip disimpan: %1$s</string>
     <string name="msg_clip_failed">Klip tidak dapat disimpan</string>
     <string name="clip_share_note">Kira-kira 30 saat sekitar detik ini, disimpan ke DCIM/EVCam_Clips. Pembersihan automatik tidak memadamnya.</string>
+    <string name="clip_mark_start">Pilih julat bermula di sini</string>
+    <string name="clip_save_around">15 saat sebelum dan selepas</string>
+    <string name="clip_save_range">Simpan %1$s – %2$s (%3$s)</string>
+    <string name="clip_cancel_range">Batal julat</string>
+    <string name="clip_save_to_here">Simpan hingga sini</string>
+    <string name="clip_start_marked">Mula ditetapkan pada %1$s. Pergi ke penghujung, kemudian ketik \"Simpan hingga sini\" (maksimum 10 minit)</string>
+    <string name="msg_clip_saving_range">Menyimpan julat (%1$s)…</string>
+    <string name="clip_share_note_range">Julat yang anda pilih (%1$s), disimpan ke DCIM/EVCam_Clips. Pembersihan automatik tidak memadamnya.</string>
     <string name="share_phone_title">Hantar ke telefon</string>
     <string name="share_phone_steps">Imbas kod QR dengan telefon → fail dibuka dalam pelayar → tekan lama dan pilih Simpan</string>
     <string name="share_phone_steps_file">Imbas kod QR dengan telefon → halaman muat turun dibuka → ketik Muat turun untuk menyimpan fail</string>

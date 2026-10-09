@@ -460,6 +460,7 @@
     <string name="player_lane_no_footage">No recording from this camera at this moment</string>
     <string name="player_lane_unplayable">Can\'t play this clip</string>
     <string name="msg_scanning">Scanning recordings…</string>
+    <string name="msg_deleting">Deleting…</string>
     <string name="msg_scanning_short">Scanning…</string>
     <string name="msg_no_surround_clips">No surround recordings</string>
     <string name="msg_no_surround_clips_long">No surround recordings (the playback timeline is built from surround recordings)</string>
@@ -582,6 +583,14 @@
     <string name="msg_clip_saved">Clip saved: %1$s</string>
     <string name="msg_clip_failed">Couldn\'t save the clip</string>
     <string name="clip_share_note">About 30 seconds around this moment, saved to DCIM/EVCam_Clips. Automatic cleanup doesn\'t delete it.</string>
+    <string name="clip_mark_start">Choose a range starting here</string>
+    <string name="clip_save_around">15 seconds before and after</string>
+    <string name="clip_save_range">Save %1$s – %2$s (%3$s)</string>
+    <string name="clip_cancel_range">Cancel range</string>
+    <string name="clip_save_to_here">Save to here</string>
+    <string name="clip_start_marked">Start set at %1$s. Move to the end, then tap \"Save to here\" (up to 10 minutes)</string>
+    <string name="msg_clip_saving_range">Saving the range (%1$s)…</string>
+    <string name="clip_share_note_range">The range you chose (%1$s), saved to DCIM/EVCam_Clips. Automatic cleanup doesn\'t delete it.</string>
     <string name="share_phone_title">Send to phone</string>
     <string name="share_phone_steps">Scan the QR code with your phone → the file opens in the browser → long-press it and choose Save</string>
     <string name="share_phone_steps_file">Scan the QR code with your phone → the download page opens → tap Download to save the file</string>

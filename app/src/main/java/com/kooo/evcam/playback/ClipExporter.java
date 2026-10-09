@@ -31,6 +31,8 @@ public final class ClipExporter {
     public static final String DIR_NAME = "EVCam_Clips";
     /** 前后各多少。 */
     public static final long HALF_MS = 15_000L;
+    /** 自己选的一段最长多久：再长就是好几百 MB，发手机也发不动。 */
+    public static final long MAX_RANGE_MS = 10 * 60_000L;
 
     /** 一段录像：文件、开始时刻（系统时间）、时长。 */
     public static final class Part {
@@ -64,12 +66,24 @@ public final class ClipExporter {
      * @return 存好的文件；失败为 null
      */
     public static File export(List<Part> parts, long momentMs, File outDir, String label) {
-        if (parts == null || parts.isEmpty() || outDir == null || !(outDir.isDirectory() || outDir.mkdirs())) {
+        return exportRange(parts, momentMs - HALF_MS, momentMs + HALF_MS, momentMs, outDir, label);
+    }
+
+    /**
+     * 抄出 [fromMs, toMs] 这一段（自己选的起点和终点，最长 {@link #MAX_RANGE_MS}）。
+     * 文件名按起点。别在主线程上调。
+     */
+    public static File exportRange(List<Part> parts, long fromMs, long toMs, File outDir, String label) {
+        return exportRange(parts, fromMs, Math.min(toMs, fromMs + MAX_RANGE_MS), fromMs, outDir, label);
+    }
+
+    private static File exportRange(List<Part> parts, long fromMs, long toMs, long nameMs, File outDir,
+            String label) {
+        if (parts == null || parts.isEmpty() || toMs <= fromMs
+                || outDir == null || !(outDir.isDirectory() || outDir.mkdirs())) {
             return null;
         }
-        long fromMs = momentMs - HALF_MS;
-        long toMs = momentMs + HALF_MS;
-        String base = "clip_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(momentMs))
+        String base = "clip_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(nameMs))
                 + "_" + label;
         // 同一刻存两次不覆盖上一次的：加序号（审查 2026-10-08）
         File out = new File(outDir, base + ".mp4");

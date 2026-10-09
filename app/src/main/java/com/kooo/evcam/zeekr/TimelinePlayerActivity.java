@@ -30,6 +30,7 @@ import com.kooo.evcam.AppLog;
 import com.kooo.evcam.R;
 import com.kooo.evcam.StorageHelper;
 import com.kooo.evcam.camera.CameraSlots;
+import com.kooo.evcam.playback.ClipExporter;
 import com.kooo.evcam.playback.ManagedVideoPlayer;
 import com.kooo.evcam.profile.RecordSpecs;
 
@@ -111,6 +112,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     private Button nextSessionButton;
     /** 锁定此刻 / 解锁（锁定影像开着时才有）。 */
     private Button lockButton;
+    private Button saveClipButton;
     /** 进度条下面那条：锁定的那几段。 */
     private com.kooo.evcam.ui.LockedRangeStrip lockedStrip;
     /** 「锁定影像」开着没有：扫描时读一次，回到前台时再看一眼。 */
@@ -328,9 +330,9 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         if (lockButton != null) {
             lockButton.setOnClickListener(v -> toggleLockHere());
         }
-        View saveClipButton = findViewById(R.id.timeline_save_clip);
+        saveClipButton = findViewById(R.id.timeline_save_clip);
         if (saveClipButton != null) {
-            saveClipButton.setOnClickListener(v -> saveClipHere());
+            saveClipButton.setOnClickListener(v -> showClipChoices());
         }
         View sendButton = findViewById(R.id.timeline_send);
         if (sendButton != null) {
@@ -568,6 +570,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         playWhenReady = true;
 
         surround.track = LaneTrack.of(session);
+        clearClipStart();   // 选段只在一条录制里选
         for (Lane lane : lanes) {
             if (lane != surround) {
                 List<RecordingTimeline.Source> sources = laneSources.get(lane.slot);
@@ -703,6 +706,10 @@ public class TimelinePlayerActivity extends AppCompatActivity {
 
     /** 「保存片段」正在存（主线程读写）。 */
     private boolean savingClip;
+    /** 选段的起点（真实时刻）；没在选是 -1。主线程。 */
+    private long clipStartEpochMs = -1L;
+    /** 正在后台删文件（主线程读写）。 */
+    private boolean deleting;
 
     /** 划多远才算换一路。 */
     private static final float SWIPE_DP = 60f;
@@ -1132,10 +1139,68 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     }
 
     /**
-     * 保存片段（2.10.8）：此刻前后各 15 秒，看的是哪一路就抄哪一路（网格或放大某一路时是环视那个文件），
-     * 存到 EVCam_Clips，存好后打开「发送到手机」。不重新编码，几秒钟。
+     * 点「保存片段」：此刻前后 15 秒，或者自己选一段（先在起点定一下，拖到终点再点一次）。
+     *
+     * <p>以前只有前后 15 秒；想要一段更长的，只能整条录制或者整个分段文件发出去。</p>
      */
-    private void saveClipHere() {
+    private void showClipChoices() {
+        Lane lane = expanded != null ? expanded : surround;
+        if (sessions.isEmpty() || lane.track.isEmpty()) {
+            Toast.makeText(this, R.string.share_phone_no_file, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final long now = clockEpoch();
+        final List<CharSequence> items = new ArrayList<>();
+        final List<Runnable> actions = new ArrayList<>();
+        if (clipStartEpochMs >= 0) {
+            final long from = Math.min(clipStartEpochMs, now);
+            final long to = Math.max(clipStartEpochMs, now);
+            items.add(getString(R.string.clip_save_range, clockText(from), clockText(to),
+                    TimelineFormat.duration(Math.min(to - from, ClipExporter.MAX_RANGE_MS))));
+            actions.add(() -> saveClip(from, to, false));
+        } else {
+            items.add(getString(R.string.clip_mark_start));
+            actions.add(() -> markClipStart(now));
+        }
+        items.add(getString(R.string.clip_save_around));
+        actions.add(() -> saveClip(now - ClipExporter.HALF_MS, now + ClipExporter.HALF_MS, true));
+        if (clipStartEpochMs >= 0) {
+            items.add(getString(R.string.clip_cancel_range));
+            actions.add(this::clearClipStart);
+        }
+        com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
+                .setTitle(R.string.action_save_clip)
+                .setItems(items.toArray(new CharSequence[0]), (dialog, which) -> actions.get(which).run())
+                .setNegativeButton(R.string.action_cancel, null));
+    }
+
+    /** 选段的起点定在这一刻；按钮换成「保存到此处」，提醒还在选。 */
+    private void markClipStart(long epochMs) {
+        clipStartEpochMs = epochMs;
+        if (saveClipButton != null) {
+            saveClipButton.setText(R.string.clip_save_to_here);
+        }
+        Toast.makeText(this, getString(R.string.clip_start_marked, clockText(epochMs)), Toast.LENGTH_LONG).show();
+    }
+
+    private void clearClipStart() {
+        clipStartEpochMs = -1L;
+        if (saveClipButton != null) {
+            saveClipButton.setText(R.string.action_save_clip);
+        }
+    }
+
+    private static String clockText(long epochMs) {
+        return new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(epochMs));
+    }
+
+    /**
+     * 把 [fromMs, toMs] 抄成一个 MP4（2.10.8 起；2.11.0 之后可以自己选起止）：看的是哪一路就抄哪一路
+     * （网格或放大某一路时是环视那个文件），存到 EVCam_Clips，存好后打开「发送到手机」。不重新编码，几秒钟。
+     *
+     * @param around 是「此刻前后 15 秒」（文件名、提示按此刻），不是自己选的一段
+     */
+    private void saveClip(long fromMs, long toMs, boolean around) {
         if (savingClip) {
             return;   // 上一次还在存：连点不另起一个（审查 2026-10-08）
         }
@@ -1144,19 +1209,25 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.share_phone_no_file, Toast.LENGTH_SHORT).show();
             return;
         }
-        final long moment = clockEpoch();
-        final List<com.kooo.evcam.playback.ClipExporter.Part> parts = new ArrayList<>();
+        final List<ClipExporter.Part> parts = new ArrayList<>();
         for (LaneTrack.Clip clip : lane.track.clips()) {
-            parts.add(new com.kooo.evcam.playback.ClipExporter.Part(new File(clip.path),
-                    clip.startEpochMs, clip.durationMs));
+            parts.add(new ClipExporter.Part(new File(clip.path), clip.startEpochMs, clip.durationMs));
         }
         final String label = lane.slot.toLowerCase(Locale.US);
-        final File outDir = com.kooo.evcam.playback.ClipExporter.clipsDir(
-                StorageHelper.getVideoDir(getApplicationContext()));
-        Toast.makeText(this, R.string.msg_clip_saving, Toast.LENGTH_SHORT).show();
+        final File outDir = ClipExporter.clipsDir(StorageHelper.getVideoDir(getApplicationContext()));
+        Toast.makeText(this, around ? getString(R.string.msg_clip_saving)
+                : getString(R.string.msg_clip_saving_range,
+                        TimelineFormat.duration(Math.min(toMs - fromMs, ClipExporter.MAX_RANGE_MS))),
+                Toast.LENGTH_SHORT).show();
+        if (!around) {
+            clearClipStart();
+        }
         savingClip = true;
         new Thread(() -> {
-            File saved = com.kooo.evcam.playback.ClipExporter.export(parts, moment, outDir, label);
+            File saved = around
+                    ? ClipExporter.export(parts, fromMs + ClipExporter.HALF_MS, outDir, label)
+                    : ClipExporter.exportRange(parts, fromMs, toMs, outDir, label);
+            final long savedMs = saved != null ? ClipDurations.of(saved) : -1L;
             runOnUiThread(() -> {
                 savingClip = false;
                 if (isFinishing() || isDestroyed()) {
@@ -1167,7 +1238,10 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                     return;
                 }
                 Toast.makeText(this, getString(R.string.msg_clip_saved, saved.getName()), Toast.LENGTH_SHORT).show();
-                com.kooo.evcam.share.PhoneShare.show(this, saved, getString(R.string.clip_share_note));
+                String note = around ? getString(R.string.clip_share_note)
+                        : getString(R.string.clip_share_note_range,
+                                TimelineFormat.duration(Math.max(0L, savedMs)));
+                com.kooo.evcam.share.PhoneShare.show(this, saved, note);
             });
         }, "save-clip").start();
     }
@@ -1379,27 +1453,14 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         for (Lane lane : lanes) {
             resetLane(lane);
         }
-        int deleted = 0;
-        int total = 0;
-        int kept = 0;
+        List<LaneTrack.Clip> files = new ArrayList<>();
         for (int index : indexes) {
-            if (index < 0 || index >= sessions.size()) {
-                continue;
-            }
-            for (LaneTrack.Clip clip : filesOf(sessions.get(index))) {
-                total++;
-                File file = new File(clip.path);
-                if (isLocked(clip.path)) {
-                    kept++;
-                } else if (file.exists() && file.delete()) {
-                    deleted++;
-                }
+            if (index >= 0 && index < sessions.size()) {
+                files.addAll(filesOf(sessions.get(index)));
             }
         }
-        AppLog.i(TAG, "多选删除：" + deleted + "/" + total + " 个文件，锁定的留下 " + kept + " 个");
-        Toast.makeText(this, deletedText(deleted, kept), Toast.LENGTH_SHORT).show();
         setSelecting(false);
-        loadTimelines();
+        deleteInBackground(files, "多选删除");
     }
 
     private void confirmDeleteSession(int index, RecordingTimeline.Session session) {
@@ -1420,20 +1481,49 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                 resetLane(lane);
             }
         }
-        List<LaneTrack.Clip> files = filesOf(session);
-        int deleted = 0;
-        int kept = 0;
+        deleteInBackground(filesOf(session), "删除时间轴 " + index);
+    }
+
+    /**
+     * 删文件放后台线程：U 盘上一个文件删一下就要几十到几百毫秒，一次删几条时间轴
+     * 主线程会卡好几秒（2026-10-09 实测卡了 3.5 秒），再多就要 ANR 了。
+     * 锁定与否在这里（主线程）先判好，后台只管删。
+     */
+    private void deleteInBackground(List<LaneTrack.Clip> files, String what) {
+        if (deleting) {
+            return;   // 上一批还在删
+        }
+        final List<File> toDelete = new ArrayList<>();
+        int locked = 0;
         for (LaneTrack.Clip clip : files) {
-            File file = new File(clip.path);
             if (isLocked(clip.path)) {
-                kept++;
-            } else if (file.exists() && file.delete()) {
-                deleted++;
+                locked++;
+            } else {
+                toDelete.add(new File(clip.path));
             }
         }
-        AppLog.i(TAG, "删除时间轴 " + index + "：" + deleted + "/" + files.size() + " 个文件，锁定的留下 " + kept + " 个");
-        Toast.makeText(this, deletedText(deleted, kept), Toast.LENGTH_SHORT).show();
-        loadTimelines();
+        final int kept = locked;
+        final int total = files.size();
+        deleting = true;
+        infoText.setText(R.string.msg_deleting);
+        new Thread(() -> {
+            int deleted = 0;
+            for (File file : toDelete) {
+                if (file.exists() && file.delete()) {
+                    deleted++;
+                }
+            }
+            final int done = deleted;
+            AppLog.i(TAG, what + "：" + done + "/" + total + " 个文件，锁定的留下 " + kept + " 个");
+            runOnUiThread(() -> {
+                deleting = false;
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                Toast.makeText(this, deletedText(done, kept), Toast.LENGTH_SHORT).show();
+                loadTimelines();
+            });
+        }, "delete-clips").start();
     }
 
     // ------------------------------------------------------------------ 锁定影像
