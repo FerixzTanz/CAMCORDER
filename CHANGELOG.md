@@ -9,7 +9,7 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+- Floating record button: dark icon at the same size and line weight as the car's own buttons, no shadow.
 
 ## [2.11.1] - 2026-10-09
 
