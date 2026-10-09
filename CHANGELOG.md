@@ -11,6 +11,15 @@ commit message, not here.
 
 Nothing yet.
 
+## [2.11.3] - 2026-10-10
+
+### New and improved
+
+- **Record all vehicle signals** (Settings → Developer options). While on, the app listens to every signal the
+  head unit offers and logs each change with time, speed and name, to find signals not mapped yet, such as
+  the blind-spot warning. Read only. Results are in Diagnostics under "Signal scan". Turns itself off after
+  3 hours.
+
 ## [2.11.2] - 2026-10-09
 
 ### New and improved

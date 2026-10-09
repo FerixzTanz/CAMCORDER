@@ -870,7 +870,7 @@ public class RecordingFloatingService extends Service {
         private boolean trouble;
         private Paint backgroundPaint;
         private Paint iconPaint;
-        /** 外面那一圈：待机是灰的空心圈，录制中是浅红的轨道。 */
+        /** 外面那一圈：待机是正文色（近黑 / 夜间近白）的空心圈，录制中是浅红的轨道。 */
         private Paint ringPaint;
         /** 录制中沿着轨道走的那一段，和主界面录制键的分段进度环同一个意思。 */
         private Paint progressPaint;
@@ -971,7 +971,7 @@ public class RecordingFloatingService extends Service {
 
             // 外面那一圈，和主界面录制键的分段进度环一个意思。
             //
-            // 待机时是<b>灰的空心圈</b> —— 合并之前那个「打开主界面」的悬浮按钮
+            // 待机时是<b>空心圈</b>（正文色）—— 合并之前那个「打开主界面」的悬浮按钮
             // 就长这样，而这个按钮默认干的也正是那件事。红色留给「正在录」。
             //
             // 图标的大小和笔画照车机自己的按钮来（实车照片 2026-10-09）：图标占按钮四成宽、细线条（第二张照片后又缩了一档）。
