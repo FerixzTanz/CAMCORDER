@@ -24,11 +24,31 @@ public class SignalScanTest {
     }
 
     @Test
-    public void sensorTypeShape() {
-        assertTrue("档位", SignalScan.isSensorType(0x00200200));
-        assertTrue("车速", SignalScan.isSensorType(0x00100100));
-        assertFalse("档位的取值（末字节不是 0）", SignalScan.isSensorType(0x00200201));
-        assertFalse("功能号", SignalScan.isSensorType(0x28070200));
-        assertFalse(SignalScan.isSensorType(0x00000100));
+    public void sensorEventTypeShape() {
+        assertTrue("档位", SignalScan.isSensorEventType(0x00200200));
+        assertTrue("安全带", SignalScan.isSensorEventType(0x00201200));
+        assertFalse("车速是浮点，不挂", SignalScan.isSensorEventType(0x00100100));
+        assertFalse("电量是浮点，不挂", SignalScan.isSensorEventType(0x00404000));
+        assertFalse("档位的取值（末字节不是 0）", SignalScan.isSensorEventType(0x00200201));
+        assertFalse("功能号", SignalScan.isSensorEventType(0x28070200));
+        assertFalse(SignalScan.isSensorEventType(0x00200000));
+    }
+
+    @Test
+    public void placeholdersAreNotPolled() {
+        assertTrue(SignalScan.isPlaceholder("255"));
+        assertTrue(SignalScan.isPlaceholder("-65535"));
+        assertTrue(SignalScan.isPlaceholder("-1.0"));
+        assertFalse(SignalScan.isPlaceholder("0"));
+        assertFalse(SignalScan.isPlaceholder("1"));
+        assertFalse(SignalScan.isPlaceholder("abc"));
+    }
+
+    @Test
+    public void blindSpotNamesComeFirst() {
+        assertTrue(SignalScan.isBlindSpotName("IADAS.SETTING_FUNC_BLIND_SPOT_DETECTION_WARNING"));
+        assertTrue(SignalScan.isBlindSpotName("IVehicle.SETTING_FUNC_BSD_SW_ONOFF_WARN_TYPE"));
+        assertFalse(SignalScan.isBlindSpotName("IADAS.SETTING_FUNC_DOW_SYS_STS"));
+        assertFalse(SignalScan.isBlindSpotName(null));
     }
 }
