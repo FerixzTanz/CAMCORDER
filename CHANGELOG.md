@@ -17,9 +17,9 @@ Nothing yet.
 
 - **Floating record button:** the icon (ring, dot and stop square) is a little bigger, closer to the car's
   own buttons.
-- **Record all vehicle signals** now also records sensor events (gear, seat belts and the like) and reads
-  the blind-spot-like signals twice a second, in case the car only answers when asked. Same switch, same
-  Diagnostics section.
+- **Record all vehicle signals** now also records the car's sensor events that the app doesn't use yet,
+  and reads the blind-spot-like signals twice a second, in case the car only answers when asked. Same
+  switch, same Diagnostics section.
 
 ## [2.11.3] - 2026-10-10
 

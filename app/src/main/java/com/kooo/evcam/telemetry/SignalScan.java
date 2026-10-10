@@ -475,7 +475,7 @@ public final class SignalScan {
 
     /** 读到占位值的组合再试一遍：读到真值的记一行、转进轮询（不超上限，名字是盲区的排在前面所以先转）。 */
     private void reprobe(long wall) {
-        for (Iterator<int[]> it = pending.iterator(); it.hasNext() && polled.size() < MAX_POLL_PAIRS; ) {
+        for (Iterator<int[]> it = pending.iterator(); !stopped && it.hasNext() && polled.size() < MAX_POLL_PAIRS; ) {
             int[] p = it.next();
             String v = readValue(p[0], p[1]);
             if (v != null && !isPlaceholder(v)) {
