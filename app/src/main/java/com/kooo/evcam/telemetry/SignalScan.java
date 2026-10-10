@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -62,11 +63,12 @@ import java.util.TreeMap;
  *   <li><b>传感器事件</b>（{@code ISensor}，档位、安全带那一类，类型号 0x0020xx00）：类型号同样从 jar 里收，
  *       行里记成 {@code S:0x...}。浮点传感器（车速、转角，0x0010 / 0x0040 段）不挂：变一点就推，只是噪声。
  *       和 {@link EcarxSource} 一样，传感器监听<b>进程里每个类型只注册一次、永不注销</b>（注销不掉，
- *       注销再注册回调会变成两三条），回调转给此刻在跑的那次普查，没在跑就丢掉。</li>
+ *       注销再注册回调会变成两三条），回调转给此刻在跑的那次普查，没在跑就丢掉。应用自己已经认识、
+ *       {@link EcarxSource} 在听的类型（档位、安全带、座椅、昼夜）不挂。</li>
  *   <li><b>轮询名字像盲区的号</b>：{@code BLIND_SPOT_DETECTION_WARNING} 这类挂着却从没回调过，
  *       可能只是不推、要自己读。每 {@link #POLL_MS} 读一次（不带区域和几个常见区域），变了记一行
- *       {@code P:0x...}。开头读一遍，读到占位值（255 / 254 / 253 / -1 / -65535）或读不出来的组合不再读，
- *       最多 {@link #MAX_POLL_PAIRS} 组。</li>
+ *       {@code P:0x...}。读到占位值（255 / 254 / 253 / -1 / -65535）的组合先不轮询，每 {@link #REPROBE_MS}
+ *       再试一次（车刚醒时可能还没准备好），读到真值再加进来；读都读不出来的不再试。最多 {@link #MAX_POLL_PAIRS} 组。</li>
  * </ul>
  */
 public final class SignalScan {
@@ -85,6 +87,8 @@ public final class SignalScan {
     private static final int[] POLL_ZONES = {0, 0x80000000, 0x1, 0x4, 0x8, 0x80};
     /** 最多轮询多少组号 / 区域。 */
     static final int MAX_POLL_PAIRS = 40;
+    /** 读到占位值的组合多久再试一次。 */
+    static final long REPROBE_MS = 30_000L;
     /** 传感器事件的类型号段：0x0020xx00。jar 里收不到常量时就把这一段挨个试一遍。 */
     private static final int SENSOR_EVENT_PREFIX = 0x00200000;
 
@@ -104,17 +108,21 @@ public final class SignalScan {
     private final Context app;
     private final Runnable onAutoStop;
     private HandlerThread thread;
-    private Handler handler;
+    /** 传感器回调在车的 binder 线程上读它，所以 volatile。 */
+    private volatile Handler handler;
     private Object function;
     private Object watcher;
     private int[] ids = new int[0];
     private final Map<Integer, String> names = new HashMap<>();
     private final Map<Integer, String> sensorNames = new TreeMap<>();
-    /** jar 里认出来的传感器事件类型常量有几个（含应用自己也认识的）。 */
+    /** jar 里认出来、应用还不认识的传感器事件类型有几个。 */
     private int sensorTypesInJar;
     private Object sensor;
     /** 轮询的组合：{号, 区域}，和上一次读到的值。 */
     private final List<int[]> polled = new ArrayList<>();
+    /** 开头读到占位值的组合：车刚醒时辅助驾驶可能还没准备好，每 {@link #REPROBE_MS} 再试，读到真值就转进 polled。 */
+    private final List<int[]> pending = new ArrayList<>();
+    private long nextReprobe;
     private final Map<String, String> lastPolled = new HashMap<>();
     private Method getValue;
     private Method getValueZoned;
@@ -312,7 +320,8 @@ public final class SignalScan {
 
     /**
      * 传感器事件类型号：名字带 Sensor 的类里，名字带 TYPE、不带 FUNC 的 int 常量，形如 0x0020xx00
-     * （末字节是 0；末字节不是 0 的是事件取值，比如档位 D）。返回认出来几个（已经在表里的也算）。
+     * （末字节是 0；末字节不是 0 的是事件取值，比如档位 D）。返回新认出来几个：应用已经认识的不算 ——
+     * 那些本来就不挂，jar 里只有它们的话等于没收到，要按号段挨个试。
      */
     static int collectSensorTypes(Class<?> type, Map<Integer, String> into) {
         if (!type.getSimpleName().contains("Sensor")) {
@@ -335,11 +344,9 @@ public final class SignalScan {
             try {
                 f.setAccessible(true);
                 int v = f.getInt(null);
-                if (isSensorEventType(v)) {
+                if (isSensorEventType(v) && !into.containsKey(v)) {
+                    into.put(v, type.getSimpleName() + "." + n);
                     count++;
-                    if (!into.containsKey(v)) {
-                        into.put(v, type.getSimpleName() + "." + n);
-                    }
                 }
             } catch (Throwable ignored) {
                 // 读不了的常量跳过
@@ -377,9 +384,14 @@ public final class SignalScan {
                 sensorProxy = Proxy.newProxyInstance(SignalScan.class.getClassLoader(),
                         new Class<?>[]{register.getParameterTypes()[0]}, new SensorForward());
             }
-            for (int type : sensorNames.keySet()) {
+            for (Map.Entry<Integer, String> e : sensorNames.entrySet()) {
                 if (stopped) {
                     break;
+                }
+                int type = e.getKey();
+                String n = e.getValue();
+                if (n != null && n.startsWith("(app)")) {
+                    continue;   // 档位、安全带这些 EcarxSource 已经在听，也不是要找的；不再挂第二个监听
                 }
                 if (!sensorTypesRegistered.contains(type) && quietOk(register, sensor, sensorProxy, type)) {
                     sensorTypesRegistered.add(type);
@@ -413,7 +425,11 @@ public final class SignalScan {
                     break;
                 }
                 String v = readValue(id, zone);
-                if (v == null || isPlaceholder(v)) {
+                if (v == null) {
+                    continue;
+                }
+                if (isPlaceholder(v)) {
+                    pending.add(new int[]{id, zone});
                     continue;
                 }
                 if (polled.size() >= MAX_POLL_PAIRS) {
@@ -425,10 +441,12 @@ public final class SignalScan {
                 write("# poll start " + pollKey(id, zone) + " = " + v + " " + names.get(id));
             }
         }
-        if (!polled.isEmpty()) {
+        if (!polled.isEmpty() || !pending.isEmpty()) {
+            nextReprobe = SystemClock.elapsedRealtime() + REPROBE_MS;
             handler.postDelayed(poll, POLL_MS);
         }
-        return polled.size() + " id/zone pairs every " + POLL_MS + " ms"
+        return polled.size() + " id/zone pairs every " + POLL_MS + " ms, " + pending.size()
+                + " reading a placeholder retried every " + (REPROBE_MS / 1000) + " s"
                 + (skipped > 0 ? " (" + skipped + " more left out, cap " + MAX_POLL_PAIRS + ")" : "");
     }
 
@@ -437,6 +455,10 @@ public final class SignalScan {
             return;
         }
         long wall = System.currentTimeMillis();
+        if (!pending.isEmpty() && SystemClock.elapsedRealtime() >= nextReprobe) {
+            nextReprobe = SystemClock.elapsedRealtime() + REPROBE_MS;
+            reprobe(wall);
+        }
         for (int[] p : polled) {
             String v = readValue(p[0], p[1]);
             String key = pollKey(p[0], p[1]);
@@ -448,6 +470,21 @@ public final class SignalScan {
         Handler h = handler;
         if (h != null && !stopped) {
             h.postDelayed(poll, POLL_MS);
+        }
+    }
+
+    /** 读到占位值的组合再试一遍：读到真值的记一行、转进轮询（不超上限，名字是盲区的排在前面所以先转）。 */
+    private void reprobe(long wall) {
+        for (Iterator<int[]> it = pending.iterator(); it.hasNext() && polled.size() < MAX_POLL_PAIRS; ) {
+            int[] p = it.next();
+            String v = readValue(p[0], p[1]);
+            if (v != null && !isPlaceholder(v)) {
+                it.remove();
+                polled.add(p);
+                String key = pollKey(p[0], p[1]);
+                lastPolled.put(key, v);
+                logLine(wall, key, v, names.get(p[0]));
+            }
         }
     }
 
