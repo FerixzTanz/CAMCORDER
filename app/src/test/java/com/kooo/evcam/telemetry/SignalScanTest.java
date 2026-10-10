@@ -22,4 +22,13 @@ public class SignalScanTest {
         assertFalse("WINDOW 里的 DOW 不算", SignalScan.matchesHint("IBcm.BCM_FUNC_WINDOW_POS"));
         assertFalse(SignalScan.matchesHint(null));
     }
+
+    @Test
+    public void sensorTypeShape() {
+        assertTrue("档位", SignalScan.isSensorType(0x00200200));
+        assertTrue("车速", SignalScan.isSensorType(0x00100100));
+        assertFalse("档位的取值（末字节不是 0）", SignalScan.isSensorType(0x00200201));
+        assertFalse("功能号", SignalScan.isSensorType(0x28070200));
+        assertFalse(SignalScan.isSensorType(0x00000100));
+    }
 }

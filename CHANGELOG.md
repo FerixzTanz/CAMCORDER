@@ -9,7 +9,14 @@ commit message, not here.
 
 ## [Unreleased]
 
-- Floating record button: icon a little bigger, closer in weight to the car's own buttons.
+## [2.11.4] - 2026-10-10
+
+### New and improved
+
+- **Floating record button:** the ring and dot are a little bigger, closer to the car's own buttons.
+- **Record all vehicle signals** now also records sensor events and checks the blind-spot-like
+  signals twice a second, in case the car only answers when asked. Same switch, same Diagnostics
+  section.
 
 ## [2.11.3] - 2026-10-10
 

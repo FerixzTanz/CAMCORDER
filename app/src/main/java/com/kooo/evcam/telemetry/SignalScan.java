@@ -52,6 +52,17 @@ import java.util.TreeMap;
  * <p>每次变化一行：时刻、车速、号、区域、值、常量名，写到 {@code files/signal_scan.txt}，最多
  * {@link #MAX_LINES} 行。诊断报告里出摘要和过滤掉刷屏号之后的时间线。只读，不往车上写任何东西。
  * 开着最多 {@link #MAX_RUN_MS}，到点自己停，开关也跟着关。</p>
+ *
+ * <h3>2.11.4 补的两样</h3>
+ *
+ * <p>2.11.3 那一趟（2068 个号，124 个变过）里盲区灯一次都没对上。还没看过的两处：</p>
+ * <ul>
+ *   <li><b>传感器事件</b>（{@code ISensor}，档位、安全带那一类）：类型号同样从 jar 里收，行里记成
+ *       {@code S:0x...}。只记事件（枚举），不记浮点值（车速那种一秒几十次，会把行数吃光）。</li>
+ *   <li><b>轮询名字像盲区的号</b>：{@code BLIND_SPOT_DETECTION_WARNING} 这类挂着却从没回调过，
+ *       可能只是不推、要自己读。每 {@link #POLL_MS} 读一次（不带区域和几个常见区域），变了记一行
+ *       {@code P:0x...}。开头读一遍，读不出来的组合就不再读。</li>
+ * </ul>
  */
 public final class SignalScan {
 
@@ -63,6 +74,12 @@ public final class SignalScan {
     static final int MAX_LINES = 60_000;
     /** 多久把缓冲写一次盘。 */
     private static final long FLUSH_MS = 5_000L;
+    /** 名字像盲区的号多久读一次。 */
+    static final long POLL_MS = 500L;
+    /** 轮询时试的区域：0 表示不带区域。 */
+    private static final int[] POLL_ZONES = {0, 0x80000000, 0x1, 0x4, 0x8, 0x80};
+    /** 传感器类型号收不到常量时，按这几段挨个试（类型号形如 0x00PPxx00）。 */
+    private static final int[] SENSOR_PREFIXES = {0x00100000, 0x00200000, 0x00400000};
     /** 名字里带这些的常量先单独列出来（盲区、变道、开门预警、后方横穿）。 */
     static final String[] BLIND_SPOT_WORDS = {"BSD", "BSM", "LCA", "DOW", "RCTA", "RCW"};
     /** 这几个按片段找（BLINDSPOT 连写也算）。 */
@@ -79,6 +96,15 @@ public final class SignalScan {
     private Object watcher;
     private int[] ids = new int[0];
     private final Map<Integer, String> names = new HashMap<>();
+    private final Map<Integer, String> sensorNames = new TreeMap<>();
+    private Object sensor;
+    private Object sensorWatcher;
+    /** 轮询的组合：{号, 区域}，和上一次读到的值。 */
+    private final List<int[]> polled = new ArrayList<>();
+    private final Map<String, String> lastPolled = new HashMap<>();
+    private Method getValue;
+    private Method getValueZoned;
+    private final Runnable poll = this::pollNow;
     private final Map<Integer, String> known = new HashMap<>();
     private Writer out;
     private int lines;
@@ -92,6 +118,8 @@ public final class SignalScan {
         for (Signal s : Signal.values()) {
             if (s.kind == Signal.Kind.FUNCTION || s.kind == Signal.Kind.FUNCTION_ZONE) {
                 known.put(s.id, s.name());
+            } else if (s.kind == Signal.Kind.SENSOR_EVENT) {
+                sensorNames.put(s.id, "(app) " + s.name());
             }
         }
     }
@@ -162,6 +190,9 @@ public final class SignalScan {
                 return;
             }
             write("# registered: " + register());
+            sensor = EcarxSource.call(car, "getSensorManager");
+            write("# sensors: " + (sensor == null ? "no sensor manager" : registerSensors()));
+            write("# polling: " + startPolling());
             flushNow();
         } catch (Throwable t) {
             AppLog.w(TAG, "scan failed to start: " + EcarxSource.describe(t));
@@ -190,7 +221,9 @@ public final class SignalScan {
                         continue;
                     }
                     try {
-                        collectFrom(Class.forName(name, false, loader), found);
+                        Class<?> type = Class.forName(name, false, loader);
+                        collectFrom(type, found);
+                        collectSensorTypes(type, sensorNames);
                         classes++;
                     } catch (Throwable ignored) {
                         // 加载不了的类跳过
@@ -259,6 +292,155 @@ public final class SignalScan {
             } catch (Throwable ignored) {
                 // 读不了的常量跳过
             }
+        }
+    }
+
+    /**
+     * 传感器类型号：名字带 Sensor 的类里，名字带 TYPE、不带 FUNC 的 int 常量，形如 0x00PPxx00
+     * （末字节是 0；末字节不是 0 的是事件取值，比如档位 D）。
+     */
+    static void collectSensorTypes(Class<?> type, Map<Integer, String> into) {
+        if (!type.getSimpleName().contains("Sensor")) {
+            return;
+        }
+        Field[] fields;
+        try {
+            fields = type.getDeclaredFields();
+        } catch (Throwable t) {
+            return;
+        }
+        for (Field f : fields) {
+            int mod = f.getModifiers();
+            String n = f.getName();
+            if (f.getType() != int.class || !Modifier.isStatic(mod) || !Modifier.isFinal(mod)
+                    || !n.contains("TYPE") || n.contains("FUNC")) {
+                continue;
+            }
+            try {
+                f.setAccessible(true);
+                int v = f.getInt(null);
+                if (isSensorType(v) && !into.containsKey(v)) {
+                    into.put(v, type.getSimpleName() + "." + n);
+                }
+            } catch (Throwable ignored) {
+                // 读不了的常量跳过
+            }
+        }
+    }
+
+    /** 形如 0x00PPxx00：高字节 0、末字节 0、中间两个字节都不是 0。 */
+    static boolean isSensorType(int v) {
+        return (v & 0xFF0000FF) == 0 && (v & 0x00FF0000) != 0 && (v & 0x0000FF00) != 0;
+    }
+
+    /** 传感器事件逐个类型挂（它只认一个一个挂）；jar 里没收到类型就按几段号挨个试。 */
+    private String registerSensors() {
+        Method register = EcarxSource.findMethodWithInterfaceFirst(sensor, "registerListener", int.class);
+        if (register == null) {
+            return "no registerListener";
+        }
+        boolean fromJar = false;
+        for (String n : sensorNames.values()) {
+            if (!n.startsWith("(app)")) {
+                fromJar = true;
+                break;
+            }
+        }
+        if (!fromJar) {
+            for (int prefix : SENSOR_PREFIXES) {
+                for (int mid = 1; mid <= 0xFF; mid++) {
+                    int v = prefix | (mid << 8);
+                    if (!sensorNames.containsKey(v)) {
+                        sensorNames.put(v, null);
+                    }
+                }
+            }
+        }
+        Object proxy = Proxy.newProxyInstance(SignalScan.class.getClassLoader(),
+                new Class<?>[]{register.getParameterTypes()[0]}, new Callback());
+        int done = 0;
+        for (int type : sensorNames.keySet()) {
+            if (stopped) {
+                break;
+            }
+            if (quietOk(register, sensor, proxy, type)) {
+                done++;
+            }
+        }
+        if (done > 0) {
+            sensorWatcher = proxy;
+        }
+        return (fromJar ? "types from the jar " : "no types in the jar, tried ranges ") + done + "/" + sensorNames.size();
+    }
+
+    /** 开头把名字像盲区的号在几个区域上各读一遍，读得出来的组合以后每 {@link #POLL_MS} 读一次。 */
+    private String startPolling() {
+        getValue = EcarxSource.findMethod(function, "getFunctionValue", int.class);
+        getValueZoned = EcarxSource.findMethod(function, "getFunctionValue", int.class, int.class);
+        if (getValue == null && getValueZoned == null) {
+            return "no getFunctionValue";
+        }
+        for (Map.Entry<Integer, String> e : names.entrySet()) {
+            if (!matchesHint(e.getValue())) {
+                continue;
+            }
+            for (int zone : POLL_ZONES) {
+                String v = readValue(e.getKey(), zone);
+                if (v != null) {
+                    polled.add(new int[]{e.getKey(), zone});
+                    lastPolled.put(pollKey(e.getKey(), zone), v);
+                    write("# poll start " + pollKey(e.getKey(), zone) + " = " + v + " " + e.getValue());
+                }
+            }
+        }
+        if (!polled.isEmpty()) {
+            handler.postDelayed(poll, POLL_MS);
+        }
+        return polled.size() + " id/zone pairs every " + POLL_MS + " ms";
+    }
+
+    private void pollNow() {
+        if (stopped) {
+            return;
+        }
+        long wall = System.currentTimeMillis();
+        for (int[] p : polled) {
+            String v = readValue(p[0], p[1]);
+            String key = pollKey(p[0], p[1]);
+            if (v != null && !v.equals(lastPolled.get(key))) {
+                lastPolled.put(key, v);
+                logLine(wall, key, v, names.get(p[0]));
+            }
+        }
+        Handler h = handler;
+        if (h != null && !stopped) {
+            h.postDelayed(poll, POLL_MS);
+        }
+    }
+
+    /** 读一个号（zone 为 0 时不带区域）；抛异常或读到 null 返回 null。 */
+    private String readValue(int id, int zone) {
+        try {
+            Object v = zone == 0
+                    ? (getValue == null ? null : getValue.invoke(function, id))
+                    : (getValueZoned == null ? null : getValueZoned.invoke(function, id, zone));
+            return v == null ? null : String.valueOf(v);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static String pollKey(int id, int zone) {
+        return "P:" + hex(id) + (zone != 0 ? "@" + hex(zone) : "");
+    }
+
+    /** 和 {@link EcarxSource#invokeOk} 一样，只是失败不进日志（试几百个类型号时会刷屏）。 */
+    private static boolean quietOk(Method m, Object target, Object... args) {
+        try {
+            Object r = m.invoke(target, args);
+            return !(r instanceof Boolean) || (Boolean) r;
+        } catch (Throwable t) {
+            return false;
         }
     }
 
@@ -334,19 +516,36 @@ public final class SignalScan {
                 }
                 return null;
             }
+            if ("onSensorEventChanged".equals(method.getName()) && args != null && args.length == 2
+                    && args[0] instanceof Integer && args[1] instanceof Number) {
+                final int type = (Integer) args[0];
+                final Number value = (Number) args[1];
+                final long wall = System.currentTimeMillis();
+                Handler h = handler;
+                if (h != null && !stopped) {
+                    h.post(() -> logLine(wall, "S:" + hex(type), String.valueOf(value), sensorNames.get(type)));
+                }
+                return null;
+            }
+            if ("onSensorValueChanged".equals(method.getName())) {
+                return null;   // 浮点值（车速之类）不记，见类注释
+            }
             return EcarxSource.proxyDefault(proxy, method, args, "SignalScan.Callback");
         }
     }
 
     private void onChange(long wall, int id, int zone, Number value) {
+        logLine(wall, hex(id) + (zone != 0 ? "@" + hex(zone) : ""), String.valueOf(value), names.get(id));
+    }
+
+    /** 一行：时刻 车速 号 = 值 名字（报告按空格切，号里不能有空格）。 */
+    private void logLine(long wall, String key, String value, String name) {
         if (stopped || lines >= MAX_LINES) {
             return;
         }
         Float speed = Telemetry.get().latest().speedKmh;
-        String name = names.get(id);
         write(time(wall) + " v=" + (speed == null ? "?" : String.format(Locale.US, "%.0f", speed))
-                + " " + hex(id) + (zone != 0 ? "@" + hex(zone) : "") + " = " + value
-                + (name != null ? " " + name : ""));
+                + " " + key + " = " + value + (name != null ? " " + name : ""));
         lines++;
         if (lines == MAX_LINES) {
             write("# reached " + MAX_LINES + " lines, no more changes recorded");
@@ -377,6 +576,7 @@ public final class SignalScan {
             return;
         }
         h.removeCallbacks(autoStop);
+        h.removeCallbacks(poll);
         h.post(() -> {
             unregister();
             write("# stopped " + stamp() + " (" + why + "), " + lines + " changes");
@@ -396,6 +596,14 @@ public final class SignalScan {
     }
 
     private void unregister() {
+        Object sw = sensorWatcher;
+        sensorWatcher = null;
+        if (sw != null && sensor != null) {
+            Method m = EcarxSource.findMethodWithInterface(sensor, "unregisterListener");
+            if (m != null) {
+                EcarxSource.invokeOk(m, sensor, sw);
+            }
+        }
         Object w = watcher;
         watcher = null;
         if (w == null || function == null) {

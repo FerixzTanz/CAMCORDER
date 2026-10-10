@@ -692,7 +692,7 @@ final class EcarxSource {
     }
 
     /** 找「(某个接口, second)」形状的方法：传感器的 registerListener(listener, type)。 */
-    private static Method findMethodWithInterfaceFirst(Object target, String name, Class<?> second) {
+    static Method findMethodWithInterfaceFirst(Object target, String name, Class<?> second) {
         for (Class<?> type : publicInterfaces(target)) {
             for (Method m : type.getMethods()) {
                 Class<?>[] p = m.getParameterTypes();
