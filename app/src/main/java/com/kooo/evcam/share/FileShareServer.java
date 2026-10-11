@@ -176,7 +176,9 @@ public class FileShareServer extends NanoHTTPD {
         if (session.getMethod() == Method.HEAD) {
             boolean ours = uri.equals("/f/" + expected) || uri.equals("/s/" + expected);
             if (!ours) {
-                return text(Response.Status.NOT_FOUND, "Not found");
+                // 空正文的 404（text() 是 text/plain，会被 gzip，HEAD 回应就又坏了）
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/html; charset=utf-8",
+                        new ByteArrayInputStream(new byte[0]), 0);
             }
             boolean fileItself = uri.startsWith("/f/");
             Response head = newFixedLengthResponse(Response.Status.OK,
