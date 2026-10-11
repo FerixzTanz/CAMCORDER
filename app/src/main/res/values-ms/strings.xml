@@ -604,6 +604,14 @@
     <string name="upd_downloading_size">Memuat turun… %1$s MB</string>
     <string name="upd_download_failed_title">Muat turun gagal</string>
     <string name="share_phone_qr_failed">Tidak dapat mencipta kod QR. Masukkan alamat ini dalam pelayar telefon.</string>
+    <string name="share_status_waiting">Menunggu telefon anda… IP telefon mesti bermula dengan %1$s</string>
+    <string name="share_status_unreachable">Telefon anda belum sampai ke unit kepala. IP Wi-Fi telefon mesti bermula dengan %1$s: sambungkan telefon ke Wi-Fi yang sama dengan unit kepala, atau hidupkan hotspot telefon dan sambungkan unit kepala kepadanya. Jika telefon disambungkan ke Wi-Fi lain (seperti hotspot kereta), putuskan dahulu.</string>
+    <string name="share_status_connected">Telefon disambungkan ✓ Ketik Muat turun pada telefon</string>
+    <string name="share_status_connected_media">Telefon disambungkan ✓</string>
+    <string name="share_status_sending">Menghantar…</string>
+    <string name="share_status_done">Dihantar ✓</string>
+    <string name="share_status_stopped">Penghantaran terhenti sebelum selesai. Ketik Muat turun pada telefon sekali lagi</string>
+    <string name="share_status_wrong_link">Telefon anda sampai ke unit kepala, tetapi dengan kod lama. Imbas kod ini sekali lagi</string>
     <string name="set_plate_switch_title">Tera nombor plat</string>
     <string name="set_plate_switch_summary">Menunjukkan nombor plat</string>
     <string name="set_plate_title">Nombor plat</string>

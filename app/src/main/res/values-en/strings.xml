@@ -615,6 +615,14 @@
     <string name="upd_downloading_size">Downloading… %1$s MB</string>
     <string name="upd_download_failed_title">Download failed</string>
     <string name="share_phone_qr_failed">Couldn\'t create the QR code. Enter this address in the phone\'s browser instead.</string>
+    <string name="share_status_waiting">Waiting for your phone… Its IP must start with %1$s</string>
+    <string name="share_status_unreachable">Your phone hasn\'t reached the head unit yet. Its Wi-Fi IP must start with %1$s: put the phone on the same Wi-Fi as the head unit, or turn on the phone\'s hotspot and connect the head unit to it. If the phone is joined to another Wi-Fi (such as the car\'s hotspot), disconnect it first.</string>
+    <string name="share_status_connected">Phone connected ✓ Tap Download on the phone</string>
+    <string name="share_status_connected_media">Phone connected ✓</string>
+    <string name="share_status_sending">Sending…</string>
+    <string name="share_status_done">Sent ✓</string>
+    <string name="share_status_stopped">Sending stopped before the end. Tap Download on the phone again</string>
+    <string name="share_status_wrong_link">Your phone reached the head unit, but with an old code. Scan this code again</string>
     <string name="set_plate_switch_title">Plate number stamp</string>
     <string name="set_plate_switch_summary">Shows the plate number</string>
     <string name="set_plate_title">Plate number</string>

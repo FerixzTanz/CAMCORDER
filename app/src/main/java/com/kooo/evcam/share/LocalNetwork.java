@@ -114,6 +114,36 @@ public final class LocalNetwork {
         return copy;
     }
 
+    /**
+     * 手机可能连得上的那几个：热点、无线、USB 共享。
+     *
+     * <p>车机上还挂着一串内部网卡（{@code vlan*}、{@code veth}、{@code vt*}，10.1.x.x、198.18.x.x 这些），
+     * 是车机和车上别的控制器之间的线，手机永远够不着。以前一并列出来，「切换地址」要按十几下，
+     * 默认那个也可能落在上面（2026-10-11：项目拥有者对着 10.1.4.6 扫了半天）。
+     * 一个能用的都没有时退回全部 —— 万一哪台车机的无线网卡名字认不出来，至少还有得挑。</p>
+     */
+    public static List<Endpoint> usable(List<Endpoint> endpoints) {
+        List<Endpoint> out = new ArrayList<>();
+        for (Endpoint e : sorted(endpoints)) {
+            if (e.kind != Kind.OTHER) {
+                out.add(e);
+            }
+        }
+        return out.isEmpty() ? sorted(endpoints) : out;
+    }
+
+    /**
+     * 手机的 IP 应该以什么开头才和这个地址在同一个网里（按常见的 /24 估：前三段）。
+     * 只用来给人提示，不做判断。
+     */
+    public static String subnetPrefix(String address) {
+        if (address == null) {
+            return "";
+        }
+        int last = address.lastIndexOf('.');
+        return last > 0 ? address.substring(0, last + 1) : address;
+    }
+
     /** 排在最前的那个；一个都没有时返回 null。 */
     public static Endpoint preferred(List<Endpoint> endpoints) {
         List<Endpoint> ordered = sorted(endpoints);

@@ -86,4 +86,32 @@ public class LocalNetworkTest {
     public void noAddressesMeansNoPreferredOne() {
         assertNull(LocalNetwork.preferred(new ArrayList<>()));
     }
+
+    /** 车机内部的网卡（2026-10-11 实车：vlan2..vlan99、veth、vt3）不给手机用。 */
+    @Test
+    public void internalInterfacesAreLeftOutWhenWifiIsThere() {
+        List<LocalNetwork.Endpoint> found = Arrays.asList(
+                at("veth", "192.168.55.15"),
+                at("vlan4", "10.1.4.6"),
+                at("vt3", "192.168.118.1"),
+                at("wlan2", "192.168.5.78"));
+        List<LocalNetwork.Endpoint> usable = LocalNetwork.usable(found);
+        assertEquals(1, usable.size());
+        assertEquals("192.168.5.78", usable.get(0).address);
+    }
+
+    /** 一个认得出的都没有时退回全部：网卡名认错了也还有得挑。 */
+    @Test
+    public void everythingIsKeptWhenNothingIsRecognised() {
+        List<LocalNetwork.Endpoint> found = Arrays.asList(
+                at("eth0", "10.0.0.5"),
+                at("vlan4", "10.1.4.6"));
+        assertEquals(2, LocalNetwork.usable(found).size());
+    }
+
+    @Test
+    public void subnetPrefixIsTheFirstThreeParts() {
+        assertEquals("192.168.5.", LocalNetwork.subnetPrefix("192.168.5.78"));
+        assertEquals("", LocalNetwork.subnetPrefix(null));
+    }
 }

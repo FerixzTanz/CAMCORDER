@@ -47,6 +47,18 @@ public final class ShareDiagnostics {
         }
 
         sb.append("端口可用性: ").append(probePort()).append('\n');
+        List<LocalNetwork.Endpoint> offered = LocalNetwork.usable(endpoints);
+        sb.append("addresses offered in the QR dialog: ").append(offered.isEmpty() ? "none" : offered.toString())
+                .append('\n');
+        // 最近几次分享的经过：给了哪个地址、手机的请求到没到、发完没有（不含链接里的随机串）
+        List<String> log = ShareLog.snapshot();
+        sb.append("recent sends (").append(log.size()).append("):").append('\n');
+        if (log.isEmpty()) {
+            sb.append("  none since the app started").append('\n');
+        }
+        for (String line : log) {
+            sb.append("  ").append(line).append('\n');
+        }
         sb.append('\n');
     }
 

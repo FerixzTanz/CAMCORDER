@@ -6,7 +6,9 @@ import com.kooo.evcam.AppLog;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.Locale;
 
@@ -42,6 +44,38 @@ public class FileShareServer extends NanoHTTPD {
     private final Context context;
     private File file;
     private String token;
+    private volatile Listener listener;
+
+    /** 手机那边发生了什么：给对话框显示进度用。回调在服务的线程上，不是主线程。 */
+    public enum Event {
+        /** 手机打开了下载页（扫码成功、网是通的）。 */
+        PAGE_OPENED,
+        /** 开始传文件。 */
+        DOWNLOAD_STARTED,
+        /** 文件整份发完了。 */
+        DOWNLOAD_DONE,
+        /** 传到一半断了。 */
+        DOWNLOAD_STOPPED,
+        /** 有请求进来，但链接不对（旧二维码、别的设备乱试）—— 至少说明网是通的。 */
+        WRONG_LINK
+    }
+
+    public interface Listener {
+        void onEvent(Event event, String remoteAddress);
+    }
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    private void emit(Event event, String remote) {
+        ShareLog.add(event + " from " + remote);
+        AppLog.i(TAG, "share " + event + " from " + remote);
+        Listener l = listener;
+        if (l != null) {
+            l.onEvent(event, remote);
+        }
+    }
 
     public FileShareServer(Context context) {
         super(AUTO_PORT);
@@ -125,6 +159,7 @@ public class FileShareServer extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri() == null ? "" : session.getUri();
+        String remote = session.getRemoteIpAddress();
         File shared;
         String expected;
         synchronized (this) {
@@ -136,20 +171,28 @@ public class FileShareServer extends NanoHTTPD {
         }
 
         if (uri.equals("/s/" + expected)) {
+            emit(Event.PAGE_OPENED, remote);
             return landingPage(shared, expected);
         }
         if (uri.equals("/f/" + expected)) {
-            return fileResponse(shared);
+            emit(Event.DOWNLOAD_STARTED, remote);
+            return fileResponse(shared, remote);
+        }
+        // 浏览器自己会来要 favicon，不算「链接不对」
+        if (!uri.startsWith("/favicon")) {
+            emit(Event.WRONG_LINK, remote);
         }
         // 路径不对就当没有这个东西，不提示「token 错了」——
         // 那等于告诉对方「猜对格式了，继续猜」
         return text(Response.Status.NOT_FOUND, "Not found");
     }
 
-    private Response fileResponse(File shared) {
+    private Response fileResponse(File shared, String remote) {
         try {
+            InputStream body = new Watched(new FileInputStream(shared), shared.length(),
+                    done -> emit(done ? Event.DOWNLOAD_DONE : Event.DOWNLOAD_STOPPED, remote));
             Response response = newFixedLengthResponse(Response.Status.OK,
-                    mimeTypeOf(shared.getName()), new FileInputStream(shared), shared.length());
+                    mimeTypeOf(shared.getName()), body, shared.length());
             // 图片、视频用 inline：手机浏览器直接显示出来，用户长按就能存 ——
             // attachment 会变成一次下载，反而多一步。诊断报告这种文件正相反：
             // 显示出来是一屏看不懂的字，直接下载才对
@@ -160,6 +203,57 @@ public class FileShareServer extends NanoHTTPD {
         } catch (IOException e) {
             AppLog.e(TAG, "读不到要分享的文件", e);
             return text(Response.Status.INTERNAL_ERROR, "读取失败 / Cannot read file");
+        }
+    }
+
+    /**
+     * 数着读了多少字节的输入流：读满整份算发完，没读满就被关掉算断了。只报一次。
+     * NanoHTTPD 发完（或者连接断了）都会关这个流。
+     */
+    static final class Watched extends FilterInputStream {
+        interface End {
+            void ended(boolean complete);
+        }
+
+        private final long length;
+        private final End end;
+        private long read;
+        private boolean reported;
+
+        Watched(InputStream in, long length, End end) {
+            super(in);
+            this.length = length;
+            this.end = end;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b >= 0) {
+                read++;
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte[] buf, int off, int len) throws IOException {
+            int n = super.read(buf, off, len);
+            if (n > 0) {
+                read += n;
+            }
+            return n;
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                super.close();
+            } finally {
+                if (!reported) {
+                    reported = true;
+                    end.ended(read >= length);
+                }
+            }
         }
     }
 
