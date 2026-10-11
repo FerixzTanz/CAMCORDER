@@ -171,23 +171,15 @@ public class FileShareServer extends NanoHTTPD {
             return text(Response.Status.NOT_FOUND, "没有正在分享的文件 / Nothing is being shared");
         }
 
-        // HEAD 只问不拿：不算「开始 / 发完」。给真实的类型和长度、空正文；
-        // 显式写 Content-Length 也让 2.3.1 不去 gzip（gzip 时它会把压缩字节跟在 HEAD 回应后面，坏掉连接）
+        // HEAD 只问不拿：不算「开始 / 发完」。真实的类型和长度、空正文（不压缩，见 useGzipWhenAccepted）
         if (session.getMethod() == Method.HEAD) {
-            boolean ours = uri.equals("/f/" + expected) || uri.equals("/s/" + expected);
-            if (!ours) {
-                // 空正文的 404（text() 是 text/plain，会被 gzip，HEAD 回应就又坏了）
-                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/html; charset=utf-8",
-                        new ByteArrayInputStream(new byte[0]), 0);
+            if (uri.equals("/f/" + expected)) {
+                return newFixedLengthResponse(Response.Status.OK, mimeTypeOf(shared.getName()),
+                        new ByteArrayInputStream(new byte[0]), shared.length());
             }
-            boolean fileItself = uri.startsWith("/f/");
-            Response head = newFixedLengthResponse(Response.Status.OK,
-                    fileItself ? mimeTypeOf(shared.getName()) : "text/html; charset=utf-8",
+            return newFixedLengthResponse(uri.equals("/s/" + expected) ? Response.Status.OK
+                            : Response.Status.NOT_FOUND, "text/html; charset=utf-8",
                     new ByteArrayInputStream(new byte[0]), 0);
-            if (fileItself) {
-                head.addHeader("Content-Length", String.valueOf(shared.length()));
-            }
-            return head;
         }
         if (uri.equals("/s/" + expected)) {
             emit(Event.PAGE_OPENED, remote);
@@ -225,6 +217,15 @@ public class FileShareServer extends NanoHTTPD {
             AppLog.e(TAG, "读不到要分享的文件", e);
             return text(Response.Status.INTERNAL_ERROR, "读取失败 / Cannot read file");
         }
+    }
+
+    /**
+     * 不压缩：局域网上省不了多少，而 2.3.1 对 text/* 的 HEAD 回应会照样把压缩后的正文跟在后面，
+     * 同一条连接上的下一个请求就读乱了（2026-10-11 实测）。
+     */
+    @Override
+    protected boolean useGzipWhenAccepted(Response r) {
+        return false;
     }
 
     /**

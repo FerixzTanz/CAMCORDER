@@ -252,8 +252,10 @@ public final class PhoneShare {
                     // 断了不代表失败：回到「已连上」，不停在「正在发送」
                     if (!media) {
                         statusText.setText(R.string.share_status_stopped);
-                    } else if (!shownOnPhone) {
-                        statusText.setText(R.string.share_status_connected_media);
+                    } else {
+                        // 已经显示在手机上之后的断开（长按另存、拖视频进度）：回到「已在手机上」，别停在「正在发送」
+                        statusText.setText(shownOnPhone ? R.string.share_status_done_media
+                                : R.string.share_status_connected_media);
                     }
                     break;
                 case WRONG_LINK:
