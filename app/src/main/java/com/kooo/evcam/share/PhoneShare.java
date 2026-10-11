@@ -212,13 +212,16 @@ public final class PhoneShare {
         /** 等这么久手机还没来，就提示连不上。 */
         private static final long UNREACHABLE_AFTER_MS = 20_000L;
 
-        private final Runnable unreachable = () -> {
+        // 方法引用：字段初始化时 activity / endpoints 还没赋值，lambda 里直接读它们编不过
+        private final Runnable unreachable = this::onUnreachable;
+
+        private void onUnreachable() {
             if (!reached) {
                 statusText.setText(activity.getString(R.string.share_status_unreachable, prefix()));
                 ShareLog.add("no request from the phone after " + (UNREACHABLE_AFTER_MS / 1000) + " s on "
                         + endpoints.get(index).address);
             }
-        };
+        }
 
         private String prefix() {
             return LocalNetwork.subnetPrefix(endpoints.get(index).address);
