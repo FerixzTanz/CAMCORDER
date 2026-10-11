@@ -108,6 +108,8 @@ public final class PhoneShare {
         private int index;
         /** 手机的请求到过车机没有：到过就不再提示「连不上」。 */
         private boolean reached;
+        /** 手机打开过正确的链接：之后来的「链接不对」（别的设备、残缺链接）不再盖掉进度。 */
+        private boolean opened;
         private TextView statusText;
         private ImageView qrImage;
         private TextView addressText;
@@ -217,14 +219,11 @@ public final class PhoneShare {
 
         private void onUnreachable() {
             if (!reached) {
-                statusText.setText(activity.getString(R.string.share_status_unreachable, prefix()));
+                statusText.setText(activity.getString(R.string.share_status_unreachable,
+                        endpoints.get(index).address));
                 ShareLog.add("no request from the phone after " + (UNREACHABLE_AFTER_MS / 1000) + " s on "
                         + endpoints.get(index).address);
             }
-        }
-
-        private String prefix() {
-            return LocalNetwork.subnetPrefix(endpoints.get(index).address);
         }
 
         /** 主线程上。 */
@@ -234,22 +233,26 @@ public final class PhoneShare {
             boolean media = FileShareServer.isMedia(file.getName());
             switch (event) {
                 case PAGE_OPENED:
+                    opened = true;
                     statusText.setText(media ? R.string.share_status_connected_media : R.string.share_status_connected);
                     break;
                 case DOWNLOAD_STARTED:
+                    opened = true;
                     statusText.setText(R.string.share_status_sending);
                     break;
                 case DOWNLOAD_DONE:
-                    statusText.setText(R.string.share_status_done);
+                    // 图片、视频是页面里直接显示的：「发完」只是手机上显示出来了，还得长按保存，别急着关
+                    statusText.setText(media ? R.string.share_status_done_media : R.string.share_status_done);
                     break;
                 case DOWNLOAD_STOPPED:
-                    // 视频、图片在手机浏览器里会先要一小段再断开（预览），断了不代表失败，不说
-                    if (!media) {
-                        statusText.setText(R.string.share_status_stopped);
-                    }
+                    // 视频、图片在手机浏览器里常先要一小段就断开（预览；NanoHTTPD 不认 Range），
+                    // 断了不代表失败：回到「已连上」，不停在「正在发送」
+                    statusText.setText(media ? R.string.share_status_connected_media : R.string.share_status_stopped);
                     break;
                 case WRONG_LINK:
-                    statusText.setText(R.string.share_status_wrong_link);
+                    if (!opened) {
+                        statusText.setText(R.string.share_status_wrong_link);
+                    }
                     break;
                 default:
                     break;
@@ -268,7 +271,7 @@ public final class PhoneShare {
                     url == null ? "" : url, file.getName(),
                     FileShareServer.readableSize(file.length())));
             if (!reached) {
-                statusText.setText(activity.getString(R.string.share_status_waiting, prefix()));
+                statusText.setText(activity.getString(R.string.share_status_waiting, endpoint.address));
                 closer.removeCallbacks(unreachable);
                 closer.postDelayed(unreachable, UNREACHABLE_AFTER_MS);
             }
@@ -280,7 +283,16 @@ public final class PhoneShare {
                     + (qr == null ? "  << 二维码没画出来" : ""));
         }
 
+        private boolean stopped;
+
         private void stop() {
+            if (stopped) {
+                return;   // 关对话框和界面退到后台可能都走到这里
+            }
+            stopped = true;
+            // 先摘掉监听：stop 会断开还连着的手机，那时 Watched 报的「断了」不是真的断，别记、别往已关的界面上写
+            server.setListener(null);
+            ShareLog.add("dialog closed, sharing stopped" + (reached ? "" : " (the phone never reached the head unit)"));
             try {
                 server.stop();
                 AppLog.d(TAG, "分享服务已停止");

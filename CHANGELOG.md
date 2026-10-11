@@ -13,19 +13,19 @@ Nothing yet.
 
 ## [2.11.5] - 2026-10-11
 
+### New and improved
+
+- **Send to phone shows what is happening:** *Waiting for your phone*, *Phone connected*, *Sending*,
+  *Sent*. If the phone hasn't reached the head unit after 20 seconds, it says so and what to check.
+- **Diagnostics list the recent Send to phone attempts:** which address the QR code showed, whether the
+  phone's request arrived, and how the attempt ended.
+
 ### Fixed
 
 - **Send to phone offers only addresses your phone can reach.** The head unit has a dozen internal
   network addresses (links to the car's other modules) that a phone can never open; the QR code used
-  to cycle through all of them. Now it shows only the head unit's Wi-Fi or hotspot address.
-
-### New and improved
-
-- **Send to phone shows what is happening:** *Waiting for your phone*, *Phone connected*, *Sending*,
-  *Sent*. If the phone hasn't reached the head unit after 20 seconds, it says so and tells you what your
-  phone's IP must start with to be on the same network.
-- **Diagnostics list the recent Send to phone attempts:** which address the QR code showed, whether the
-  phone's request arrived, and whether the file was sent.
+  to cycle through all of them. Now it offers the head unit's Wi-Fi, hotspot or USB-tethering address
+  (and everything only if none of those is found).
 
 ## [2.11.4] - 2026-10-10
 

@@ -56,7 +56,7 @@ public class FileShareServer extends NanoHTTPD {
         DOWNLOAD_DONE,
         /** 传到一半断了。 */
         DOWNLOAD_STOPPED,
-        /** 有请求进来，但链接不对（旧二维码、别的设备乱试）—— 至少说明网是通的。 */
+        /** 有请求进来、像是这个链接，但随机串不对（链接没抄全、别的设备乱试）—— 至少说明网是通的。 */
         WRONG_LINK
     }
 
@@ -170,6 +170,10 @@ public class FileShareServer extends NanoHTTPD {
             return text(Response.Status.NOT_FOUND, "没有正在分享的文件 / Nothing is being shared");
         }
 
+        // HEAD 只问不拿：2.3.1 照样发正文，也不该算成「开始 / 发完」
+        if (session.getMethod() == Method.HEAD) {
+            return text(Response.Status.OK, "");
+        }
         if (uri.equals("/s/" + expected)) {
             emit(Event.PAGE_OPENED, remote);
             return landingPage(shared, expected);
@@ -178,9 +182,11 @@ public class FileShareServer extends NanoHTTPD {
             emit(Event.DOWNLOAD_STARTED, remote);
             return fileResponse(shared, remote);
         }
-        // 浏览器自己会来要 favicon，不算「链接不对」
-        if (!uri.startsWith("/favicon")) {
+        // 浏览器自己会来要图标（favicon、iOS 的 apple-touch-icon），不算「链接不对」，只记一笔
+        if (uri.startsWith("/s/") || uri.startsWith("/f/")) {
             emit(Event.WRONG_LINK, remote);
+        } else {
+            ShareLog.add("other request from " + remote);
         }
         // 路径不对就当没有这个东西，不提示「token 错了」——
         // 那等于告诉对方「猜对格式了，继续猜」

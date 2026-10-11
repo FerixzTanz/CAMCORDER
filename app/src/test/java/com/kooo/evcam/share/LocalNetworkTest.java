@@ -110,8 +110,9 @@ public class LocalNetworkTest {
     }
 
     @Test
-    public void subnetPrefixIsTheFirstThreeParts() {
-        assertEquals("192.168.5.", LocalNetwork.subnetPrefix("192.168.5.78"));
-        assertEquals("", LocalNetwork.subnetPrefix(null));
+    public void otherHotspotAndTetherNamesAreRecognised() {
+        assertEquals(LocalNetwork.Kind.HOTSPOT, LocalNetwork.classify("swlan0"));
+        assertEquals(LocalNetwork.Kind.TETHER, LocalNetwork.classify("ncm0"));
+        assertEquals(LocalNetwork.Kind.TETHER, LocalNetwork.classify("bt-pan"));
     }
 }

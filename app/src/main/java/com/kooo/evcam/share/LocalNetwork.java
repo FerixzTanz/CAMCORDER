@@ -22,7 +22,8 @@ import java.util.Locale;
  * </ul>
  *
  * <p>所以不能只认一种网卡。这里把所有可用的 IPv4 地址都列出来，
- * 按「哪个更可能是那条直连」排个序 —— 但<b>不隐藏其余的</b>：
+ * 按「哪个更可能是那条直连」排个序。认不出是热点 / 无线 / USB 共享的那些（车机内部的 vlan、veth……）
+ * 在 {@link #usable} 里不给手机 —— 一个认得出的都没有时才全给：
  * 车机固件五花八门，猜错时得让人能自己挑一个试。</p>
  *
  * <p>网卡名的判断和排序都是纯函数，可以单独测。</p>
@@ -66,20 +67,22 @@ public final class LocalNetwork {
      * 按网卡名猜它是哪一类。
      *
      * <p>名字是唯一能拿到的线索 —— Android 没有公开「哪块网卡是热点」的接口。
-     * 猜错不致命：所有地址都会列出来，排序只影响默认选哪个。</p>
+     * 认成 OTHER 的不会出现在二维码里（除非一个认得出的都没有），所以新见到的网卡名要补在这里。</p>
      */
     public static Kind classify(String interfaceName) {
         if (interfaceName == null) {
             return Kind.OTHER;
         }
         String name = interfaceName.toLowerCase(Locale.US);
-        if (name.startsWith("ap") || name.contains("softap") || name.startsWith("p2p")) {
+        if (name.startsWith("ap") || name.contains("softap") || name.startsWith("p2p")
+                || name.startsWith("swlan")) {
             return Kind.HOTSPOT;
         }
         if (name.startsWith("wlan") || name.startsWith("wifi")) {
             return Kind.WIFI;
         }
-        if (name.startsWith("rndis") || name.startsWith("usb")) {
+        if (name.startsWith("rndis") || name.startsWith("usb") || name.startsWith("ncm")
+                || name.startsWith("bt-pan")) {
             return Kind.TETHER;
         }
         return Kind.OTHER;
@@ -130,18 +133,6 @@ public final class LocalNetwork {
             }
         }
         return out.isEmpty() ? sorted(endpoints) : out;
-    }
-
-    /**
-     * 手机的 IP 应该以什么开头才和这个地址在同一个网里（按常见的 /24 估：前三段）。
-     * 只用来给人提示，不做判断。
-     */
-    public static String subnetPrefix(String address) {
-        if (address == null) {
-            return "";
-        }
-        int last = address.lastIndexOf('.');
-        return last > 0 ? address.substring(0, last + 1) : address;
     }
 
     /** 排在最前的那个；一个都没有时返回 null。 */
