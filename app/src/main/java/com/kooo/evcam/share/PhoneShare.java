@@ -110,6 +110,8 @@ public final class PhoneShare {
         private boolean reached;
         /** 手机打开过正确的链接：之后来的「链接不对」（别的设备、残缺链接）不再盖掉进度。 */
         private boolean opened;
+        /** 图片、视频已经在手机上显示出来：之后预览、长按另存时的断开不再把提示退回「已连上」。 */
+        private boolean shownOnPhone;
         private TextView statusText;
         private ImageView qrImage;
         private TextView addressText;
@@ -242,12 +244,17 @@ public final class PhoneShare {
                     break;
                 case DOWNLOAD_DONE:
                     // 图片、视频是页面里直接显示的：「发完」只是手机上显示出来了，还得长按保存，别急着关
+                    shownOnPhone = media;
                     statusText.setText(media ? R.string.share_status_done_media : R.string.share_status_done);
                     break;
                 case DOWNLOAD_STOPPED:
                     // 视频、图片在手机浏览器里常先要一小段就断开（预览；NanoHTTPD 不认 Range），
                     // 断了不代表失败：回到「已连上」，不停在「正在发送」
-                    statusText.setText(media ? R.string.share_status_connected_media : R.string.share_status_stopped);
+                    if (!media) {
+                        statusText.setText(R.string.share_status_stopped);
+                    } else if (!shownOnPhone) {
+                        statusText.setText(R.string.share_status_connected_media);
+                    }
                     break;
                 case WRONG_LINK:
                     if (!opened) {
@@ -290,7 +297,8 @@ public final class PhoneShare {
                 return;   // 关对话框和界面退到后台可能都走到这里
             }
             stopped = true;
-            // 先摘掉监听：stop 会断开还连着的手机，那时 Watched 报的「断了」不是真的断，别记、别往已关的界面上写
+            // 先摘掉监听：stop 会断开还连着的手机，那时 Watched 报的「断了」不是真的断，别往已关的界面上写
+            // （ShareLog 里仍会紧跟着「dialog closed」记一行 DOWNLOAD_STOPPED，按顺序看得懂）
             server.setListener(null);
             ShareLog.add("dialog closed, sharing stopped" + (reached ? "" : " (the phone never reached the head unit)"));
             try {

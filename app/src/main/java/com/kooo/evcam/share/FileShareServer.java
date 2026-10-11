@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.kooo.evcam.AppLog;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilterInputStream;
@@ -170,9 +171,21 @@ public class FileShareServer extends NanoHTTPD {
             return text(Response.Status.NOT_FOUND, "没有正在分享的文件 / Nothing is being shared");
         }
 
-        // HEAD 只问不拿：2.3.1 照样发正文，也不该算成「开始 / 发完」
+        // HEAD 只问不拿：不算「开始 / 发完」。给真实的类型和长度、空正文；
+        // 显式写 Content-Length 也让 2.3.1 不去 gzip（gzip 时它会把压缩字节跟在 HEAD 回应后面，坏掉连接）
         if (session.getMethod() == Method.HEAD) {
-            return text(Response.Status.OK, "");
+            boolean ours = uri.equals("/f/" + expected) || uri.equals("/s/" + expected);
+            if (!ours) {
+                return text(Response.Status.NOT_FOUND, "Not found");
+            }
+            boolean fileItself = uri.startsWith("/f/");
+            Response head = newFixedLengthResponse(Response.Status.OK,
+                    fileItself ? mimeTypeOf(shared.getName()) : "text/html; charset=utf-8",
+                    new ByteArrayInputStream(new byte[0]), 0);
+            if (fileItself) {
+                head.addHeader("Content-Length", String.valueOf(shared.length()));
+            }
+            return head;
         }
         if (uri.equals("/s/" + expected)) {
             emit(Event.PAGE_OPENED, remote);

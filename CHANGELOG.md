@@ -16,7 +16,7 @@ Nothing yet.
 ### New and improved
 
 - **Send to phone shows what is happening:** *Waiting for your phone*, *Phone connected*, *Sending*,
-  *Sent*. If the phone hasn't reached the head unit after 20 seconds, it says so and what to check.
+  *Sent* (for photos and videos: *On your phone*, with a reminder to long-press and save). If the phone hasn't reached the head unit after 20 seconds, it says so and what to check.
 - **Diagnostics list the recent Send to phone attempts:** which address the QR code showed, whether the
   phone's request arrived, and how the attempt ended.
 
