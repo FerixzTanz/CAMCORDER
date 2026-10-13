@@ -591,6 +591,7 @@
     <string name="share_phone_failed">Tidak dapat memulakan penghantaran. Cuba lagi</string>
     <string name="share_phone_need_hotspot_title">Sambung ke rangkaian dahulu</string>
     <string name="share_phone_need_hotspot_msg">Unit kepala tidak disambungkan ke Wi-Fi dan hotspotnya dimatikan.</string>
+    <string name="share_phone_links_seen">Pautan rangkaian pada unit kepala, tiada satu pun dikenali sebagai Wi-Fi, hotspot atau USB: %1$s</string>
 
     <!-- Gesaan perkongsian -->
     <string name="share_phone_network_hint">Telefon dan unit kepala mesti berada pada rangkaian yang sama. Hidupkan hotspot telefon dan sambungkan unit kepala kepadanya.</string>
@@ -605,7 +606,7 @@
     <string name="upd_download_failed_title">Muat turun gagal</string>
     <string name="share_phone_qr_failed">Tidak dapat mencipta kod QR. Masukkan alamat ini dalam pelayar telefon.</string>
     <string name="share_status_waiting">Menunggu telefon anda… Sambungkan ke Wi-Fi yang sama dengan unit kepala (unit kepala: %1$s)</string>
-    <string name="share_status_unreachable">Telefon anda belum sampai ke unit kepala (%1$s). Sambungkan telefon ke Wi-Fi yang sama dengan unit kepala, atau hidupkan hotspot telefon dan sambungkan unit kepala kepadanya. Jika telefon disambungkan ke Wi-Fi lain (seperti hotspot kereta), putuskan dahulu. Pada rangkaian yang sama, IP telefon biasanya bermula dengan nombor yang sama seperti unit kepala.</string>
+    <string name="share_status_unreachable">Telefon anda belum sampai ke unit kepala (%1$s). Sambungkan telefon ke Wi-Fi yang sama dengan unit kepala, atau hidupkan hotspot telefon dan sambungkan unit kepala kepadanya. Jika telefon disambungkan ke Wi-Fi lain (seperti hotspot kereta), putuskan dahulu. Pada rangkaian yang sama, IP telefon biasanya bermula dengan nombor yang sama seperti unit kepala. Jika data mudah alih telefon dihidupkan, matikannya dan cuba lagi: sesetengah telefon menghantar alamat tempatan melalui data mudah alih apabila Wi-Fi tiada internet.</string>
     <string name="share_status_connected">Telefon disambungkan ✓ Ketik Download pada telefon</string>
     <string name="share_status_connected_media">Telefon disambungkan ✓</string>
     <string name="share_status_sending">Menghantar…</string>

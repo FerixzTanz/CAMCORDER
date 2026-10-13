@@ -600,6 +600,7 @@
     <string name="share_phone_failed">无法启动发送服务，请重试</string>
     <string name="share_phone_need_hotspot_title">请先连接网络</string>
     <string name="share_phone_need_hotspot_msg">车机未连接 Wi-Fi，也未开启热点。</string>
+    <string name="share_phone_links_seen">车机上的网络连接，没有一个认得出是 Wi-Fi、热点或 USB：%1$s</string>
 
     <!-- 分享提示 -->
     <string name="share_phone_network_hint">手机和车机需连接同一网络，建议开启手机热点，车机连接该热点</string>
@@ -614,7 +615,7 @@
     <string name="upd_download_failed_title">下载失败</string>
     <string name="share_phone_qr_failed">无法生成二维码，请在手机浏览器中输入以下地址</string>
     <string name="share_status_waiting">等待手机连接… 请让手机和车机连同一个 Wi-Fi（车机地址 %1$s）</string>
-    <string name="share_status_unreachable">手机还没连上车机（%1$s）。请让手机和车机连同一个 Wi-Fi，或打开手机热点、车机连上去；手机连着别的 Wi-Fi（比如车载热点）时请先断开。同一个网里手机的 IP 通常和车机前几段相同</string>
+    <string name="share_status_unreachable">手机还没连上车机（%1$s）。请让手机和车机连同一个 Wi-Fi，或打开手机热点、车机连上去；手机连着别的 Wi-Fi（比如车载热点）时请先断开。同一个网里手机的 IP 通常和车机前几段相同。手机开着移动数据时请先关掉再试：Wi-Fi 没有网络时，有些手机会把本地地址发到移动数据上</string>
     <string name="share_status_connected">手机已连上 ✓ 在手机上点击「下载」</string>
     <string name="share_status_connected_media">手机已连上 ✓</string>
     <string name="share_status_sending">正在发送…</string>

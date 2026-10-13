@@ -9,7 +9,15 @@ commit message, not here.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Send to phone no longer shows an address the phone can't open when the head unit isn't on a
+  network.** With Wi-Fi and the hotspot both off, the QR code used to carry one of the head unit's
+  internal addresses (for example 192.168.55.15), and the *Connect to a network first* message never
+  appeared. Now it says the head unit isn't on a network and lists the network links it found.
+- The *waiting* and *hasn't reached the head unit* messages now say which network link the address
+  belongs to (for example `192.168.5.78 · wlan2`), and the second one suggests turning off the phone's
+  mobile data.
 
 ## [2.11.5] - 2026-10-11
 
