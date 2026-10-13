@@ -65,13 +65,21 @@ public final class PhoneShare {
         }
 
         // 只给手机可能连得上的地址（热点、无线、USB 共享），车机内部那一串不列（见 LocalNetwork.usable）
-        List<LocalNetwork.Endpoint> endpoints = LocalNetwork.usable(LocalNetwork.enumerate());
+        List<LocalNetwork.Endpoint> seen = LocalNetwork.enumerate();
+        List<LocalNetwork.Endpoint> endpoints = LocalNetwork.usable(seen);
         if (endpoints.isEmpty()) {
-            // 没有可用地址就不是「失败」，是前提没满足 —— 说清楚该做什么
+            // 没有可用地址就不是「失败」，是前提没满足 —— 说清楚该做什么。
+            // 找到的网卡也列出来：车机内部那几条不会被当成可用的，万一 Wi-Fi 网卡的名字认不出来，
+            // 在车上看一眼就知道，不用再导报告
+            StringBuilder message = new StringBuilder(activity.getString(R.string.share_phone_need_hotspot_msg))
+                    .append("\n\n").append(activity.getString(R.string.share_phone_network_hint));
+            if (!seen.isEmpty()) {
+                message.append("\n\n").append(activity.getString(R.string.share_phone_links_seen, describe(seen)));
+            }
+            ShareLog.add("no hotspot / Wi-Fi / tether address, nothing to offer; network links seen: " + seen);
             com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(activity, R.style.Theme_Cam_MaterialAlertDialog)
                     .setTitle(R.string.share_phone_need_hotspot_title)
-                    .setMessage(activity.getString(R.string.share_phone_need_hotspot_msg)
-                            + "\n\n" + activity.getString(R.string.share_phone_network_hint))
+                    .setMessage(message.toString())
                     .setPositiveButton(R.string.action_got_it, null));
             return;
         }
@@ -95,6 +103,23 @@ public final class PhoneShare {
 
     private static void toast(Activity activity, String text) {
         Toast.makeText(activity, text, Toast.LENGTH_LONG).show();
+    }
+
+    /** 「192.168.5.78 · wlan2」：地址后面跟上它在哪块网卡上，在车上一眼看出是 Wi-Fi 还是内部的线。 */
+    private static String label(LocalNetwork.Endpoint endpoint) {
+        return endpoint.address + " · " + endpoint.interfaceName;
+    }
+
+    /** 「veth 192.168.55.15, vlan4 10.1.4.6」：只是网卡名和地址，不是界面文字。 */
+    private static String describe(List<LocalNetwork.Endpoint> endpoints) {
+        StringBuilder sb = new StringBuilder();
+        for (LocalNetwork.Endpoint e : endpoints) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            sb.append(e.interfaceName).append(' ').append(e.address);
+        }
+        return sb.toString();
     }
 
     /** 对话框本身。拆出来是因为「切换地址」要改二维码，得留着几个引用。 */
@@ -222,7 +247,7 @@ public final class PhoneShare {
         private void onUnreachable() {
             if (!reached) {
                 statusText.setText(activity.getString(R.string.share_status_unreachable,
-                        endpoints.get(index).address));
+                        label(endpoints.get(index))));
                 ShareLog.add("no request from the phone after " + (UNREACHABLE_AFTER_MS / 1000) + " s on "
                         + endpoints.get(index).address);
             }
@@ -280,7 +305,7 @@ public final class PhoneShare {
                     url == null ? "" : url, file.getName(),
                     FileShareServer.readableSize(file.length())));
             if (!reached) {
-                statusText.setText(activity.getString(R.string.share_status_waiting, endpoint.address));
+                statusText.setText(activity.getString(R.string.share_status_waiting, label(endpoint)));
                 closer.removeCallbacks(unreachable);
                 closer.postDelayed(unreachable, UNREACHABLE_AFTER_MS);
             }

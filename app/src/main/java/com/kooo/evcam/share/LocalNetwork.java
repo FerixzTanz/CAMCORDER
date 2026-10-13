@@ -122,8 +122,13 @@ public final class LocalNetwork {
      *
      * <p>车机上还挂着一串内部网卡（{@code vlan*}、{@code veth}、{@code vt*}，10.1.x.x、198.18.x.x 这些），
      * 是车机和车上别的控制器之间的线，手机永远够不着。以前一并列出来，「切换地址」要按十几下，
-     * 默认那个也可能落在上面（2026-10-11：项目拥有者对着 10.1.4.6 扫了半天）。
-     * 一个能用的都没有时退回全部 —— 万一哪台车机的无线网卡名字认不出来，至少还有得挑。</p>
+     * 默认那个也可能落在上面（2026-10-11：项目拥有者对着 10.1.4.6 扫了半天）。</p>
+     *
+     * <p>一个能用的都没有时返回空，<b>不</b>退回全部。以前退回全部，可这台车机上内部网卡永远在
+     * （{@code veth} 192.168.55.15、{@code vt3} 192.168.118.1……），车机没连 Wi-Fi、热点也没开时，
+     * 二维码照样给出一个 192.168.x.x，手机永远打不开，「请先连网」的提示也永远弹不出来。
+     * 现在空就是空，由界面说「车机没连网」，并把找到的网卡列出来，万一哪台车机的无线网卡名字
+     * 认不出来，看一眼就知道要补哪个名字。</p>
      */
     public static List<Endpoint> usable(List<Endpoint> endpoints) {
         List<Endpoint> out = new ArrayList<>();
@@ -132,7 +137,7 @@ public final class LocalNetwork {
                 out.add(e);
             }
         }
-        return out.isEmpty() ? sorted(endpoints) : out;
+        return out;
     }
 
     /** 排在最前的那个；一个都没有时返回 null。 */

@@ -602,6 +602,7 @@
     <string name="share_phone_failed">Can\'t start sending. Try again</string>
     <string name="share_phone_need_hotspot_title">Connect to a network first</string>
     <string name="share_phone_need_hotspot_msg">The head unit is not on Wi-Fi and its hotspot is off.</string>
+    <string name="share_phone_links_seen">Network links on the head unit, none recognised as Wi-Fi, hotspot or USB: %1$s</string>
 
     <!-- Share hints -->
     <string name="share_phone_network_hint">The phone and head unit must be on the same network. Turn on the phone\'s hotspot and connect the head unit to it.</string>
@@ -616,7 +617,7 @@
     <string name="upd_download_failed_title">Download failed</string>
     <string name="share_phone_qr_failed">Couldn\'t create the QR code. Enter this address in the phone\'s browser instead.</string>
     <string name="share_status_waiting">Waiting for your phone… Put it on the same Wi-Fi as the head unit (head unit: %1$s)</string>
-    <string name="share_status_unreachable">Your phone hasn\'t reached the head unit (%1$s). Put the phone on the same Wi-Fi as the head unit, or turn on the phone\'s hotspot and connect the head unit to it. If the phone is joined to another Wi-Fi (such as the car\'s hotspot), disconnect it first. On the same network, the phone\'s IP usually starts with the same numbers as the head unit\'s.</string>
+    <string name="share_status_unreachable">Your phone hasn\'t reached the head unit (%1$s). Put the phone on the same Wi-Fi as the head unit, or turn on the phone\'s hotspot and connect the head unit to it. If the phone is joined to another Wi-Fi (such as the car\'s hotspot), disconnect it first. On the same network, the phone\'s IP usually starts with the same numbers as the head unit\'s. If the phone\'s mobile data is on, turn it off and try again: some phones send local addresses over mobile data when the Wi-Fi has no internet.</string>
     <string name="share_status_connected">Phone connected ✓ Tap Download on the phone</string>
     <string name="share_status_connected_media">Phone connected ✓</string>
     <string name="share_status_sending">Sending…</string>
