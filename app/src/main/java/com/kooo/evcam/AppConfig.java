@@ -137,6 +137,7 @@ public class AppConfig {
     private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 左右位置，0 贴左 100 贴右
     private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
     private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
+    private static final String KEY_HUD_SIDE_CONTRAST = "hud_side_contrast";  // 对比度，100 原样，见 HudPictureTone
     // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。HUD 默认翻（和后视镜一样读），主屏默认不翻（LaneWatch 的读法）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
@@ -150,6 +151,9 @@ public class AppConfig {
     public static final int HUD_SIDE_DEFAULT_VERTICAL_PERCENT = 50;
     public static final int HUD_SIDE_MIN_OPACITY_PERCENT = 20;
     public static final int HUD_SIDE_DEFAULT_OPACITY_PERCENT = 100;
+    public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
+    public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
+    public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 150;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1805,6 +1809,17 @@ public class AppConfig {
     public void setHudSideOpacityPercent(int percent) {
         prefs.edit().putInt(KEY_HUD_SIDE_OPACITY,
                 Math.max(HUD_SIDE_MIN_OPACITY_PERCENT, Math.min(100, percent))).apply();
+    }
+
+    /** HUD 上画面的对比度，100..300；100 是原画面，默认 150（中灰压暗，投影上不发白，见 HudPictureTone）。 */
+    public int getHudSideContrastPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_CONTRAST, HUD_SIDE_DEFAULT_CONTRAST_PERCENT);
+        return Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, v));
+    }
+
+    public void setHudSideContrastPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST,
+                Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

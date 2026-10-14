@@ -372,6 +372,11 @@ public class SideViewPopupView extends ViewGroup {
         }
         aspect = (float) width / height;
         int save = canvas.save();
+        Paint tone = pictureTone();
+        if (tone != null) {
+            // 画面过一层颜色矩阵（HUD 上压暗中灰，见 HudPictureTone）；盖板、边框、箭头在层外，不受它影响
+            canvas.saveLayer(0f, 0f, width, height, tone);
+        }
         if (LaneCycle.isMirrored(lane) != mirrored) {
             // 像门镜那样翻；盖板、箭头在镜像之外画
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
@@ -470,6 +475,9 @@ public class SideViewPopupView extends ViewGroup {
 
     /** 细浅边，压在画面最上层；线宽一半落在窗口外会被圆角裁掉，所以往里收半个线宽。 */
     private void drawFrame(Canvas canvas, int width, int height) {
+        if (!framed()) {
+            return;
+        }
         float inset = framePaint.getStrokeWidth() / 2f;
         frameRect.set(inset, inset, width - inset, height - inset);
         canvas.drawRoundRect(frameRect, cornerRadius - inset, cornerRadius - inset, framePaint);
@@ -478,4 +486,19 @@ public class SideViewPopupView extends ViewGroup {
     private void drawTextureOnce(Canvas canvas) {
         drawChild(canvas, textureView, getDrawingTime());
     }
-}
+
+    /**
+     * 画面要不要过一层颜色矩阵：返回带 {@code ColorFilter} 的画笔就过，null 就原样。
+     * 主屏不过；HUD 那一块（{@link SideViewHudPanel}）按对比度设置给。
+     */
+    protected Paint pictureTone() {
+        return null;
+    }
+
+    /**
+     * 外框画不画。主屏画：和原厂 360 的分格一样一道浅边。HUD 不画：浅边在投影上就是一圈白光，
+     * 画面本来就嫌白（用户 2026-10-14）；HUD 上黑底就是没有，不需要边来把画面和底分开。
+     */
+    protected boolean framed() {
+        return true;
+    }

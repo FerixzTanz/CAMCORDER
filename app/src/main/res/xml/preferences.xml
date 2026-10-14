@@ -390,6 +390,12 @@
                 android:title="@string/set_hud_side_opacity_title"
                 android:summary="@string/set_hud_side_opacity_summary"
                 app:showSeekBarValue="true" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_contrast"
+                android:title="@string/set_hud_side_contrast_title"
+                android:summary="@string/set_hud_side_contrast_summary"
+                app:showSeekBarValue="true" />
         </PreferenceScreen>
 
 

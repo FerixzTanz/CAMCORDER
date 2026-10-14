@@ -321,7 +321,7 @@
     <string name="set_side_output_hud">HUD</string>
     <string name="set_side_output_both">Skrin dan HUD</string>
     <string name="set_sub_hud_title">Gambar HUD</string>
-    <string name="set_sub_hud_summary">Saiz, kedudukan dan kelegapan pada HUD</string>
+    <string name="set_sub_hud_summary">Saiz, kedudukan, kelegapan dan kontras pada HUD</string>
     <string name="set_hud_side_size_title">Ketinggian gambar HUD (% daripada tinggi HUD)</string>
     <string name="set_hud_side_size_summary">Lebar mengikut bentuk di bawah</string>
     <string name="set_hud_side_shape_title">Bentuk gambar HUD (lebar ÷ tinggi, %)</string>
@@ -332,6 +332,8 @@
     <string name="set_hud_side_vertical_summary">0 ialah atas, 100 ialah bawah</string>
     <string name="set_hud_side_opacity_title">Kelegapan gambar HUD (%)</string>
     <string name="set_hud_side_opacity_summary">Lebih rendah lebih pudar. Warna hitam memang tidak menyala pada HUD</string>
+    <string name="set_hud_side_contrast_title">Kontras gambar HUD (%)</string>
+    <string name="set_hud_side_contrast_summary">Lebih tinggi menjadikan bahagian gelap lebih gelap, supaya gambar tidak pudar pada HUD. 100 ialah gambar asal kamera</string>
     <string name="msg_floating_reset">Butang terapung ditetapkan semula</string>
     <string name="msg_adjust_opened">Tetingkap pelarasan imej dibuka. Kembali ke skrin utama untuk melihat kesannya.</string>
     <string name="msg_adjust_reset">Tetapan imej dipulihkan kepada lalai</string>

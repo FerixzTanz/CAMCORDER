@@ -7,6 +7,22 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [Unreleased]
+
+### Fixed
+
+- **The HUD side view now shows below 30 km/h.** At low speed the car pops up its own side-view
+  window on the screen, and the HUD used to step aside for it like the screen pop-up does. That
+  window is only on the screen, so the HUD no longer waits for it. The HUD still steps aside for
+  reverse, the car's 360 view and park assist.
+
+### New and improved
+
+- **HUD picture contrast.** The HUD is a projection: every grey lights up, so the camera's picture
+  looked washed out. *HUD picture contrast* (Settings → Super mirror → Turn-signal side view →
+  HUD picture) pushes the darker half of the picture towards black; default 150, 100 is the camera's
+  own picture. The HUD picture also loses the thin light frame, which showed as a ring of light.
+
 ## [2.12.0] - 2026-10-14
 
 ### New and improved
