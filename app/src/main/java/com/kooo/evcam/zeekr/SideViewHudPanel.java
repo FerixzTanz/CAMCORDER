@@ -2,6 +2,9 @@ package com.kooo.evcam.zeekr;
 
 import android.app.Presentation;
 import android.content.Context;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.display.DisplayManager;
@@ -24,7 +27,8 @@ import java.util.List;
  *
  * <p>画面、盖板、转向箭头都是 {@link SideViewPopupView} 那一套，这里只换窗口：
  * 在 HUD 那块屏上开一个透明的 {@link Presentation}（不要悬浮窗权限，但那块屏得是公开的「可投影」屏，诊断报告里 flags 带 0x8），
- * 画面按 {@link HudPanelPlacement} 放在里面。HUD 是投影，黑色就是不亮，所以黑底、盖板在 HUD 上都是「什么也没有」。</p>
+ * 画面按 {@link HudPanelPlacement} 放在里面。HUD 是投影，黑色就是不亮，所以黑底、盖板在 HUD 上都是「什么也没有」。
+ * 画面本身过一条对比度曲线（{@link HudPictureTone}，设置里调），四边渐隐到黑（{@link HudEdgeFade}，设置里调），不画浅色外框：投影上中灰一片发白。</p>
  *
  * <p>备着（透明、相机照推）和显示的区别和主屏弹窗一样：备着时窗口 alpha 0，不用 INVISIBLE，
  * 理由见 {@link SideViewPopupView} 的类说明。</p>
@@ -43,10 +47,55 @@ public class SideViewHudPanel extends SideViewPopupView {
     private Presentation presentation;
     private FrameLayout root;
     private FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(1, 1);
+    /** 画面过的颜色矩阵；对比度 100 时 null（原样）。 */
+    private Paint tonePaint;
+    private boolean night;
 
     public SideViewHudPanel(Context context, AppConfig appConfig, Display display) {
         super(context, appConfig);
         this.display = display;
+        readTone();
+    }
+
+    private void readTone() {
+        int contrast = appConfig.getHudSideContrastPercent();
+        if (HudPictureTone.isIdentity(contrast)) {
+            tonePaint = null;
+            return;
+        }
+        Paint paint = new Paint();
+        paint.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix(HudPictureTone.matrix(contrast))));
+        tonePaint = paint;
+    }
+
+    @Override
+    protected Paint pictureTone() {
+        return tonePaint;
+    }
+
+    /** 车上是不是夜间模式：夜间再按设置的比例调暗（{@link HudNightDimming}）。服务每次读数变化时给。 */
+    public void setNight(boolean night) {
+        if (this.night != night) {
+            this.night = night;
+            applyWindowAlpha();
+        }
+    }
+
+    @Override
+    protected int edgeFadePercent() {
+        return appConfig.getHudSideFadePercent();
+    }
+
+    @Override
+    protected boolean framed() {
+        return false;
+    }
+
+    @Override
+    public void applyConfig() {
+        readTone();
+        applyWindowAlpha();
+        super.applyConfig();
     }
 
     /** 诊断报告里的一行：HUD 窗口最近怎么样。 */
@@ -160,14 +209,15 @@ public class SideViewHudPanel extends SideViewPopupView {
         releasePresentation();
     }
 
-    /** 大小 / 位置：窗口大小跟着 HUD 的真实尺寸算。 */
+    /** 大小 / 位置：窗口大小跟着 HUD 的真实尺寸算；左灯靠左、右灯靠右（{@link HudPanelPlacement}）。 */
     @Override
     protected void place(int side) {
         DisplayMetrics metrics = new DisplayMetrics();
         display.getRealMetrics(metrics);
         HudPanelPlacement.Rect rect = HudPanelPlacement.compute(metrics.widthPixels, metrics.heightPixels,
                 appConfig.getHudSideSizePercent(), appConfig.getHudSideShapePercent(),
-                appConfig.getHudSideLeftPercent(), appConfig.getHudSideVerticalPercent());
+                appConfig.getHudSideLeftPercent(), appConfig.getHudSideVerticalPercent(),
+                side == LaneCycle.RIGHT);
         panelParams = new FrameLayout.LayoutParams(rect.width, rect.height, Gravity.TOP | Gravity.START);
         panelParams.leftMargin = rect.left;
         panelParams.topMargin = rect.top;
@@ -189,7 +239,8 @@ public class SideViewHudPanel extends SideViewPopupView {
             return;
         }
         WindowManager.LayoutParams attrs = window.getAttributes();
-        attrs.alpha = visible ? appConfig.getHudSideOpacityPercent() / 100f : 0f;
+        attrs.alpha = visible ? HudNightDimming.opacity(
+                appConfig.getHudSideOpacityPercent(), appConfig.getHudSideNightPercent(), night) : 0f;
         window.setAttributes(attrs);
     }
 

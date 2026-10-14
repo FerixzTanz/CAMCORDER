@@ -240,9 +240,12 @@ public class SideViewPopupService extends Service {
         }
         boolean hudOn = output != AppConfig.SIDE_OUTPUT_SCREEN && !ScreenState.dark() && hudOutput().available();
         if (hudOn) {
-            // HUD 不看车速门槛：低速也出，只有主屏弹窗才等车速
+            // HUD 不看车速门槛：低速也出，只有主屏弹窗才等车速。也不让原厂的侧方小窗：它只在主屏上，
+            // 而低速打灯原厂必弹它 —— 让了 HUD 低速就永远不出（2.12.0 实车：30 以下不显示）
             SideViewDecision.Input hudIn = inputFrom(r, s, 0, hud.showingLane());
+            hudIn.yieldToStockPopup = false;
             hud.followIndicator(r.code(Signal.INDICATOR_DISPLAY));
+            hud.setNight(Integer.valueOf(Signal.NIGHT).equals(r.code(Signal.DAY_NIGHT)));
             hudOn = hud.update(SideViewDecision.decide(hudIn), SideViewDecision.factoryViewActive(hudIn),
                     appConfig.isSidePopupInstant() && SideViewDecision.shouldStayReady(hudIn),
                     appConfig.getSidePopupCloseDelayMs());

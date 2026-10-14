@@ -134,10 +134,13 @@ public class AppConfig {
     public static final int SIDE_OUTPUT_BOTH = 2;
     private static final String KEY_HUD_SIDE_SIZE = "hud_side_size";  // 高度，HUD 高度的百分比
     private static final String KEY_HUD_SIDE_SHAPE = "hud_side_shape";  // 宽 ÷ 高 ×100
-    private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 左右位置，0 贴左 100 贴右
+    private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 离打灯那一边的距离，0 贴边 50 居中（键名是 2.12.0 的）
     private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
     private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
-    // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。HUD 默认翻（和后视镜一样读），主屏默认不翻（LaneWatch 的读法）
+    private static final String KEY_HUD_SIDE_CONTRAST = "hud_side_contrast";  // 对比度，100 原样，见 HudPictureTone
+    private static final String KEY_HUD_SIDE_NIGHT = "hud_side_night";  // 夜间模式时再乘的亮度比例，100 不调暗，见 HudNightDimming
+    private static final String KEY_HUD_SIDE_FADE = "hud_side_fade";  // 边缘渐隐，占短边的百分比，0 是硬边，见 HudEdgeFade
+    // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。默认都不翻（HUD 翻过一版，用户 2026-10-14：看着糊涂）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
     public static final int HUD_SIDE_MIN_SIZE_PERCENT = 30;
@@ -150,6 +153,15 @@ public class AppConfig {
     public static final int HUD_SIDE_DEFAULT_VERTICAL_PERCENT = 50;
     public static final int HUD_SIDE_MIN_OPACITY_PERCENT = 20;
     public static final int HUD_SIDE_DEFAULT_OPACITY_PERCENT = 100;
+    public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
+    public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
+    public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 150;
+    public static final int HUD_SIDE_MIN_NIGHT_PERCENT = 20;
+    public static final int HUD_SIDE_MAX_NIGHT_PERCENT = 100;
+    public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 60;
+    public static final int HUD_SIDE_MIN_FADE_PERCENT = 0;
+    public static final int HUD_SIDE_MAX_FADE_PERCENT = 40;
+    public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 15;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1758,7 +1770,7 @@ public class AppConfig {
                 Math.max(HUD_SIDE_MIN_SHAPE_PERCENT, Math.min(HUD_SIDE_MAX_SHAPE_PERCENT, percent))).apply();
     }
 
-    /** HUD 上画面的左右位置：剩余宽度里的百分比，0 贴左、100 贴右。 */
+    /** HUD 上画面离打灯那一边的距离：剩余宽度里的百分比，0 贴边、50 居中。左灯从左边量，右灯从右边量。 */
     public int getHudSideLeftPercent() {
         int v = prefs.getInt(KEY_HUD_SIDE_LEFT, HUD_SIDE_DEFAULT_LEFT_PERCENT);
         return Math.max(0, Math.min(100, v));
@@ -1787,9 +1799,9 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_MIRROR, on).apply();
     }
 
-    /** HUD 上侧视左右翻转（像门镜），默认翻：看 HUD 和看门镜是同一眼，方向得一致。 */
+    /** HUD 上侧视左右翻转（像门镜），默认不翻：2.12.0 默认翻，实车看着糊涂（用户 2026-10-14）。 */
     public boolean isHudSideMirrored() {
-        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, true);
+        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, false);
     }
 
     public void setHudSideMirrored(boolean on) {
@@ -1805,6 +1817,39 @@ public class AppConfig {
     public void setHudSideOpacityPercent(int percent) {
         prefs.edit().putInt(KEY_HUD_SIDE_OPACITY,
                 Math.max(HUD_SIDE_MIN_OPACITY_PERCENT, Math.min(100, percent))).apply();
+    }
+
+    /** HUD 上画面的对比度，100..300；100 是原画面，默认 150（中灰压暗，投影上不发白，见 HudPictureTone）。 */
+    public int getHudSideContrastPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_CONTRAST, HUD_SIDE_DEFAULT_CONTRAST_PERCENT);
+        return Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, v));
+    }
+
+    public void setHudSideContrastPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST,
+                Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
+    }
+
+    /** 车上是夜间模式时，HUD 画面在不透明度的基础上再调到这个比例，20..100；100 不调暗。 */
+    public int getHudSideNightPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_NIGHT, HUD_SIDE_DEFAULT_NIGHT_PERCENT);
+        return Math.max(HUD_SIDE_MIN_NIGHT_PERCENT, Math.min(HUD_SIDE_MAX_NIGHT_PERCENT, v));
+    }
+
+    public void setHudSideNightPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_NIGHT,
+                Math.max(HUD_SIDE_MIN_NIGHT_PERCENT, Math.min(HUD_SIDE_MAX_NIGHT_PERCENT, percent))).apply();
+    }
+
+    /** HUD 上画面四边渐隐到黑的宽度，占短边的百分比，0..40；0 是原来的硬边。 */
+    public int getHudSideFadePercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_FADE, HUD_SIDE_DEFAULT_FADE_PERCENT);
+        return Math.max(HUD_SIDE_MIN_FADE_PERCENT, Math.min(HUD_SIDE_MAX_FADE_PERCENT, v));
+    }
+
+    public void setHudSideFadePercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_FADE,
+                Math.max(HUD_SIDE_MIN_FADE_PERCENT, Math.min(HUD_SIDE_MAX_FADE_PERCENT, percent))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

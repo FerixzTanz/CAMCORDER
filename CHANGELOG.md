@@ -7,6 +7,35 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [Unreleased]
+
+### Fixed
+
+- **The HUD side view now shows below 30 km/h.** At low speed the car pops up its own side-view
+  window on the screen, and the HUD used to step aside for it like the screen pop-up does. That
+  window is only on the screen, so the HUD no longer waits for it. The HUD still steps aside for
+  reverse, the car's 360 view and park assist.
+
+### New and improved
+
+- **The HUD picture follows the signal.** Left indicator, picture on the left of the HUD; right
+  indicator, picture on the right. *Position across the HUD* is now *HUD picture distance from the
+  edge*: the same distance from the left edge or the right edge (0 at the edge, 50 the middle).
+- **The HUD picture is no longer mirrored by default.** It reads as the camera sees it, like the
+  screen pop-up. *Mirror the HUD picture like the door mirror* is still there for those who want it.
+- **HUD picture contrast.** The HUD is a projection: every grey lights up, so the camera's picture
+  looked washed out. *HUD picture contrast* (Settings → Super mirror → Turn-signal side view →
+  HUD picture) pushes the darker half of the picture towards black; default 150, 100 is the camera's
+  own picture. The HUD picture also loses the thin light frame, which showed as a ring of light.
+- **HUD picture dims at night.** When the car is in night mode the HUD picture is dimmed to the
+  share set in *HUD picture brightness at night* (applied on top of *HUD picture opacity*; default 60,
+  100 turns it off). It follows the car's own day/night signal; if that cannot be read, the picture
+  stays at the day brightness.
+- **HUD picture edge fade.** The picture keeps the shape set under *HUD picture shape*, but its four
+  edges now fade to black, which blends into the road on a HUD. *HUD picture edge fade* (same
+  place) sets how far the fade reaches, as a share of the shorter side; default 15, 0 is the old
+  hard edge.
+
 ## [2.12.0] - 2026-10-14
 
 ### New and improved

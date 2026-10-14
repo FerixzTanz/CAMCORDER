@@ -8,7 +8,9 @@ package com.kooo.evcam.zeekr;
  * <ul>
  *   <li>左灯只弹左侧那一路，右灯只弹右侧那一路；双闪、不打灯、读不到都不弹。</li>
  *   <li><b>原厂画面优先</b>：挂 R 档、原厂 360 在显示、原厂画面弹着（360 或侧方小窗）、
- *       泊车辅助开着，任何一样成立都不弹；已经弹着的立刻收。</li>
+ *       泊车辅助开着，任何一样成立都不弹；已经弹着的立刻收。
+ *       HUD 那一路不让侧方小窗（{@link Input#yieldToStockPopup} 关）：那块小窗只在主屏上，
+ *       HUD 上没有东西和它抢，而低速打灯原厂必弹它 —— 让的话 HUD 低速就永远不出（用户 2026-10-14）。</li>
  *   <li>车速低于设定值不弹（默认 30 km/h：再慢原厂自己会弹侧方小窗）；车速读不到不拦。
  *       只在「还没弹」时看车速 —— 弹出来之后减速不收，免得在门槛上来回闪。</li>
  *   <li>灯一灭就收。</li>
@@ -38,6 +40,11 @@ public final class SideViewDecision {
         public int minSpeedKmh;
         /** 此刻已经弹着的是哪一路（{@link LaneCycle#LEFT} / {@link LaneCycle#RIGHT}），没弹是 {@link #NONE}。 */
         public int showing = NONE;
+        /**
+         * 原厂侧方小窗弹着时让不让（{@link #stockPopupShown}）。主屏弹窗让（默认）：和小窗在同一块屏上。
+         * HUD 不让：小窗不在 HUD 上。R 档、原厂 360、泊车辅助照旧都让。
+         */
+        public boolean yieldToStockPopup = true;
     }
 
     /**
@@ -78,11 +85,11 @@ public final class SideViewDecision {
         return "D".equals(in.gear);
     }
 
-    /** 原厂有画面在屏幕上（或马上要有）：倒车、360、原厂弹窗、泊车辅助。 */
+    /** 原厂有画面在屏幕上（或马上要有）：倒车、360、原厂弹窗（{@link Input#yieldToStockPopup} 开时）、泊车辅助。 */
     public static boolean factoryViewActive(Input in) {
         return "R".equals(in.gear)
                 || Boolean.TRUE.equals(in.stock360Shown)
-                || Boolean.TRUE.equals(in.stockPopupShown)
+                || (in.yieldToStockPopup && Boolean.TRUE.equals(in.stockPopupShown))
                 || Boolean.TRUE.equals(in.parkAssistOn);
     }
 

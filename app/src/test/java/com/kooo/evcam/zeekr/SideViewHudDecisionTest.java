@@ -41,6 +41,41 @@ public class SideViewHudDecisionTest {
         assertEquals(SideViewDecision.NONE, SideViewDecision.decide(stock360));
     }
 
+    /**
+     * 低速打灯原厂必弹侧方小窗（主屏上）。HUD 不让它：让了就等于也有车速门槛（2.12.0 实车：30 以下 HUD 不出）。
+     * 主屏弹窗照旧让，它和小窗在同一块屏上。
+     */
+    @Test
+    public void hudIgnoresTheCarsOwnSidePopupButTheScreenYields() {
+        SideViewDecision.Input hud = leftSignalAt(10f, 0);
+        hud.stockPopupShown = true;
+        hud.yieldToStockPopup = false;
+        assertEquals(LaneCycle.LEFT, SideViewDecision.decide(hud));
+        assertEquals(false, SideViewDecision.factoryViewActive(hud));
+
+        SideViewDecision.Input screen = leftSignalAt(50f, 30);
+        screen.stockPopupShown = true;
+        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(screen));
+        assertEquals(true, SideViewDecision.factoryViewActive(screen));
+    }
+
+    /** 不让小窗只是不让小窗：R 档、原厂 360、泊车辅助 HUD 照样让。 */
+    @Test
+    public void hudStillYieldsToReverseStock360AndParkAssist() {
+        SideViewDecision.Input stock360 = leftSignalAt(10f, 0);
+        stock360.yieldToStockPopup = false;
+        stock360.stock360Shown = true;
+        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(stock360));
+        SideViewDecision.Input park = leftSignalAt(10f, 0);
+        park.yieldToStockPopup = false;
+        park.parkAssistOn = true;
+        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(park));
+        SideViewDecision.Input reverse = leftSignalAt(10f, 0);
+        reverse.yieldToStockPopup = false;
+        reverse.gear = "R";
+        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(reverse));
+    }
+
     @Test
     public void bothStayQuietOnHazards() {
         SideViewDecision.Input hazard = leftSignalAt(50f, 0);

@@ -4,8 +4,10 @@ package com.kooo.evcam.zeekr;
  * HUD 上侧视画面的位置和大小。
  *
  * <p>高度是 HUD 高度的百分比，宽度 = 高度 × 形状（宽 ÷ 高 ×100），最多一整个 HUD 宽；
- * 左边位置和上下位置都是「剩余空间里的百分比」，0 贴边、100 贴对面那一边。
- * 默认值（高度 74%、正方形、左边 6%、居中）是 1440×480 上 355×355 px、左边留 64 px 的样子。</p>
+ * 左右位置是「离打灯那一边的距离」：左灯的画面离左边这么远，右灯的画面离右边这么远，
+ * 都是剩余宽度里的百分比，0 贴边、50 居中、100 贴对面（用户 2026-10-14：「左灯左边、右灯右边」）；
+ * 上下位置同样是剩余高度里的百分比，0 贴顶、100 贴底。
+ * 默认值（高度 74%、正方形、离边 6%、居中）是 1440×480 上 355×355 px、离边留 64 px 的样子。</p>
  *
  * <p>纯 Java，不碰 Android，见 {@code HudPanelPlacementTest}。</p>
  */
@@ -32,13 +34,18 @@ public final class HudPanelPlacement {
         }
     }
 
+    /**
+     * @param edgePercent 离打灯那一边多远（剩余宽度的百分比）
+     * @param rightSide   右灯：从右边量；否则从左边量
+     */
     public static Rect compute(int hudWidth, int hudHeight, int sizePercent, int shapePercent,
-                               int leftPercent, int verticalPercent) {
+                               int edgePercent, int verticalPercent, boolean rightSide) {
         int height = Math.round(hudHeight * sizePercent / 100f);
         height = Math.max(Math.min(MIN_SIZE_PX, hudHeight), Math.min(height, hudHeight));
         int width = Math.round(height * shapePercent / 100f);
         width = Math.max(Math.min(MIN_SIZE_PX, hudWidth), Math.min(width, hudWidth));
-        int left = Math.round(Math.max(0, hudWidth - width) * clampPercent(leftPercent) / 100f);
+        int fromEdge = Math.round(Math.max(0, hudWidth - width) * clampPercent(edgePercent) / 100f);
+        int left = rightSide ? hudWidth - width - fromEdge : fromEdge;
         int top = Math.round(Math.max(0, hudHeight - height) * clampPercent(verticalPercent) / 100f);
         return new Rect(left, top, width, height);
     }
