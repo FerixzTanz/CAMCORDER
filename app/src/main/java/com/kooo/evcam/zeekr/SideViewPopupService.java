@@ -245,6 +245,7 @@ public class SideViewPopupService extends Service {
             SideViewDecision.Input hudIn = inputFrom(r, s, 0, hud.showingLane());
             hudIn.yieldToStockPopup = false;
             hud.followIndicator(r.code(Signal.INDICATOR_DISPLAY));
+            hud.setNight(Integer.valueOf(Signal.NIGHT).equals(r.code(Signal.DAY_NIGHT)));
             hudOn = hud.update(SideViewDecision.decide(hudIn), SideViewDecision.factoryViewActive(hudIn),
                     appConfig.isSidePopupInstant() && SideViewDecision.shouldStayReady(hudIn),
                     appConfig.getSidePopupCloseDelayMs());

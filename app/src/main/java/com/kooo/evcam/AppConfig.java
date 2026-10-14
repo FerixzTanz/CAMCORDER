@@ -138,6 +138,7 @@ public class AppConfig {
     private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
     private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
     private static final String KEY_HUD_SIDE_CONTRAST = "hud_side_contrast";  // 对比度，100 原样，见 HudPictureTone
+    private static final String KEY_HUD_SIDE_NIGHT = "hud_side_night";  // 夜间模式时再乘的亮度比例，100 不调暗，见 HudNightDimming
     private static final String KEY_HUD_SIDE_FADE = "hud_side_fade";  // 边缘渐隐，占短边的百分比，0 是硬边，见 HudEdgeFade
     // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。默认都不翻（HUD 翻过一版，用户 2026-10-14：看着糊涂）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
@@ -155,6 +156,9 @@ public class AppConfig {
     public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
     public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
     public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 150;
+    public static final int HUD_SIDE_MIN_NIGHT_PERCENT = 20;
+    public static final int HUD_SIDE_MAX_NIGHT_PERCENT = 100;
+    public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 60;
     public static final int HUD_SIDE_MIN_FADE_PERCENT = 0;
     public static final int HUD_SIDE_MAX_FADE_PERCENT = 40;
     public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 15;
@@ -1824,6 +1828,17 @@ public class AppConfig {
     public void setHudSideContrastPercent(int percent) {
         prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST,
                 Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
+    }
+
+    /** 车上是夜间模式时，HUD 画面在不透明度的基础上再调到这个比例，20..100；100 不调暗。 */
+    public int getHudSideNightPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_NIGHT, HUD_SIDE_DEFAULT_NIGHT_PERCENT);
+        return Math.max(HUD_SIDE_MIN_NIGHT_PERCENT, Math.min(HUD_SIDE_MAX_NIGHT_PERCENT, v));
+    }
+
+    public void setHudSideNightPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_NIGHT,
+                Math.max(HUD_SIDE_MIN_NIGHT_PERCENT, Math.min(HUD_SIDE_MAX_NIGHT_PERCENT, percent))).apply();
     }
 
     /** HUD 上画面四边渐隐到黑的宽度，占短边的百分比，0..40；0 是原来的硬边。 */

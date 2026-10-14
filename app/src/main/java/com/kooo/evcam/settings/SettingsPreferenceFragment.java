@@ -827,6 +827,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     appConfig.setHudSideContrastPercent(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
+        bindSlider("pref_hud_side_night", AppConfig.HUD_SIDE_MIN_NIGHT_PERCENT,
+                AppConfig.HUD_SIDE_MAX_NIGHT_PERCENT, appConfig.getHudSideNightPercent(), "%", value -> {
+                    appConfig.setHudSideNightPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
         bindSlider("pref_hud_side_fade", AppConfig.HUD_SIDE_MIN_FADE_PERCENT,
                 AppConfig.HUD_SIDE_MAX_FADE_PERCENT, appConfig.getHudSideFadePercent(), "%", value -> {
                     appConfig.setHudSideFadePercent(value);

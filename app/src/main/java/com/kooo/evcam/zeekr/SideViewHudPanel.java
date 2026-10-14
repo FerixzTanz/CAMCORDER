@@ -49,6 +49,7 @@ public class SideViewHudPanel extends SideViewPopupView {
     private FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(1, 1);
     /** 画面过的颜色矩阵；对比度 100 时 null（原样）。 */
     private Paint tonePaint;
+    private boolean night;
 
     public SideViewHudPanel(Context context, AppConfig appConfig, Display display) {
         super(context, appConfig);
@@ -72,6 +73,14 @@ public class SideViewHudPanel extends SideViewPopupView {
         return tonePaint;
     }
 
+    /** 车上是不是夜间模式：夜间再按设置的比例调暗（{@link HudNightDimming}）。服务每次读数变化时给。 */
+    public void setNight(boolean night) {
+        if (this.night != night) {
+            this.night = night;
+            applyWindowAlpha();
+        }
+    }
+
     @Override
     protected int edgeFadePercent() {
         return appConfig.getHudSideFadePercent();
@@ -85,6 +94,7 @@ public class SideViewHudPanel extends SideViewPopupView {
     @Override
     public void applyConfig() {
         readTone();
+        applyWindowAlpha();
         super.applyConfig();
     }
 
@@ -229,7 +239,8 @@ public class SideViewHudPanel extends SideViewPopupView {
             return;
         }
         WindowManager.LayoutParams attrs = window.getAttributes();
-        attrs.alpha = visible ? appConfig.getHudSideOpacityPercent() / 100f : 0f;
+        attrs.alpha = visible ? HudNightDimming.opacity(
+                appConfig.getHudSideOpacityPercent(), appConfig.getHudSideNightPercent(), night) : 0f;
         window.setAttributes(attrs);
     }
 

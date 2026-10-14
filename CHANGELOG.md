@@ -27,6 +27,10 @@ commit message, not here.
   looked washed out. *HUD picture contrast* (Settings → Super mirror → Turn-signal side view →
   HUD picture) pushes the darker half of the picture towards black; default 150, 100 is the camera's
   own picture. The HUD picture also loses the thin light frame, which showed as a ring of light.
+- **HUD picture dims at night.** When the car is in night mode the HUD picture is dimmed to the
+  share set in *HUD picture brightness at night* (applied on top of *HUD picture opacity*; default 60,
+  100 turns it off). It follows the car's own day/night signal; if that cannot be read, the picture
+  stays at the day brightness.
 - **HUD picture edge fade.** The picture keeps the shape set under *HUD picture shape*, but its four
   edges now fade to black, which blends into the road on a HUD. *HUD picture edge fade* (same
   place) sets how far the fade reaches, as a share of the shorter side; default 15, 0 is the old
