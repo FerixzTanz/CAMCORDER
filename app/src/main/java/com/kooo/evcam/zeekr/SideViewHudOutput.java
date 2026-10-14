@@ -52,6 +52,7 @@ final class SideViewHudOutput {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private SideViewHudPanel panel;
+    private boolean night;
     private SingleCamera boundCamera;
     /** 交给相机的是哪一个 SurfaceTexture：放手时确认槽位还是自己的。 */
     private SurfaceTexture boundTexture;
@@ -110,6 +111,14 @@ final class SideViewHudOutput {
     void followIndicator(Integer display) {
         if (panel != null) {
             panel.setIndicatorLit(SideViewDecision.indicatorLit(display, panel.lane()));
+        }
+    }
+
+    /** 车上是不是夜间模式（{@link HudNightDimming}）。记下来：窗口还没建好时，建好后照这个来。 */
+    void setNight(boolean night) {
+        this.night = night;
+        if (panel != null) {
+            panel.setNight(night);
         }
     }
 
@@ -270,6 +279,7 @@ final class SideViewHudOutput {
             return;
         }
         SideViewHudPanel created = new SideViewHudPanel(context, config, hud);
+        created.setNight(night);
         lastFrameMs = 0;   // 新窗口：上一个窗口的帧不算
         created.getTextureView().setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
