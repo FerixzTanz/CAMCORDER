@@ -26,8 +26,13 @@ left camera; right signal, right camera. It closes when the signal goes off.
 - Optional straightening of the fisheye picture (display only; recordings are unchanged).
 - Optional instant pop-up: in D the picture is kept ready in the background, at the cost of the
   camera staying on while driving.
-- Off by default: **Settings → Super mirror → Turn-signal side view**. It does not show while the
-  Super mirror itself is switched on.
+- Optional HUD projection: **Show side view on** can be the screen (default), the HUD, or both. The
+  HUD is found as the extra 1440×480 screen (the 7X's HUD) and the picture appears there at any
+  speed; only the screen pop-up waits for the speed above. If the HUD isn't found, the screen
+  pop-up is used instead. Size, position and opacity are under **HUD picture**. The HUD picture is
+  mirrored like the door mirror by default; the screen pop-up isn't. Both have a switch.
+- Off by default: **Settings → Super mirror → Turn-signal side view**. The screen pop-up does not
+  show while the Super mirror itself is switched on; the HUD picture still does.
 
 It relies on vehicle signals that dts88 found by experiment on one car. They may behave
 differently on yours.

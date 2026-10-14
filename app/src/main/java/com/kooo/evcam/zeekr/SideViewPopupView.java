@@ -60,7 +60,8 @@ public class SideViewPopupView extends ViewGroup {
     public static final int COVER_NO_PICTURE = 2;
 
     private final WindowManager windowManager;
-    private final AppConfig appConfig;
+    /** 子类在父类构造器里就会被问到设置（{@link #readMirrored}），所以用这一份，别自己再存一份。 */
+    protected final AppConfig appConfig;
     private final AutoFitTextureView textureView;
     private final Matrix drawMatrix = new Matrix();
     private final RectF sourceRect = new RectF();
@@ -91,11 +92,14 @@ public class SideViewPopupView extends ViewGroup {
     private static final int ARROW_OFF_GREY = 0xFF8A8D92;
 
     private WindowManager.LayoutParams params;
-    private boolean attached;
-    private boolean visible;
+    /** 子类（HUD 上的那一块，{@link SideViewHudPanel}）换了一套窗口，状态由它自己设。 */
+    protected boolean attached;
+    protected boolean visible;
     private CompositeStreamGeometry.Plan plan;
-    private int lane = LaneCycle.LEFT;
+    protected int lane = LaneCycle.LEFT;
     private boolean straighten;
+    /** 左右翻转，像门镜（设置里开）；HUD 那一块按自己的开关（见 {@link #readMirrored}）。 */
+    private boolean mirrored;
     private int viewFov;
     /** 这一帧窗口的宽 ÷ 高，画之前更新。 */
     private float aspect = 1f;
@@ -162,7 +166,7 @@ public class SideViewPopupView extends ViewGroup {
 
     /** 正显示在屏幕上。 */
     public boolean isShowing() {
-        return attached && visible;
+        return isAttached() && visible;
     }
 
     public int lane() {
@@ -237,12 +241,18 @@ public class SideViewPopupView extends ViewGroup {
 
     private void readConfig() {
         straighten = appConfig.isSidePopupStraighten();
+        mirrored = readMirrored();
         viewFov = appConfig.getSidePopupFov();
         yaw = appConfig.getSidePopupYaw();
         pitch = appConfig.getSidePopupPitch();
     }
 
-    private void attachAt(int side, boolean show) {
+    /** 这一块窗口该不该左右翻转；HUD 子类换成自己的开关。 */
+    protected boolean readMirrored() {
+        return appConfig.isSidePopupMirrored();
+    }
+
+    protected void attachAt(int side, boolean show) {
         boolean sideChanged = side != lane;
         lane = side;
         if (attached) {
@@ -303,7 +313,7 @@ public class SideViewPopupView extends ViewGroup {
         return true;
     }
 
-    private void update() {
+    protected void update() {
         try {
             windowManager.updateViewLayout(this, params);
         } catch (Exception e) {
@@ -317,7 +327,7 @@ public class SideViewPopupView extends ViewGroup {
      *
      * <p>长方形（用户 2026-10-02）：正方形只能靠缩小视野、转来转去看两边，横着拉宽才是要的。</p>
      */
-    private void place(int side) {
+    protected void place(int side) {
         int w = getResources().getDisplayMetrics().widthPixels;
         int h = getResources().getDisplayMetrics().heightPixels;
         int height = Math.round(Math.min(h * appConfig.getSidePopupSizePercent() / 100f, h));
@@ -362,7 +372,8 @@ public class SideViewPopupView extends ViewGroup {
         }
         aspect = (float) width / height;
         int save = canvas.save();
-        if (LaneCycle.isMirrored(lane)) {
+        if (LaneCycle.isMirrored(lane) != mirrored) {
+            // 像门镜那样翻；盖板、箭头在镜像之外画
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
         }
         if (straighten) {

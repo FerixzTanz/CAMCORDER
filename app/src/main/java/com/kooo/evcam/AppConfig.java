@@ -127,6 +127,29 @@ public class AppConfig {
     public static final int SIDE_POPUP_DEFAULT_FOV = 80;
     public static final int SIDE_POPUP_DEFAULT_YAW = 50;
     public static final int SIDE_POPUP_DEFAULT_PITCH = 15;
+    // 侧视画面出在哪：主屏、HUD、两边都出；HUD 不受车速门槛管；位置是 HUD 上的百分比，见 HudPanelPlacement
+    private static final String KEY_SIDE_OUTPUT = "side_output";
+    public static final int SIDE_OUTPUT_SCREEN = 0;
+    public static final int SIDE_OUTPUT_HUD = 1;
+    public static final int SIDE_OUTPUT_BOTH = 2;
+    private static final String KEY_HUD_SIDE_SIZE = "hud_side_size";  // 高度，HUD 高度的百分比
+    private static final String KEY_HUD_SIDE_SHAPE = "hud_side_shape";  // 宽 ÷ 高 ×100
+    private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 左右位置，0 贴左 100 贴右
+    private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
+    private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
+    // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。HUD 默认翻（和后视镜一样读），主屏默认不翻（LaneWatch 的读法）
+    private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
+    private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
+    public static final int HUD_SIDE_MIN_SIZE_PERCENT = 30;
+    public static final int HUD_SIDE_MAX_SIZE_PERCENT = 100;
+    public static final int HUD_SIDE_DEFAULT_SIZE_PERCENT = 74;
+    public static final int HUD_SIDE_MIN_SHAPE_PERCENT = 100;
+    public static final int HUD_SIDE_MAX_SHAPE_PERCENT = 300;
+    public static final int HUD_SIDE_DEFAULT_SHAPE_PERCENT = 100;
+    public static final int HUD_SIDE_DEFAULT_LEFT_PERCENT = 6;
+    public static final int HUD_SIDE_DEFAULT_VERTICAL_PERCENT = 50;
+    public static final int HUD_SIDE_MIN_OPACITY_PERCENT = 20;
+    public static final int HUD_SIDE_DEFAULT_OPACITY_PERCENT = 100;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1696,6 +1719,92 @@ public class AppConfig {
 
     public void setSidePopupPitch(int degrees) {
         prefs.edit().putInt(KEY_SIDE_POPUP_PITCH, degrees).apply();
+    }
+
+    /**
+     * 侧视画面出在哪：{@link #SIDE_OUTPUT_SCREEN}（默认）、{@link #SIDE_OUTPUT_HUD}、{@link #SIDE_OUTPUT_BOTH}。
+     * 只选 HUD 而找不到 HUD 时，退回主屏弹窗。
+     */
+    public int getSideOutput() {
+        int v = prefs.getInt(KEY_SIDE_OUTPUT, SIDE_OUTPUT_SCREEN);
+        return Math.max(SIDE_OUTPUT_SCREEN, Math.min(SIDE_OUTPUT_BOTH, v));
+    }
+
+    public void setSideOutput(int output) {
+        prefs.edit().putInt(KEY_SIDE_OUTPUT,
+                Math.max(SIDE_OUTPUT_SCREEN, Math.min(SIDE_OUTPUT_BOTH, output))).apply();
+        AppLog.i(TAG, "侧视画面出在: " + output + "（0 主屏 / 1 HUD / 2 两边）");
+    }
+
+    /** HUD 上画面的高度，HUD 高度的百分比。 */
+    public int getHudSideSizePercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_SIZE, HUD_SIDE_DEFAULT_SIZE_PERCENT);
+        return Math.max(HUD_SIDE_MIN_SIZE_PERCENT, Math.min(HUD_SIDE_MAX_SIZE_PERCENT, v));
+    }
+
+    public void setHudSideSizePercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_SIZE,
+                Math.max(HUD_SIDE_MIN_SIZE_PERCENT, Math.min(HUD_SIDE_MAX_SIZE_PERCENT, percent))).apply();
+    }
+
+    /** HUD 上画面的宽 ÷ 高 ×100，100 是正方形。 */
+    public int getHudSideShapePercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_SHAPE, HUD_SIDE_DEFAULT_SHAPE_PERCENT);
+        return Math.max(HUD_SIDE_MIN_SHAPE_PERCENT, Math.min(HUD_SIDE_MAX_SHAPE_PERCENT, v));
+    }
+
+    public void setHudSideShapePercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_SHAPE,
+                Math.max(HUD_SIDE_MIN_SHAPE_PERCENT, Math.min(HUD_SIDE_MAX_SHAPE_PERCENT, percent))).apply();
+    }
+
+    /** HUD 上画面的左右位置：剩余宽度里的百分比，0 贴左、100 贴右。 */
+    public int getHudSideLeftPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_LEFT, HUD_SIDE_DEFAULT_LEFT_PERCENT);
+        return Math.max(0, Math.min(100, v));
+    }
+
+    public void setHudSideLeftPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_LEFT, Math.max(0, Math.min(100, percent))).apply();
+    }
+
+    /** HUD 上画面的上下位置：剩余高度里的百分比，0 贴顶、100 贴底，默认居中。 */
+    public int getHudSideVerticalPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_VERTICAL, HUD_SIDE_DEFAULT_VERTICAL_PERCENT);
+        return Math.max(0, Math.min(100, v));
+    }
+
+    public void setHudSideVerticalPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_VERTICAL, Math.max(0, Math.min(100, percent))).apply();
+    }
+
+    /** 主屏侧视左右翻转（像门镜），默认不翻。 */
+    public boolean isSidePopupMirrored() {
+        return prefs.getBoolean(KEY_SIDE_POPUP_MIRROR, false);
+    }
+
+    public void setSidePopupMirrored(boolean on) {
+        prefs.edit().putBoolean(KEY_SIDE_POPUP_MIRROR, on).apply();
+    }
+
+    /** HUD 上侧视左右翻转（像门镜），默认翻：看 HUD 和看门镜是同一眼，方向得一致。 */
+    public boolean isHudSideMirrored() {
+        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, true);
+    }
+
+    public void setHudSideMirrored(boolean on) {
+        prefs.edit().putBoolean(KEY_HUD_SIDE_MIRROR, on).apply();
+    }
+
+    /** HUD 上画面的不透明度，20..100。 */
+    public int getHudSideOpacityPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_OPACITY, HUD_SIDE_DEFAULT_OPACITY_PERCENT);
+        return Math.max(HUD_SIDE_MIN_OPACITY_PERCENT, Math.min(100, v));
+    }
+
+    public void setHudSideOpacityPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_OPACITY,
+                Math.max(HUD_SIDE_MIN_OPACITY_PERCENT, Math.min(100, percent))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

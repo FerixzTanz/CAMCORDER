@@ -290,8 +290,12 @@
     <string name="set_side_popup_title">Turn-signal side view</string>
     <string name="set_side_popup_summary">While you signal, a pop-up shows the camera on that side: left signal, left camera. It closes when the signal goes off. The car\'s own views come first: no pop-up in reverse or while the stock 360 or side view is showing. Not shown while the Super mirror is on</string>
     <string name="set_side_popup_speed_title">Show from speed (km/h)</string>
-    <string name="set_side_popup_speed_summary">Below this speed the car shows its own side view. 0 shows it at any speed</string>
+    <string name="set_side_popup_speed_summary">Below this speed the screen pop-up stays closed, since the car shows its own side view. 0 shows it at any speed. The HUD is not held back by this: it shows at any speed</string>
     <string name="msg_side_popup_on">Turn-signal side view on. Signal left or right to see that side</string>
+    <string name="set_side_popup_mirror_title">Mirror like the door mirror</string>
+    <string name="set_side_popup_mirror_summary">A car coming up from behind enters from the outside edge, the same way as in the door mirror. Off shows the picture as the camera sees it</string>
+    <string name="set_hud_side_mirror_title">Mirror the HUD picture like the door mirror</string>
+    <string name="set_hud_side_mirror_summary">On by default: you glance at the HUD and the door mirror in the same moment, so they should read the same way</string>
     <string name="set_side_popup_straighten_title">Straighten picture</string>
     <string name="set_side_popup_straighten_summary">Corrects the fisheye curve before showing it; the three settings below set how wide it looks and where it points. Only changes the pop-up; recordings are not affected</string>
     <string name="set_side_popup_fov_title">View width (°)</string>
@@ -310,6 +314,24 @@
     <string name="set_side_popup_shape_title">Pop-up shape (width ÷ height, %)</string>
     <string name="set_side_popup_vertical_title">Height on screen (%)</string>
     <string name="set_side_popup_vertical_summary">0 is the top, 100 the bottom</string>
+
+    <!-- Where the side view shows: screen / HUD / both -->
+    <string name="set_side_output_title">Show side view on</string>
+    <string name="set_side_output_screen">Screen</string>
+    <string name="set_side_output_hud">HUD</string>
+    <string name="set_side_output_both">Screen and HUD</string>
+    <string name="set_sub_hud_title">HUD picture</string>
+    <string name="set_sub_hud_summary">Size, position and opacity on the HUD</string>
+    <string name="set_hud_side_size_title">HUD picture height (% of HUD height)</string>
+    <string name="set_hud_side_size_summary">The width follows from the shape below</string>
+    <string name="set_hud_side_shape_title">HUD picture shape (width ÷ height, %)</string>
+    <string name="set_hud_side_shape_summary">100 is square; higher is wider</string>
+    <string name="set_hud_side_left_title">Position across the HUD (%)</string>
+    <string name="set_hud_side_left_summary">0 is the left, 100 the right</string>
+    <string name="set_hud_side_vertical_title">Height on the HUD (%)</string>
+    <string name="set_hud_side_vertical_summary">0 is the top, 100 the bottom</string>
+    <string name="set_hud_side_opacity_title">HUD picture opacity (%)</string>
+    <string name="set_hud_side_opacity_summary">Lower is fainter. Black does not light up on a HUD anyway</string>
     <string name="msg_floating_reset">Floating button reset</string>
     <string name="msg_adjust_opened">Image adjustment window opened. Go back to the main screen to see the effect.</string>
     <string name="msg_adjust_reset">Image settings reset to defaults</string>

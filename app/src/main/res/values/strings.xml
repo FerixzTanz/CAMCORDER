@@ -309,8 +309,12 @@
     <string name="set_side_popup_title">打转向灯弹侧视</string>
     <string name="set_side_popup_summary">打转向灯时弹出那一侧的画面：左灯左侧、右灯右侧，灯灭就收。原厂画面优先：挂 R 档、原厂 360 或侧方小窗在显示时不弹。超级后视镜开着时不弹</string>
     <string name="set_side_popup_speed_title">从这个车速起弹（km/h）</string>
-    <string name="set_side_popup_speed_summary">低于这个车速原厂会自己弹侧方小窗。0 表示任何车速都弹</string>
+    <string name="set_side_popup_speed_summary">低于这个车速，主屏不弹（原厂会自己弹侧方小窗）。0 表示任何车速都弹。HUD 不受这个限制，低速也显示</string>
     <string name="msg_side_popup_on">打转向灯弹侧视已开启：打左灯看左侧、打右灯看右侧</string>
+    <string name="set_side_popup_mirror_title">左右翻转（像门镜）</string>
+    <string name="set_side_popup_mirror_summary">后面来的车从画面外侧进来，和门上的后视镜一个方向。关了就是相机看到的样子</string>
+    <string name="set_hud_side_mirror_title">HUD 画面左右翻转（像门镜）</string>
+    <string name="set_hud_side_mirror_summary">默认开：看 HUD 和看门镜是同一眼，方向一致不用想</string>
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，下面三项调视野和朝向。只影响弹窗的显示，录像照旧</string>
     <string name="set_side_popup_fov_title">视野（°）</string>
@@ -329,6 +333,24 @@
     <string name="set_side_popup_shape_title">弹窗形状（宽 ÷ 高，%）</string>
     <string name="set_side_popup_vertical_title">上下位置（%）</string>
     <string name="set_side_popup_vertical_summary">0 贴顶，100 贴底</string>
+
+    <!-- 侧视画面显示在哪：主屏 / HUD / 两边 -->
+    <string name="set_side_output_title">侧视画面显示在</string>
+    <string name="set_side_output_screen">主屏</string>
+    <string name="set_side_output_hud">HUD</string>
+    <string name="set_side_output_both">主屏和 HUD</string>
+    <string name="set_sub_hud_title">HUD 画面</string>
+    <string name="set_sub_hud_summary">HUD 上画面的大小、位置和不透明度</string>
+    <string name="set_hud_side_size_title">HUD 画面高度（占 HUD 高度 %）</string>
+    <string name="set_hud_side_size_summary">宽度由下面的形状决定</string>
+    <string name="set_hud_side_shape_title">HUD 画面形状（宽 ÷ 高，%）</string>
+    <string name="set_hud_side_shape_summary">100 为正方形，越大越宽</string>
+    <string name="set_hud_side_left_title">HUD 画面左右位置（%）</string>
+    <string name="set_hud_side_left_summary">0 贴左，100 贴右</string>
+    <string name="set_hud_side_vertical_title">HUD 画面上下位置（%）</string>
+    <string name="set_hud_side_vertical_summary">0 贴顶，100 贴底</string>
+    <string name="set_hud_side_opacity_title">HUD 画面不透明度（%）</string>
+    <string name="set_hud_side_opacity_summary">越低越淡。HUD 上黑色本来就不亮</string>
     <string name="msg_floating_reset">悬浮按钮已重置</string>
     <string name="msg_adjust_opened">已打开画面调节窗口，返回主界面查看效果</string>
     <string name="msg_adjust_reset">画面参数已恢复默认</string>

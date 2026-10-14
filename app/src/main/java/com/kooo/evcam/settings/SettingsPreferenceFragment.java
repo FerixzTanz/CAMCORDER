@@ -788,6 +788,64 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     appConfig.setSidePopupVerticalPercent(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
+        bindSideOutput();
+        bindSwitch("pref_side_popup_mirror", appConfig.isSidePopupMirrored(), value -> {
+            appConfig.setSidePopupMirrored(value);
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+        });
+        bindSwitch("pref_hud_side_mirror", appConfig.isHudSideMirrored(), value -> {
+            appConfig.setHudSideMirrored(value);
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+        });
+        bindSlider("pref_hud_side_size", AppConfig.HUD_SIDE_MIN_SIZE_PERCENT,
+                AppConfig.HUD_SIDE_MAX_SIZE_PERCENT, appConfig.getHudSideSizePercent(), "%", value -> {
+                    appConfig.setHudSideSizePercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_hud_side_shape", AppConfig.HUD_SIDE_MIN_SHAPE_PERCENT,
+                AppConfig.HUD_SIDE_MAX_SHAPE_PERCENT, appConfig.getHudSideShapePercent(), "%", value -> {
+                    appConfig.setHudSideShapePercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_hud_side_left", 0, 100,
+                appConfig.getHudSideLeftPercent(), "%", value -> {
+                    appConfig.setHudSideLeftPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_hud_side_vertical", 0, 100,
+                appConfig.getHudSideVerticalPercent(), "%", value -> {
+                    appConfig.setHudSideVerticalPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+        bindSlider("pref_hud_side_opacity", AppConfig.HUD_SIDE_MIN_OPACITY_PERCENT, 100,
+                appConfig.getHudSideOpacityPercent(), "%", value -> {
+                    appConfig.setHudSideOpacityPercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
+    }
+
+    /** 侧视画面出在哪：主屏、HUD、两边都出。存下去的是 {@link AppConfig#getSideOutput} 那三个数。 */
+    private void bindSideOutput() {
+        ListPreference list = findPreference("pref_side_output");
+        if (list == null) {
+            return;
+        }
+        list.setPersistent(false);
+        list.setEntries(new CharSequence[] {
+                getString(R.string.set_side_output_screen),
+                getString(R.string.set_side_output_hud),
+                getString(R.string.set_side_output_both)});
+        list.setEntryValues(new CharSequence[] {
+                String.valueOf(AppConfig.SIDE_OUTPUT_SCREEN),
+                String.valueOf(AppConfig.SIDE_OUTPUT_HUD),
+                String.valueOf(AppConfig.SIDE_OUTPUT_BOTH)});
+        list.setValue(String.valueOf(appConfig.getSideOutput()));
+        list.setSummaryProvider(p -> ((ListPreference) p).getEntry());
+        list.setOnPreferenceChangeListener((p, value) -> {
+            appConfig.setSideOutput(Integer.parseInt(String.valueOf(value)));
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+            return true;
+        });
     }
 
     // ------------------------------------------------------------------ 超级后视镜

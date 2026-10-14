@@ -273,6 +273,11 @@
                 android:title="@string/set_side_popup_title"
                 android:summary="@string/set_side_popup_summary" />
 
+            <ListPreference
+                android:key="pref_side_output"
+                android:dependency="pref_side_popup"
+                android:title="@string/set_side_output_title" />
+
             <SeekBarPreference
                 android:key="pref_side_popup_min_speed"
                 android:dependency="pref_side_popup"
@@ -296,6 +301,11 @@
                 android:key="pref_side_popup_straighten"
                 android:title="@string/set_side_popup_straighten_title"
                 android:summary="@string/set_side_popup_straighten_summary" />
+
+            <SwitchPreferenceCompat
+                android:key="pref_side_popup_mirror"
+                android:title="@string/set_side_popup_mirror_title"
+                android:summary="@string/set_side_popup_mirror_summary" />
 
             <SeekBarPreference
                 android:key="pref_side_popup_fov"
@@ -337,6 +347,48 @@
                 android:key="pref_side_popup_vertical"
                 android:title="@string/set_side_popup_vertical_title"
                 android:summary="@string/set_side_popup_vertical_summary"
+                app:showSeekBarValue="true" />
+        </PreferenceScreen>
+
+        <!-- HUD 上的画面：大小、位置、不透明度（打灯时的画面本身，拉直 / 视野 / 朝向和主屏共用） -->
+        <PreferenceScreen
+            android:key="sub_side_hud"
+            android:title="@string/set_sub_hud_title"
+            android:summary="@string/set_sub_hud_summary">
+
+            <SwitchPreferenceCompat
+                android:key="pref_hud_side_mirror"
+                android:title="@string/set_hud_side_mirror_title"
+                android:summary="@string/set_hud_side_mirror_summary" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_size"
+                android:title="@string/set_hud_side_size_title"
+                android:summary="@string/set_hud_side_size_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_shape"
+                android:title="@string/set_hud_side_shape_title"
+                android:summary="@string/set_hud_side_shape_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_left"
+                android:title="@string/set_hud_side_left_title"
+                android:summary="@string/set_hud_side_left_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_vertical"
+                android:title="@string/set_hud_side_vertical_title"
+                android:summary="@string/set_hud_side_vertical_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
+                android:key="pref_hud_side_opacity"
+                android:title="@string/set_hud_side_opacity_title"
+                android:summary="@string/set_hud_side_opacity_summary"
                 app:showSeekBarValue="true" />
         </PreferenceScreen>
 

@@ -455,14 +455,47 @@ public final class DiagnosticsCollector {
                     .append(d.getName())
                     .append("  ").append(size.x).append('x').append(size.y)
                     .append("  state=").append(d.getState())
+                    .append("  flags=0x").append(Integer.toHexString(d.getFlags()))
                     .append('\n');
         }
+        appendHud(sb, context, displays);
         if (displays.length <= 1) {
             sb.append(">> 只有一块屏，副屏推送不可用").append('\n');
         } else {
             sb.append(">> 检测到多块屏，副屏推送有可能实现").append('\n');
         }
         sb.append('\n');
+    }
+
+    /** HUD：找到的是哪一块、按什么找到的、侧视画面设成出在哪、HUD 窗口最近怎么样。 */
+    private static void appendHud(StringBuilder sb, Context context, Display[] displays) {
+        List<HudDisplayLocator.Candidate> candidates = new ArrayList<>();
+        for (Display d : displays) {
+            android.graphics.Point size = new android.graphics.Point();
+            try {
+                d.getRealSize(size);
+            } catch (Exception ignored) {
+                // 拿不到尺寸就当 0×0
+            }
+            candidates.add(new HudDisplayLocator.Candidate(d.getDisplayId(), size.x, size.y));
+        }
+        int id = HudDisplayLocator.find(candidates);
+        int bySize = HudDisplayLocator.findBySize(candidates);
+        sb.append("HUD 屏: ");
+        if (id == HudDisplayLocator.NONE) {
+            sb.append("没找到（要一块 ").append(HudDisplayLocator.HUD_WIDTH).append('x')
+                    .append(HudDisplayLocator.HUD_HEIGHT).append(" 的非主屏，或者 id ")
+                    .append(HudDisplayLocator.FALLBACK_DISPLAY_ID).append("）");
+        } else {
+            sb.append("id ").append(id).append(bySize != HudDisplayLocator.NONE ? "（按尺寸找到）" : "（尺寸不对，按 id 退到的）");
+        }
+        sb.append('\n');
+        int output = new AppConfig(context).getSideOutput();
+        sb.append("侧视画面出在: ")
+                .append(output == AppConfig.SIDE_OUTPUT_HUD ? "HUD"
+                        : output == AppConfig.SIDE_OUTPUT_BOTH ? "主屏和 HUD" : "主屏")
+                .append('\n');
+        sb.append("HUD 窗口最近: ").append(SideViewHudPanel.lastState()).append('\n');
     }
 
     private static void appendStorage(StringBuilder sb, Context context) {
