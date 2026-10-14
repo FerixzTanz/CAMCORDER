@@ -18,6 +18,11 @@ commit message, not here.
 
 ### New and improved
 
+- **The HUD picture follows the signal.** Left indicator, picture on the left of the HUD; right
+  indicator, picture on the right. *Position across the HUD* is now *HUD picture distance from the
+  edge*: the same distance from the left edge or the right edge (0 at the edge, 50 the middle).
+- **The HUD picture is no longer mirrored by default.** It reads as the camera sees it, like the
+  screen pop-up. *Mirror the HUD picture like the door mirror* is still there for those who want it.
 - **HUD picture contrast.** The HUD is a projection: every grey lights up, so the camera's picture
   looked washed out. *HUD picture contrast* (Settings → Super mirror → Turn-signal side view →
   HUD picture) pushes the darker half of the picture towards black; default 150, 100 is the camera's

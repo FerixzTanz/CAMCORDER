@@ -194,14 +194,15 @@ public class SideViewHudPanel extends SideViewPopupView {
         releasePresentation();
     }
 
-    /** 大小 / 位置：窗口大小跟着 HUD 的真实尺寸算。 */
+    /** 大小 / 位置：窗口大小跟着 HUD 的真实尺寸算；左灯靠左、右灯靠右（{@link HudPanelPlacement}）。 */
     @Override
     protected void place(int side) {
         DisplayMetrics metrics = new DisplayMetrics();
         display.getRealMetrics(metrics);
         HudPanelPlacement.Rect rect = HudPanelPlacement.compute(metrics.widthPixels, metrics.heightPixels,
                 appConfig.getHudSideSizePercent(), appConfig.getHudSideShapePercent(),
-                appConfig.getHudSideLeftPercent(), appConfig.getHudSideVerticalPercent());
+                appConfig.getHudSideLeftPercent(), appConfig.getHudSideVerticalPercent(),
+                side == LaneCycle.RIGHT);
         panelParams = new FrameLayout.LayoutParams(rect.width, rect.height, Gravity.TOP | Gravity.START);
         panelParams.leftMargin = rect.left;
         panelParams.topMargin = rect.top;

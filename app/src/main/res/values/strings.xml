@@ -314,7 +314,7 @@
     <string name="set_side_popup_mirror_title">左右翻转（像门镜）</string>
     <string name="set_side_popup_mirror_summary">后面来的车从画面外侧进来，和门上的后视镜一个方向。关了就是相机看到的样子</string>
     <string name="set_hud_side_mirror_title">HUD 画面左右翻转（像门镜）</string>
-    <string name="set_hud_side_mirror_summary">默认开：看 HUD 和看门镜是同一眼，方向一致不用想</string>
+    <string name="set_hud_side_mirror_summary">开启后，后方来车从画面外侧进入，与门镜相同。默认关闭。</string>
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，下面三项调视野和朝向。只影响弹窗的显示，录像照旧</string>
     <string name="set_side_popup_fov_title">视野（°）</string>
@@ -345,8 +345,8 @@
     <string name="set_hud_side_size_summary">宽度由下面的形状决定</string>
     <string name="set_hud_side_shape_title">HUD 画面形状（宽 ÷ 高，%）</string>
     <string name="set_hud_side_shape_summary">100 为正方形，越大越宽</string>
-    <string name="set_hud_side_left_title">HUD 画面左右位置（%）</string>
-    <string name="set_hud_side_left_summary">0 贴左，100 贴右</string>
+    <string name="set_hud_side_left_title">HUD 画面离边距离（%）</string>
+    <string name="set_hud_side_left_summary">左转向灯的画面在左侧，右转向灯的画面在右侧，离该侧边缘这么远。0 贴边，50 居中。</string>
     <string name="set_hud_side_vertical_title">HUD 画面上下位置（%）</string>
     <string name="set_hud_side_vertical_summary">0 贴顶，100 贴底</string>
     <string name="set_hud_side_opacity_title">HUD 画面不透明度（%）</string>

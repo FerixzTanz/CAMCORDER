@@ -134,11 +134,11 @@ public class AppConfig {
     public static final int SIDE_OUTPUT_BOTH = 2;
     private static final String KEY_HUD_SIDE_SIZE = "hud_side_size";  // 高度，HUD 高度的百分比
     private static final String KEY_HUD_SIDE_SHAPE = "hud_side_shape";  // 宽 ÷ 高 ×100
-    private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 左右位置，0 贴左 100 贴右
+    private static final String KEY_HUD_SIDE_LEFT = "hud_side_left";  // 离打灯那一边的距离，0 贴边 50 居中（键名是 2.12.0 的）
     private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
     private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
     private static final String KEY_HUD_SIDE_CONTRAST = "hud_side_contrast";  // 对比度，100 原样，见 HudPictureTone
-    // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。HUD 默认翻（和后视镜一样读），主屏默认不翻（LaneWatch 的读法）
+    // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。默认都不翻（HUD 翻过一版，用户 2026-10-14：看着糊涂）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
     public static final int HUD_SIDE_MIN_SIZE_PERCENT = 30;
@@ -1762,7 +1762,7 @@ public class AppConfig {
                 Math.max(HUD_SIDE_MIN_SHAPE_PERCENT, Math.min(HUD_SIDE_MAX_SHAPE_PERCENT, percent))).apply();
     }
 
-    /** HUD 上画面的左右位置：剩余宽度里的百分比，0 贴左、100 贴右。 */
+    /** HUD 上画面离打灯那一边的距离：剩余宽度里的百分比，0 贴边、50 居中。左灯从左边量，右灯从右边量。 */
     public int getHudSideLeftPercent() {
         int v = prefs.getInt(KEY_HUD_SIDE_LEFT, HUD_SIDE_DEFAULT_LEFT_PERCENT);
         return Math.max(0, Math.min(100, v));
@@ -1791,9 +1791,9 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_MIRROR, on).apply();
     }
 
-    /** HUD 上侧视左右翻转（像门镜），默认翻：看 HUD 和看门镜是同一眼，方向得一致。 */
+    /** HUD 上侧视左右翻转（像门镜），默认不翻：2.12.0 默认翻，实车看着糊涂（用户 2026-10-14）。 */
     public boolean isHudSideMirrored() {
-        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, true);
+        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, false);
     }
 
     public void setHudSideMirrored(boolean on) {
