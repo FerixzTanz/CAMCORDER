@@ -502,3 +502,4 @@ public class SideViewPopupView extends ViewGroup {
     protected boolean framed() {
         return true;
     }
+}
