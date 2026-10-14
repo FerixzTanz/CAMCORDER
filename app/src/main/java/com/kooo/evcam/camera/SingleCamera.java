@@ -82,6 +82,8 @@ public class SingleCamera {
     private Surface recordSurface;  // 录制Surface
     private Surface mainFloatingSurface; // 主屏悬浮窗Surface
     private android.graphics.SurfaceTexture mainFloatingSurfaceTexture; // 主屏悬浮窗SurfaceTexture（用于设置buffer尺寸）
+    private Surface hudSurface; // HUD 上的侧视画面（和主屏悬浮窗同时显示时用，各有各的槽位）
+    private android.graphics.SurfaceTexture hudSurfaceTexture; // HUD 画面的SurfaceTexture（用于设置buffer尺寸）
     private Surface previewSurface;  // 预览Surface（缓存以避免重复创建）
 
     /**
@@ -601,6 +603,25 @@ public class SingleCamera {
         }
     }
 
+    /**
+     * 此刻占着 HUD 槽位的是谁的 SurfaceTexture。这个槽位只给 HUD 上的侧视画面用，
+     * 和 {@link #setMainFloatingSurface} 那个互不相干，所以主屏弹窗和 HUD 可以同时出画面。
+     */
+    public android.graphics.SurfaceTexture getHudSurfaceTexture() {
+        return hudSurfaceTexture;
+    }
+
+    /** 设置 HUD 画面的 Surface（带 SurfaceTexture 引用，建会话时统一设 buffer 尺寸）；null 是摘掉。 */
+    public void setHudSurface(Surface surface, android.graphics.SurfaceTexture surfaceTexture) {
+        this.hudSurface = surface;
+        this.hudSurfaceTexture = surfaceTexture;
+        if (surface != null) {
+            AppLog.d(TAG, "HUD surface set for camera " + cameraId + ": " + surface + ", isValid=" + surface.isValid());
+        } else {
+            AppLog.d(TAG, "HUD surface cleared for camera " + cameraId);
+        }
+    }
+
 
     /**
      * 清除录制Surface
@@ -821,6 +842,7 @@ public class SingleCamera {
                 + " reconnecting=" + isReconnecting
                 + " outputs[main-preview=" + surfaceState(previewSurface)
                 + " mirror=" + surfaceState(mainFloatingSurface)
+                + " hud=" + surfaceState(hudSurface)
                 + " record=" + surfaceState(recordSurface)
                 + " jpeg=" + (jpegReader != null) + "]"
                 + " fps=" + String.format(java.util.Locale.US, "%.1f", currentFps)
@@ -844,6 +866,9 @@ public class SingleCamera {
         }
         if (target == mainFloatingSurface) {
             return "mirror";
+        }
+        if (target == hudSurface) {
+            return "hud";
         }
         if (target == recordSurface) {
             return "record";
@@ -904,8 +929,8 @@ public class SingleCamera {
      * 那些状态标志卡住的情形，拿卡住的标志当前提就等于不救。</p>
      */
     public boolean wantsFrames() {
-        return previewSurface != null || mainFloatingSurface != null || recordSurface != null
-                || sinkWanted();
+        return previewSurface != null || mainFloatingSurface != null || hudSurface != null
+                || recordSurface != null || sinkWanted();
     }
 
     /** 不显示的出帧口要不要挂：有人等拍照，或者录像在等环视出画面（主界面不在前台、预览摘了时靠它）。 */
@@ -996,7 +1021,7 @@ public class SingleCamera {
             return;
         }
         boolean want = sinkWanted() && previewSurface == null
-                && mainFloatingSurface == null && recordSurface == null;
+                && mainFloatingSurface == null && hudSurface == null && recordSurface == null;
         if (want != frameSinkInSession) {
             requestSessionRebuild(want ? "needs-frames" : "frames-done", 0);
         }
@@ -1557,6 +1582,9 @@ public class SingleCamera {
                     surface = mainFloatingSurface;
                 }
             }
+            if (surface == null && hudSurface != null && hudSurface.isValid()) {
+                surface = hudSurface;
+            }
             
             // 有人等拍照、而这一路没有任何显示或录像输出（主界面在后台）：挂上不显示的出帧口
             boolean nothingElse = (surface == null || !surface.isValid())
@@ -1614,6 +1642,9 @@ public class SingleCamera {
                     if (mainFloatingSurfaceTexture != null) {
                         mainFloatingSurfaceTexture.setDefaultBufferSize(getPreviewBufferSize().getWidth(), getPreviewBufferSize().getHeight());
                     }
+                    if (hudSurfaceTexture != null) {
+                        hudSurfaceTexture.setDefaultBufferSize(getPreviewBufferSize().getWidth(), getPreviewBufferSize().getHeight());
+                    }
                 }
 
                 if (surface != null && surface.isValid()) {
@@ -1635,6 +1666,13 @@ public class SingleCamera {
                         surfaces.add(mainFloatingSurface);
                         previewRequestBuilder.addTarget(mainFloatingSurface);
                         AppLog.d(TAG, "Added main floating surface to SHARED preview stream");
+                    }
+
+                    if (hudSurface != null && hudSurface.isValid() && hudSurface != surface) {
+                        previewSharedConfig.addSurface(hudSurface);
+                        surfaces.add(hudSurface);
+                        previewRequestBuilder.addTarget(hudSurface);
+                        AppLog.d(TAG, "Added HUD surface to SHARED preview stream");
                     }
 
 
@@ -1784,11 +1822,22 @@ public class SingleCamera {
                         // 录制中：丢弃可选 Surface 后重试
                         boolean droppedOptionalSurface = false;
                         if (mainFloatingSurface != null) {
+                            // 连 SurfaceTexture 一起清：窗口那边靠「槽位上还是不是我的 texture」判断画面丢没丢，
+                            // 只清 Surface 的话它看不出来，之后每次打灯都是黑的
                             mainFloatingSurface = null;
+                            mainFloatingSurfaceTexture = null;
                             droppedOptionalSurface = true;
                             AppLog.w(TAG, "Retrying without main floating surface...");
                             com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId
                                     + " 录像中会话配置失败：丢掉后视镜输出重试");
+                        }
+                        if (hudSurface != null) {
+                            hudSurface = null;
+                            hudSurfaceTexture = null;
+                            droppedOptionalSurface = true;
+                            AppLog.w(TAG, "Retrying without HUD surface...");
+                            com.kooo.evcam.blackbox.BlackBox.noteImportant("相机 " + cameraId
+                                    + " 录像中会话配置失败：丢掉 HUD 输出重试");
                         }
                         if (!droppedOptionalSurface) {
                             AppLog.w(TAG, "Retrying without recording surface...");
@@ -1857,8 +1906,15 @@ public class SingleCamera {
                 boolean cleared = false;
                 if (mainFloatingSurface != null) {
                     mainFloatingSurface = null;
+                    mainFloatingSurfaceTexture = null;
                     cleared = true;
                     AppLog.w(TAG, "Camera " + cameraId + " cleared abandoned mainFloatingSurface and retrying");
+                }
+                if (hudSurface != null) {
+                    hudSurface = null;
+                    hudSurfaceTexture = null;
+                    cleared = true;
+                    AppLog.w(TAG, "Camera " + cameraId + " cleared abandoned hudSurface and retrying");
                 }
                 if (!cleared && recordSurface != null) {
                     recordSurface = null;
@@ -2676,6 +2732,8 @@ public class SingleCamera {
             recordSurface = null;
             mainFloatingSurface = null;
             mainFloatingSurfaceTexture = null;
+            hudSurface = null;
+            hudSurfaceTexture = null;
 
             // 这一轮的相机线程也摘下来：之后来自它的回调就是过时的（见 isStale）
             thread = backgroundThread;

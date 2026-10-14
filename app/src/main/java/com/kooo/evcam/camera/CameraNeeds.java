@@ -45,7 +45,9 @@ public final class CameraNeeds {
          */
         PHOTO,
         /** 打转向灯弹出的侧视窗，只在弹着的时候登记。 */
-        SIDE_POPUP
+        SIDE_POPUP,
+        /** 打转向灯投到 HUD 上的侧视画面（相机的 HUD 槽位），和主屏弹窗各登记各的。 */
+        SIDE_HUD
     }
 
     private static final CameraNeeds CURRENT = new CameraNeeds();

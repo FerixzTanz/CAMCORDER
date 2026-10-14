@@ -71,6 +71,8 @@ public class SideViewPopupService extends Service {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private AppConfig appConfig;
     private SideViewPopupView popup;
+    /** 投到 HUD 的那一路：设置选了 HUD 或「两边」才有；和主屏弹窗各管各的相机槽位。 */
+    private SideViewHudOutput hud;
     private SingleCamera boundCamera;
     /** 交给相机的是哪一个 SurfaceTexture：放手时确认槽位还是自己的。 */
     private SurfaceTexture boundTexture;
@@ -149,6 +151,9 @@ public class SideViewPopupService extends Service {
             if (svc.popup != null) {
                 svc.popup.applyConfig();
             }
+            if (svc.hud != null) {
+                svc.hud.applyConfig();
+            }
             svc.evaluate();
         }
     }
@@ -218,6 +223,7 @@ public class SideViewPopupService extends Service {
         Telemetry.get().release(TELEMETRY_USER);
         lastReady = false;
         detachPopup();
+        dropHud();
         AppLog.i(TAG, "侧视弹窗：停止听转向灯");
     }
 
@@ -228,21 +234,32 @@ public class SideViewPopupService extends Service {
         }
         Readings r = Telemetry.get().readings();
         VehicleState s = Telemetry.get().latest();
-        SideViewDecision.Input in = new SideViewDecision.Input();
-        in.turnSignal = s.turnSignal;
-        in.hazard = s.hazard;
-        in.gear = r.text(Signal.GEAR);
-        in.stock360Shown = r.bool(Signal.STOCK_360);
-        in.stockPopupShown = r.bool(Signal.STOCK_POPUP);
-        in.parkAssistOn = r.bool(Signal.PARK_ASSIST);
-        in.speedKmh = s.speedKmh;
-        in.minSpeedKmh = appConfig.getSidePopupMinSpeed();
-        in.showing = popup != null && popup.isShowing() ? popup.lane() : SideViewDecision.NONE;
+        int output = appConfig.getSideOutput();
+        if (output == AppConfig.SIDE_OUTPUT_SCREEN) {
+            dropHud();
+        }
+        boolean hudOn = output != AppConfig.SIDE_OUTPUT_SCREEN && !ScreenState.dark() && hudOutput().available();
+        if (hudOn) {
+            // HUD 不看车速门槛：低速也出，只有主屏弹窗才等车速
+            SideViewDecision.Input hudIn = inputFrom(r, s, 0, hud.showingLane());
+            hud.followIndicator(r.code(Signal.INDICATOR_DISPLAY));
+            hudOn = hud.update(SideViewDecision.decide(hudIn), SideViewDecision.factoryViewActive(hudIn),
+                    appConfig.isSidePopupInstant() && SideViewDecision.shouldStayReady(hudIn),
+                    appConfig.getSidePopupCloseDelayMs());
+        } else if (hud != null) {
+            // 出不来（熄屏、找不到屏、开窗刚失败）：窗口收掉，对象留着 —— 开窗失败后的间隔记在它身上
+            hud.detach();
+        }
+        // 只选了 HUD、而 HUD 此刻出不来（找不到屏、开窗失败）：主屏弹窗顶上
+        boolean screenOn = output != AppConfig.SIDE_OUTPUT_HUD || !hudOn;
+
+        SideViewDecision.Input in = inputFrom(r, s, appConfig.getSidePopupMinSpeed(),
+                popup != null && popup.isShowing() ? popup.lane() : SideViewDecision.NONE);
         if (popup != null) {
             popup.setIndicatorLit(SideViewDecision.indicatorLit(r.code(Signal.INDICATOR_DISPLAY), popup.lane()));
         }
 
-        boolean blocked = ScreenState.dark() || RearViewMirrorService.isRunning();
+        boolean blocked = ScreenState.dark() || RearViewMirrorService.isRunning() || !screenOn;
         int want = blocked ? SideViewDecision.NONE : SideViewDecision.decide(in);
         lastReady = !blocked && appConfig.isSidePopupInstant() && SideViewDecision.shouldStayReady(in);
 
@@ -260,7 +277,7 @@ public class SideViewPopupService extends Service {
             boolean factory = SideViewDecision.factoryViewActive(in);
             int delayMs = appConfig.getSidePopupCloseDelayMs();
             if (factory || blocked || delayMs <= 0) {
-                AppLog.i(TAG, "侧视收起：" + (factory ? "原厂画面在" : blocked ? "超级后视镜开着或熄屏" : "转向灯灭"));
+                AppLog.i(TAG, "侧视收起：" + (factory ? "原厂画面在" : blocked ? "超级后视镜开着、熄屏或只投 HUD" : "转向灯灭"));
                 closeNow();
             } else if (!closePending) {
                 closePending = true;
@@ -278,6 +295,34 @@ public class SideViewPopupService extends Service {
             }
         } else if (popup != null && popup.isAttached() && !closePending) {
             armReadyExpiry(blocked ? 0 : READY_GRACE_MS);
+        }
+    }
+
+    private SideViewDecision.Input inputFrom(Readings r, VehicleState s, int minSpeedKmh, int showing) {
+        SideViewDecision.Input in = new SideViewDecision.Input();
+        in.turnSignal = s.turnSignal;
+        in.hazard = s.hazard;
+        in.gear = r.text(Signal.GEAR);
+        in.stock360Shown = r.bool(Signal.STOCK_360);
+        in.stockPopupShown = r.bool(Signal.STOCK_POPUP);
+        in.parkAssistOn = r.bool(Signal.PARK_ASSIST);
+        in.speedKmh = s.speedKmh;
+        in.minSpeedKmh = minSpeedKmh;
+        in.showing = showing;
+        return in;
+    }
+
+    private SideViewHudOutput hudOutput() {
+        if (hud == null) {
+            hud = new SideViewHudOutput(this, appConfig);
+        }
+        return hud;
+    }
+
+    private void dropHud() {
+        if (hud != null) {
+            hud.detach();
+            hud = null;
         }
     }
 

@@ -435,6 +435,7 @@ public class CameraForegroundService extends Service {
         // 超级后视镜也算（审查 2026-10-08）：保活关着时，停录或侧视放开后服务一停，正开着的后视镜就黑了
         com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
         return needs.isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_POPUP)
+                || needs.isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.SIDE_HUD)
                 || needs.isHeld(com.kooo.evcam.camera.CameraNeeds.Holder.MIRROR);
     }
 

@@ -9,6 +9,19 @@ commit message, not here.
 
 ## [Unreleased]
 
+### New and improved
+
+- **Side view on the HUD.** *Show side view on* (Settings → Super mirror → Turn-signal side view)
+  chooses the screen (as before), the HUD, or both. The picture appears on the HUD at any speed; only
+  the screen pop-up waits for *Show from speed*. *HUD picture* sets its size, position and opacity,
+  and the picture, aim and stay-open settings are shared with the screen pop-up. The HUD is the extra
+  1440×480 screen; if it isn't found, or its window can't open, the screen pop-up is used instead.
+- **Mirror like the door mirror.** The HUD picture is flipped left-to-right by default, so a car
+  coming up from behind enters from the outside edge as it does in the door mirror. The screen
+  pop-up stays as the camera sees it. Each has its own switch under its picture settings.
+- **Diagnostics list the HUD:** which screen was picked and how, where the side view is set to show,
+  the HUD window's last state, and each screen's flags.
+
 ### Fixed
 
 - **Send to phone no longer shows an address the phone can't open when the head unit isn't on a
