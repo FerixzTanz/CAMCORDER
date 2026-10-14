@@ -36,8 +36,8 @@ public class SideViewHudPanel extends SideViewPopupView {
 
     private static final String TAG = "SideViewHud";
 
-    /** 最近一次的情况，诊断报告里读。 */
-    private static volatile String lastState = "还没用过";
+    /** 最近一次的情况，诊断报告里读。状态记号，不是给人读的句子（同 CameraNeeds.describe）。 */
+    private static volatile String lastState = "never";
 
     private final Display display;
     private Presentation presentation;
@@ -131,11 +131,11 @@ public class SideViewHudPanel extends SideViewPopupView {
             applyWindowAlpha();
             p.show();
             attached = true;
-            lastState = (show ? "显示中" : "备着") + "，屏 " + display.getDisplayId() + "（" + display.getName() + "）";
+            lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")";
             BlackBox.note("HUD 侧视窗挂上：" + lastState);
         } catch (Throwable t) {
             AppLog.e(TAG, "HUD 窗口添加失败", t);
-            lastState = "失败：" + t.getClass().getSimpleName() + ": " + t.getMessage();
+            lastState = "failed: " + t.getClass().getSimpleName() + ": " + t.getMessage();
             BlackBox.note("HUD 侧视窗添加失败：" + lastState);
             releasePresentation();
         }
@@ -155,7 +155,7 @@ public class SideViewHudPanel extends SideViewPopupView {
     @Override
     public void detach() {
         if (presentation != null) {
-            lastState = "已收起";
+            lastState = "dismissed";
         }
         releasePresentation();
     }
