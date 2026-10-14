@@ -138,6 +138,7 @@ public class AppConfig {
     private static final String KEY_HUD_SIDE_VERTICAL = "hud_side_vertical";  // 上下位置，0 顶 100 底
     private static final String KEY_HUD_SIDE_OPACITY = "hud_side_opacity";  // 不透明度
     private static final String KEY_HUD_SIDE_CONTRAST = "hud_side_contrast";  // 对比度，100 原样，见 HudPictureTone
+    private static final String KEY_HUD_SIDE_FADE = "hud_side_fade";  // 边缘渐隐，占短边的百分比，0 是硬边，见 HudEdgeFade
     // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。默认都不翻（HUD 翻过一版，用户 2026-10-14：看着糊涂）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
@@ -154,6 +155,9 @@ public class AppConfig {
     public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
     public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
     public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 150;
+    public static final int HUD_SIDE_MIN_FADE_PERCENT = 0;
+    public static final int HUD_SIDE_MAX_FADE_PERCENT = 40;
+    public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 15;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -1820,6 +1824,17 @@ public class AppConfig {
     public void setHudSideContrastPercent(int percent) {
         prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST,
                 Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
+    }
+
+    /** HUD 上画面四边渐隐到黑的宽度，占短边的百分比，0..40；0 是原来的硬边。 */
+    public int getHudSideFadePercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_FADE, HUD_SIDE_DEFAULT_FADE_PERCENT);
+        return Math.max(HUD_SIDE_MIN_FADE_PERCENT, Math.min(HUD_SIDE_MAX_FADE_PERCENT, v));
+    }
+
+    public void setHudSideFadePercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_FADE,
+                Math.max(HUD_SIDE_MIN_FADE_PERCENT, Math.min(HUD_SIDE_MAX_FADE_PERCENT, percent))).apply();
     }
 
     public boolean isLicensePlateEnabled() {

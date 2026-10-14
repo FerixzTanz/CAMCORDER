@@ -321,7 +321,7 @@
     <string name="set_side_output_hud">HUD</string>
     <string name="set_side_output_both">Screen and HUD</string>
     <string name="set_sub_hud_title">HUD picture</string>
-    <string name="set_sub_hud_summary">Size, position, opacity and contrast on the HUD</string>
+    <string name="set_sub_hud_summary">Size, position, opacity, contrast and edge fade on the HUD</string>
     <string name="set_hud_side_size_title">HUD picture height (% of HUD height)</string>
     <string name="set_hud_side_size_summary">The width follows from the shape below</string>
     <string name="set_hud_side_shape_title">HUD picture shape (width ÷ height, %)</string>
@@ -334,6 +334,8 @@
     <string name="set_hud_side_opacity_summary">Lower is fainter. Black does not light up on a HUD anyway</string>
     <string name="set_hud_side_contrast_title">HUD picture contrast (%)</string>
     <string name="set_hud_side_contrast_summary">Higher makes the dark parts darker, so the picture does not wash out on the HUD. 100 is the camera\'s own picture</string>
+    <string name="set_hud_side_fade_title">HUD picture edge fade (%)</string>
+    <string name="set_hud_side_fade_summary">How far the edges fade to black, as a share of the shorter side. 0 is a hard edge. Black does not light up on a HUD, so the fade blends into the road</string>
     <string name="msg_floating_reset">Floating button reset</string>
     <string name="msg_adjust_opened">Image adjustment window opened. Go back to the main screen to see the effect.</string>
     <string name="msg_adjust_reset">Image settings reset to defaults</string>

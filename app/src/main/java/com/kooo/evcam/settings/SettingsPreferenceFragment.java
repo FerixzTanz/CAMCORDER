@@ -827,6 +827,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                     appConfig.setHudSideContrastPercent(value);
                     com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
                 });
+        bindSlider("pref_hud_side_fade", AppConfig.HUD_SIDE_MIN_FADE_PERCENT,
+                AppConfig.HUD_SIDE_MAX_FADE_PERCENT, appConfig.getHudSideFadePercent(), "%", value -> {
+                    appConfig.setHudSideFadePercent(value);
+                    com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+                });
     }
 
     /** 侧视画面出在哪：主屏、HUD、两边都出。存下去的是 {@link AppConfig#getSideOutput} 那三个数。 */

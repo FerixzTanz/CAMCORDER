@@ -28,7 +28,7 @@ import java.util.List;
  * <p>画面、盖板、转向箭头都是 {@link SideViewPopupView} 那一套，这里只换窗口：
  * 在 HUD 那块屏上开一个透明的 {@link Presentation}（不要悬浮窗权限，但那块屏得是公开的「可投影」屏，诊断报告里 flags 带 0x8），
  * 画面按 {@link HudPanelPlacement} 放在里面。HUD 是投影，黑色就是不亮，所以黑底、盖板在 HUD 上都是「什么也没有」。
- * 画面本身过一条对比度曲线（{@link HudPictureTone}，设置里调），不画浅色外框：投影上中灰一片发白。</p>
+ * 画面本身过一条对比度曲线（{@link HudPictureTone}，设置里调），四边渐隐到黑（{@link HudEdgeFade}，设置里调），不画浅色外框：投影上中灰一片发白。</p>
  *
  * <p>备着（透明、相机照推）和显示的区别和主屏弹窗一样：备着时窗口 alpha 0，不用 INVISIBLE，
  * 理由见 {@link SideViewPopupView} 的类说明。</p>
@@ -70,6 +70,11 @@ public class SideViewHudPanel extends SideViewPopupView {
     @Override
     protected Paint pictureTone() {
         return tonePaint;
+    }
+
+    @Override
+    protected int edgeFadePercent() {
+        return appConfig.getHudSideFadePercent();
     }
 
     @Override

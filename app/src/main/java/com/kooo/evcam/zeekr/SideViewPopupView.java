@@ -2,11 +2,15 @@ package com.kooo.evcam.zeekr;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.os.Build;
 import android.util.Size;
 import android.view.Gravity;
@@ -73,6 +77,8 @@ public class SideViewPopupView extends ViewGroup {
     private final RectF frameRect = new RectF();
     private final float cornerRadius;
     private final Paint coverTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final PorterDuffXfermode DST_OUT = new PorterDuffXfermode(PorterDuff.Mode.DST_OUT);
+    private final Paint fadePaint = new Paint();
     /** 新窗口还一帧都没有：先黑着，等服务按帧来的时间改。 */
     private int cover = COVER_BLACK;
     /**
@@ -373,10 +379,13 @@ public class SideViewPopupView extends ViewGroup {
         aspect = (float) width / height;
         int save = canvas.save();
         Paint tone = pictureTone();
-        if (tone != null) {
-            // 画面过一层颜色矩阵（HUD 上压暗中灰，见 HudPictureTone）；盖板、边框、箭头在层外，不受它影响
+        float fade = HudEdgeFade.widthPx(edgeFadePercent(), width, height);
+        if (tone != null || fade > 0f) {
+            // 画面过一层颜色矩阵（HUD 上压暗中灰，见 HudPictureTone）、四边渐隐（见 HudEdgeFade）；
+            // 盖板、边框、箭头在层外，不受它们影响
             canvas.saveLayer(0f, 0f, width, height, tone);
         }
+        int inner = canvas.save();
         if (LaneCycle.isMirrored(lane) != mirrored) {
             // 像门镜那样翻；盖板、箭头在镜像之外画
             canvas.scale(-1f, 1f, width / 2f, height / 2f);
@@ -403,6 +412,10 @@ public class SideViewPopupView extends ViewGroup {
             canvas.clipRect(destRect);
             canvas.concat(drawMatrix);
             drawChild(canvas, textureView, getDrawingTime());
+        }
+        canvas.restoreToCount(inner);
+        if (fade > 0f) {
+            drawEdgeFade(canvas, width, height, fade);
         }
         canvas.restoreToCount(save);
         drawCover(canvas, width, height);
@@ -483,6 +496,26 @@ public class SideViewPopupView extends ViewGroup {
         canvas.drawRoundRect(frameRect, cornerRadius - inset, cornerRadius - inset, framePaint);
     }
 
+    /**
+     * 四条渐变带，用 DST_OUT 把画面从边上往里擦成透明：擦的量在最外沿是 100%，到带的内沿是 0。
+     * 角上两条带叠在一起，擦得更多，四个角自然圆下去。必须在图层里、矩阵复位之后画。
+     */
+    private void drawEdgeFade(Canvas canvas, int width, int height, float fade) {
+        final int opaque = 0xFF000000;
+        final int clear = 0x00000000;
+        fadePaint.setXfermode(DST_OUT);
+        fadePaint.setShader(new LinearGradient(0f, 0f, fade, 0f, opaque, clear, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, 0f, fade, height, fadePaint);
+        fadePaint.setShader(new LinearGradient(width, 0f, width - fade, 0f, opaque, clear, Shader.TileMode.CLAMP));
+        canvas.drawRect(width - fade, 0f, width, height, fadePaint);
+        fadePaint.setShader(new LinearGradient(0f, 0f, 0f, fade, opaque, clear, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, 0f, width, fade, fadePaint);
+        fadePaint.setShader(new LinearGradient(0f, height, 0f, height - fade, opaque, clear, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, height - fade, width, height, fadePaint);
+        fadePaint.setShader(null);
+        fadePaint.setXfermode(null);
+    }
+
     private void drawTextureOnce(Canvas canvas) {
         drawChild(canvas, textureView, getDrawingTime());
     }
@@ -493,6 +526,11 @@ public class SideViewPopupView extends ViewGroup {
      */
     protected Paint pictureTone() {
         return null;
+    }
+
+    /** 四边渐隐的宽度，占短边的百分比；0 是硬边。主屏不渐隐；HUD 那一块按设置给。 */
+    protected int edgeFadePercent() {
+        return 0;
     }
 
     /**

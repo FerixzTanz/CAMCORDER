@@ -340,7 +340,7 @@
     <string name="set_side_output_hud">HUD</string>
     <string name="set_side_output_both">主屏和 HUD</string>
     <string name="set_sub_hud_title">HUD 画面</string>
-    <string name="set_sub_hud_summary">HUD 上画面的大小、位置、不透明度和对比度</string>
+    <string name="set_sub_hud_summary">HUD 上画面的大小、位置、不透明度、对比度和边缘渐隐</string>
     <string name="set_hud_side_size_title">HUD 画面高度（占 HUD 高度 %）</string>
     <string name="set_hud_side_size_summary">宽度由下面的形状决定</string>
     <string name="set_hud_side_shape_title">HUD 画面形状（宽 ÷ 高，%）</string>
@@ -353,6 +353,8 @@
     <string name="set_hud_side_opacity_summary">越低越淡。HUD 上黑色本来就不亮</string>
     <string name="set_hud_side_contrast_title">HUD 画面对比度（%）</string>
     <string name="set_hud_side_contrast_summary">调高后暗部更暗，画面在 HUD 上不发白。100 为摄像头原画面。</string>
+    <string name="set_hud_side_fade_title">HUD 画面边缘渐隐（%）</string>
+    <string name="set_hud_side_fade_summary">画面四边渐隐到黑的宽度，占短边的百分比。0 为硬边。HUD 上黑色不亮，渐隐处与路面融为一体。</string>
     <string name="msg_floating_reset">悬浮按钮已重置</string>
     <string name="msg_adjust_opened">已打开画面调节窗口，返回主界面查看效果</string>
     <string name="msg_adjust_reset">画面参数已恢复默认</string>
