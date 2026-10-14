@@ -321,7 +321,7 @@
     <string name="set_side_output_hud">HUD</string>
     <string name="set_side_output_both">Screen and HUD</string>
     <string name="set_sub_hud_title">HUD picture</string>
-    <string name="set_sub_hud_summary">Size, position, opacity, contrast and edge fade on the HUD</string>
+    <string name="set_sub_hud_summary">Size, position, opacity, night brightness, contrast and edge fade on the HUD</string>
     <string name="set_hud_side_size_title">HUD picture height (% of HUD height)</string>
     <string name="set_hud_side_size_summary">The width follows from the shape below</string>
     <string name="set_hud_side_shape_title">HUD picture shape (width ÷ height, %)</string>

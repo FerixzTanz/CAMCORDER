@@ -321,7 +321,7 @@
     <string name="set_side_output_hud">HUD</string>
     <string name="set_side_output_both">Skrin dan HUD</string>
     <string name="set_sub_hud_title">Gambar HUD</string>
-    <string name="set_sub_hud_summary">Saiz, kedudukan, kelegapan, kontras dan pudar tepi pada HUD</string>
+    <string name="set_sub_hud_summary">Saiz, kedudukan, kelegapan, kecerahan malam, kontras dan pudar tepi pada HUD</string>
     <string name="set_hud_side_size_title">Ketinggian gambar HUD (% daripada tinggi HUD)</string>
     <string name="set_hud_side_size_summary">Lebar mengikut bentuk di bawah</string>
     <string name="set_hud_side_shape_title">Bentuk gambar HUD (lebar ÷ tinggi, %)</string>
