@@ -797,10 +797,6 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setHudSideMirrored(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
         });
-        bindSwitch("pref_hud_side_overlay", appConfig.isHudSideOverlay(), value -> {
-            appConfig.setHudSideOverlay(value);
-            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
-        });
         bindSlider("pref_hud_side_size", AppConfig.HUD_SIDE_MIN_SIZE_PERCENT,
                 AppConfig.HUD_SIDE_MAX_SIZE_PERCENT, appConfig.getHudSideSizePercent(), "%", value -> {
                     appConfig.setHudSideSizePercent(value);

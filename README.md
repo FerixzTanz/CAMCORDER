@@ -5,6 +5,9 @@ App Lab app.
 
 [中文说明](README.zh-CN.md) · [Changelog](CHANGELOG.md) · [Credits](NOTICE.md) · [Platform notes](docs/zeekr-platform-notes.md)
 
+**2.13.0 is the final release.** The app does everything its author set out to do. Bug reports are
+welcome, but no further features are planned.
+
 > [!IMPORTANT]
 > - CAMCORDER is a personal hobby project by a car owner, **not a professional developer**. My
 >   changes were vibe coded with an AI assistant, checked by eye and tested only in my own car.
@@ -44,8 +47,8 @@ screen and the HUD.
 - **HUD output**: show the side view on the screen, the HUD (found as the extra 1440×480 display),
   or both. It appears at any speed and is mirrored like a door mirror by default. Under **HUD
   picture**: size, position, opacity, contrast, edge fade, and dimming at night from the car's
-  day/night signal. If the HUD isn't found, the screen pop-up is used instead. An experimental
-  switch tries a higher window layer so the picture sits above the car's own HUD information.
+  day/night signal. If the HUD isn't found, the screen pop-up is used instead. The car's own HUD
+  graphics always draw above the picture; that layer is not reachable from an app.
 - Switch it off in **Settings → Super mirror → Turn-signal side view**. It relies on vehicle
   signals that dts88 found on one car, so it may behave differently on yours.
 

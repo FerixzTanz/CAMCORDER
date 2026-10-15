@@ -1,6 +1,6 @@
 # Owner's settings — the app's defaults
 
-Taken from the diagnostics export `zeekr_diagnostics_20261015_131145` (app 2.12.2, 7X), section
+Taken from the diagnostics export `zeekr_diagnostics_20261015_191746` (app 2.12.7, 7X; first taken from the 13:11 export of 2.12.2), section
 "全部设置的原始值（app_config）". **From the first release after 2026-10-15, these are the defaults** in
 `AppConfig` — a fresh install, or a setting never touched, comes up like the owner's car.
 A setting that was already saved on a car keeps its saved value; only the defaults moved.
@@ -23,9 +23,9 @@ read the `app_config` block, update the table below and the matching defaults in
 | Mirror the screen pop-up (`side_popup_mirror`) | on | off |
 | HUD picture size / shape (`hud_side_size`, `_shape`) | 49 % / 194 | 74 % / 100 |
 | HUD picture distance from the edge / vertical (`hud_side_left`, `_vertical`) | 11 / 21 | 6 / 50 |
-| HUD picture opacity / night brightness (`hud_side_opacity`, `_night`) | 100 / 60 | 100 / 60 (same) |
+| HUD picture opacity / night brightness (`hud_side_opacity`, `_night`) | 100 / 100 | 100 / 60 |
 | HUD picture contrast (`hud_side_contrast`) | 220 | 150 |
-| HUD picture contrast at night (`hud_side_contrast_night`, 2.12.6) | 120 | new |
+| HUD picture contrast at night (`hud_side_contrast_night`, 2.12.6) | 100 | 120 |
 | HUD picture edge fade (`hud_side_fade`) | 6 | 15 |
 | Mirror the HUD picture (`hud_side_mirror`) | on | off |
 

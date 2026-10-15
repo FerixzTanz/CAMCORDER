@@ -143,7 +143,6 @@ public class AppConfig {
     // 左右翻转，像门上的后视镜：后面来的车从画面外侧进来。默认都不翻（HUD 翻过一版，用户 2026-10-14：看着糊涂）
     private static final String KEY_SIDE_POPUP_MIRROR = "side_popup_mirror";
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
-    private static final String KEY_HUD_SIDE_OVERLAY = "hud_side_overlay";  // HUD 窗口用悬浮窗层级，盖在原厂 HUD 画面上
     public static final int HUD_SIDE_MIN_SIZE_PERCENT = 30;
     public static final int HUD_SIDE_MAX_SIZE_PERCENT = 100;
     public static final int HUD_SIDE_DEFAULT_SIZE_PERCENT = 49;
@@ -157,12 +156,12 @@ public class AppConfig {
     public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
     public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
     public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 220;
-    /** 夜间对比度：夜里摄像头画面本来就暗，220 会把整张压成黑（2026-10-15 夜间实车照片），默认接近原画面。 */
-    public static final int HUD_SIDE_DEFAULT_CONTRAST_NIGHT_PERCENT = 120;
+    /** 夜间对比度：夜里摄像头画面本来就暗，220 会把整张压成黑（2026-10-15 夜间实车照片），默认原画面（项目拥有者的设置）。 */
+    public static final int HUD_SIDE_DEFAULT_CONTRAST_NIGHT_PERCENT = 100;
     private static final String KEY_HUD_SIDE_CONTRAST_NIGHT = "hud_side_contrast_night";
     public static final int HUD_SIDE_MIN_NIGHT_PERCENT = 20;
     public static final int HUD_SIDE_MAX_NIGHT_PERCENT = 100;
-    public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 60;
+    public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 100;
     public static final int HUD_SIDE_MIN_FADE_PERCENT = 0;
     public static final int HUD_SIDE_MAX_FADE_PERCENT = 40;
     public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 6;
@@ -1816,21 +1815,6 @@ public class AppConfig {
         prefs.edit().putBoolean(KEY_HUD_SIDE_MIRROR, on).apply();
     }
 
-    /**
-     * HUD 窗口要不要用悬浮窗层级（TYPE_APPLICATION_OVERLAY）。
-     *
-     * <p>默认的 Presentation 是普通应用窗口，原厂 HUD 的导航、车道图标画在它上面（2026-10-15 实车照片）。
-     * 悬浮窗层级在所有应用窗口之上，有机会盖过去；那块屏不收这种窗口时 show() 会抛，
-     * 服务照旧退回主屏弹窗。默认关：试验项，拨开试，不行就拨回来。</p>
-     */
-    public boolean isHudSideOverlay() {
-        return prefs.getBoolean(KEY_HUD_SIDE_OVERLAY, false);
-    }
-
-    public void setHudSideOverlay(boolean on) {
-        prefs.edit().putBoolean(KEY_HUD_SIDE_OVERLAY, on).apply();
-    }
-
     /** HUD 上画面的不透明度，20..100。 */
     public int getHudSideOpacityPercent() {
         int v = prefs.getInt(KEY_HUD_SIDE_OPACITY, HUD_SIDE_DEFAULT_OPACITY_PERCENT);
@@ -1853,7 +1837,7 @@ public class AppConfig {
                 Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
     }
 
-    /** HUD 上画面夜间的对比度，100..300；车辆处于夜间模式时代替上面那个。默认 120。 */
+    /** HUD 上画面夜间的对比度，100..300；车辆处于夜间模式时代替上面那个。默认 100。 */
     public int getHudSideContrastNightPercent() {
         int v = prefs.getInt(KEY_HUD_SIDE_CONTRAST_NIGHT, HUD_SIDE_DEFAULT_CONTRAST_NIGHT_PERCENT);
         return Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, v));

@@ -7,6 +7,34 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.13.0] - 2026-10-15
+
+Final release. The app does everything its author set out to do; bug reports are welcome, but no
+further features are planned.
+
+### Changed
+
+- **Defaults follow the owner's settings again** (see `docs/owner-config.md`): *HUD picture
+  brightness at night* is now 100 (no dimming) and *HUD picture contrast at night* is 100 (the
+  camera's own picture). Everything else was already the default. Settings already saved on a car
+  keep their value.
+- The *About* page describes what the app does today and says this is the final release.
+
+### Removed
+
+- **The experimental HUD overlay switch.** Tested on the car on 2026-10-15: the head unit accepted
+  the overlay window, but the car's own HUD graphics are drawn at a layer no sideloaded app can
+  reach, so the navigation card still covered the picture. The switch did nothing useful and is
+  gone; the HUD window is created the way it was before 2.12.4. If you had it on, nothing changes.
+
+### Investigated, not possible
+
+- **The mirror's blind-spot light.** Two full signal scans (11 and 15 October) with every vehicle
+  function registered: the blind-spot IDs the head unit exposes answer "not available", and no
+  other signal changes when the mirror light comes on. The light is driven outside the head unit,
+  so the app cannot react to it. The *Record all vehicle signals* developer option stays for anyone
+  who wants to look further.
+
 ## [2.12.7] - 2026-10-15
 
 ### Fixed

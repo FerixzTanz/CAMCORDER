@@ -296,8 +296,6 @@
     <string name="set_side_popup_mirror_summary">A car coming up from behind enters from the outside edge, the same way as in the door mirror. Off shows the picture as the camera sees it</string>
     <string name="set_hud_side_mirror_title">Mirror the HUD picture like the door mirror</string>
     <string name="set_hud_side_mirror_summary">When on, a car coming up from behind enters from the outside edge, as in the door mirror. Off by default</string>
-    <string name="set_hud_side_overlay_title">HUD picture above the car\'s HUD information (experimental)</string>
-    <string name="set_hud_side_overlay_summary">When on, the picture uses a higher window layer and may cover the navigation and lane icons. If the head unit refuses it, the screen pop-up is used instead. Turn it off if it does not help. Off by default</string>
     <string name="set_side_popup_straighten_title">Straighten picture</string>
     <string name="set_side_popup_straighten_summary">Corrects the fisheye curve before showing it; the three settings below set how wide it looks and where it points. Only changes the pop-up; recordings are not affected</string>
     <string name="set_side_popup_fov_title">View width (°)</string>
@@ -337,7 +335,7 @@
     <string name="set_hud_side_contrast_title">HUD picture contrast (%)</string>
     <string name="set_hud_side_contrast_summary">Higher makes the dark parts darker, so the picture does not wash out on the HUD. 100 is the camera\'s own picture. Used by day</string>
     <string name="set_hud_side_contrast_night_title">HUD picture contrast at night (%)</string>
-    <string name="set_hud_side_contrast_night_summary">Replaces the contrast above while the car is in night mode. The night picture is already dark, so a high value turns it black. Default 120</string>
+    <string name="set_hud_side_contrast_night_summary">Replaces the contrast above while the car is in night mode. The night picture is already dark, so a high value turns it black. Default 100</string>
     <string name="set_hud_side_fade_title">HUD picture edge fade (%)</string>
     <string name="set_hud_side_fade_summary">How far the edges fade to black, as a share of the shorter side. 0 is a hard edge. Black does not light up on a HUD, so the fade blends into the road</string>
     <string name="set_hud_side_night_title">HUD picture brightness at night (%)</string>

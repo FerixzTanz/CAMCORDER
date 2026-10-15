@@ -5,11 +5,9 @@ import android.content.Context;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -48,12 +46,6 @@ public class SideViewHudPanel extends SideViewPopupView {
     private final Display display;
     private Presentation presentation;
     private FrameLayout root;
-    /** 悬浮窗层级那条路：窗口上下文的 WindowManager 和挂上去的根布局（{@link #presentation} 为 null 时用）。 */
-    private WindowManager overlayWm;
-    private OverlayRoot overlayRoot;
-    private WindowManager.LayoutParams overlayParams;
-    /** 挂窗口时设置里的层级值：设置拨了就得重建，窗口类型加上去之后改不了。 */
-    private boolean overlayUsed;
     private FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(1, 1);
     /** 画面过的颜色矩阵；对比度 100 时 null（原样）。 */
     private Paint tonePaint;
@@ -154,25 +146,13 @@ public class SideViewHudPanel extends SideViewPopupView {
 
     @Override
     public boolean isAttached() {
-        if (!attached) {
-            return false;
-        }
-        if (presentation != null) {
-            return presentation.isShowing();
-        }
-        // 悬浮窗那条路：系统把窗口收掉（屏没了）时根布局会被 detach，它自己记下来
-        return overlayRoot != null && !overlayRoot.goneBySystem;
+        return attached && presentation != null && presentation.isShowing();
     }
 
     @Override
     protected void attachAt(int side, boolean show) {
         boolean sideChanged = side != lane;
         lane = side;
-        if (isAttached() && overlayUsed != appConfig.isHudSideOverlay()) {
-            // 层级设置拨过了：窗口类型只能在添加前定，收掉重建
-            AppLog.i(TAG, "HUD 窗口层级设置变了，重建窗口");
-            releasePresentation();
-        }
         if (isAttached()) {
             boolean wasShown = windowShown();
             boolean visibilityChanged = show != visible;
@@ -197,102 +177,36 @@ public class SideViewHudPanel extends SideViewPopupView {
         }
         releasePresentation();
         setAlpha(IDLE_ALPHA);
-        boolean overlay = appConfig.isHudSideOverlay();
-        // Presentation 的窗口类型改不了：Android 12 上 setType(2038) 被拒（Window type mismatch，
-        // 2026-10-15 实车）。悬浮窗层级要走 createWindowContext(屏, 2038) 拿到的 WindowManager 直接挂。
-        boolean useOverlay = overlay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
         try {
+            Presentation p = new Presentation(getContext(), display);
+            FrameLayout frame = new FrameLayout(p.getContext());
+            frame.setBackgroundColor(0);
             place(side);
-            if (useOverlay) {
-                attachOverlay();
-            } else {
-                attachPresentation();
+            frame.addView(this, panelParams);
+            p.setContentView(frame);
+            Window window = p.getWindow();
+            if (window != null) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                window.setBackgroundDrawable(new ColorDrawable(0));
             }
-            overlayUsed = overlay;
+            presentation = p;
+            root = frame;
             visible = show;
             applyWindowAlpha();
+            p.show();
             attached = true;
             if (show) {
                 reveal(false);
             }
-            lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")"
-                    + (useOverlay ? " overlay" : overlay ? " presentation (overlay needs Android 11+)" : " presentation");
+            lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")";
             BlackBox.note("HUD 侧视窗挂上：" + lastState);
         } catch (Throwable t) {
             AppLog.e(TAG, "HUD 窗口添加失败", t);
-            lastState = "failed" + (useOverlay ? " (overlay)" : "") + ": " + t.getClass().getSimpleName() + ": " + t.getMessage();
+            lastState = "failed: " + t.getClass().getSimpleName() + ": " + t.getMessage();
             BlackBox.note("HUD 侧视窗添加失败：" + lastState);
             releasePresentation();
-        }
-    }
-
-    /** 老路：透明 Presentation，普通应用窗口层级（原厂 HUD 画面在它之上）。 */
-    private void attachPresentation() {
-        Presentation p = new Presentation(getContext(), display);
-        FrameLayout frame = new FrameLayout(p.getContext());
-        frame.setBackgroundColor(0);
-        frame.addView(this, panelParams);
-        p.setContentView(frame);
-        Window window = p.getWindow();
-        if (window != null) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-            window.setBackgroundDrawable(new ColorDrawable(0));
-        }
-        presentation = p;
-        root = frame;
-        p.show();
-    }
-
-    /**
-     * 悬浮窗层级（TYPE_APPLICATION_OVERLAY）：在所有应用窗口（包括原厂 HUD 应用）之上。
-     * 要悬浮窗权限，侧视服务起之前已查过。窗口上下文得带着这块屏和这个类型建，不然系统拒收。
-     */
-    private void attachOverlay() {
-        Context windowContext = getContext().createDisplayContext(display)
-                .createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
-        WindowManager wm = (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE);
-        OverlayRoot frame = new OverlayRoot(windowContext);
-        frame.setBackgroundColor(0);
-        frame.addView(this, panelParams);
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                        | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.alpha = 0f;
-        wm.addView(frame, lp);
-        overlayWm = wm;
-        overlayRoot = frame;
-        overlayParams = lp;
-        root = frame;
-    }
-
-    /** 悬浮窗那条路的根布局：系统收窗口时它会被 detach，记一笔给 {@link #isAttached()} 看。 */
-    private static final class OverlayRoot extends FrameLayout {
-        private boolean everAttached;
-        boolean goneBySystem;
-
-        OverlayRoot(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected void onAttachedToWindow() {
-            super.onAttachedToWindow();
-            everAttached = true;
-        }
-
-        @Override
-        protected void onDetachedFromWindow() {
-            super.onDetachedFromWindow();
-            if (everAttached) {
-                goneBySystem = true;
-            }
         }
     }
 
@@ -339,31 +253,15 @@ public class SideViewHudPanel extends SideViewPopupView {
 
     /** 显示时按设置里的不透明度，备着时全透明。 */
     private void applyWindowAlpha() {
-        float alpha = windowShown() ? HudNightDimming.opacity(
-                appConfig.getHudSideOpacityPercent(), appConfig.getHudSideNightPercent(), night) : 0f;
         Presentation p = presentation;
-        if (p != null) {
-            Window window = p.getWindow();
-            if (window == null) {
-                return;
-            }
-            WindowManager.LayoutParams attrs = window.getAttributes();
-            attrs.alpha = alpha;
-            window.setAttributes(attrs);
+        Window window = p != null ? p.getWindow() : null;
+        if (window == null) {
             return;
         }
-        WindowManager wm = overlayWm;
-        OverlayRoot frame = overlayRoot;
-        WindowManager.LayoutParams lp = overlayParams;
-        if (wm == null || frame == null || lp == null || lp.alpha == alpha) {
-            return;
-        }
-        lp.alpha = alpha;
-        try {
-            wm.updateViewLayout(frame, lp);
-        } catch (Exception e) {
-            AppLog.w(TAG, "HUD 悬浮窗改不透明度失败: " + e);
-        }
+        WindowManager.LayoutParams attrs = window.getAttributes();
+        attrs.alpha = windowShown() ? HudNightDimming.opacity(
+                appConfig.getHudSideOpacityPercent(), appConfig.getHudSideNightPercent(), night) : 0f;
+        window.setAttributes(attrs);
     }
 
     @Override
@@ -380,13 +278,8 @@ public class SideViewHudPanel extends SideViewPopupView {
         abortFade();
         Presentation p = presentation;
         FrameLayout frame = root;
-        WindowManager wm = overlayWm;
-        OverlayRoot overlayFrame = overlayRoot;
         presentation = null;
         root = null;
-        overlayWm = null;
-        overlayRoot = null;
-        overlayParams = null;
         attached = false;
         visible = false;
         if (frame != null) {
@@ -401,13 +294,6 @@ public class SideViewHudPanel extends SideViewPopupView {
                 p.dismiss();
             } catch (Exception e) {
                 AppLog.w(TAG, "HUD 窗口收起失败: " + e);
-            }
-        }
-        if (wm != null && overlayFrame != null) {
-            try {
-                wm.removeViewImmediate(overlayFrame);
-            } catch (Exception e) {
-                AppLog.w(TAG, "HUD 悬浮窗收起失败: " + e);
             }
         }
     }
