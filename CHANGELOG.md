@@ -7,6 +7,15 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.12.5] - 2026-10-15
+
+### Fixed
+
+- **The experimental HUD overlay switch now actually opens an overlay window.** In 2.12.4 the head
+  unit refused it (*Window type mismatch*, seen in the 16:35 diagnostics) and the app fell back to
+  the screen pop-up every time. The HUD window is now created the way Android 11+ requires for an
+  overlay on a second screen. The switch is still off by default; with it off nothing changes.
+
 ## [2.12.4] - 2026-10-15
 
 ### New and improved
