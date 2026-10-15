@@ -154,6 +154,11 @@ public class SideViewHudPanel extends SideViewPopupView {
             boolean visibilityChanged = show != visible;
             visible = show;
             applyWindowAlpha();
+            if (sideChanged) {
+                // 画面在打灯那一边（2.12.1）：右灯直接打成左灯，窗口要跟着挪过去，
+                // 不然相机换成了左路、窗口还停在右边
+                place(side);
+            }
             if (sideChanged || visibilityChanged) {
                 invalidate();
             }

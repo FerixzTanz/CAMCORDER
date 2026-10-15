@@ -17,6 +17,9 @@ commit message, not here.
   and the two kept knocking each other off the surround camera. The recording stopped, the main
   screen couldn't start the camera, and the side view flickered and said *No live picture*. The
   app now keeps using the one camera it already has.
+- **The HUD picture moves to the other side when you switch the indicator straight from right to
+  left (or left to right).** It used to stay where the first indicator had put it and only change
+  the camera view.
 
 ## [2.12.1] - 2026-10-14
 
