@@ -7,9 +7,12 @@ android {
     compileSdk = 36
 
     // 签名配置。
-    // 默认沿用仓库内的公开测试密钥（AOSP 测试签名，口令公开），方便任何人自行构建、
-    // 并保证不同版本之间可以覆盖安装。正式发布可用环境变量覆盖为自己的密钥：
+    // 2.13.0 起正式发布用项目拥有者的私有密钥（不在仓库里，CI 从 Secrets 解出来），通过环境变量给：
     //   ZEEKR_KEYSTORE / ZEEKR_KEYSTORE_PASSWORD / ZEEKR_KEY_ALIAS / ZEEKR_KEY_PASSWORD
+    //   （ZEEKR_KEYSTORE_TYPE 可选，默认按文件：.p12/.pfx 为 PKCS12，其余 JKS）
+    // 没给环境变量时退到仓库内的公开 AOSP 测试密钥，只为本机、PR 构建能跑；
+    // 打 tag 发布时 CI 会在没有私钥的情况下直接失败，不会用测试密钥发版（build.yml）。
+    // 用测试密钥签的包装不到 2.13.0 之上，反过来也一样 —— 这正是换私钥的目的。
     signingConfigs {
         create("release") {
             val customStore = System.getenv("ZEEKR_KEYSTORE")
@@ -18,6 +21,9 @@ android {
                 storePassword = System.getenv("ZEEKR_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ZEEKR_KEY_ALIAS")
                 keyPassword = System.getenv("ZEEKR_KEY_PASSWORD")
+                val lower = customStore.lowercase()
+                storeType = System.getenv("ZEEKR_KEYSTORE_TYPE")
+                    ?: if (lower.endsWith(".p12") || lower.endsWith(".pfx")) "PKCS12" else "JKS"
             } else {
                 storeFile = file("../keystore/release.jks")
                 storePassword = "android"

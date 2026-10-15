@@ -39,6 +39,32 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 正式签名密钥从 Secrets 解出来（私钥不在仓库里）。没配置时只影响 PR / 手动构建：
+      # 退到公开测试密钥，装不到正式版之上。打 tag 时下一步会拦住。
+      - name: Set up release signing
+        env:
+          KEYSTORE_B64: ${{ secrets.ZEEKR_KEYSTORE_B64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64}" ]; then
+            echo "no ZEEKR_KEYSTORE_B64 secret: building with the public test key"
+            exit 0
+          fi
+          printf '%s' "${KEYSTORE_B64}" | base64 -d > "${RUNNER_TEMP}/release.p12"
+          echo "ZEEKR_KEYSTORE=${RUNNER_TEMP}/release.p12" >> "$GITHUB_ENV"
+          echo "ZEEKR_KEYSTORE_TYPE=PKCS12" >> "$GITHUB_ENV"
+          echo "release signing key loaded"
+
+      - name: Refuse to publish a release with the test key
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          KEYSTORE_B64: ${{ secrets.ZEEKR_KEYSTORE_B64 }}
+        run: |
+          if [ -z "${KEYSTORE_B64}" ]; then
+            echo "::error::Tag build without ZEEKR_KEYSTORE_B64: a release must be signed with the private key. Add the secrets and re-run."
+            exit 1
+          fi
+
       # 纯 JVM 单元测试：合成流几何拆分与相机选择逻辑
       - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
@@ -52,7 +78,17 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build release APK
+        env:
+          ZEEKR_KEYSTORE_PASSWORD: ${{ secrets.ZEEKR_KEYSTORE_PASSWORD }}
+          ZEEKR_KEY_ALIAS: ${{ secrets.ZEEKR_KEY_ALIAS }}
+          ZEEKR_KEY_PASSWORD: ${{ secrets.ZEEKR_KEY_PASSWORD }}
         run: ./gradlew assembleRelease --stacktrace
+
+      - name: Show APK signer
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --print-certs "$APK" | grep -i "certificate DN\|SHA-256"
 
       - name: Rename APK
         id: apk
