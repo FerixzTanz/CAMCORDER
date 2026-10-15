@@ -7,6 +7,15 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.12.7] - 2026-10-15
+
+### Fixed
+
+- **The signal scan no longer loses its recording when the app restarts.** Quitting and reopening
+  the app while *Record all vehicle signals* was on started a new file each time, so everything
+  recorded before the restart was gone (four minutes of a blind-spot drive on 2026-10-15). A scan
+  that continues after a restart now appends to the same file and notes the restart.
+
 ## [2.12.6] - 2026-10-15
 
 ### New and improved
