@@ -44,7 +44,8 @@ screen and the HUD.
 - **HUD output**: show the side view on the screen, the HUD (found as the extra 1440×480 display),
   or both. It appears at any speed and is mirrored like a door mirror by default. Under **HUD
   picture**: size, position, opacity, contrast, edge fade, and dimming at night from the car's
-  day/night signal. If the HUD isn't found, the screen pop-up is used instead.
+  day/night signal. If the HUD isn't found, the screen pop-up is used instead. An experimental
+  switch tries a higher window layer so the picture sits above the car's own HUD information.
 - Switch it off in **Settings → Super mirror → Turn-signal side view**. It relies on vehicle
   signals that dts88 found on one car, so it may behave differently on yours.
 
