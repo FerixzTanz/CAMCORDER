@@ -46,6 +46,8 @@ public class SideViewHudPanel extends SideViewPopupView {
     private final Display display;
     private Presentation presentation;
     private FrameLayout root;
+    /** 挂着的这个窗口是不是悬浮窗层级：设置拨了就得重建，窗口类型加上去之后改不了。 */
+    private boolean overlayUsed;
     private FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(1, 1);
     /** 画面过的颜色矩阵；对比度 100 时 null（原样）。 */
     private Paint tonePaint;
@@ -150,6 +152,11 @@ public class SideViewHudPanel extends SideViewPopupView {
     protected void attachAt(int side, boolean show) {
         boolean sideChanged = side != lane;
         lane = side;
+        if (isAttached() && overlayUsed != appConfig.isHudSideOverlay()) {
+            // 层级设置拨过了：窗口类型只能在添加前定，收掉重建
+            AppLog.i(TAG, "HUD 窗口层级设置变了，重建窗口");
+            releasePresentation();
+        }
         if (isAttached()) {
             boolean wasShown = windowShown();
             boolean visibilityChanged = show != visible;
@@ -174,6 +181,7 @@ public class SideViewHudPanel extends SideViewPopupView {
         }
         releasePresentation();
         setAlpha(IDLE_ALPHA);
+        boolean overlay = appConfig.isHudSideOverlay();
         try {
             Presentation p = new Presentation(getContext(), display);
             FrameLayout frame = new FrameLayout(p.getContext());
@@ -187,7 +195,13 @@ public class SideViewHudPanel extends SideViewPopupView {
                         | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
                 window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
                 window.setBackgroundDrawable(new ColorDrawable(0));
+                if (overlay) {
+                    // 悬浮窗层级：在所有应用窗口（包括原厂 HUD 应用）之上。要悬浮窗权限，侧视服务起之前已查过。
+                    // 必须在 show() 之前设，加到窗口管理器之后类型就定了。
+                    window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+                }
             }
+            overlayUsed = overlay;
             presentation = p;
             root = frame;
             visible = show;
@@ -197,11 +211,12 @@ public class SideViewHudPanel extends SideViewPopupView {
             if (show) {
                 reveal(false);
             }
-            lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")";
+            lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")"
+                    + (overlay ? " overlay" : " presentation");
             BlackBox.note("HUD 侧视窗挂上：" + lastState);
         } catch (Throwable t) {
             AppLog.e(TAG, "HUD 窗口添加失败", t);
-            lastState = "failed: " + t.getClass().getSimpleName() + ": " + t.getMessage();
+            lastState = "failed" + (overlay ? " (overlay)" : "") + ": " + t.getClass().getSimpleName() + ": " + t.getMessage();
             BlackBox.note("HUD 侧视窗添加失败：" + lastState);
             releasePresentation();
         }

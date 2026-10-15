@@ -315,6 +315,8 @@
     <string name="set_side_popup_mirror_summary">后面来的车从画面外侧进来，和门上的后视镜一个方向。关了就是相机看到的样子</string>
     <string name="set_hud_side_mirror_title">HUD 画面左右翻转（像门镜）</string>
     <string name="set_hud_side_mirror_summary">开启后，后方来车从画面外侧进入，与门镜相同。默认关闭。</string>
+    <string name="set_hud_side_overlay_title">HUD 画面盖在原厂 HUD 信息上（试验）</string>
+    <string name="set_hud_side_overlay_summary">开启后用更高的窗口层级，画面可能盖住导航和车道图标。车机不接受时自动退回主屏弹窗。不行就关掉。默认关闭。</string>
     <string name="set_side_popup_straighten_title">拉直画面</string>
     <string name="set_side_popup_straighten_summary">把鱼眼画面拉直再显示，下面三项调视野和朝向。只影响弹窗的显示，录像照旧</string>
     <string name="set_side_popup_fov_title">视野（°）</string>

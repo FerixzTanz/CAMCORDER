@@ -296,6 +296,8 @@
     <string name="set_side_popup_mirror_summary">Kereta yang datang dari belakang masuk dari tepi luar, sama seperti dalam cermin pintu. Tutup untuk melihat gambar seperti yang dilihat kamera</string>
     <string name="set_hud_side_mirror_title">Cerminkan gambar HUD seperti cermin pintu</string>
     <string name="set_hud_side_mirror_summary">Apabila hidup, kereta yang datang dari belakang masuk dari tepi luar, seperti dalam cermin pintu. Mati secara lalai</string>
+    <string name="set_hud_side_overlay_title">Gambar HUD di atas maklumat HUD kereta (percubaan)</string>
+    <string name="set_hud_side_overlay_summary">Apabila hidup, gambar menggunakan lapisan tetingkap yang lebih tinggi dan mungkin menutup ikon navigasi dan lorong. Jika unit kepala menolaknya, pop timbul skrin digunakan. Matikan jika tidak membantu. Mati secara lalai</string>
     <string name="set_side_popup_straighten_title">Luruskan gambar</string>
     <string name="set_side_popup_straighten_summary">Membetulkan lengkungan fisheye sebelum dipaparkan; tiga tetapan di bawah menetapkan lebar dan arah pandangan. Hanya mengubah tetingkap timbul; rakaman tidak terjejas</string>
     <string name="set_side_popup_fov_title">Lebar pandangan (°)</string>

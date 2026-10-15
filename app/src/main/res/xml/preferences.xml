@@ -361,6 +361,11 @@
                 android:title="@string/set_hud_side_mirror_title"
                 android:summary="@string/set_hud_side_mirror_summary" />
 
+            <SwitchPreferenceCompat
+                android:key="pref_hud_side_overlay"
+                android:title="@string/set_hud_side_overlay_title"
+                android:summary="@string/set_hud_side_overlay_summary" />
+
             <SeekBarPreference
                 android:key="pref_hud_side_size"
                 android:title="@string/set_hud_side_size_title"

@@ -296,6 +296,8 @@
     <string name="set_side_popup_mirror_summary">A car coming up from behind enters from the outside edge, the same way as in the door mirror. Off shows the picture as the camera sees it</string>
     <string name="set_hud_side_mirror_title">Mirror the HUD picture like the door mirror</string>
     <string name="set_hud_side_mirror_summary">When on, a car coming up from behind enters from the outside edge, as in the door mirror. Off by default</string>
+    <string name="set_hud_side_overlay_title">HUD picture above the car\'s HUD information (experimental)</string>
+    <string name="set_hud_side_overlay_summary">When on, the picture uses a higher window layer and may cover the navigation and lane icons. If the head unit refuses it, the screen pop-up is used instead. Turn it off if it does not help. Off by default</string>
     <string name="set_side_popup_straighten_title">Straighten picture</string>
     <string name="set_side_popup_straighten_summary">Corrects the fisheye curve before showing it; the three settings below set how wide it looks and where it points. Only changes the pop-up; recordings are not affected</string>
     <string name="set_side_popup_fov_title">View width (°)</string>

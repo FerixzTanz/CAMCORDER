@@ -7,6 +7,11 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.12.4-alpha] - 2026-10-15
+
+- New switch *HUD picture above the car's HUD information (experimental)* under Settings → Super mirror → Turn-signal side view → HUD picture. Off by default. When on, the HUD window is opened at the overlay layer, which may put the picture above the car's navigation and lane icons. If the head unit refuses the window, the screen pop-up is used as before; switching it off rebuilds the window the old way, no reinstall needed.
+- Diagnostics: the HUD window's last state says whether it was a plain presentation or an overlay.
+
 ## [2.12.3] - 2026-10-15
 
 ### Fixed
