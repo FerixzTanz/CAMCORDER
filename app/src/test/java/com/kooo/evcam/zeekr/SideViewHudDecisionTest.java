@@ -42,38 +42,54 @@ public class SideViewHudDecisionTest {
     }
 
     /**
-     * 低速打灯原厂必弹侧方小窗（主屏上）。HUD 不让它：让了就等于也有车速门槛（2.12.0 实车：30 以下 HUD 不出）。
-     * 主屏弹窗照旧让，它和小窗在同一块屏上。
+     * 低速打灯原厂一弹，侧方小窗、360、泊车辅助三个信号同一毫秒一起变 1（2026-10-11 普查：26 km/h 右灯、
+     * 10 km/h 左灯）。三样都只在主屏上：HUD 一样不让，让了就等于也有车速门槛
+     * （2.12.0 实车：30 以下 HUD 不出；2.12.1 只放开了小窗，2026-10-15 实车 360 还在拦）。
+     * 主屏弹窗照旧让，它和它们在同一块屏上。
      */
     @Test
-    public void hudIgnoresTheCarsOwnSidePopupButTheScreenYields() {
+    public void hudIgnoresTheCarsOwnScreenViewsButTheScreenYields() {
         SideViewDecision.Input hud = leftSignalAt(10f, 0);
         hud.stockPopupShown = true;
-        hud.yieldToStockPopup = false;
+        hud.stock360Shown = true;
+        hud.parkAssistOn = true;
+        hud.yieldToScreenViews = false;
         assertEquals(LaneCycle.LEFT, SideViewDecision.decide(hud));
         assertEquals(false, SideViewDecision.factoryViewActive(hud));
 
         SideViewDecision.Input screen = leftSignalAt(50f, 30);
         screen.stockPopupShown = true;
+        screen.stock360Shown = true;
+        screen.parkAssistOn = true;
         assertEquals(SideViewDecision.NONE, SideViewDecision.decide(screen));
         assertEquals(true, SideViewDecision.factoryViewActive(screen));
     }
 
-    /** 不让小窗只是不让小窗：R 档、原厂 360、泊车辅助 HUD 照样让。 */
+    /** 每一样单独亮也一样：HUD 不让，主屏让。 */
     @Test
-    public void hudStillYieldsToReverseStock360AndParkAssist() {
+    public void eachScreenViewAloneDoesNotStopTheHud() {
         SideViewDecision.Input stock360 = leftSignalAt(10f, 0);
-        stock360.yieldToStockPopup = false;
+        stock360.yieldToScreenViews = false;
         stock360.stock360Shown = true;
-        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(stock360));
+        assertEquals(LaneCycle.LEFT, SideViewDecision.decide(stock360));
         SideViewDecision.Input park = leftSignalAt(10f, 0);
-        park.yieldToStockPopup = false;
+        park.yieldToScreenViews = false;
         park.parkAssistOn = true;
-        assertEquals(SideViewDecision.NONE, SideViewDecision.decide(park));
+        assertEquals(LaneCycle.LEFT, SideViewDecision.decide(park));
+        SideViewDecision.Input popup = leftSignalAt(10f, 0);
+        popup.yieldToScreenViews = false;
+        popup.stockPopupShown = true;
+        assertEquals(LaneCycle.LEFT, SideViewDecision.decide(popup));
+    }
+
+    /** HUD 只让 R 档：倒车时原厂的画面是主角。 */
+    @Test
+    public void hudStillYieldsToReverse() {
         SideViewDecision.Input reverse = leftSignalAt(10f, 0);
-        reverse.yieldToStockPopup = false;
+        reverse.yieldToScreenViews = false;
         reverse.gear = "R";
         assertEquals(SideViewDecision.NONE, SideViewDecision.decide(reverse));
+        assertEquals(true, SideViewDecision.factoryViewActive(reverse));
     }
 
     @Test

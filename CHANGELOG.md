@@ -20,6 +20,10 @@ commit message, not here.
 - **The HUD picture moves to the other side when you switch the indicator straight from right to
   left (or left to right).** It used to stay where the first indicator had put it and only change
   the camera view.
+- **The HUD side view now shows below 30 km/h even when the car pops up its own 360 view.** At low
+  speed the car's 360 view, its small side window and park assist all come on together with the
+  indicator, and the HUD was still stepping aside for two of the three. They are only on the
+  screen, so the HUD now ignores all three. It still steps aside for reverse.
 
 ## [2.12.1] - 2026-10-14
 
