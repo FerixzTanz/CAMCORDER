@@ -32,17 +32,21 @@ If you only want the dash cam and mirror, use dts88's app. Come here for the ext
 ## What CAMCORDER adds
 
 **Turn-signal side view.** Signal left and the left camera pops up; signal right and the right one
-does. It closes when the signal goes off.
+does. It fades in, and fades out when the signal goes off. It is on by default and shows on both the
+screen and the HUD.
 
 - The car's own views win: in reverse, or while the stock 360, side pop-up or park-assist view is
-  up, the pop-up stays hidden.
-- Screen pop-up only above a set speed (default 30 km/h); below that the car shows its own view.
-- Adjustable size, height and an optional hold time. Optional fisheye straightening (display only,
-  recordings are untouched) and an optional always-ready mode that keeps the camera warm in D.
+  up, the screen pop-up stays hidden. The HUD steps aside only for reverse, so it also works at
+  low speed when the car pops up its own views on the screen.
+- The screen pop-up only opens above a set speed (default 30 km/h).
+- Adjustable size, height and hold time. Optional fisheye straightening (display only, recordings
+  are untouched) and an optional always-ready mode that keeps the camera warm in D.
 - **HUD output**: show the side view on the screen, the HUD (found as the extra 1440×480 display),
-  or both. The HUD picture appears at any speed and is mirrored like a door mirror by default.
-- Off by default: **Settings → Super mirror → Turn-signal side view**. It relies on vehicle signals
-  that dts88 found on one car, so it may behave differently on yours.
+  or both. It appears at any speed and is mirrored like a door mirror by default. Under **HUD
+  picture**: size, position, opacity, contrast, edge fade, and dimming at night from the car's
+  day/night signal. If the HUD isn't found, the screen pop-up is used instead.
+- Switch it off in **Settings → Super mirror → Turn-signal side view**. It relies on vehicle
+  signals that dts88 found on one car, so it may behave differently on yours.
 
 **Recording follows the driver.** Starts when you take the driver's seat or leave P, stops after
 you get out (or when Sentry Mode takes over). Can be switched off in Settings → Recording.
