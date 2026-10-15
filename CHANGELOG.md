@@ -7,7 +7,7 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
-## [Unreleased]
+## [2.12.3] - 2026-10-15
 
 ### Fixed
 
@@ -28,6 +28,9 @@ commit message, not here.
   start on boot, info bar and licence plate on, floating button locked and tap = record, and so on.
   A fresh install, or a setting you never changed, comes up like that; settings already saved on a
   car keep their value.
+- **Signal scan (developer option) listens on one more path.** Some of the car's values arrive only
+  through a second callback the scan never recorded; it now logs them (`C:` lines) and notes which
+  callback paths the car uses. For the blind-spot light investigation.
 
 ## [2.12.2] - 2026-10-15
 
