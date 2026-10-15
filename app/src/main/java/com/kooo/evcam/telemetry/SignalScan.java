@@ -70,6 +70,12 @@ import java.util.TreeMap;
  *       {@code P:0x...}。读到占位值（255 / 254 / 253 / -1 / -65535）的组合先不轮询，每 {@link #REPROBE_MS}
  *       再试一次（车刚醒时可能还没准备好），读到真值再加进来；读都读不出来的不再试。最多 {@link #MAX_POLL_PAIRS} 组。</li>
  * </ul>
+ *
+ * <h3>2.12.x 补的一样</h3>
+ *
+ * <p>功能监听里 {@code onCustomizeFunctionValueChanged}（定制功能的值回调）以前整条没听，只认
+ * {@code onFunctionValueChanged}；有的号只从定制回调给值（{@link ScanCallbacks}）。现在记成 {@code C:0x...}。
+ * 另外别的回调方法第一次响时在文件里记一行 {@code # callback seen: 方法名(参数类型)}，报告里列在表头。</p>
  */
 public final class SignalScan {
 
@@ -593,21 +599,37 @@ public final class SignalScan {
     private final class Callback implements InvocationHandler {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
-            if ("onFunctionValueChanged".equals(method.getName()) && args != null && args.length == 3
-                    && args[0] instanceof Integer && args[1] instanceof Integer && args[2] instanceof Number) {
+            final String name = method.getName();
+            final boolean plain = "onFunctionValueChanged".equals(name) && ScanCallbacks.isValue(args);
+            if (plain || ScanCallbacks.isCustomizeValue(name, args)) {
                 final int id = (Integer) args[0];
                 final int zone = (Integer) args[1];
                 final Number value = (Number) args[2];
                 final long wall = System.currentTimeMillis();
                 Handler h = handler;
                 if (h != null && !stopped) {
-                    h.post(() -> onChange(wall, id, zone, value));
+                    h.post(() -> onChange(wall, plain ? "" : "C:", id, zone, value));
                 }
                 return null;
+            }
+            if (!ScanCallbacks.isObjectMethod(name)) {
+                final String shape = ScanCallbacks.shape(name, args);
+                Handler h = handler;
+                if (h != null && !stopped) {
+                    h.post(() -> {
+                        // 每种回调第一次来时记一行表头，看得出车上还有哪几路在推（只在普查线程上读写这个集合）
+                        if (!stopped && otherCallbacks.add(shape)) {
+                            write("# callback seen: " + shape);
+                        }
+                    });
+                }
             }
             return EcarxSource.proxyDefault(proxy, method, args, "SignalScan.Callback");
         }
     }
+
+    /** 回调过的方法形状（{@link ScanCallbacks#shape}），只在普查线程上读写。 */
+    private final Set<String> otherCallbacks = new HashSet<>();
 
     /** 传感器的回调（进程级的一个代理，永不注销）：转给此刻在跑的那次普查，没在跑就丢掉。 */
     private static final class SensorForward implements InvocationHandler {
@@ -636,8 +658,9 @@ public final class SignalScan {
         }
     }
 
-    private void onChange(long wall, int id, int zone, Number value) {
-        logLine(wall, hex(id) + (zone != 0 ? "@" + hex(zone) : ""), String.valueOf(value), names.get(id));
+    /** @param prefix 普通的功能号回调是空，定制功能的值回调是 {@code C:}（和 {@code S:} {@code P:} 并列） */
+    private void onChange(long wall, String prefix, int id, int zone, Number value) {
+        logLine(wall, prefix + hex(id) + (zone != 0 ? "@" + hex(zone) : ""), String.valueOf(value), names.get(id));
     }
 
     /** 一行：时刻 车速 号 = 值 名字（报告按空格切，号里不能有空格）。 */
