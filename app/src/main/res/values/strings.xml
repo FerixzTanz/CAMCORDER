@@ -354,7 +354,9 @@
     <string name="set_hud_side_opacity_title">HUD 画面不透明度（%）</string>
     <string name="set_hud_side_opacity_summary">越低越淡。HUD 上黑色本来就不亮</string>
     <string name="set_hud_side_contrast_title">HUD 画面对比度（%）</string>
-    <string name="set_hud_side_contrast_summary">调高后暗部更暗，画面在 HUD 上不发白。100 为摄像头原画面。</string>
+    <string name="set_hud_side_contrast_summary">调高后暗部更暗，画面在 HUD 上不发白。100 为摄像头原画面。白天用这一档。</string>
+    <string name="set_hud_side_contrast_night_title">HUD 画面夜间对比度（%）</string>
+    <string name="set_hud_side_contrast_night_summary">车辆处于夜间模式时代替上面的对比度。夜里画面本来就暗，调高会把整张压黑。默认 120。</string>
     <string name="set_hud_side_fade_title">HUD 画面边缘渐隐（%）</string>
     <string name="set_hud_side_fade_summary">画面四边渐隐到黑的宽度，占短边的百分比。0 为硬边。HUD 上黑色不亮，渐隐处与路面融为一体。</string>
     <string name="set_hud_side_night_title">HUD 画面夜间亮度（%）</string>

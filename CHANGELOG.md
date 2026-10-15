@@ -7,6 +7,16 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.12.6] - 2026-10-15
+
+### New and improved
+
+- **The HUD picture switches to its own contrast at night.** The day contrast (default 220) pushes
+  everything darker than mid-grey to black, which is right in daylight but turns a night picture into
+  nothing on the HUD. A new *HUD picture contrast at night* (Settings → Super mirror → Turn-signal
+  side view → HUD picture, default 120) replaces it while the car is in night mode, following the same
+  day/night signal as *HUD picture brightness at night*. The day value is unchanged.
+
 ## [2.12.5] - 2026-10-15
 
 ### Fixed

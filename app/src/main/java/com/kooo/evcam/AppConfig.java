@@ -157,6 +157,9 @@ public class AppConfig {
     public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
     public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
     public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 220;
+    /** 夜间对比度：夜里摄像头画面本来就暗，220 会把整张压成黑（2026-10-15 夜间实车照片），默认接近原画面。 */
+    public static final int HUD_SIDE_DEFAULT_CONTRAST_NIGHT_PERCENT = 120;
+    private static final String KEY_HUD_SIDE_CONTRAST_NIGHT = "hud_side_contrast_night";
     public static final int HUD_SIDE_MIN_NIGHT_PERCENT = 20;
     public static final int HUD_SIDE_MAX_NIGHT_PERCENT = 100;
     public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 60;
@@ -1848,6 +1851,22 @@ public class AppConfig {
     public void setHudSideContrastPercent(int percent) {
         prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST,
                 Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
+    }
+
+    /** HUD 上画面夜间的对比度，100..300；车辆处于夜间模式时代替上面那个。默认 120。 */
+    public int getHudSideContrastNightPercent() {
+        int v = prefs.getInt(KEY_HUD_SIDE_CONTRAST_NIGHT, HUD_SIDE_DEFAULT_CONTRAST_NIGHT_PERCENT);
+        return Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, v));
+    }
+
+    public void setHudSideContrastNightPercent(int percent) {
+        prefs.edit().putInt(KEY_HUD_SIDE_CONTRAST_NIGHT,
+                Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, percent))).apply();
+    }
+
+    /** 这一刻该用的 HUD 对比度：夜间模式用夜间那档。 */
+    public int getHudSideContrastPercent(boolean night) {
+        return night ? getHudSideContrastNightPercent() : getHudSideContrastPercent();
     }
 
     /** 车上是夜间模式时，HUD 画面在不透明度的基础上再调到这个比例，20..100；100 不调暗。 */

@@ -403,6 +403,12 @@
                 app:showSeekBarValue="true" />
 
             <SeekBarPreference
+                android:key="pref_hud_side_contrast_night"
+                android:title="@string/set_hud_side_contrast_night_title"
+                android:summary="@string/set_hud_side_contrast_night_summary"
+                app:showSeekBarValue="true" />
+
+            <SeekBarPreference
                 android:key="pref_hud_side_night"
                 android:title="@string/set_hud_side_night_title"
                 android:summary="@string/set_hud_side_night_summary"

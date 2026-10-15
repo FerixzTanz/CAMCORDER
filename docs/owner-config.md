@@ -25,6 +25,7 @@ read the `app_config` block, update the table below and the matching defaults in
 | HUD picture distance from the edge / vertical (`hud_side_left`, `_vertical`) | 11 / 21 | 6 / 50 |
 | HUD picture opacity / night brightness (`hud_side_opacity`, `_night`) | 100 / 60 | 100 / 60 (same) |
 | HUD picture contrast (`hud_side_contrast`) | 220 | 150 |
+| HUD picture contrast at night (`hud_side_contrast_night`, 2.12.6) | 120 | new |
 | HUD picture edge fade (`hud_side_fade`) | 6 | 15 |
 | Mirror the HUD picture (`hud_side_mirror`) | on | off |
 

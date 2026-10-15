@@ -335,7 +335,9 @@
     <string name="set_hud_side_opacity_title">Kelegapan gambar HUD (%)</string>
     <string name="set_hud_side_opacity_summary">Lebih rendah lebih pudar. Warna hitam memang tidak menyala pada HUD</string>
     <string name="set_hud_side_contrast_title">Kontras gambar HUD (%)</string>
-    <string name="set_hud_side_contrast_summary">Lebih tinggi menjadikan bahagian gelap lebih gelap, supaya gambar tidak pudar pada HUD. 100 ialah gambar asal kamera</string>
+    <string name="set_hud_side_contrast_summary">Lebih tinggi menjadikan bahagian gelap lebih gelap, supaya gambar tidak pudar pada HUD. 100 ialah gambar asal kamera. Digunakan pada waktu siang</string>
+    <string name="set_hud_side_contrast_night_title">Kontras gambar HUD pada waktu malam (%)</string>
+    <string name="set_hud_side_contrast_night_summary">Menggantikan kontras di atas apabila kereta dalam mod malam. Gambar malam sudah gelap, jadi nilai tinggi menjadikannya hitam. Lalai 120</string>
     <string name="set_hud_side_fade_title">Pudar tepi gambar HUD (%)</string>
     <string name="set_hud_side_fade_summary">Jarak tepi memudar ke hitam, sebagai peratusan sisi yang lebih pendek. 0 ialah tepi keras. Warna hitam tidak menyala pada HUD, jadi pudaran menyatu dengan jalan</string>
     <string name="set_hud_side_night_title">Kecerahan gambar HUD pada waktu malam (%)</string>

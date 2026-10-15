@@ -335,7 +335,9 @@
     <string name="set_hud_side_opacity_title">HUD picture opacity (%)</string>
     <string name="set_hud_side_opacity_summary">Lower is fainter. Black does not light up on a HUD anyway</string>
     <string name="set_hud_side_contrast_title">HUD picture contrast (%)</string>
-    <string name="set_hud_side_contrast_summary">Higher makes the dark parts darker, so the picture does not wash out on the HUD. 100 is the camera\'s own picture</string>
+    <string name="set_hud_side_contrast_summary">Higher makes the dark parts darker, so the picture does not wash out on the HUD. 100 is the camera\'s own picture. Used by day</string>
+    <string name="set_hud_side_contrast_night_title">HUD picture contrast at night (%)</string>
+    <string name="set_hud_side_contrast_night_summary">Replaces the contrast above while the car is in night mode. The night picture is already dark, so a high value turns it black. Default 120</string>
     <string name="set_hud_side_fade_title">HUD picture edge fade (%)</string>
     <string name="set_hud_side_fade_summary">How far the edges fade to black, as a share of the shorter side. 0 is a hard edge. Black does not light up on a HUD, so the fade blends into the road</string>
     <string name="set_hud_side_night_title">HUD picture brightness at night (%)</string>
