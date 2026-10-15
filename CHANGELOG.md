@@ -7,6 +7,17 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [Unreleased]
+
+### Fixed
+
+- **The camera no longer breaks when the car flips between day and night twice within a few
+  seconds.** The second flip could drop the camera the recording was using from the app's
+  bookkeeping; the next thing to ask for the camera (the HUD side view) then opened a second copy,
+  and the two kept knocking each other off the surround camera. The recording stopped, the main
+  screen couldn't start the camera, and the side view flickered and said *No live picture*. The
+  app now keeps using the one camera it already has.
+
 ## [2.12.1] - 2026-10-14
 
 ### Fixed

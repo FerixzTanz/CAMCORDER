@@ -2907,11 +2907,17 @@ public class MainActivity extends AppCompatActivity {
         com.kooo.evcam.camera.CameraNeeds needs = com.kooo.evcam.camera.CameraNeeds.current();
         final boolean othersNeedCamera = needs.heldByAnyoneExcept(
                 com.kooo.evcam.camera.CameraNeeds.Holder.PREVIEW);
+        // 管线是哪一份：新建的界面手里一直是 null，要等 TextureView 就绪才有（夜间模式 3 秒内翻两次，
+        // 第二次销毁时这个界面还没轮到）。只看自己手里的，就把录像和 HUD 正用着的那份从 Holder 里丢了，
+        // HUD 再来要就另建一份，两份管线抢同一个相机（LivePipeline）。所以 Holder 里那份也算
+        final MultiCameraManager pipeline = com.kooo.evcam.camera.LivePipeline.pick(cameraManager,
+                com.kooo.evcam.camera.CameraManagerHolder.getInstance().getCameraManager(),
+                MultiCameraManager::isReleased);
         // 协调器还在等环视开录的（开机自启动、悬浮按钮拉起）也算有人要：管线拆了它就永远开不起来。
         // 在录（含开录中）、上一次停录还在收拾的，同样留着（needsPipeline，问的是协调器那一份「在不在录」）
-        final boolean keepPipeline = cameraManager != null && !cameraManager.isReleased()
+        final boolean keepPipeline = pipeline != null
                 && (recordingCoordinator.needsPipeline() || isChangingConfigurations() || othersNeedCamera);
-        if (othersNeedCamera && cameraManager != null && !cameraManager.isReleased()) {
+        if (othersNeedCamera && pipeline != null) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("主界面销毁，但相机还有人要（"
                     + needs.describe() + "），不释放");
         }
@@ -2965,7 +2971,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (keepPipeline) {
             // 留着管线：只摘掉这个界面设的回调
-            cameraManager.detachUiCallbacks();
+            pipeline.detachUiCallbacks();
         } else if (cameraManager != null) {
             // 带超时保护的摄像头资源释放
             releaseCameraManagerWithTimeout(3000);  // 3秒超时
