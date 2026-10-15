@@ -27,13 +27,38 @@ further features are planned.
   reach, so the navigation card still covered the picture. The switch did nothing useful and is
   gone; the HUD window is created the way it was before 2.12.4. If you had it on, nothing changes.
 
-### Investigated, not possible
+### Known limits, as found on the car
 
-- **The mirror's blind-spot light.** Two full signal scans (11 and 15 October) with every vehicle
-  function registered: the blind-spot IDs the head unit exposes answer "not available", and no
-  other signal changes when the mirror light comes on. The light is driven outside the head unit,
-  so the app cannot react to it. The *Record all vehicle signals* developer option stays for anyone
-  who wants to look further.
+These were tested and are not going to change. Read them before relying on the app.
+
+- **The car's own HUD graphics always draw over the side-view picture.** The navigation card, lane
+  icons and turn arrows sit at a system layer that no sideloaded app can get above; an overlay-type
+  window was tried on 2026-10-15 and still ended up underneath. Keep the picture at the edge
+  (*HUD picture distance from the edge* 0, a smaller size) so the two overlap as little as possible.
+- **The mirror's blind-spot light cannot be read.** Two full signal scans (11 and 15 October) with
+  all 2068 vehicle functions registered: the blind-spot IDs the head unit exposes answer "not
+  available", and no other signal changes when the mirror light comes on. The light is driven
+  outside the head unit. The app cannot show a blind-spot warning and never will on this platform.
+  *Record all vehicle signals* (developer options) stays for anyone who wants to look further.
+- **The night picture is only as good as the camera.** The surround camera is dark and low in
+  contrast after sunset. The automatic night contrast keeps the picture visible, but it will not
+  look like daytime, and streetlights or headlights can wash it out.
+- **The screen pop-up and the Super mirror share one camera output.** While the Super mirror is
+  open, the turn-signal pop-up on the main screen does not appear. The HUD picture is unaffected.
+- **Factory views come first.** In reverse, or when the car shows its own 360 view, side window or
+  park assist, the screen pop-up stays hidden. The HUD steps aside only for reverse. The car can
+  take the camera back at any time.
+- **Signals were found on one car.** The turn-signal, gear, speed and day/night signals the side
+  view relies on were mapped on a single ZEEKR 7X. Other models, markets or software versions may
+  not report them the same way; the diagnostics report shows what your car provides.
+- **The HUD is found by its size.** The picture goes to the 1440×480 display the 7X reports as its
+  HUD. If no such display exists, the screen pop-up is used instead.
+- **Signing uses a public test key.** Releases are signed with the AOSP test key that ships in the
+  repository, the same key dts88's app and every earlier version used, so updates keep installing
+  over each other without an uninstall. The flip side is that anyone can build an APK that installs
+  over this app. Install only from this repository's Releases page.
+- **Tested in one car by one person.** There is no QA beyond the unit tests of pure logic. Try
+  anything new in a parked car first.
 
 ## [2.12.7] - 2026-10-15
 

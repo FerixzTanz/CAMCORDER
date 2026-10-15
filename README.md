@@ -86,6 +86,15 @@ For the underlying dash cam, Super mirror, playback and send-to-phone features, 
 - Factory features come first and can take a camera back at any time.
 - Record to a USB drive. If it can't keep up, use a faster drive or lower the frame rate/bitrate
   (needs Developer options; see Settings → Recording → Edit stream profile).
+- The car's own HUD graphics (navigation card, lane icons) always draw over the side-view picture.
+  That layer is not reachable from an app; keep the picture at the edge so they overlap less.
+- The mirror's blind-spot light is not readable from the head unit, so the app cannot show a
+  blind-spot warning. Two full signal scans confirmed it.
+- The night picture is limited by the camera. Night contrast keeps it visible, not daylight-bright.
+- While the Super mirror is open, the screen pop-up does not appear (shared camera output). The
+  HUD picture is unaffected.
+- Releases are signed with the public AOSP test key, like dts88's app, so updates install over each
+  other. Anyone can build an APK with that key, so install only from this repository's Releases.
 - Automated tests cover pure logic only. Try it in a parked car first.
 
 Problems: [open an issue](../../issues) and attach a report from **Settings → System → Diagnostics**.
