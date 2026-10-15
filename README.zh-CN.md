@@ -46,12 +46,8 @@
 
 ## 安装
 
-从本仓库 [Releases](../../releases) 下载 `.apk`，通过 App Lab 侧载。安装完成后请点「返回」而不是「打开」，
-否则车机安装器可能卡住。
-
-**2.13.0 起改用私有签名密钥。** 车机上若装着 dts88 的版本或 2.13.0 之前的 CAMCORDER，**请先卸载**：
-安装器不会用不同密钥签的包覆盖安装，旧版的应用内更新也会在这一步失败。卸载会清掉应用设置，改过的请先记下；
-U 盘上的录像不受影响。
+从本仓库 [Releases](../../releases) 下载 `.apk`，通过 App Lab 侧载。它会覆盖安装 dts88 的版本并保留设置。
+安装完成后请点「返回」而不是「打开」，否则车机安装器可能卡住。
 
 自行构建需要 JDK 17+ 与 Android SDK（compileSdk 36）：
 
@@ -59,9 +55,8 @@ U 盘上的录像不受影响。
 ./gradlew assembleRelease
 ```
 
-正式版用项目拥有者的私有密钥签名，密钥不在仓库里，CI 通过 Secrets（`ZEEKR_KEYSTORE_B64`、
-`ZEEKR_KEYSTORE_PASSWORD`、`ZEEKR_KEY_ALIAS`、`ZEEKR_KEY_PASSWORD`）取得；没有它们的 tag 构建会直接失败。
-本机不设 `ZEEKR_KEYSTORE` 时退到 `keystore/` 里的公开 AOSP 测试密钥，签出的包装不到正式版之上，反过来也一样。
+仓库内含公开的 AOSP 测试签名密钥（口令 `android`），可用 `ZEEKR_KEYSTORE`、`ZEEKR_KEYSTORE_PASSWORD`、
+`ZEEKR_KEY_ALIAS`、`ZEEKR_KEY_PASSWORD` 覆盖。
 
 记录仪、超级后视镜、回放、发送到手机等基础功能的说明，请看
 [dts88 的 README](https://github.com/dts88/zeekr-shortcut-car#readme)。

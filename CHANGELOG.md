@@ -14,12 +14,6 @@ further features are planned.
 
 ### Changed
 
-- **Signed with a new, private key.** Earlier builds used the public AOSP test key, so anyone could
-  produce an APK that installs over the app. From 2.13.0 the release key is private and the CI
-  refuses to publish a tag without it. **Uninstall any earlier version first**: Android will not
-  replace an app signed with a different key, and the in-app updater on 2.12.x will download
-  2.13.0 but fail to install it for the same reason. Settings are cleared by the uninstall;
-  recordings on the USB drive are not.
 - **Defaults follow the owner's settings again** (see `docs/owner-config.md`): *HUD picture
   brightness at night* is now 100 (no dimming) and *HUD picture contrast at night* is 100 (the
   camera's own picture). Everything else was already the default. Settings already saved on a car

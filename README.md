@@ -64,14 +64,9 @@ releases* in **Settings → Updates** for betas.
 
 ## Install
 
-Sideload the `.apk` from this repo's [Releases](../../releases) through App Lab. When the installer
-finishes, tap **Back**, not **Open**, or the head unit's installer can get stuck.
-
-**2.13.0 is signed with a new, private key.** If dts88's app or any CAMCORDER before 2.13.0 is on
-the head unit, **uninstall it first**; the installer refuses to replace an app signed with a different
-key, and the in-app updater on older versions will download 2.13.0 but fail at the same step.
-Uninstalling clears the app's settings, so note any you changed. Recordings on the USB drive are
-not touched.
+Sideload the `.apk` from this repo's [Releases](../../releases) through App Lab. It installs over
+dts88's app and keeps your settings. When the installer finishes, tap **Back**, not **Open**, or the
+head unit's installer can get stuck.
 
 Build it yourself with JDK 17+ and the Android SDK (compileSdk 36):
 
@@ -79,11 +74,8 @@ Build it yourself with JDK 17+ and the Android SDK (compileSdk 36):
 ./gradlew assembleRelease
 ```
 
-Releases are signed with the owner's private key, kept out of the repo and supplied to CI through
-secrets (`ZEEKR_KEYSTORE_B64`, `ZEEKR_KEYSTORE_PASSWORD`, `ZEEKR_KEY_ALIAS`, `ZEEKR_KEY_PASSWORD`);
-a tag build without them fails rather than publish. A local build without `ZEEKR_KEYSTORE` falls
-back to the public AOSP test key in `keystore/`, which produces an APK that cannot install over a
-release and that a release cannot install over. That is deliberate.
+The repo carries a public AOSP test signing key (password `android`); override it with
+`ZEEKR_KEYSTORE`, `ZEEKR_KEYSTORE_PASSWORD`, `ZEEKR_KEY_ALIAS` and `ZEEKR_KEY_PASSWORD`.
 
 For the underlying dash cam, Super mirror, playback and send-to-phone features, see
 [dts88's README](https://github.com/dts88/zeekr-shortcut-car#readme).
