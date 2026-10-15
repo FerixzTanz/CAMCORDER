@@ -7,6 +7,23 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [Unreleased]
+
+### Fixed
+
+- **Signalling right no longer flashes the left picture first.** The picture was hidden between
+  signals by making its window see-through, which left the last picture (the other side's) in the
+  window; the next signal showed that leftover for a moment before the new one was drawn. The picture
+  now fades out when it is hidden, so nothing is left behind, and fades in when it comes back.
+
+### New and improved
+
+- **The side view fades in and out** (about 0.13 s in, 0.16 s out) on the HUD and the screen pop-up,
+  instead of appearing and disappearing in one frame. Switching straight from one side to the other
+  fades the new side in.
+- The diagnostics report now notes, for each pop-up, which side was chosen and where the window had
+  been parked.
+
 ## [2.12.2] - 2026-10-15
 
 ### Fixed

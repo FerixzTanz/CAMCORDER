@@ -272,6 +272,9 @@ public class SideViewPopupService extends Service {
             disarmReadyExpiry();
             if (want != in.showing) {
                 AppLog.i(TAG, "转向灯：弹出「" + LaneCycle.labelOf(want) + "」路");
+                BlackBox.note("侧视弹窗 弹出「" + LaneCycle.labelOf(want) + "」路："
+                        + (popup == null ? "没有窗口" : "窗口此前在「" + LaneCycle.labelOf(popup.lane()) + "」路"
+                        + (popup.isShowing() ? "，显示中" : "，备着")));
                 showPopup(want);
             }
             return;

@@ -1,5 +1,8 @@
 package com.kooo.evcam.zeekr;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -101,6 +104,21 @@ public class SideViewPopupView extends ViewGroup {
     /** 子类（HUD 上的那一块，{@link SideViewHudPanel}）换了一套窗口，状态由它自己设。 */
     protected boolean attached;
     protected boolean visible;
+    /**
+     * 画面自己的透明度（View alpha）在没显示时停在这个值，不是 0。
+     *
+     * <p>备着的窗口只是<b>窗口</b> alpha 0，里面的画面还照常画、TextureView 照常取帧。窗口缓冲里留着的是
+     * 上一次画出来的那一帧；拨亮窗口（并挪到另一边）的那一刻，合成器先拿这张顶着，直到新的一帧画好。
+     * 上一次是左边、这次打右灯，就先闪一下左边那张（2.12.2 实车：打右灯偶尔先蹦出半秒左边的画面）。
+     * 所以收起时先把画面淡到这个值，缓冲里留下的是近乎透明的一帧，拨亮时再从它淡入。
+     * 不取 0：alpha 0 的子树渲染线程会跳过，TextureView 就不取帧了（见类说明里为什么不用 INVISIBLE）。</p>
+     */
+    protected static final float IDLE_ALPHA = 0.02f;
+    private static final long FADE_IN_MS = 130L;
+    private static final long FADE_OUT_MS = 160L;
+    private ObjectAnimator fade;
+    /** 正在淡出：{@link #visible} 已经是 false（逻辑上收了），窗口要露着直到淡完。 */
+    private boolean fadingOut;
     private CompositeStreamGeometry.Plan plan;
     protected int lane = LaneCycle.LEFT;
     private boolean straighten;
@@ -211,14 +229,13 @@ public class SideViewPopupView extends ViewGroup {
         attachAt(side, true);
     }
 
-    /** 收起来但窗口留着、相机照推（备着）。 */
+    /** 收起来但窗口留着、相机照推（备着）：画面先淡出，淡完窗口才全透明。 */
     public void conceal() {
         if (!attached || !visible) {
             return;
         }
         visible = false;
-        applyVisibility(false);
-        update();
+        hideWithFade();
     }
 
     /** 整个拿掉。 */
@@ -226,6 +243,7 @@ public class SideViewPopupView extends ViewGroup {
         if (!attached) {
             return;
         }
+        abortFade();
         try {
             windowManager.removeView(this);
         } catch (Exception e) {
@@ -262,13 +280,19 @@ public class SideViewPopupView extends ViewGroup {
         boolean sideChanged = side != lane;
         lane = side;
         if (attached) {
-            boolean visibilityChanged = show != visible;
+            boolean wasShown = windowShown();
             visible = show;
-            applyVisibility(show);
             if (sideChanged) {
                 place(side);
             }
-            if (sideChanged || visibilityChanged) {
+            if (show) {
+                // 原来收着、或换了边：从近乎透明淡入，缓冲里留的上一边那张看不见；
+                // 淡出到一半又打灯、同一边：接着往上淡
+                reveal(wasShown && !sideChanged);
+            } else if (wasShown) {
+                hideWithFade();
+            }
+            if (!show && sideChanged) {
                 update();
             }
             if (sideChanged) {
@@ -284,14 +308,104 @@ public class SideViewPopupView extends ViewGroup {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP | Gravity.START;
+        setAlpha(IDLE_ALPHA);
         applyVisibility(show);
         place(side);
         try {
             windowManager.addView(this, params);
             attached = true;
             visible = show;
+            if (show) {
+                startFade(IDLE_ALPHA, 1f, FADE_IN_MS, null);
+            }
         } catch (Exception e) {
             AppLog.e(TAG, "侧视窗添加失败", e);
+        }
+    }
+
+    // ------------------------------------------------------------------ 淡入淡出
+
+    /** 窗口露在屏幕上：显示中，或还在淡出。备着（窗口全透明）时是 false。 */
+    protected final boolean windowShown() {
+        return visible || fadingOut;
+    }
+
+    /** 窗口露出来（不透明、接点击）。HUD 那块窗口换成自己的做法。 */
+    protected void windowUp() {
+        applyVisibility(true);
+        update();
+    }
+
+    /** 窗口完全收起（全透明、点击穿过去）。HUD 那块窗口换成自己的做法。 */
+    protected void windowDown() {
+        applyVisibility(false);
+        update();
+    }
+
+    /**
+     * 拨亮：窗口露出来，画面从近乎透明淡入。
+     *
+     * @param continueFromCurrent 淡出到一半又要显示、而且还是同一边：从现在的透明度接着往上淡
+     */
+    protected void reveal(boolean continueFromCurrent) {
+        fadingOut = false;
+        float from = continueFromCurrent ? Math.max(getAlpha(), IDLE_ALPHA) : IDLE_ALPHA;
+        cancelFade();
+        setAlpha(from);   // 窗口露出来之前先定好，第一帧就是淡入的起点
+        windowUp();
+        startFade(from, 1f, FADE_IN_MS, null);
+    }
+
+    /** 收起：画面淡出，淡完才让窗口全透明（调用前 {@link #visible} 已经是 false）。 */
+    protected void hideWithFade() {
+        fadingOut = true;
+        startFade(getAlpha(), IDLE_ALPHA, FADE_OUT_MS, () -> {
+            fadingOut = false;
+            if (!visible && attached) {
+                windowDown();
+            }
+        });
+    }
+
+    /** 立刻停掉淡入淡出，画面回到「没显示」的透明度（窗口拿掉、重建之前）。 */
+    protected void abortFade() {
+        cancelFade();
+        fadingOut = false;
+        setAlpha(IDLE_ALPHA);
+    }
+
+    private void startFade(float from, float to, long durationMs, Runnable whenDone) {
+        cancelFade();
+        setAlpha(from);
+        final ObjectAnimator animator = ObjectAnimator.ofFloat(this, View.ALPHA, from, to);
+        animator.setDuration(durationMs);
+        animator.addListener(new AnimatorListenerAdapter() {
+            private boolean canceled;
+
+            @Override
+            public void onAnimationCancel(Animator a) {
+                canceled = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator a) {
+                if (fade == animator) {
+                    fade = null;
+                }
+                if (!canceled && whenDone != null) {
+                    whenDone.run();
+                }
+            }
+        });
+        fade = animator;
+        animator.start();
+    }
+
+    private void cancelFade() {
+        ObjectAnimator running = fade;
+        fade = null;
+        if (running != null) {
+            running.cancel();
         }
     }
 

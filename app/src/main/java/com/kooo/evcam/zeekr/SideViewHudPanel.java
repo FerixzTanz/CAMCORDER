@@ -151,13 +151,21 @@ public class SideViewHudPanel extends SideViewPopupView {
         boolean sideChanged = side != lane;
         lane = side;
         if (isAttached()) {
+            boolean wasShown = windowShown();
             boolean visibilityChanged = show != visible;
             visible = show;
-            applyWindowAlpha();
             if (sideChanged) {
                 // 画面在打灯那一边（2.12.1）：右灯直接打成左灯，窗口要跟着挪过去，
                 // 不然相机换成了左路、窗口还停在右边
                 place(side);
+            }
+            if (show) {
+                // 先挪好、画面先淡到近乎透明，再露出窗口：缓冲里留的上一边那张看不见（SideViewPopupView.IDLE_ALPHA）
+                reveal(wasShown && !sideChanged);
+            } else if (wasShown) {
+                hideWithFade();
+            } else {
+                applyWindowAlpha();
             }
             if (sideChanged || visibilityChanged) {
                 invalidate();
@@ -165,6 +173,7 @@ public class SideViewHudPanel extends SideViewPopupView {
             return;
         }
         releasePresentation();
+        setAlpha(IDLE_ALPHA);
         try {
             Presentation p = new Presentation(getContext(), display);
             FrameLayout frame = new FrameLayout(p.getContext());
@@ -185,6 +194,9 @@ public class SideViewHudPanel extends SideViewPopupView {
             applyWindowAlpha();
             p.show();
             attached = true;
+            if (show) {
+                reveal(false);
+            }
             lastState = (show ? "showing" : "ready") + " on display " + display.getDisplayId() + " (" + display.getName() + ")";
             BlackBox.note("HUD 侧视窗挂上：" + lastState);
         } catch (Throwable t) {
@@ -202,7 +214,7 @@ public class SideViewHudPanel extends SideViewPopupView {
             return;
         }
         visible = false;
-        applyWindowAlpha();
+        hideWithFade();
     }
 
     /** 整个拿掉。 */
@@ -244,12 +256,23 @@ public class SideViewHudPanel extends SideViewPopupView {
             return;
         }
         WindowManager.LayoutParams attrs = window.getAttributes();
-        attrs.alpha = visible ? HudNightDimming.opacity(
+        attrs.alpha = windowShown() ? HudNightDimming.opacity(
                 appConfig.getHudSideOpacityPercent(), appConfig.getHudSideNightPercent(), night) : 0f;
         window.setAttributes(attrs);
     }
 
+    @Override
+    protected void windowUp() {
+        applyWindowAlpha();
+    }
+
+    @Override
+    protected void windowDown() {
+        applyWindowAlpha();
+    }
+
     private void releasePresentation() {
+        abortFade();
         Presentation p = presentation;
         FrameLayout frame = root;
         presentation = null;

@@ -152,6 +152,10 @@ final class SideViewHudOutput {
             disarmReadyExpiry();
             if (showingLane() != want) {
                 AppLog.i(TAG, "HUD：弹出「" + LaneCycle.labelOf(want) + "」路");
+                // 黑匣子里留一行：弹哪一边、窗口此前停在哪一边 —— 「打右灯先蹦出左边」这类事回头看得见
+                BlackBox.note("HUD 弹出「" + LaneCycle.labelOf(want) + "」路："
+                        + (panel == null ? "没有窗口" : "窗口此前在「" + LaneCycle.labelOf(panel.lane()) + "」路"
+                        + (panel.isShowing() ? "，显示中" : "，备着")));
                 show(want);
             }
             return;
