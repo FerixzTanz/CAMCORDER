@@ -8,7 +8,7 @@ import com.kooo.evcam.AppConfig;
 import org.junit.Test;
 
 /**
- * {@link HudPanelPlacement}：HUD 上画面的大小和位置。默认值要摆出 1440×480 上 355×355 px、离边留约 64 px 的样子：
+ * {@link HudPanelPlacement}：HUD 上画面的大小和位置。默认值（项目拥有者 2026-10-15 的设置）要摆出 1440×480 上 456×235 px、离边留约 108 px 的样子：
  * 左灯靠左、右灯靠右。
  */
 public class HudPanelPlacementTest {
@@ -20,12 +20,12 @@ public class HudPanelPlacementTest {
     }
 
     @Test
-    public void defaultsAreAboutThreeFiftyFiveSquareWithSixtyFourOnTheLeft() {
+    public void defaultsAreTheOwnersFourFiftySixByTwoThirtyFive() {
         HudPanelPlacement.Rect r = defaults(false);
-        assertEquals(355, r.height);
-        assertEquals(355, r.width);
-        assertEquals(65, r.left);
-        assertEquals(63, r.top);
+        assertEquals(235, r.height);
+        assertEquals(456, r.width);
+        assertEquals(108, r.left);
+        assertEquals(51, r.top);
     }
 
     @Test
@@ -34,7 +34,7 @@ public class HudPanelPlacementTest {
         HudPanelPlacement.Rect right = defaults(true);
         assertEquals(left.width, right.width);
         assertEquals(left.top, right.top);
-        assertEquals(1440 - 355 - 65, right.left);
+        assertEquals(1440 - 456 - 108, right.left);
         assertEquals(left.left, 1440 - (right.left + right.width));
     }
 

@@ -23,6 +23,11 @@ commit message, not here.
   fades the new side in.
 - The diagnostics report now notes, for each pop-up, which side was chosen and where the window had
   been parked.
+- **Defaults now follow the owner's settings** (see `docs/owner-config.md`): side view on screen and
+  HUD, HUD picture 49 % tall / shape 194 / contrast 220 / edge fade 6, stay open 500 ms, mirrored,
+  start on boot, info bar and licence plate on, floating button locked and tap = record, and so on.
+  A fresh install, or a setting you never changed, comes up like that; settings already saved on a
+  car keep their value.
 
 ## [2.12.2] - 2026-10-15
 

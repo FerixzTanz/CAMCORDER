@@ -27,8 +27,8 @@ public class HudPictureToneTest {
     }
 
     @Test
-    public void defaultPushesMidGreyDownAndKeepsTheEnds() {
-        int c = AppConfig.HUD_SIDE_DEFAULT_CONTRAST_PERCENT;
+    public void contrast150PushesMidGreyDownAndKeepsTheEnds() {
+        int c = 150;   // 2.12.1 的默认值；曲线的数学用它来钉，不跟着默认值走（默认值现在是 220）
         assertFalse(HudPictureTone.isIdentity(c));
         // 40% 灰（路面）落到 30%
         assertEquals(76.5f, HudPictureTone.apply(c, 102f), 0.01f);

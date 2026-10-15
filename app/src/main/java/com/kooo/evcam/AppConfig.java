@@ -108,14 +108,14 @@ public class AppConfig {
     private static final String KEY_SIDE_POPUP_VERTICAL = "side_popup_vertical";  // 上下位置，0 顶 100 底
     /** 以毫秒存：按秒只有 0–3 四档，车机那条很宽的滑块拖一小段根本不动（用户 2026-10-01 实车）。 */
     public static final int SIDE_POPUP_MAX_CLOSE_DELAY_MS = 3000;
-    public static final int SIDE_POPUP_DEFAULT_CLOSE_DELAY_MS = 1000;
+    public static final int SIDE_POPUP_DEFAULT_CLOSE_DELAY_MS = 500;
     public static final int SIDE_POPUP_MIN_SIZE_PERCENT = 25;
     public static final int SIDE_POPUP_MAX_SIZE_PERCENT = 90;
-    public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 55;
+    public static final int SIDE_POPUP_DEFAULT_SIZE_PERCENT = 33;
     /** 默认偏宽：左右看得多比上下看得多有用（用户 2026-10-02）。 */
     public static final int SIDE_POPUP_MIN_SHAPE_PERCENT = 100;
     public static final int SIDE_POPUP_MAX_SHAPE_PERCENT = 300;
-    public static final int SIDE_POPUP_DEFAULT_SHAPE_PERCENT = 180;
+    public static final int SIDE_POPUP_DEFAULT_SHAPE_PERCENT = 220;
     // 换了键名：用户 2026-10-02 要求改用业内的宽度（本田 LaneWatch 约 80°），旧键里存的 90 / 120 一并作废
     private static final String KEY_SIDE_POPUP_FOV = "side_popup_fov_v2";  // 虚拟相机横向视野（度）
     private static final String KEY_SIDE_POPUP_YAW = "side_popup_yaw";  // 往车尾转多少度，负数往车头
@@ -124,9 +124,9 @@ public class AppConfig {
      * 横向 80°：本田 LaneWatch 公开的数（普通后视镜 18–22°），够看两条车道又不至于把车缩得太小、判断不了距离。
      * 往车尾转 50°、稍往上 15° 是猜的（见 SideViewProjection）。
      */
-    public static final int SIDE_POPUP_DEFAULT_FOV = 80;
-    public static final int SIDE_POPUP_DEFAULT_YAW = 50;
-    public static final int SIDE_POPUP_DEFAULT_PITCH = 15;
+    public static final int SIDE_POPUP_DEFAULT_FOV = 90;
+    public static final int SIDE_POPUP_DEFAULT_YAW = 33;
+    public static final int SIDE_POPUP_DEFAULT_PITCH = 10;
     // 侧视画面出在哪：主屏、HUD、两边都出；HUD 不受车速门槛管；位置是 HUD 上的百分比，见 HudPanelPlacement
     private static final String KEY_SIDE_OUTPUT = "side_output";
     public static final int SIDE_OUTPUT_SCREEN = 0;
@@ -145,23 +145,23 @@ public class AppConfig {
     private static final String KEY_HUD_SIDE_MIRROR = "hud_side_mirror";
     public static final int HUD_SIDE_MIN_SIZE_PERCENT = 30;
     public static final int HUD_SIDE_MAX_SIZE_PERCENT = 100;
-    public static final int HUD_SIDE_DEFAULT_SIZE_PERCENT = 74;
+    public static final int HUD_SIDE_DEFAULT_SIZE_PERCENT = 49;
     public static final int HUD_SIDE_MIN_SHAPE_PERCENT = 100;
     public static final int HUD_SIDE_MAX_SHAPE_PERCENT = 300;
-    public static final int HUD_SIDE_DEFAULT_SHAPE_PERCENT = 100;
-    public static final int HUD_SIDE_DEFAULT_LEFT_PERCENT = 6;
-    public static final int HUD_SIDE_DEFAULT_VERTICAL_PERCENT = 50;
+    public static final int HUD_SIDE_DEFAULT_SHAPE_PERCENT = 194;
+    public static final int HUD_SIDE_DEFAULT_LEFT_PERCENT = 11;
+    public static final int HUD_SIDE_DEFAULT_VERTICAL_PERCENT = 21;
     public static final int HUD_SIDE_MIN_OPACITY_PERCENT = 20;
     public static final int HUD_SIDE_DEFAULT_OPACITY_PERCENT = 100;
     public static final int HUD_SIDE_MIN_CONTRAST_PERCENT = 100;
     public static final int HUD_SIDE_MAX_CONTRAST_PERCENT = 300;
-    public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 150;
+    public static final int HUD_SIDE_DEFAULT_CONTRAST_PERCENT = 220;
     public static final int HUD_SIDE_MIN_NIGHT_PERCENT = 20;
     public static final int HUD_SIDE_MAX_NIGHT_PERCENT = 100;
     public static final int HUD_SIDE_DEFAULT_NIGHT_PERCENT = 60;
     public static final int HUD_SIDE_MIN_FADE_PERCENT = 0;
     public static final int HUD_SIDE_MAX_FADE_PERCENT = 40;
-    public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 15;
+    public static final int HUD_SIDE_DEFAULT_FADE_PERCENT = 6;
     private static final String KEY_FORCE_H264_ENCODING = "force_h264_encoding";  // 拍照走相机 JPEG 通道
     private static final String KEY_LICENSE_PLATE = "license_plate";  // 车牌号（可选）
     private static final String KEY_LICENSE_PLATE_ENABLED = "license_plate_enabled";
@@ -318,7 +318,7 @@ public class AppConfig {
     public boolean isAutoStartOnBoot() {
         // 默认启用开机自启动（车机系统场景）
         // 默认关：开机就自己起来是件挺重的事，该由用户明确开启
-        return prefs.getBoolean(KEY_AUTO_START_ON_BOOT, false);
+        return prefs.getBoolean(KEY_AUTO_START_ON_BOOT, true);
     }
     
     /**
@@ -429,7 +429,7 @@ public class AppConfig {
      * <p>和开发者选项里的「息屏录制」是两回事：那个没在录的时候也不关相机，这个不管那件事。</p>
      */
     public boolean isScreenOffKeepRecording() {
-        return prefs.getBoolean(KEY_SCREEN_OFF_KEEP_RECORDING, true);
+        return prefs.getBoolean(KEY_SCREEN_OFF_KEEP_RECORDING, false);
     }
 
     public void setScreenOffKeepRecording(boolean enabled) {
@@ -492,7 +492,7 @@ public class AppConfig {
      * 系统对 START_STICKY 服务的重启。关 = 被杀了不回来。默认开。
      */
     public boolean isKeepAliveEnabled() {
-        return prefs.getBoolean(KEY_KEEP_ALIVE_ENABLED, true);
+        return prefs.getBoolean(KEY_KEEP_ALIVE_ENABLED, false);
     }
     
     
@@ -838,8 +838,12 @@ public class AppConfig {
      * <p>宽高分开，而不是正方形：后视镜天然是横向的，喂给它的取景也是该路画面里
      * 一条横向的带 —— 硬做成正方形，要么上下留黑边，要么把两侧裁掉。</p>
      */
-    public static final int REARVIEW_DEFAULT_WIDTH = 900;
-    public static final int REARVIEW_DEFAULT_HEIGHT = 340;
+    public static final int REARVIEW_DEFAULT_WIDTH = 782;
+    /** 窗口默认位置和上下平移：项目拥有者 2026-10-15 的设置（右上角贴边；平移到底）。 */
+    public static final int REARVIEW_DEFAULT_X = 2418;
+    public static final int REARVIEW_DEFAULT_Y = 198;
+    public static final float REARVIEW_DEFAULT_PAN = 1.0f;
+    public static final int REARVIEW_DEFAULT_HEIGHT = 295;
     /** 允许的窗口尺寸范围。 */
     /**
      * 窗口尺寸下限。
@@ -898,7 +902,7 @@ public class AppConfig {
      * <p>键名还是 {@code photo_fisheye}：它最早只管图片回看，改名的话用户拨过的状态就丢了。</p>
      */
     public boolean isFisheyeCorrection() {
-        return prefs.getBoolean(KEY_PHOTO_FISHEYE, false);
+        return prefs.getBoolean(KEY_PHOTO_FISHEYE, true);
     }
 
     public void setFisheyeCorrection(boolean on) {
@@ -1069,7 +1073,7 @@ public class AppConfig {
      */
     public float getRearViewPan() {
         return com.kooo.evcam.zeekr.RearViewGeometry.clampPan(
-                prefs.getFloat(KEY_REARVIEW_PAN, com.kooo.evcam.zeekr.RearViewGeometry.DEFAULT_PAN));
+                prefs.getFloat(KEY_REARVIEW_PAN, REARVIEW_DEFAULT_PAN));
     }
 
     /**
@@ -1118,13 +1122,13 @@ public class AppConfig {
                 com.kooo.evcam.zeekr.RearViewGeometry.clampPan(pan)).apply();
     }
 
-    /** 窗口位置；返回 -1 表示还没拖过，由调用方决定初始位置。 */
+    /** 窗口位置；没拖过就是默认位置（{@link #REARVIEW_DEFAULT_X}）；负数表示没有位置，由调用方决定初始位置。 */
     public int getRearViewX() {
-        return prefs.getInt(KEY_REARVIEW_X, -1);
+        return prefs.getInt(KEY_REARVIEW_X, REARVIEW_DEFAULT_X);
     }
 
     public int getRearViewY() {
-        return prefs.getInt(KEY_REARVIEW_Y, -1);
+        return prefs.getInt(KEY_REARVIEW_Y, REARVIEW_DEFAULT_Y);
     }
 
     public void setRearViewPosition(int x, int y) {
@@ -1479,7 +1483,7 @@ public class AppConfig {
      */
     public boolean isRecordingStatsEnabled() {
         // 默认开启录制状态显示
-        return prefs.getBoolean(KEY_RECORDING_STATS_ENABLED, true);
+        return prefs.getBoolean(KEY_RECORDING_STATS_ENABLED, false);
     }
     
     // ==================== 时间角标配置相关方法 ====================
@@ -1515,7 +1519,7 @@ public class AppConfig {
      * 存下来的、录进画面的必须是同一个串。</p>
      */
     public String getLicensePlate() {
-        if (!prefs.getBoolean(KEY_LICENSE_PLATE_ENABLED, false)) {
+        if (!prefs.getBoolean(KEY_LICENSE_PLATE_ENABLED, true)) {
             return "";
         }
         return LicensePlate.sanitize(prefs.getString(KEY_LICENSE_PLATE, ""));
@@ -1587,7 +1591,7 @@ public class AppConfig {
      * 显示哪几项在系统信息里勾选（{@link #getInfoBarItems}，{@code telemetry.InfoBar}）。</p>
      */
     public boolean isInfoBarEnabled() {
-        return prefs.getBoolean(KEY_INFO_BAR, false);
+        return prefs.getBoolean(KEY_INFO_BAR, true);
     }
 
     public void setInfoBarEnabled(boolean enabled) {
@@ -1621,7 +1625,7 @@ public class AppConfig {
 
     /** 打转向灯弹侧视，默认关。 */
     public boolean isSidePopupEnabled() {
-        return prefs.getBoolean(KEY_SIDE_POPUP, false);
+        return prefs.getBoolean(KEY_SIDE_POPUP, true);
     }
 
     public void setSidePopupEnabled(boolean enabled) {
@@ -1738,7 +1742,7 @@ public class AppConfig {
      * 只选 HUD 而找不到 HUD 时，退回主屏弹窗。
      */
     public int getSideOutput() {
-        int v = prefs.getInt(KEY_SIDE_OUTPUT, SIDE_OUTPUT_SCREEN);
+        int v = prefs.getInt(KEY_SIDE_OUTPUT, SIDE_OUTPUT_BOTH);
         return Math.max(SIDE_OUTPUT_SCREEN, Math.min(SIDE_OUTPUT_BOTH, v));
     }
 
@@ -1790,18 +1794,18 @@ public class AppConfig {
         prefs.edit().putInt(KEY_HUD_SIDE_VERTICAL, Math.max(0, Math.min(100, percent))).apply();
     }
 
-    /** 主屏侧视左右翻转（像门镜），默认不翻。 */
+    /** 主屏侧视左右翻转（像门镜），默认翻（项目拥有者 2026-10-15 的设置）。 */
     public boolean isSidePopupMirrored() {
-        return prefs.getBoolean(KEY_SIDE_POPUP_MIRROR, false);
+        return prefs.getBoolean(KEY_SIDE_POPUP_MIRROR, true);
     }
 
     public void setSidePopupMirrored(boolean on) {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_MIRROR, on).apply();
     }
 
-    /** HUD 上侧视左右翻转（像门镜），默认不翻：2.12.0 默认翻，实车看着糊涂（用户 2026-10-14）。 */
+    /** HUD 上侧视左右翻转（像门镜），默认翻：2.12.1 曾改成不翻，项目拥有者 2026-10-15 又改回翻，默认跟着他的设置。 */
     public boolean isHudSideMirrored() {
-        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, false);
+        return prefs.getBoolean(KEY_HUD_SIDE_MIRROR, true);
     }
 
     public void setHudSideMirrored(boolean on) {
@@ -1819,7 +1823,7 @@ public class AppConfig {
                 Math.max(HUD_SIDE_MIN_OPACITY_PERCENT, Math.min(100, percent))).apply();
     }
 
-    /** HUD 上画面的对比度，100..300；100 是原画面，默认 150（中灰压暗，投影上不发白，见 HudPictureTone）。 */
+    /** HUD 上画面的对比度，100..300；100 是原画面，默认 220（中灰压暗，投影上不发白，见 HudPictureTone；2.12.1 是 150，项目拥有者 2026-10-15 调到 220）。 */
     public int getHudSideContrastPercent() {
         int v = prefs.getInt(KEY_HUD_SIDE_CONTRAST, HUD_SIDE_DEFAULT_CONTRAST_PERCENT);
         return Math.max(HUD_SIDE_MIN_CONTRAST_PERCENT, Math.min(HUD_SIDE_MAX_CONTRAST_PERCENT, v));
@@ -1853,7 +1857,7 @@ public class AppConfig {
     }
 
     public boolean isLicensePlateEnabled() {
-        return prefs.getBoolean(KEY_LICENSE_PLATE_ENABLED, false);
+        return prefs.getBoolean(KEY_LICENSE_PLATE_ENABLED, true);
     }
 
     public void setLicensePlateEnabled(boolean enabled) {
@@ -2095,7 +2099,7 @@ public class AppConfig {
      * 蹭一下它就跑了。锁只锁拖拽，单击和长按照旧。</p>
      */
     public boolean isFloatingPositionLocked() {
-        return prefs.getBoolean(KEY_FLOATING_LOCKED, false);
+        return prefs.getBoolean(KEY_FLOATING_LOCKED, true);
     }
 
     public void setFloatingPositionLocked(boolean locked) {
@@ -2103,12 +2107,13 @@ public class AppConfig {
     }
 
     /**
-     * 单击做什么。默认「打开主界面」—— 手指擦到按钮就停了录像，
-     * 是行车记录仪最不该发生的事。
+     * 单击做什么。默认「开始 / 停止录制」（项目拥有者 2026-10-15 的设置）。
+     * 以前默认「打开主界面」：手指擦到按钮就停了录像，是行车记录仪最不该发生的事 ——
+     * 现在靠「锁定位置」（默认开）和拥有者自己的取舍；觉得不妥的在设置里改回「打开主界面」。
      */
     public String getFloatingTapAction() {
         return prefs.getString(KEY_FLOATING_TAP_ACTION,
-                com.kooo.evcam.overlay.FloatingAction.OPEN_APP.key);
+                com.kooo.evcam.overlay.FloatingAction.TOGGLE_RECORDING.key);
     }
 
     public void setFloatingTapAction(String key) {
