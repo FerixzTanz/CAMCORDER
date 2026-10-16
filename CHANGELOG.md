@@ -7,7 +7,7 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
-## [2.13.0] - 2026-10-16
+## [2.14.0] - 2026-10-16
 
 ### New and improved
 
@@ -33,6 +33,100 @@ commit message, not here.
   options are now turned on by tapping the Settings title seven times (then the password) and off from
   the last row of the Developer section.
 - The photo viewer no longer has its own multi-select; use the gallery.
+
+||||||| 8e1231d
+## [2.13.0] - 2026-10-15
+
+Final release. The app does everything its author set out to do; bug reports are welcome, but no
+further features are planned.
+
+### Changed
+
+- **Defaults follow the owner's settings again** (see `docs/owner-config.md`): *HUD picture
+  brightness at night* is now 100 (no dimming) and *HUD picture contrast at night* is 100 (the
+  camera's own picture). Everything else was already the default. Settings already saved on a car
+  keep their value.
+- The *About* page describes what the app does today and says this is the final release.
+
+### Removed
+
+- **The experimental HUD overlay switch.** Tested on the car on 2026-10-15: the head unit accepted
+  the overlay window, but the car's own HUD graphics are drawn at a layer no sideloaded app can
+  reach, so the navigation card still covered the picture. The switch did nothing useful and is
+  gone; the HUD window is created the way it was before 2.12.4. If you had it on, nothing changes.
+
+### Known limits, as found on the car
+
+These were tested and are not going to change. Read them before relying on the app.
+
+- **The car's own HUD graphics always draw over the side-view picture.** The navigation card, lane
+  icons and turn arrows sit at a system layer that no sideloaded app can get above; an overlay-type
+  window was tried on 2026-10-15 and still ended up underneath. Keep the picture at the edge
+  (*HUD picture distance from the edge* 0, a smaller size) so the two overlap as little as possible.
+- **The mirror's blind-spot light cannot be read.** Two full signal scans (11 and 15 October) with
+  all 2068 vehicle functions registered: the blind-spot IDs the head unit exposes answer "not
+  available", and no other signal changes when the mirror light comes on. The light is driven
+  outside the head unit. The app cannot show a blind-spot warning and never will on this platform.
+  *Record all vehicle signals* (developer options) stays for anyone who wants to look further.
+- **The night picture is only as good as the camera.** The surround camera is dark and low in
+  contrast after sunset. The automatic night contrast keeps the picture visible, but it will not
+  look like daytime, and streetlights or headlights can wash it out.
+- **The screen pop-up and the Super mirror share one camera output.** While the Super mirror is
+  open, the turn-signal pop-up on the main screen does not appear. The HUD picture is unaffected.
+- **Factory views come first.** In reverse, or when the car shows its own 360 view, side window or
+  park assist, the screen pop-up stays hidden. The HUD steps aside only for reverse. The car can
+  take the camera back at any time.
+- **Signals were found on one car.** The turn-signal, gear, speed and day/night signals the side
+  view relies on were mapped on a single ZEEKR 7X. Other models, markets or software versions may
+  not report them the same way; the diagnostics report shows what your car provides.
+- **The HUD is found by its size.** The picture goes to the 1440×480 display the 7X reports as its
+  HUD. If no such display exists, the screen pop-up is used instead.
+- **Signing uses a public test key.** Releases are signed with the AOSP test key that ships in the
+  repository, the same key dts88's app and every earlier version used, so updates keep installing
+  over each other without an uninstall. The flip side is that anyone can build an APK that installs
+  over this app. Install only from this repository's Releases page.
+- **Tested in one car by one person.** There is no QA beyond the unit tests of pure logic. Try
+  anything new in a parked car first.
+
+## [2.12.7] - 2026-10-15
+
+### Fixed
+
+- **The signal scan no longer loses its recording when the app restarts.** Quitting and reopening
+  the app while *Record all vehicle signals* was on started a new file each time, so everything
+  recorded before the restart was gone (four minutes of a blind-spot drive on 2026-10-15). A scan
+  that continues after a restart now appends to the same file and notes the restart.
+
+## [2.12.6] - 2026-10-15
+
+### New and improved
+
+- **The HUD picture switches to its own contrast at night.** The day contrast (default 220) pushes
+  everything darker than mid-grey to black, which is right in daylight but turns a night picture into
+  nothing on the HUD. A new *HUD picture contrast at night* (Settings → Super mirror → Turn-signal
+  side view → HUD picture, default 120) replaces it while the car is in night mode, following the same
+  day/night signal as *HUD picture brightness at night*. The day value is unchanged.
+
+## [2.12.5] - 2026-10-15
+
+### Fixed
+
+- **The experimental HUD overlay switch now actually opens an overlay window.** In 2.12.4 the head
+  unit refused it (*Window type mismatch*, seen in the 16:35 diagnostics) and the app fell back to
+  the screen pop-up every time. The HUD window is now created the way Android 11+ requires for an
+  overlay on a second screen. The switch is still off by default; with it off nothing changes.
+
+## [2.12.4] - 2026-10-15
+
+### New and improved
+
+- **HUD picture above the car's HUD information (experimental).** On the HUD, the car's own
+  navigation arrow and lane icons were drawn over the side-view picture. A new switch under
+  Settings → Super mirror → Turn-signal side view → HUD picture opens the HUD window at a higher
+  layer, which may put the picture above them. Off by default. If the head unit refuses the window,
+  the screen pop-up is used as before. Switching it off rebuilds the window the old way, so there is
+  nothing to reinstall.
+- The diagnostics report now says whether the HUD window was a plain presentation or an overlay.
 
 ## [2.12.3] - 2026-10-15
 

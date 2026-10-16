@@ -57,8 +57,9 @@ public class SideViewHudPanel extends SideViewPopupView {
         readTone();
     }
 
+    /** 按这一刻是白天还是夜间读对比度曲线：夜里画面本来就暗，用夜间那档。 */
     private void readTone() {
-        int contrast = appConfig.getHudSideContrastPercent();
+        int contrast = appConfig.getHudSideContrastPercent(night);
         if (HudPictureTone.isIdentity(contrast)) {
             tonePaint = null;
             return;
@@ -73,11 +74,13 @@ public class SideViewHudPanel extends SideViewPopupView {
         return tonePaint;
     }
 
-    /** 车上是不是夜间模式：夜间再按设置的比例调暗（{@link HudNightDimming}）。服务每次读数变化时给。 */
+    /** 车上是不是夜间模式：夜间换夜间对比度，再按设置的比例调暗（{@link HudNightDimming}）。服务每次读数变化时给。 */
     public void setNight(boolean night) {
         if (this.night != night) {
             this.night = night;
+            readTone();
             applyWindowAlpha();
+            invalidate();
         }
     }
 

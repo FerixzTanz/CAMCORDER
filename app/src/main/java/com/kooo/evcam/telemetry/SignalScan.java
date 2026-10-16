@@ -137,6 +137,8 @@ public final class SignalScan {
     private Writer out;
     private int lines;
     private volatile boolean stopped;
+    /** 进程重启后接着上一次：文件追加，别把之前记的清掉（2026-10-15 实车：退出应用两次，四分钟的记录没了）。 */
+    private boolean resume;
     private final Runnable flush = this::flushNow;
     private final Runnable autoStop = this::autoStop;
 
@@ -164,6 +166,8 @@ public final class SignalScan {
                 return;
             }
             running = new SignalScan(context, onAutoStop);
+            // 开关刚拨开时剩的是整段；少了半分钟以上就是进程重启后接着记
+            running.resume = remainingMs < MAX_RUN_MS - 30_000L;
             running.begin(Math.max(60_000L, Math.min(MAX_RUN_MS, remainingMs)));
         }
     }
@@ -196,8 +200,11 @@ public final class SignalScan {
     private void connect() {
         try {
             File file = new File(app.getFilesDir(), FILE_NAME);
-            out = new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8);
-            write("# signal scan started " + stamp() + ", running up to " + (MAX_RUN_MS / 60000) + " min");
+            boolean append = resume && file.isFile();
+            out = new OutputStreamWriter(new FileOutputStream(file, append), StandardCharsets.UTF_8);
+            write(append
+                    ? "# signal scan resumed " + stamp() + " after an app restart, earlier lines kept"
+                    : "# signal scan started " + stamp() + ", running up to " + (MAX_RUN_MS / 60000) + " min");
             Object car = EcarxSource.carFor(app);
             function = car == null ? null : EcarxSource.call(car, "getICarFunction");
             if (function == null) {

@@ -5,6 +5,9 @@ App Lab app.
 
 [中文说明](README.zh-CN.md) · [Changelog](CHANGELOG.md) · [Credits](NOTICE.md) · [Platform notes](docs/zeekr-platform-notes.md)
 
+**2.13.0 is the final release.** The app does everything its author set out to do. Bug reports are
+welcome, but no further features are planned.
+
 > [!IMPORTANT]
 > - CAMCORDER is a personal hobby project by a car owner, **not a professional developer**. My
 >   changes were vibe coded with an AI assistant, checked by eye and tested only in my own car.
@@ -44,7 +47,8 @@ screen and the HUD.
 - **HUD output**: show the side view on the screen, the HUD (found as the extra 1440×480 display),
   or both. It appears at any speed and is mirrored like a door mirror by default. Under **HUD
   picture**: size, position, opacity, contrast, edge fade, and dimming at night from the car's
-  day/night signal. If the HUD isn't found, the screen pop-up is used instead.
+  day/night signal. If the HUD isn't found, the screen pop-up is used instead. The car's own HUD
+  graphics always draw above the picture; that layer is not reachable from an app.
 - Switch it off in **Settings → Super mirror → Turn-signal side view**. It relies on vehicle
   signals that dts88 found on one car, so it may behave differently on yours.
 
@@ -82,6 +86,15 @@ For the underlying dash cam, Super mirror, playback and send-to-phone features, 
 - Factory features come first and can take a camera back at any time.
 - Record to a USB drive. If it can't keep up, use a faster drive or lower the frame rate/bitrate
   (needs Developer options; see Settings → Recording → Edit stream profile).
+- The car's own HUD graphics (navigation card, lane icons) always draw over the side-view picture.
+  That layer is not reachable from an app; keep the picture at the edge so they overlap less.
+- The mirror's blind-spot light is not readable from the head unit, so the app cannot show a
+  blind-spot warning. Two full signal scans confirmed it.
+- The night picture is limited by the camera. Night contrast keeps it visible, not daylight-bright.
+- While the Super mirror is open, the screen pop-up does not appear (shared camera output). The
+  HUD picture is unaffected.
+- Releases are signed with the public AOSP test key, like dts88's app, so updates install over each
+  other. Anyone can build an APK with that key, so install only from this repository's Releases.
 - Automated tests cover pure logic only. Try it in a parked car first.
 
 Problems: [open an issue](../../issues) and attach a report from **Settings → System → Diagnostics**.
