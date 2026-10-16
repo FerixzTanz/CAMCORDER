@@ -90,6 +90,7 @@ public final class GithubReleases {
         public final String apkName;
         public final String apkUrl;
         public final long apkBytes;
+        public final String apkDigest;
         public final String pageUrl;
         /** 发布页上的说明原文（Markdown）。 */
         public final String body;
@@ -99,19 +100,20 @@ public final class GithubReleases {
          */
         public final String notes;
 
-        Release(String tagName, String apkName, String apkUrl, long apkBytes, String pageUrl,
+        Release(String tagName, String apkName, String apkUrl, long apkBytes, String apkDigest, String pageUrl,
                 String body, String notes) {
             this.tagName = tagName;
             this.apkName = apkName;
             this.apkUrl = apkUrl;
             this.apkBytes = apkBytes;
+            this.apkDigest = apkDigest;
             this.pageUrl = pageUrl;
             this.body = body;
             this.notes = notes;
         }
 
         Release withNotes(String notes) {
-            return new Release(tagName, apkName, apkUrl, apkBytes, pageUrl, body, notes);
+            return new Release(tagName, apkName, apkUrl, apkBytes, apkDigest, pageUrl, body, notes);
         }
     }
 
@@ -200,6 +202,7 @@ public final class GithubReleases {
                         name,
                         url,
                         asset.optLong("size", 0),
+                        asset.optString("digest", ""),
                         release.optString("html_url", ""),
                         release.optString("body", ""),
                         "");
@@ -219,6 +222,10 @@ public final class GithubReleases {
         if (release.apkUrl == null || !release.apkUrl.startsWith("https://")) {
             throw new Failure("Refusing a non-https download URL", R.string.upd_err_bad_response);
         }
+        final String expected;
+        try { expected = DownloadIntegrity.expected(release.apkDigest); }
+        catch (IOException e) { throw new Failure(e.getMessage(), R.string.upd_err_integrity).because(e); }
+        java.security.MessageDigest hash = DownloadIntegrity.sha256();
         HttpURLConnection connection = open(release.apkUrl);
         try {
             int code = connection.getResponseCode();
@@ -243,6 +250,7 @@ public final class GithubReleases {
                 int n;
                 while ((n = in.read(buffer)) != -1) {
                     out.write(buffer, 0, n);
+                    hash.update(buffer, 0, n);
                     done += n;
                     if (done > MAX_APK_BYTES) {
                         throw new Failure("Download exceeded the size limit, aborted",
@@ -257,11 +265,8 @@ public final class GithubReleases {
                 throw new Failure("Only received " + done + "/" + total + " bytes",
                         R.string.upd_err_truncated, done, total);
             }
-            // 也要和 GitHub 列出来的文件大小对上（Content-Length 只说这一次传了多少）（安全审查 2026-10-08）
-            if (release.apkBytes > 0 && done != release.apkBytes) {
-                throw new Failure("Received " + done + " bytes, release lists " + release.apkBytes,
-                        R.string.upd_err_truncated, done, release.apkBytes);
-            }
+            try { DownloadIntegrity.verify(expected, hash.digest(), release.apkBytes, done); }
+            catch (IOException e) { throw new Failure(e.getMessage(), R.string.upd_err_integrity).because(e); }
             AppLog.d(TAG, "已下载 " + release.apkName + "（" + done + " 字节）");
         } catch (IOException e) {
             // 残件必须删掉
@@ -300,13 +305,28 @@ public final class GithubReleases {
     }
 
     private static HttpURLConnection open(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        connection.setReadTimeout(READ_TIMEOUT_MS);
-        connection.setRequestProperty("User-Agent", USER_AGENT);
-        connection.setRequestProperty("Accept", "application/vnd.github+json");
-        connection.setInstanceFollowRedirects(true);
-        return connection;
+        URL next = DownloadIntegrity.https(url);
+        for (int redirects = 0; redirects <= 5; redirects++) {
+            HttpURLConnection connection = (HttpURLConnection) next.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(READ_TIMEOUT_MS);
+            connection.setRequestProperty("User-Agent", USER_AGENT);
+            connection.setRequestProperty("Accept", "application/vnd.github+json");
+            connection.setInstanceFollowRedirects(false);
+            try {
+                int status = connection.getResponseCode();
+                if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308)
+                    return connection;
+                String location = connection.getHeaderField("Location");
+                if (location == null) throw new IOException("Redirect without Location");
+                next = DownloadIntegrity.https(new URL(next, location).toString());
+            } catch (IOException e) {
+                connection.disconnect();
+                throw e;
+            }
+            connection.disconnect();
+        }
+        throw new IOException("Too many update redirects");
     }
 }

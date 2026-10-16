@@ -68,6 +68,8 @@ Sideload the `.apk` from this repo's [Releases](../../releases) through App Lab.
 dts88's app and keeps your settings. When the installer finishes, tap **Back**, not **Open**, or the
 head unit's installer can get stuck.
 
+In-app APK downloads require the release asset’s SHA-256 digest and exact published size, and follow only HTTPS redirects. Assets without a valid digest must be downloaded manually from the release page. This checks downloaded bytes against GitHub metadata; it does not establish trust in the APK signing key.
+
 Build it yourself with JDK 17+ and the Android SDK (compileSdk 36):
 
 ```bash
