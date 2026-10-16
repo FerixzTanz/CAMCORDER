@@ -289,12 +289,10 @@ public class FileShareServer extends NanoHTTPD {
                 ? "<video src=\"/f/" + tokenValue + "\" controls playsinline></video>"
                 : "<img src=\"/f/" + tokenValue + "\" alt=\"\">";
         String howTo = video
-                ? "长按视频 → 选择「保存视频」或「下载」<br>"
-                  + "Long-press the video → Save video / Download"
-                : "长按图片 → 选择「保存图片」或「下载」<br>"
-                  + "Long-press the image → Save image / Download";
+                ? "Long-press the video → Save video / Download"
+                : "Long-press the image → Save image / Download";
 
-        String html = "<!doctype html><html lang=\"zh\"><head>"
+        String html = "<!doctype html><html lang=\"en\"><head>"
                 + "<meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<title>" + escape(shared.getName()) + "</title><style>"
@@ -311,7 +309,7 @@ public class FileShareServer extends NanoHTTPD {
                 + "<div class=\"name\">" + escape(shared.getName()) + "</div>"
                 + "<div class=\"size\">" + readableSize(shared.length()) + "</div>"
                 + "<div class=\"tip\">" + howTo
-                + "<br><br>存不下来时，点这里直接下载<br>If saving fails, download it here:<br>"
+                + "<br><br>If saving fails, download it here:<br>"
                 + "<a href=\"/f/" + tokenValue + "\" download>" + escape(shared.getName()) + "</a>"
                 + "</div></body></html>";
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html);
@@ -319,7 +317,7 @@ public class FileShareServer extends NanoHTTPD {
 
     /** 不是图片、视频的文件（诊断报告）：页面上只有一个下载按钮。 */
     private Response downloadPage(File shared, String tokenValue) {
-        String html = "<!doctype html><html lang=\"zh\"><head>"
+        String html = "<!doctype html><html lang=\"en\"><head>"
                 + "<meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<title>" + escape(shared.getName()) + "</title><style>"
@@ -333,9 +331,8 @@ public class FileShareServer extends NanoHTTPD {
                 + "</style></head><body>"
                 + "<div class=\"name\">" + escape(shared.getName()) + "</div>"
                 + "<div class=\"size\">" + readableSize(shared.length()) + "</div>"
-                + "<a class=\"btn\" href=\"/f/" + tokenValue + "\" download>下载 / Download</a>"
-                + "<div class=\"tip\">点上面的按钮，文件就存到手机里了<br>"
-                + "Tap the button to save the file to your phone</div>"
+                + "<a class=\"btn\" href=\"/f/" + tokenValue + "\" download>Download</a>"
+                + "<div class=\"tip\">Tap the button to save the file to your phone</div>"
                 + "</body></html>";
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html);
     }
