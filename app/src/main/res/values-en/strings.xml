@@ -1038,7 +1038,6 @@
     <string name="action_deselect_all">Deselect all</string>
     <string name="action_all_photos">All photos</string>
     <string name="action_all_videos">All videos</string>
-    <string name="action_back">Back</string>
     <string name="action_info">Details</string>
     <string name="msg_select_first">Select something first</string>
     <string name="info_photo_detail">Taken: %1$s\nSize: %2$s\nViews: %3$s</string>

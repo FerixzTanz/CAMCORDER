@@ -1019,7 +1019,6 @@
     <string name="action_deselect_all">全不选</string>
     <string name="action_all_photos">全部照片</string>
     <string name="action_all_videos">全部录像</string>
-    <string name="action_back">返回</string>
     <string name="action_info">详情</string>
     <string name="msg_select_first">请先选择</string>
     <string name="info_photo_detail">拍摄时间：%1$s\n大小：%2$s\n画面：%3$s</string>
