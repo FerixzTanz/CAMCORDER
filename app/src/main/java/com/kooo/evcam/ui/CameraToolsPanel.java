@@ -48,6 +48,12 @@ public final class CameraToolsPanel {
         void onImageAdjustTouched();
         /** 「录制状态角标」开关拨了：主界面按新值画角标。 */
         void onStatsToggled(boolean enabled);
+        /** 拨超级后视镜；返回拨完之后的真实状态（没有悬浮窗权限时拨不动，返回原状态）。 */
+        boolean setRearView(boolean on);
+        /** 拨悬浮按钮；返回拨完之后的真实状态。 */
+        boolean setFloatingButton(boolean on);
+        /** 退出应用（抽屉没了，退出从那儿搬到面板最底下）。 */
+        void exitApp();
     }
 
     private final View panel;
@@ -59,6 +65,8 @@ public final class CameraToolsPanel {
     private SeekBar exposureBar;
     private TextView exposureValue;
     private final List<Runnable> refreshers = new ArrayList<>();
+    /** 开关行按真实状态重摆：后视镜、悬浮按钮也可能在设置里或悬浮窗自己关掉 */
+    private final List<Runnable> switchSyncs = new ArrayList<>();
 
     public CameraToolsPanel(View panel, Host host) {
         this.panel = panel;
@@ -82,14 +90,20 @@ public final class CameraToolsPanel {
             }
         });
 
+        panel.findViewById(R.id.tools_exit).setOnClickListener(v -> host.exitApp());
+
         LinearLayout switches = panel.findViewById(R.id.tools_switches);
+        // 两个原来在抽屉里的开关：点一下就拨，开关显示的是拨完的真实状态
+        addSwitch(switches, R.string.set_section_rearview, 0,
+                config::isRearViewEnabled, host::setRearView);
+        addSwitch(switches, R.string.set_section_floating, 0,
+                config::isRecordingFloatingEnabled, host::setFloatingButton);
         addSwitch(switches, R.string.set_recording_stats_title, R.string.set_recording_stats_summary,
-                config.isRecordingStatsEnabled(), on -> {
+                config::isRecordingStatsEnabled, on -> {
                     config.setRecordingStatsEnabled(on);
                     host.onStatsToggled(on);
+                    return on;
                 });
-        addSwitch(switches, R.string.set_vehicle_status_title, 0,
-                config.isVehicleStatusEnabled(), config::setVehicleStatusEnabled);  // 面板自己听这个开关
         refresh();
     }
 
@@ -113,6 +127,9 @@ public final class CameraToolsPanel {
         }
         slide();
         panel.setVisibility(View.VISIBLE);
+        for (Runnable sync : switchSyncs) {
+            sync.run();
+        }
         refresh();
     }
 
@@ -304,9 +321,11 @@ public final class CameraToolsPanel {
 
     // ------------------------------------------------------------------ 开关行
 
-    private interface BoolSetter { void set(boolean on); }
+    private interface BoolGetter { boolean get(); }
+    /** 拨到某个值；返回拨完之后的真实值（拨不动就还是原来的） */
+    private interface BoolSetter { boolean set(boolean on); }
 
-    private void addSwitch(LinearLayout into, int titleRes, int summaryRes, boolean initial,
+    private void addSwitch(LinearLayout into, int titleRes, int summaryRes, BoolGetter current,
             BoolSetter onChange) {
         View row = inflater.inflate(R.layout.pref_row, into, false);
         ((TextView) row.findViewById(android.R.id.title)).setText(titleRes);
@@ -318,12 +337,10 @@ public final class CameraToolsPanel {
         }
         ViewGroup frame = row.findViewById(android.R.id.widget_frame);
         SwitchCompat toggle = (SwitchCompat) inflater.inflate(R.layout.pref_widget_switch, frame, false);
-        toggle.setChecked(initial);
+        toggle.setChecked(current.get());
         frame.addView(toggle);
-        row.setOnClickListener(v -> {
-            toggle.setChecked(!toggle.isChecked());
-            onChange.set(toggle.isChecked());
-        });
+        switchSyncs.add(() -> toggle.setChecked(current.get()));
+        row.setOnClickListener(v -> toggle.setChecked(onChange.set(!toggle.isChecked())));
         into.addView(row);
     }
 }

@@ -10,9 +10,6 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.SubMenu;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.TextView;
@@ -22,14 +19,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.appcompat.app.AlertDialog;
 
-import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.kooo.evcam.camera.ImageAdjustManager;
 import com.kooo.evcam.camera.MultiCameraManager;
@@ -57,7 +51,6 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
 
     /** 别的界面上的菜单键：回到这里，并且把抽屉拉开。 */
-    public static final String EXTRA_OPEN_DRAWER = "open_drawer";
 
     /** 悬浮按钮在应用没运行时按了「拍照」：拉起来，等相机就绪再拍。 */
 
@@ -215,12 +208,8 @@ public class MainActivity extends AppCompatActivity {
     private long segmentStartTime = 0;  // 本段开始时间（分段进度环用）
     private long segmentLengthMs = com.kooo.evcam.profile.RecordSpecs.segmentMs(com.kooo.evcam.profile.RecordSpecs.DEFAULT_SEGMENT_MINUTES);
     private boolean isRecordingStatsEnabled = true;  // 录制状态显示开关
-    private long lastStatsClickTime = 0;  // 上次点击录制状态显示的时间
-    private static final long DOUBLE_CLICK_INTERVAL = 500;  // 双击判定间隔（毫秒）
 
     // 导航相关
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
     private View recordingLayout;  // 录制界面布局
     private View fragmentContainer;  // Fragment容器
 
@@ -295,7 +284,6 @@ public class MainActivity extends AppCompatActivity {
         setupStatusBar();
 
         initViews();
-        setupNavigationDrawer();
 
         // 界面重建（切日夜模式、换语言）时录制管线一直在跑（见 onDestroy 的 keepPipeline），
         // 新界面只是把它现在的样子画出来（syncRecordingStateFromManager），没有「恢复录制」这回事
@@ -355,7 +343,6 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         AppLog.d(TAG, "onNewIntent called");
-        openDrawerIfAsked(intent);
 
 // 处理从录制悬浮按钮启动（需要自动开始录制）
         if (intent.getBooleanExtra("auto_start_recording", false)) {
@@ -467,8 +454,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
         recordingLayout = findViewById(R.id.main);
         fragmentContainer = findViewById(R.id.fragment_container);
 
@@ -479,25 +464,6 @@ public class MainActivity extends AppCompatActivity {
         if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
             recordingLayout.setVisibility(View.GONE);
             fragmentContainer.setVisibility(View.VISIBLE);
-        }
-
-        openDrawerIfAsked(getIntent());
-        
-        // 设置导航头部版本号
-        if (navigationView != null) {
-            View headerView = navigationView.getHeaderView(0);
-            if (headerView != null) {
-                TextView versionText = headerView.findViewById(R.id.nav_header_version);
-                if (versionText != null) {
-                    try {
-                        String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-                        versionText.setText(
-                                getString(R.string.nav_header_version, versionName));
-                    } catch (Exception e) {
-                        // 忽略异常，保持默认文本
-                    }
-                }
-            }
         }
 
         // 根据布局获取TextureView（不同布局有不同数量的TextureView）
@@ -531,18 +497,6 @@ public class MainActivity extends AppCompatActivity {
         
         updateCameraLabels();
 
-        // 菜单按钮点击事件（部分布局可能没有此按钮）
-        View btnMenu = findViewById(R.id.btn_menu);
-        if (btnMenu != null) {
-            btnMenu.setOnClickListener(v -> {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START);
-                } else {
-                    drawerLayout.openDrawer(GravityCompat.START);
-                }
-            });
-        }
-        
         // 工具面板：画面上只留一个圆钮，回看、设置、鱼眼校正、开关、画面调节都在面板里
         View panel = findViewById(R.id.tools_panel);
         if (panel != null) {
@@ -553,6 +507,9 @@ public class MainActivity extends AppCompatActivity {
                 @Override public ImageAdjustManager adjustManager() { return imageAdjustManager; }
                 @Override public void onImageAdjustTouched() { setImageAdjustEnabled(true); }
                 @Override public void onStatsToggled(boolean enabled) { applyRecordingStatsSetting(); }
+                @Override public boolean setRearView(boolean on) { return toggleRearView(on); }
+                @Override public boolean setFloatingButton(boolean on) { return toggleFloatingButton(on); }
+                @Override public void exitApp() { MainActivity.this.exitApp(); }
             });
         }
         View btnTools = findViewById(R.id.btn_tools);
@@ -666,25 +623,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** 从别的界面按菜单键回来：抽屉要开着，否则那一下点击看起来没反应。 */
-    private void openDrawerIfAsked(Intent intent) {
-        if (intent == null || !intent.getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
-            return;
-        }
-        intent.removeExtra(EXTRA_OPEN_DRAWER);
-        if (drawerLayout != null) {
-            drawerLayout.post(() ->
-                    drawerLayout.openDrawer(androidx.core.view.GravityCompat.START));
-        }
-    }
-
-    /** 别的界面上的菜单键用它：那些界面没有抽屉，抽屉长在这里。 */
-    public void openDrawer() {
-        if (drawerLayout != null) {
-            drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
-        }
-    }
-
     private TextureView.SurfaceTextureListener buildSurfaceListener(String cameraKey) {
         return new TextureView.SurfaceTextureListener() {
             @Override
@@ -781,46 +719,8 @@ public class MainActivity extends AppCompatActivity {
         // 初始化计时器 Handler
         recordingTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
         
-        // 确保 View 可点击（即使 INVISIBLE 也能响应点击）
-        tvRecordingStats.setClickable(true);
-        tvRecordingStats.setFocusable(true);
-        
-        // 设置双击切换显示/隐藏
-        tvRecordingStats.setOnClickListener(v -> {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastStatsClickTime < DOUBLE_CLICK_INTERVAL) {
-                // 双击：切换显示状态
-                toggleRecordingStatsDisplay();
-                lastStatsClickTime = 0;  // 重置，避免三连击触发
-            } else {
-                lastStatsClickTime = currentTime;
-            }
-            AppLog.d(TAG, "录制状态显示被点击, isRecording=" + isRecording + ", enabled=" + isRecordingStatsEnabled);
-        });
     }
     
-    /**
-     * 切换录制状态显示的开关
-     */
-    private void toggleRecordingStatsDisplay() {
-        isRecordingStatsEnabled = !isRecordingStatsEnabled;
-        appConfig.setRecordingStatsEnabled(isRecordingStatsEnabled);
-        
-        if (tvRecordingStats != null && isRecording) {
-            if (isRecordingStatsEnabled) {
-                // 显示状态（使用 alpha 恢复可见）
-                tvRecordingStats.setAlpha(1.0f);
-                Toast.makeText(this, R.string.msg_stats_on, Toast.LENGTH_SHORT).show();
-            } else {
-                // 使用 alpha=0 隐藏，但保持 VISIBLE 状态以响应点击
-                tvRecordingStats.setAlpha(0.0f);
-                Toast.makeText(this, R.string.msg_stats_off, Toast.LENGTH_SHORT).show();
-            }
-        }
-        
-        AppLog.d(TAG, "录制状态显示切换: " + (isRecordingStatsEnabled ? "开启" : "关闭"));
-    }
-
     /**
      * 按设置里的「录制状态显示」画角标。主界面建好时读一次，从设置回到主界面时再读一次 ——
      * 以前只在 onCreate 读，设置里切了要等界面重建才生效。不在录时角标是 GONE，只记下开关。
@@ -1018,105 +918,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
-     * 切换侧边栏的打开/关闭状态
-     */
-    public void toggleDrawer() {
-        if (drawerLayout != null) {
-            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                drawerLayout.closeDrawer(GravityCompat.START);
-            } else {
-                drawerLayout.openDrawer(GravityCompat.START);
-            }
-        }
-    }
-
-    /**
-     * 设置导航抽屉
-     */
-    private void setupNavigationDrawer() {
-        // 设置导航菜单点击监听
-        drawerLayout.addDrawerListener(new androidx.drawerlayout.widget.DrawerLayout.SimpleDrawerListener() {
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                // 后视镜也可能在设置里、或者悬浮窗自己关掉过
-                syncRearViewSwitch();
-            }
-        });
-        syncRearViewSwitch();
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-
-            // 开关行：点一下就拨，不跳界面、不收抽屉 —— 拨完还看得见它变了没有
-            if (itemId == R.id.nav_rearview) {
-                toggleRearViewFromDrawer();
-                return false;
-            }
-
-            if (itemId == R.id.nav_floating_button) {
-                toggleFloatingButtonFromDrawer();
-                return false;
-            }
-
-            if (itemId == R.id.nav_exit) {
-                exitApp();
-                return true;
-            }
-            
-            if (itemId == R.id.nav_recording) {
-                // 显示录制界面
-                showRecordingInterface();
-            } else if (itemId == R.id.nav_playback) {
-                // 显示回看界面
-                showPlaybackInterface();
-            } else if (itemId == R.id.nav_photo_playback) {
-                // 显示图片回看界面
-                showPhotoPlaybackInterface();
-            } else if (itemId == R.id.nav_settings) {
-                showSettingsInterface();
-            }
-            selectNavItem(itemId);
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return true;
-        });
-
-        // 默认选中录制界面
-        navigationView.setCheckedItem(R.id.nav_recording);
-    }
-    
-    /**
-     * 清除所有导航菜单项的选中状态
-     * 用于处理跨组选中时的状态同步
-     */
-    /**
-     * 选中侧边栏里的某一项。
-     *
-     * <p>跨组选中要先把别的清掉，否则会同时亮着两项。</p>
-     */
-    private void selectNavItem(int itemId) {
-        if (navigationView == null) {
-            return;
-        }
-        clearAllNavigationChecks();
-        navigationView.setCheckedItem(itemId);
-    }
-
-    private void clearAllNavigationChecks() {
-        Menu menu = navigationView.getMenu();
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem item = menu.getItem(i);
-            item.setChecked(false);
-            // 处理子菜单
-            if (item.hasSubMenu()) {
-                SubMenu subMenu = item.getSubMenu();
-                for (int j = 0; j < subMenu.size(); j++) {
-                    subMenu.getItem(j).setChecked(false);
-                }
-            }
-        }
-    }
-
-    /**
      * 检查并处理首次启动
      * 首次启动时自动进入设置界面并显示引导弹窗
      */
@@ -1153,7 +954,6 @@ public class MainActivity extends AppCompatActivity {
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             // 进入设置界面
             showSettingsInterface();
-            selectNavItem(R.id.nav_settings);
 
             // 显示引导弹窗
             showFirstLaunchGuideDialog();
@@ -1342,12 +1142,7 @@ public class MainActivity extends AppCompatActivity {
      * 供 Fragment 中的主页按钮调用
      */
     public void goToRecordingInterface() {
-        // 关闭侧边栏（如果打开的话）
-        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-        }
         showRecordingInterface();
-        selectNavItem(R.id.nav_recording);
     }
 
     /**
@@ -1690,17 +1485,6 @@ public class MainActivity extends AppCompatActivity {
             }
             int inset = (int) (8 * getResources().getDisplayMetrics().density);
             boolean paneLabel = findViewById(R.id.cabin_column) != null;
-            int menuRight = 0;
-            int menuBottom = 0;
-            View menu = findViewById(R.id.btn_menu);
-            if (menu != null && menu.getVisibility() == View.VISIBLE) {
-                int[] menuAt = new int[2];
-                int[] containerAt = new int[2];
-                menu.getLocationOnScreen(menuAt);
-                compositeContainer.getLocationOnScreen(containerAt);
-                menuRight = menuAt[0] - containerAt[0] + menu.getWidth();
-                menuBottom = menuAt[1] - containerAt[1] + menu.getHeight();
-            }
             for (com.kooo.evcam.zeekr.FourLaneContainer.Cell cell : cells) {
                 if (cell == null || cell.laneIndex < 0 || cell.laneIndex >= labels.length) {
                     continue;
@@ -1719,9 +1503,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 int start = (int) (cell.x * width) + inset;
                 int top = (int) (cell.y * height) + inset;
-                if (top < menuBottom && start < menuRight + inset) {
-                    start = menuRight + inset;
-                }
                 android.widget.FrameLayout.LayoutParams params =
                         (android.widget.FrameLayout.LayoutParams) label.getLayoutParams();
                 params.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
@@ -3140,10 +2921,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return;
-        }
         if (toolsPanel != null && toolsPanel.isShowing()) {
             toolsPanel.hide();
             return;
@@ -3560,14 +3337,15 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
-     * 抽屉里的「超级后视镜」开关。
+     * 工具面板里的「超级后视镜」开关（原来在抽屉里）。
      *
      * <p>和设置里那个开关走同一条路（{@code OverlayCoordinator.setRearViewEnabled}）：
      * 悬浮窗权限不够时它会返回 false，这时去申请权限，开关停在原位 ——
      * 开关显示的必须是后视镜真实的状态，不是「刚才按了一下」。</p>
+     *
+     * @return 拨完之后的真实状态
      */
-    private void toggleRearViewFromDrawer() {
-        boolean on = !appConfig.isRearViewEnabled();
+    private boolean toggleRearView(boolean on) {
         if (!OverlayCoordinator.setRearViewEnabled(this, on)) {
             Toast.makeText(this, R.string.msg_need_overlay, Toast.LENGTH_SHORT).show();
             WakeUpHelper.requestOverlayPermission(this);
@@ -3575,35 +3353,15 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.msg_rearview_on, Toast.LENGTH_SHORT).show();
             com.kooo.evcam.ui.RearViewGuide.showOnce(this);
         }
-        syncRearViewSwitch();
+        return appConfig.isRearViewEnabled();
     }
 
-    /** 抽屉里的悬浮按钮开关，和后视镜那一行表现一致。 */
-    private void toggleFloatingButtonFromDrawer() {
-        boolean on = !appConfig.isRecordingFloatingEnabled();
+    /** 工具面板里的悬浮按钮开关，和后视镜那一行表现一致。 */
+    private boolean toggleFloatingButton(boolean on) {
         if (!OverlayCoordinator.setRecordButtonEnabled(this, on)) {
             Toast.makeText(this, R.string.msg_need_overlay, Toast.LENGTH_SHORT).show();
             WakeUpHelper.requestOverlayPermission(this);
         }
-        syncRearViewSwitch();
+        return appConfig.isRecordingFloatingEnabled();
     }
-
-    /** 行尾那两个开关照各自的真实状态摆。 */
-    private void syncRearViewSwitch() {
-        if (navigationView == null || appConfig == null) {
-            return;
-        }
-        syncNavSwitch(R.id.nav_rearview, appConfig.isRearViewEnabled());
-        syncNavSwitch(R.id.nav_floating_button, appConfig.isRecordingFloatingEnabled());
-    }
-
-    private void syncNavSwitch(int itemId, boolean on) {
-        android.view.MenuItem item = navigationView.getMenu().findItem(itemId);
-        View action = item != null ? item.getActionView() : null;
-        View toggle = action != null ? action.findViewById(R.id.nav_switch) : null;
-        if (toggle instanceof android.widget.CompoundButton) {
-            ((android.widget.CompoundButton) toggle).setChecked(on);
-        }
-    }
-
 }

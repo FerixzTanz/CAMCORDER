@@ -156,17 +156,18 @@ public class SettingsShellFragment extends Fragment {
     }
 
     /**
-     * 标题区左键：分区层是菜单（拉开抽屉），二级界面是返回（退一层）。
+     * 标题区左键：分区层是回主界面，二级界面是返回（退一层）。
      *
-     * <p>位置不变、图标变 —— 手记住的是位置。抽屉长在主界面上，所以这里要问它。</p>
+     * <p>位置不变 —— 手记住的是位置。</p>
      */
     private void onNavClick() {
         if (getChildFragmentManager().getBackStackEntryCount() > 0) {
             getChildFragmentManager().popBackStack();
             return;
         }
+        // 抽屉没了（2.14.1）：分区层的左键是「回到主界面」
         if (getActivity() instanceof com.kooo.evcam.MainActivity) {
-            ((com.kooo.evcam.MainActivity) getActivity()).openDrawer();
+            ((com.kooo.evcam.MainActivity) getActivity()).goToRecordingInterface();
         }
     }
 
@@ -217,8 +218,8 @@ public class SettingsShellFragment extends Fragment {
             section = ((SettingsHeadersFragment) headers).titleOf(currentSection);
         }
         titleText.setText(section != null ? section : getString(R.string.nav_settings));
-        navButton.setIconResource(R.drawable.ic_menu);
-        navButton.setContentDescription(getString(R.string.cd_menu));
+        navButton.setIconResource(R.drawable.ic_back);
+        navButton.setContentDescription(getString(R.string.set_back_to_recording));
     }
 
     /**

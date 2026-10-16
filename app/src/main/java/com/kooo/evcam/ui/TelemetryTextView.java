@@ -16,7 +16,7 @@ import com.kooo.evcam.telemetry.Telemetry;
  * 要听设置的在 {@link #onStart} / {@link #onStop} 里挂、摘。
  *
  * <p>现在有两处：{@link SentryStatusView}（设置里「熄屏持续录制」那一行的右边）和
- * {@link ScreenOffHintView}（录制键上的小字）。{@link VehicleStatusPanel} 是画出来的，同一个规矩自己写了一份。</p>
+ * {@link ScreenOffHintView}（状态条上的小字）。</p>
  */
 public abstract class TelemetryTextView extends AppCompatTextView implements Telemetry.Listener {
 

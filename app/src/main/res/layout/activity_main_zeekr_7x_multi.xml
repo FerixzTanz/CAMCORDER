@@ -5,10 +5,10 @@
   内容区两列：环视合成流四宫格 · 两路座舱上下叠放。2.13 起没有 ④ 动作栏：
   操作浮在画面上（layout_camera_controls），其余收进工具面板（layout_camera_tools）。
 -->
-<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawer_layout"
+    android:id="@+id/main_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
@@ -32,7 +32,7 @@
                     android:layout_weight="1"
                     android:orientation="horizontal">
                     <!--
-                      ③ 内容区。整块是一个 FrameLayout：画面铺满整块屏，菜单键、录制角标、
+                      ③ 内容区。整块是一个 FrameLayout：画面铺满整块屏，录制角标、
                       操作层、工具面板和 ⑤ 状态条都浮在它上面 —— 和车机自带的相机应用一个排法。
 
                       标题栏没有了 —— 那一条 64dp 里只有一个菜单键、一个应用名和一个
@@ -170,22 +170,6 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <!--
-                          菜单键。其他界面的 ① 里它是「左 10dp、在 64dp 里垂直居中」
-                          （即上 8dp），这里照抄同一组数，只是量的起点从卡片边变成
-                          画面边 —— 卡片的左上角在左舵时是动作栏，不能放它。
-                        -->
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_menu"
-                            style="@style/Widget.Cam.IconButton"
-                            android:layout_width="@dimen/icon_button_size"
-                            android:layout_height="@dimen/icon_button_size"
-                            android:layout_gravity="top|start"
-                            android:layout_marginStart="10dp"
-                            android:layout_marginTop="8dp"
-                            android:contentDescription="@string/cd_menu"
-                            app:icon="@drawable/ic_menu" />
-
                         <!-- 录制角标：原来在标题栏右侧，现在在画面右上角 -->
                         <TextView
                             android:id="@+id/tv_recording_stats"
@@ -261,27 +245,5 @@
 
     </FrameLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="300dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="@color/nav_background"
-        android:elevation="8dp"
-        android:fitsSystemWindows="false"
-        app:dividerInsetEnd="16dp"
-        app:dividerInsetStart="16dp"
-        app:headerLayout="@layout/nav_header"
-        app:itemBackground="@drawable/nav_item_background"
-        app:itemHorizontalPadding="16dp"
-        app:itemIconPadding="16dp"
-        app:itemIconSize="24dp"
-        app:itemIconTint="@color/nav_icon_color_selector"
-        app:itemTextAppearance="@style/NavigationMenuTextAppearance"
-        app:itemTextColor="@color/nav_text_color_selector"
-        app:itemVerticalPadding="16dp"
-        app:menu="@menu/navigation_menu"
-        app:subheaderInsetStart="16dp"
-        app:subheaderTextAppearance="@style/NavigationSubheaderTextAppearance" />
 
-</androidx.drawerlayout.widget.DrawerLayout>
+</FrameLayout>

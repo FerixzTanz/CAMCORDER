@@ -3,7 +3,7 @@
   设置：统一骨架的 ① 标题区 · ② 列表栏 · ③ 内容区 · ⑤ 状态条（见 docs/ui-spec.md）。
 
   ① 横跨两栏，因为「设置」是一屏，不是两屏。它的左键跟着深度变：
-  停在分区层是菜单（拉开抽屉），进了二级界面是返回（退一层）——
+  停在分区层是回主界面，进了二级界面是返回（退一层）——
   位置永远是这一个，规范第一条原则。
 
   ② 左栏固定宽度（list_width，和车机系统设置的左栏同一比例）：分区名都很短，
@@ -30,8 +30,8 @@
             style="@style/Widget.Cam.IconButton"
             android:layout_width="@dimen/icon_button_size"
             android:layout_height="@dimen/icon_button_size"
-            android:contentDescription="@string/cd_menu"
-            app:icon="@drawable/ic_menu" />
+            android:contentDescription="@string/set_back_to_recording"
+            app:icon="@drawable/ic_back" />
 
         <TextView
             android:id="@+id/settings_title"

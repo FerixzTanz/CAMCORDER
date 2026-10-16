@@ -4,7 +4,7 @@
   画面上只留一个「工具」圆钮（layout_camera_controls）。
 
   里面是原来 ④ 动作栏上除录制、拍照之外的一切：回看、设置、鱼眼校正、
-  录制状态角标和车辆状态两个开关、画面调节（原来藏在开发者选项里的悬浮窗，
+  超级后视镜、悬浮按钮、录制状态角标三个开关、画面调节、退出（原来藏在开发者选项里的悬浮窗，
   现在就是面板里的几行；CameraToolsPanel 把行填进 tools_switches / tools_adjust_rows）。
 
   宽度固定（tools_panel_width）：内容再多也只往下滚，不抢画面的宽。
@@ -118,24 +118,13 @@
                     app:icon="@drawable/ic_settings" />
             </LinearLayout>
 
-            <!-- 两个开关行（录制状态角标、车辆状态）：CameraToolsPanel 用 pref_row 填 -->
+            <!-- 开关行（超级后视镜、悬浮按钮、录制状态角标）：CameraToolsPanel 用 pref_row 填 -->
             <LinearLayout
                 android:id="@+id/tools_switches"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:orientation="vertical" />
-
-            <!--
-              车辆状态（试验性，设置 → 界面）：用信息条的图标显示喇叭、闪远光和双闪。
-              控件自己管开关和收信号（VehicleStatusPanel），关着就不占地方。
-            -->
-            <com.kooo.evcam.ui.VehicleStatusPanel
-                android:id="@+id/vehicle_status_panel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -160,6 +149,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/rail_small_height"
                 android:text="@string/adj_reset" />
+
+            <!-- 退出放在最底下：和「隐藏到后台」分开，往下找得到，手滑点不到（抽屉没了，它从那儿搬来） -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tools_exit"
+                style="@style/Widget.Cam.RailSmall"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/rail_small_height"
+                android:layout_marginTop="18dp"
+                android:text="@string/nav_exit"
+                app:icon="@drawable/ic_power" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

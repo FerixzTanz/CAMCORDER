@@ -33,7 +33,7 @@
     <string name="set_watermark_spec_title">Sertakan spesifikasi rakaman</string>
     <string name="set_watermark_spec_summary">Menambah resolusi, kadar bingkai sebenar, kodek dan kadar bit semasa pada tera video</string>
     <string name="set_info_bar_title">Bar maklumat pemanduan</string>
-    <string name="set_info_bar_summary">Menambah jalur isyarat kenderaan di bawah video. Pilih apa yang dipaparkan dalam Tetapan → Sistem → Maklumat sistem. Percubaan.</string>
+    <string name="set_info_bar_summary">Menambah jalur isyarat kenderaan di bawah video. Pilih apa yang dipaparkan dalam Tetapan → Sistem → Maklumat sistem.</string>
     <string name="set_storage_location_title">Lokasi storan</string>
     <string name="set_storage_sentry_note">Apabila Mod Sentry dihidupkan, hanya port USB-A (tempat Mod Sentry menyimpan rakamannya) kekal berkuasa selepas anda keluar dari kereta, jadi rakaman boleh diteruskan. Jika lokasi storan ialah pemacu pada port Type-C, port itu terputus kuasa dan rakaman beralih ke pemacu pada port USB-A.</string>
     <string name="set_relay_title">Tulis melalui perantara</string>
@@ -117,8 +117,8 @@
     <string name="set_camera_mapping_summary">Pilih kamera bagi paparan sekeliling, kabin depan dan kabin belakang secara manual (penyelesaian masalah)</string>
     <string name="set_diagnostics_title">Maklumat diagnostik</string>
     <string name="set_diagnostics_summary">Lihat dan eksport butiran kamera, paparan dan storan serta log terkini</string>
-    <!-- System info (experimental): groups, signal names, values -->
-    <string name="set_vehicle_info_title">Maklumat sistem (percubaan)</string>
+    <!-- System info: groups, signal names, values -->
+    <string name="set_vehicle_info_title">Maklumat sistem</string>
     <string name="set_vehicle_info_summary">Isyarat kenderaan yang didedahkan unit kepala dan keadaan semasanya; item yang ditanda dipaparkan pada Bar maklumat pemanduan</string>
     <string name="vi_legend">Item yang ditanda dipaparkan pada Bar maklumat pemanduan (memerlukan Tetapan → Rakaman → Foto dan tera → Bar maklumat pemanduan): sebagai ikon jika ada, jika tidak sebagai teks buat masa ini, seperti dinyatakan di bawah setiap baris; item yang tidak muat tidak dipaparkan. Warna label menunjukkan tahap pengesahan: warna teks biasa, konsisten dalam ujian di kereta (masih disemak silang); kelabu, boleh digunakan, butiran belum muktamad; kelabu pudar, boleh dibaca tetapi belum disahkan, hanya boleh ditanda apabila pilihan pembangun dihidupkan.</string>
     <string name="vi_position">Kedudukan (lat/long)</string>
@@ -249,7 +249,7 @@
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Memandu</string>
-    <string name="set_language_title">Bahasa / Language</string>
+    <string name="set_language_title">Bahasa</string>
     <string name="lang_auto">Ikut sistem</string>
     <string name="lang_zh">中文</string>
     <string name="lang_en">English</string>
@@ -459,8 +459,6 @@
     <string name="reason_file_not_found">fail tidak ditemui</string>
     <string name="msg_screen_off_stopped">Skrin padam selama 10 saat. Rakaman dihentikan.</string>
     <string name="msg_screen_off_background">Skrin padam selama 15 saat. Dialihkan ke latar belakang.</string>
-    <string name="msg_stats_on">Paparan status rakaman dihidupkan</string>
-    <string name="msg_stats_off">Paparan status rakaman dimatikan</string>
     <string name="dlg_no_external_title">Tiada pemacu USB ditemui</string>
     <string name="dlg_no_external_msg">Rakaman disimpan ke pemacu USB sahaja, untuk mengelakkan storan dalaman haus.\n\nMasukkan pemacu USB dan cuba lagi. Jika ia tidak dikesan, cuba port lain atau pilih semula pemacu di Tetapan → Storan → Lokasi storan.</string>
     <string name="dlg_will_use_internal_title">Merakam ke storan dalaman</string>
@@ -509,19 +507,14 @@
     <string name="msg_file_unreadable">Fail hilang atau tidak boleh dibaca</string>
 
     <!-- Laci navigasi dan pemain -->
-    <string name="nav_recording">Skrin utama</string>
     <string name="nav_video_playback">Video</string>
     <string name="nav_photo_playback">Foto</string>
-    <string name="nav_group_system">Sistem</string>
     <string name="nav_settings">Tetapan</string>
-    <string name="nav_header_subtitle">Kamera papan pemuka pandangan sekeliling</string>
-    <string name="nav_header_alt_name">极氪即刻</string>
     <string name="lane_surround">Sekeliling</string>
     <string name="player_title">Video</string>
     <string name="player_prev">Sebelumnya</string>
     <string name="player_next">Seterusnya</string>
     <string name="action_close">Tutup</string>
-    <string name="nav_header_version">Versi %1$s</string>
 
     <!-- Semakan kemas kini -->
     <string name="upd_checking">Menyemak kemas kini…</string>
@@ -656,7 +649,6 @@
     <string name="recording_chip">Merakam %1$s · klip %2$d</string>
     <string name="rail_photo">Ambil foto</string>
     <string name="rail_settings">Tetapan</string>
-    <string name="cd_menu">Menu</string>
     <string name="cd_minimize">Sembunyi ke latar belakang</string>
     <string name="nav_exit">Keluar apl</string>
     <string name="set_rail_side_title">Sebelah butang tindakan</string>
@@ -668,8 +660,6 @@
     <string name="set_section_interface">Antara muka</string>
     <string name="set_reduce_motion_title">Kurangkan animasi semasa merakam</string>
     <string name="set_reduce_motion_summary">Mematikan peralihan dan animasi hiasan lain semasa merakam supaya GPU digunakan oleh pengekod. Butang rakam dan gelang kemajuan masih beranimasi.</string>
-    <string name="set_vehicle_status_title">Status kenderaan (percubaan)</string>
-    <string name="set_vehicle_status_summary">Memaparkan hon, kelip lampu tinggi dan lampu kecemasan dalam panel alat skrin utama, menggunakan ikon Bar maklumat pemanduan; isyarat hon belum dapat dibaca</string>
     <string name="set_fisheye_projection_title">Unjuran mata ikan</string>
     <string name="set_fisheye_projection_summary">%1$s · untuk pratonton langsung, foto dan video</string>
     <string name="opt_projection_rectilinear">Garisan lurus</string>
@@ -697,7 +687,6 @@
     <string name="status_camera_taken">Kamera sedang digunakan. Rakaman disambung semula apabila ia dilepaskan.</string>
     <string name="preview_no_picture">Tiada gambar daripada paparan sekeliling</string>
     <string name="status_internal_storage">storan dalaman</string>
-    <string name="nav_group_switches">Suis</string>
 
     <!-- Editor profil strim -->
     <string name="editor_reset">Set semula</string>

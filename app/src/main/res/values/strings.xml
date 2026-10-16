@@ -41,7 +41,7 @@
     <string name="set_watermark_spec_title">水印显示录制规格</string>
     <string name="set_watermark_spec_summary">在录像水印中标注分辨率、实测帧率、编码和实时码率</string>
     <string name="set_info_bar_title">行驶信息条</string>
-    <string name="set_info_bar_summary">在录像画面下方附加一栏车辆信号，显示项在「设置 → 系统 → 系统信息」中选择。试验性功能。</string>
+    <string name="set_info_bar_summary">在录像画面下方附加一栏车辆信号，显示项在「设置 → 系统 → 系统信息」中选择。</string>
     <string name="set_storage_location_title">存储位置</string>
     <string name="set_storage_sentry_note">哨兵模式开启时，下车后仅 USB-A 口（哨兵模式保存录像的接口）保持供电，可继续录制。若存储位置为 Type-C 口的 U 盘，下车后该口断电，将自动改为录制到 USB-A 口的 U 盘。</string>
     <string name="set_relay_title">中转写入</string>
@@ -129,8 +129,8 @@
     <string name="set_camera_mapping_summary">手动指定环视、前座舱、后座舱各自使用的摄像头（用于排查）</string>
     <string name="set_diagnostics_title">诊断信息</string>
     <string name="set_diagnostics_summary">查看并导出摄像头、显示屏和存储的检测信息及最近日志</string>
-    <!-- 系统信息（试验性）：分组、信号名、值 -->
-    <string name="set_vehicle_info_title">系统信息（试验性）</string>
+    <!-- 系统信息：分组、信号名、值 -->
+    <string name="set_vehicle_info_title">系统信息</string>
     <string name="set_vehicle_info_summary">车机可读取的车辆信号及当前状态；勾选的项目显示在行驶信息条上</string>
     <string name="vi_legend">勾选的项目显示在行驶信息条上（需开启「设置 → 录制 → 照片与水印 → 行驶信息条」）：有图标的显示为图标，其余暂以文字显示，每行下方注明；超出信息条宽度的不显示。名称颜色表示验证程度：正文色为实车测试结果一致（持续交叉验证）；灰色为可用、细节待定；淡灰色为可读取但未验证，需开启开发者选项才能勾选。</string>
     <string name="vi_position">位置（经纬度）</string>
@@ -261,7 +261,7 @@
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">行驶</string>
-    <string name="set_language_title">语言 / Language</string>
+    <string name="set_language_title">语言</string>
     <string name="lang_auto">跟随系统</string>
     <string name="lang_zh">中文</string>
     <string name="lang_en">English</string>
@@ -463,8 +463,6 @@
     <string name="reason_file_not_found">文件不存在</string>
     <string name="msg_screen_off_stopped">熄屏 10 秒，已自动停止录制</string>
     <string name="msg_screen_off_background">熄屏 15 秒，已转入后台</string>
-    <string name="msg_stats_on">录制状态显示已开启</string>
-    <string name="msg_stats_off">录制状态显示已关闭</string>
     <string name="dlg_no_external_title">未检测到 U 盘</string>
     <string name="dlg_no_external_msg">录像仅保存到 U 盘，以免持续写入损耗内置存储。\n\n请插入 U 盘后重试。如已插入仍未识别，可更换 USB 接口，或在「设置 → 存储 → 存储位置」中重新选择 U 盘。</string>
     <string name="dlg_will_use_internal_title">将录制到内置存储</string>
@@ -513,19 +511,14 @@
     <string name="msg_file_unreadable">文件不存在或无法读取</string>
 
     <!-- 侧边栏与播放器 -->
-    <string name="nav_recording">主界面</string>
     <string name="nav_video_playback">录像回放</string>
     <string name="nav_photo_playback">照片回放</string>
-    <string name="nav_group_system">系统</string>
     <string name="nav_settings">设置</string>
-    <string name="nav_header_subtitle">车机版环视记录仪</string>
-    <string name="nav_header_alt_name">Zeekr Shortcut</string>
     <string name="lane_surround">环视</string>
     <string name="player_title">录像回放</string>
     <string name="player_prev">上一条</string>
     <string name="player_next">下一条</string>
     <string name="action_close">关闭</string>
-    <string name="nav_header_version">版本 %1$s</string>
 
     <!-- 检查更新 -->
     <string name="upd_checking">正在检查更新…</string>
@@ -659,7 +652,6 @@
     <string name="recording_chip">录制中 %1$s · 第 %2$d 段</string>
     <string name="rail_photo">拍照</string>
     <string name="rail_settings">设置</string>
-    <string name="cd_menu">菜单</string>
     <string name="cd_minimize">隐藏到后台</string>
     <string name="nav_exit">退出应用</string>
     <string name="set_rail_side_title">操作按钮位置</string>
@@ -671,8 +663,6 @@
     <string name="set_section_interface">界面</string>
     <string name="set_reduce_motion_title">录制时减少动效</string>
     <string name="set_reduce_motion_summary">录制时关闭界面过渡、画面缩放等装饰动效，减少 GPU 占用；录制键和进度环不受影响</string>
-    <string name="set_vehicle_status_title">车辆状态（试验性）</string>
-    <string name="set_vehicle_status_summary">在主界面的工具面板里，以行驶信息条的图标显示喇叭、闪远光和双闪；喇叭信号暂无法读取</string>
     <string name="set_fisheye_projection_title">鱼眼校正方式</string>
     <string name="set_fisheye_projection_summary">%1$s · 用于主界面预览、照片回放和录像回放</string>
     <string name="opt_projection_rectilinear">直线</string>
@@ -699,7 +689,6 @@
     <string name="status_camera_taken">摄像头被占用，释放后自动继续录制</string>
     <string name="preview_no_picture">未收到环视画面</string>
     <string name="status_internal_storage">内置存储</string>
-    <string name="nav_group_switches">开关</string>
 
     <!-- 视频流配置编辑 -->
     <string name="editor_reset">重置</string>

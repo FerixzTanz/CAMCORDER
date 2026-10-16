@@ -33,7 +33,7 @@
     <string name="set_watermark_spec_title">Include recording specs</string>
     <string name="set_watermark_spec_summary">Adds resolution, measured frame rate, codec and live bitrate to the video stamp</string>
     <string name="set_info_bar_title">Driving info bar</string>
-    <string name="set_info_bar_summary">Adds a strip of vehicle signals below the video. Choose what it shows in Settings → System → System info. Experimental.</string>
+    <string name="set_info_bar_summary">Adds a strip of vehicle signals below the video. Choose what it shows in Settings → System → System info.</string>
     <string name="set_storage_location_title">Storage location</string>
     <string name="set_storage_sentry_note">With Sentry Mode on, only the USB-A port (where Sentry Mode saves its recordings) stays powered after you leave the car, so recording can continue. If the storage location is a drive on the Type-C port, that port loses power and recording switches to the drive on the USB-A port.</string>
     <string name="set_relay_title">Relay write</string>
@@ -117,8 +117,8 @@
     <string name="set_camera_mapping_summary">Choose which camera feeds the surround, front cabin and rear cabin views (troubleshooting)</string>
     <string name="set_diagnostics_title">Diagnostics</string>
     <string name="set_diagnostics_summary">View and export camera, display and storage details and recent logs</string>
-    <!-- System info (experimental): groups, signal names, values -->
-    <string name="set_vehicle_info_title">System info (experimental)</string>
+    <!-- System info: groups, signal names, values -->
+    <string name="set_vehicle_info_title">System info</string>
     <string name="set_vehicle_info_summary">Vehicle signals the head unit exposes and their current state; ticked items appear on the Driving info bar</string>
     <string name="vi_legend">Ticked items appear on the Driving info bar (requires Settings → Recording → Photos and stamps → Driving info bar): as an icon where one exists, otherwise as text for now, as noted under each row; items that don\'t fit are left out. Label color shows how well a signal is verified: normal text color, consistent in on-car tests (still cross-checked); grey, usable with details pending; faint grey, readable but unverified, can be ticked only with developer options on.</string>
     <string name="vi_position">Position (lat/long)</string>
@@ -249,7 +249,7 @@
     <string name="vi_v_ign_acc">ACC</string>
     <string name="vi_v_ign_on">ON</string>
     <string name="vi_v_ign_driving">Driving</string>
-    <string name="set_language_title">Language / 语言</string>
+    <string name="set_language_title">Language</string>
     <string name="lang_auto">Follow system</string>
     <string name="lang_zh">中文</string>
     <string name="lang_en">English</string>
@@ -464,8 +464,6 @@
     <string name="reason_file_not_found">file not found</string>
     <string name="msg_screen_off_stopped">Screen off for 10 seconds. Recording stopped.</string>
     <string name="msg_screen_off_background">Screen off for 15 seconds. Moved to the background.</string>
-    <string name="msg_stats_on">Recording status readout on</string>
-    <string name="msg_stats_off">Recording status readout off</string>
     <string name="dlg_no_external_title">No USB drive found</string>
     <string name="dlg_no_external_msg">Recordings go to a USB drive only, to avoid wearing out the internal storage.\n\nInsert a USB drive and try again. If it isn\'t detected, try another port or select the drive again in Settings → Storage → Storage location.</string>
     <string name="dlg_will_use_internal_title">Recording to internal storage</string>
@@ -517,19 +515,14 @@
     <string name="msg_file_unreadable">File missing or unreadable</string>
 
     <!-- Navigation drawer and player -->
-    <string name="nav_recording">Main screen</string>
     <string name="nav_video_playback">Videos</string>
     <string name="nav_photo_playback">Photos</string>
-    <string name="nav_group_system">System</string>
     <string name="nav_settings">Settings</string>
-    <string name="nav_header_subtitle">Surround-view dashcam</string>
-    <string name="nav_header_alt_name">极氪即刻</string>
     <string name="lane_surround">Surround</string>
     <string name="player_title">Videos</string>
     <string name="player_prev">Previous</string>
     <string name="player_next">Next</string>
     <string name="action_close">Close</string>
-    <string name="nav_header_version">Version %1$s</string>
 
     <!-- Update check -->
     <string name="upd_checking">Checking for updates…</string>
@@ -667,7 +660,6 @@
     <string name="recording_chip">Recording %1$s · clip %2$d</string>
     <string name="rail_photo">Take photo</string>
     <string name="rail_settings">Settings</string>
-    <string name="cd_menu">Menu</string>
     <string name="cd_minimize">Hide to background</string>
     <string name="nav_exit">Quit app</string>
     <string name="set_rail_side_title">Action button side</string>
@@ -679,8 +671,6 @@
     <string name="set_section_interface">Interface</string>
     <string name="set_reduce_motion_title">Less motion while recording</string>
     <string name="set_reduce_motion_summary">Turns off transitions and other decorative animation while recording, leaving the GPU to the encoder. The record button and progress ring still animate.</string>
-    <string name="set_vehicle_status_title">Vehicle status (experimental)</string>
-    <string name="set_vehicle_status_summary">Shows horn, flash-to-pass and hazard lights in the main screen\'s tools panel, using the Driving info bar icons; the horn signal can\'t be read yet</string>
     <string name="set_fisheye_projection_title">Fisheye projection</string>
     <string name="set_fisheye_projection_summary">%1$s · applies to the live preview, photos and videos</string>
     <string name="opt_projection_rectilinear">Straight lines</string>
@@ -707,7 +697,6 @@
     <string name="status_camera_taken">Camera in use. Recording resumes when it is released.</string>
     <string name="preview_no_picture">No picture from the surround view</string>
     <string name="status_internal_storage">internal storage</string>
-    <string name="nav_group_switches">Switches</string>
 
     <!-- Stream profile editor -->
     <string name="editor_reset">Reset</string>

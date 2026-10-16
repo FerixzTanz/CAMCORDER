@@ -88,8 +88,6 @@ public class HardcodedTextTest {
         JAVA_ALLOWED.put("camera/MultiCameraManager.java",
                 "相机错误码的日志说明和调试统计；状态回调用的是英文标记");
         // ---- 故意中英并列 ----
-        JAVA_ALLOWED.put("share/FileShareServer.java",
-                "手机浏览器里那一页：不知道手机是什么语言，中英并列");
     }
 
     private static final Pattern COMPARISON =

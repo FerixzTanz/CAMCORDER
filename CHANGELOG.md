@@ -7,6 +7,19 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.14.1] - 2026-10-16
+
+### Changed
+
+- **No more ☰ menu or slide-out drawer on the camera screen.** The Tools button is the one menu: the
+  Super mirror and Floating button switches and **Quit app** moved into it. The Settings and gallery
+  title bars now start with **‹ Back** to the camera.
+- **Vehicle status panel removed** (the experimental horn / flash / hazard icons). The Driving info
+  bar and System info are unchanged, just no longer labelled "experimental".
+- The hidden double-tap on the recording readout is gone; use the switch in Tools.
+- The Language setting is titled in the current language only, and the send-to-phone page's messages
+  are English only. The 中文 option itself stays.
+
 ## [2.14.0] - 2026-10-16
 
 ### New and improved

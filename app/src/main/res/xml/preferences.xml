@@ -507,11 +507,6 @@
             android:title="@string/set_reduce_motion_title"
             android:summary="@string/set_reduce_motion_summary" />
 
-        <SwitchPreferenceCompat
-            android:key="pref_vehicle_status"
-            android:title="@string/set_vehicle_status_title"
-            android:summary="@string/set_vehicle_status_summary" />
-
         <!-- 子页面（2.11.0）：主页只留开关，细调在这一层 -->
         <PreferenceScreen
             android:key="sub_fisheye"

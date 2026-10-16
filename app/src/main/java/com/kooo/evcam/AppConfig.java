@@ -93,7 +93,6 @@ public class AppConfig {
     private static final String KEY_WATERMARK_SPEC_ENABLED = "watermark_spec_enabled";  // 角标附带录制规格
     private static final String KEY_PHOTO_VIA_JPEG = "photo_via_jpeg";
     private static final String KEY_INFO_BAR = "info_bar_enabled";  // 录像下方的行驶信息条
-    private static final String KEY_VEHICLE_STATUS = "vehicle_status_panel";  // 主界面的车辆状态面板（试验性）
     private static final String KEY_INFO_BAR_ITEMS = "info_bar_items";  // 信息条上放哪几项（系统信息里勾的）
     private static final String KEY_SIDE_POPUP = "side_popup_enabled";  // 打转向灯弹侧视
     private static final String KEY_SIDE_POPUP_MIN_SPEED = "side_popup_min_speed";  // 侧视弹窗的车速门槛 km/h
@@ -929,11 +928,6 @@ public class AppConfig {
         removeChangeListener(listener);
     }
 
-    /** 车辆状态面板的开关一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
-    public SharedPreferences.OnSharedPreferenceChangeListener onVehicleStatusChanged(Runnable action) {
-        return onChanged(action, KEY_VEHICLE_STATUS);
-    }
-
     /** 熄屏后录像会怎样（{@code ScreenOffPlan}）看的这几项，一变就叫 {@code action}（主线程）。拿住返回值，同上。 */
     public SharedPreferences.OnSharedPreferenceChangeListener onScreenOffPlanChanged(Runnable action) {
         return onChanged(action, KEY_SCREEN_OFF_RECORDING, KEY_SCREEN_OFF_KEEP_RECORDING, KEY_AUTO_START_RECORDING);
@@ -1599,15 +1593,6 @@ public class AppConfig {
     public void setInfoBarEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_INFO_BAR, enabled).apply();
         AppLog.i(TAG, "行驶信息条: " + (enabled ? "开" : "关"));
-    }
-
-    /** 主界面动作栏里的车辆状态面板（试验性）。默认关。 */
-    public boolean isVehicleStatusEnabled() {
-        return prefs.getBoolean(KEY_VEHICLE_STATUS, false);
-    }
-
-    public void setVehicleStatusEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_VEHICLE_STATUS, enabled).apply();
     }
 
     /**

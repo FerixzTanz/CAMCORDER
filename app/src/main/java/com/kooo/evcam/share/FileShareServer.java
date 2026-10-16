@@ -168,7 +168,7 @@ public class FileShareServer extends NanoHTTPD {
             expected = token;
         }
         if (shared == null || expected == null) {
-            return text(Response.Status.NOT_FOUND, "没有正在分享的文件 / Nothing is being shared");
+            return text(Response.Status.NOT_FOUND, "Nothing is being shared");
         }
 
         // HEAD 只问不拿：不算「开始 / 发完」。真实的类型和长度、空正文（不压缩，见 useGzipWhenAccepted）
@@ -215,7 +215,7 @@ public class FileShareServer extends NanoHTTPD {
             return response;
         } catch (IOException e) {
             AppLog.e(TAG, "读不到要分享的文件", e);
-            return text(Response.Status.INTERNAL_ERROR, "读取失败 / Cannot read file");
+            return text(Response.Status.INTERNAL_ERROR, "Cannot read file");
         }
     }
 

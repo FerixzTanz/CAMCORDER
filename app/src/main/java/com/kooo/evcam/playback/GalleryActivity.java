@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.kooo.evcam.MainActivity;
 import com.kooo.evcam.R;
 import com.kooo.evcam.StorageHelper;
 import com.kooo.evcam.storage.FootageLocks;
@@ -81,7 +80,7 @@ public class GalleryActivity extends AppCompatActivity {
         btnShare = findViewById(R.id.btn_share);
         btnSelectAll = findViewById(R.id.btn_select_all);
 
-        findViewById(R.id.btn_menu).setOnClickListener(v -> openDrawerOnMain());
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         findViewById(R.id.btn_refresh).setOnClickListener(v -> scan());
         findViewById(R.id.btn_select).setOnClickListener(v -> setSelecting(true));
         findViewById(R.id.btn_done).setOnClickListener(v -> setSelecting(false));
@@ -343,14 +342,5 @@ public class GalleryActivity extends AppCompatActivity {
             return;
         }
         super.onBackPressed();
-    }
-
-    /** 抽屉长在主界面上：回去并让它开着。 */
-    private void openDrawerOnMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra(MainActivity.EXTRA_OPEN_DRAWER, true);
-        startActivity(intent);
-        finish();
     }
 }
