@@ -6,7 +6,7 @@
         <selector>
             <item android:state_activated="true">
                 <shape android:shape="rectangle">
-                    <corners android:radius="@dimen/corner_radius" />
+                    <corners android:radius="@dimen/corner_radius_card" />
                     <solid android:color="@color/card" />
                     <stroke
                         android:width="2dp"
@@ -15,7 +15,7 @@
             </item>
             <item>
                 <shape android:shape="rectangle">
-                    <corners android:radius="@dimen/corner_radius" />
+                    <corners android:radius="@dimen/corner_radius_card" />
                     <solid android:color="@color/card" />
                 </shape>
             </item>

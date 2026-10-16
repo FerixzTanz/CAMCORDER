@@ -5,7 +5,7 @@
   始终在，不随界面变 —— 开车的人只要扫一眼这一条：这次按什么录、还剩多少空间、
   合成流认出来没有。本段录到哪儿在录制键的外圈上，这里不再重复。
 
-  主界面（压在画面底边）和设置（占一行）两处 <include> 进去；视频回看不放：这条写的是
+  只有主界面 <include> 它（压在画面底边）；设置 2026-10-08 起不放，视频回看不放：这条写的是
   现在的设置和余量，压在旧录像上会被当成那段录像的参数（2026-10-01）。
   id 一个不改；填内容的是 ui/StatusLine，
   它在自己那一棵树里找这些 id，所以同一个界面里出现两份也不会互相填错。
@@ -34,6 +34,18 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="26dp"
         android:fontFeatureSettings="tnum"
+        android:maxLines="1"
+        android:textColor="@color/text_secondary"
+        android:textAppearance="@style/TextAppearance.Cam.Caption"
+        android:visibility="gone" />
+
+    <!-- 录制中才有：熄屏后这段录像会怎样（自己读设置和哨兵模式，RecordButtonUi 管显隐）。原来在录制键里，2.13 起录制键是个圆，字搬到这里 -->
+    <com.kooo.evcam.ui.ScreenOffHintView
+        android:id="@+id/record_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="26dp"
+        android:ellipsize="end"
         android:maxLines="1"
         android:textColor="@color/text_secondary"
         android:textAppearance="@style/TextAppearance.Cam.Caption"

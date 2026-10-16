@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ic_skip_prev：统一图标集的一员（24dp 网格、线宽 1.7、圆头）。上一条。着色由使用方的 iconTint 决定。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/text_primary"
+        android:pathData="M6,5.5V18.5H7.8V5.5Z M18,5.5L8.5,12L18,18.5Z" />
+</vector>

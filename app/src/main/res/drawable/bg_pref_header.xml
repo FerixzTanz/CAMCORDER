@@ -4,7 +4,7 @@
     android:color="@color/nav_ripple_color">
     <item android:id="@android:id/mask">
         <shape android:shape="rectangle">
-            <corners android:radius="@dimen/corner_radius" />
+            <corners android:radius="@dimen/corner_radius_pill" />
             <solid android:color="@color/white" />
         </shape>
     </item>
@@ -12,13 +12,13 @@
         <selector>
             <item android:state_activated="true">
                 <shape android:shape="rectangle">
-                    <corners android:radius="@dimen/corner_radius" />
+                    <corners android:radius="@dimen/corner_radius_pill" />
                     <solid android:color="@color/sunken" />
                 </shape>
             </item>
             <item>
                 <shape android:shape="rectangle">
-                    <corners android:radius="@dimen/corner_radius" />
+                    <corners android:radius="@dimen/corner_radius_pill" />
                     <solid android:color="@android:color/transparent" />
                 </shape>
             </item>

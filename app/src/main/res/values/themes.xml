@@ -96,6 +96,59 @@
         <item name="android:paddingRight">0dp</item>
     </style>
 
+    <!-- 图标 + 字的小按钮（「‹ 返回」「全部照片」）：和 IconButton 同一块灰，字在图标右边 -->
+    <style name="Widget.Cam.TextButton" parent="Widget.Cam.RailSmall">
+        <item name="iconPadding">6dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">16dp</item>
+    </style>
+
+    <!--
+      压在画面上的圆钮（主界面右下角的「工具」「隐藏到后台」）：半透明的灰圆，
+      图标用正文色。圆角 = 一半尺寸，才是圆。
+    -->
+    <style name="Widget.Cam.RoundIcon" parent="Widget.Cam.IconButton">
+        <item name="backgroundTint">@color/overlay_button</item>
+        <item name="cornerRadius">@dimen/round_button_radius</item>
+        <item name="iconSize">28dp</item>
+    </style>
+
+    <!--
+      主界面模式条上的一个字片（「录像」「拍照」）：没底色，选中的描一圈能量橙。
+      字压在画面上，所以日夜同色、带一点投影。
+    -->
+    <style name="Widget.Cam.ModeChip" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:checkable">true</item>
+        <item name="android:textColor">@color/mode_chip_text</item>
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:shadowColor">@color/black</item>
+        <item name="android:shadowRadius">6</item>
+        <item name="android:shadowDy">1</item>
+        <item name="strokeColor">@color/mode_chip_stroke</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">@dimen/corner_radius</item>
+        <item name="rippleColor">@color/status_overlay_text_dim</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+    </style>
+
+    <!-- 缩略图的圆角（主界面最近一张、回看网格）；胶片上的小一档 -->
+    <style name="ShapeAppearance.Cam.Thumb" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/corner_radius</item>
+    </style>
+
+    <style name="ShapeAppearance.Cam.ThumbSmall" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">6dp</item>
+    </style>
+
     <!-- 导航菜单项文字样式 -->
     <style name="NavigationMenuTextAppearance" parent="TextAppearance.AppCompat.Body1">
         <item name="android:textSize">@dimen/text_row</item>

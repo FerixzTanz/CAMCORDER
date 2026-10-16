@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主界面工具面板的底：和设置的卡片同一块灰，圆角大一档（压在画面上，要和画面分得开） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/surface" />
+    <corners android:radius="@dimen/corner_radius_card" />
+</shape>

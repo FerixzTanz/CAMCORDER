@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  设置行：两三个选项直接摆在行里。
+  设置行：两三个选项直接摆在行里 —— 标题在上，一条分段槽在下，照车机自带设置。
 
   下拉框要点两次（开框、选中），而这种行一次就够。选项少的时候，
   还能同时看见「另一个是什么」—— 下拉框收起来之后是看不见的。
@@ -13,19 +13,17 @@
     android:layout_marginBottom="8dp"
     android:background="@drawable/bg_pref_row_static"
     android:baselineAligned="false"
-    android:gravity="center_vertical"
     android:minHeight="72dp"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:paddingStart="20dp"
-    android:paddingEnd="14dp">
+    android:paddingTop="14dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="14dp">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:paddingTop="14dp"
-        android:paddingBottom="14dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@android:id/title"
@@ -48,9 +46,9 @@
 
     <LinearLayout
         android:id="@+id/segments"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
         android:background="@drawable/bg_segment_track"
         android:orientation="horizontal"
         android:padding="3dp" />

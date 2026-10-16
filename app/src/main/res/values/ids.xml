@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      录制键（RecordButtonUi）认的两个可选的字：2.13 起快门是个圆，布局里没有它们，
+      但类里仍然 findViewById —— 找不到就算了。id 得在某处声明过，代码才引用得到。
+    -->
+    <item name="record_title" type="id" />
+    <item name="record_detail" type="id" />
+</resources>

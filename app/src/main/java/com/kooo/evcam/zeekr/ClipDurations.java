@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>记在进程里，应用退出就没了：这是省一次等待，不是持久缓存，
  * 不值得为它往磁盘上写东西。</p>
  */
-final class ClipDurations {
+public final class ClipDurations {
 
     /** 键里带上大小和修改时间：同名文件被覆盖之后，旧答案自然对不上。 */
     private static final Map<String, Long> CACHE = new ConcurrentHashMap<>();
@@ -37,7 +37,7 @@ final class ClipDurations {
     }
 
     /** 读不出来返回 -1，调用方会跳过这个文件（失败不记，下次还能再试）。 */
-    static long of(File file) {
+    public static long of(File file) {
         String key = file.getAbsolutePath() + "|" + file.length() + "|" + file.lastModified();
         Long known = CACHE.get(key);
         if (known != null) {

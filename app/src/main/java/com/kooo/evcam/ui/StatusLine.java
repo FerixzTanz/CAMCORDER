@@ -53,6 +53,7 @@ public final class StatusLine {
         int dim = ContextCompat.getColor(context, R.color.status_overlay_text_dim);
         tint(root, R.id.tv_status_stream, bright);
         tint(root, R.id.tv_status_storage, bright);
+        tint(root, R.id.record_hint, dim);
         tint(root, R.id.tv_composite_info, dim);
     }
 

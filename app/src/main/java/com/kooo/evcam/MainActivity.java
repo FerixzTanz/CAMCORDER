@@ -15,7 +15,6 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -110,9 +109,15 @@ public class MainActivity extends AppCompatActivity {
     private static final int DEBUG_TAP_COUNT = 5;
     private static final long DEBUG_TAP_INTERVAL_MS = 800;  // 连续点击的最大间隔
 
-    /** 极氪布局里是一张卡片（点 + 环 + 两行字），自定义车型里还是普通按钮 —— 所以只当 View 用。 */
-    private View btnStartRecord;
-    private Button btnMinimize, btnTakePhoto;
+    /** 快门：录像模式按它开 / 停录，拍照模式按它拍一张（RecordButtonUi 画它）。 */
+    private View btnShutter;
+    private View btnMinimize;
+    /** 快门旁边「最近一张 / 一段」的缩略图，点开回看。 */
+    private android.widget.ImageView btnLastClip;
+    /** 模式条上现在选的是拍照（true）还是录像（false）；存在 AppConfig.captureMode。 */
+    private boolean photoMode;
+    /** 工具面板：回看、设置、鱼眼校正、两个开关、画面调节都在里面。 */
+    private com.kooo.evcam.ui.CameraToolsPanel toolsPanel;
 
     /** 点开放大了哪一块：环视那一块，或者座舱的某一格；null 表示没放大。 */
     private View expandedPreview;
@@ -148,8 +153,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return cameraManager;
     }
-    private ImageAdjustManager imageAdjustManager;  // 亮度/降噪调节管理器
-    private ImageAdjustFloatingWindow imageAdjustFloatingWindow;  // 亮度/降噪调节悬浮窗
+    private ImageAdjustManager imageAdjustManager;  // 画面调节管理器（工具面板里那几行的模型）
     private int textureReadyCount = 0;  // 记录准备好的TextureView数量
     private boolean isRecording = false;  // 录制状态标志
     private boolean isInBackground = false;  // 是否在后台
@@ -512,9 +516,10 @@ public class MainActivity extends AppCompatActivity {
             applyProfileCells();
         }
         
-        btnStartRecord = findViewById(R.id.btn_start_record);
+        btnShutter = findViewById(R.id.btn_shutter);
         btnMinimize = findViewById(R.id.btn_minimize);
-        btnTakePhoto = findViewById(R.id.btn_take_photo);
+        btnLastClip = findViewById(R.id.btn_last_clip);
+        photoMode = AppConfig.CAPTURE_MODE_PHOTO.equals(appConfig.getCaptureMode());
         
         // 初始化录制状态显示
         tvRecordingStats = findViewById(R.id.tv_recording_stats);
@@ -538,32 +543,54 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         
-        // 多按钮布局的快捷导航按钮（仅在 L7-多按钮 布局中存在）
-        View btnVideoPlayback = findViewById(R.id.btn_video_playback);
-        if (btnVideoPlayback != null) {
-            btnVideoPlayback.setOnClickListener(v -> showPlaybackInterface());
+        // 工具面板：画面上只留一个圆钮，回看、设置、鱼眼校正、开关、画面调节都在面板里
+        View panel = findViewById(R.id.tools_panel);
+        if (panel != null) {
+            toolsPanel = new com.kooo.evcam.ui.CameraToolsPanel(panel, new com.kooo.evcam.ui.CameraToolsPanel.Host() {
+                @Override public void openVideos() { toolsPanel.hide(); showPlaybackInterface(); }
+                @Override public void openPhotos() { toolsPanel.hide(); showPhotoPlaybackInterface(); }
+                @Override public void openSettings() { toolsPanel.hide(); showSettingsInterface(); }
+                @Override public ImageAdjustManager adjustManager() { return imageAdjustManager; }
+                @Override public void onImageAdjustTouched() { setImageAdjustEnabled(true); }
+                @Override public void onStatsToggled(boolean enabled) { applyRecordingStatsSetting(); }
+            });
         }
-        
-        View btnPhotoPlayback = findViewById(R.id.btn_photo_playback);
-        if (btnPhotoPlayback != null) {
-            btnPhotoPlayback.setOnClickListener(v -> showPhotoPlaybackInterface());
+        View btnTools = findViewById(R.id.btn_tools);
+        if (btnTools != null) {
+            btnTools.setOnClickListener(v -> toggleToolsPanel());
         }
-        
-        View btnSettings = findViewById(R.id.btn_settings);
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> showSettingsInterface());
-        }
-        
+
+        // 模式条：录像 / 拍照。快门按它决定做什么
+        setupModeStrip();
+
         bindRecordButtonUi();
-        applyActionRailSide();
+        applyControlsSide();
         updateStatusLine();
 
-        // 录制按钮：点击切换录制状态
-        btnStartRecord.setOnClickListener(v -> toggleRecording());
+        // 快门：录像模式切换录制状态，拍照模式拍一张
+        if (btnShutter != null) {
+            btnShutter.setOnClickListener(v -> {
+                if (photoMode) {
+                    takePicture();
+                } else {
+                    toggleRecording();
+                }
+            });
+        }
+        if (btnLastClip != null) {
+            btnLastClip.setOnClickListener(v -> {
+                if (photoMode) {
+                    showPhotoPlaybackInterface();
+                } else {
+                    showPlaybackInterface();
+                }
+            });
+            refreshLastClip();
+        }
 
         // 隐藏到后台：录制和悬浮按钮照旧，只把界面收起来。
         // 长按是退出，和抽屉、设置左栏最底下的「退出应用」是同一件事。退出会停掉录制，
-        // 放在长按上，碰一下不会误触（自定义布局的按钮在下面另接，那里仍是退出）
+        // 放在长按上，碰一下不会误触
         if (btnMinimize != null) {
             btnMinimize.setOnClickListener(v -> {
                 com.kooo.evcam.blackbox.BlackBox.note("用户点了最小化");
@@ -580,8 +607,6 @@ public class MainActivity extends AppCompatActivity {
                     getString(R.string.nav_exit), null);
         }
 
-        btnTakePhoto.setOnClickListener(v -> takePicture());
-
         if (textureFront != null) {
             textureFront.setSurfaceTextureListener(buildSurfaceListener("front"));
         }
@@ -592,6 +617,52 @@ public class MainActivity extends AppCompatActivity {
         }
         if (textureLeft != null && PreviewSlots.exists(configuredCameraCount, "left")) {
             textureLeft.setSurfaceTextureListener(buildSurfaceListener("left"));
+        }
+    }
+
+    /** 模式条：两个字片，选中的描橙线；选了就记住，下次打开还是它。 */
+    private void setupModeStrip() {
+        com.google.android.material.button.MaterialButton video = findViewById(R.id.mode_video);
+        com.google.android.material.button.MaterialButton photo = findViewById(R.id.mode_photo);
+        if (video == null || photo == null) {
+            return;
+        }
+        video.setOnClickListener(v -> setPhotoMode(false));
+        photo.setOnClickListener(v -> setPhotoMode(true));
+        video.setChecked(!photoMode);
+        photo.setChecked(photoMode);
+    }
+
+    private void setPhotoMode(boolean photo) {
+        com.google.android.material.button.MaterialButton video = findViewById(R.id.mode_video);
+        com.google.android.material.button.MaterialButton photoChip = findViewById(R.id.mode_photo);
+        if (video != null) {
+            video.setChecked(!photo);
+        }
+        if (photoChip != null) {
+            photoChip.setChecked(photo);
+        }
+        if (photoMode == photo) {
+            return;
+        }
+        photoMode = photo;
+        appConfig.setCaptureMode(photo ? AppConfig.CAPTURE_MODE_PHOTO : AppConfig.CAPTURE_MODE_VIDEO);
+        if (recordButtonUi != null) {
+            recordButtonUi.setPhotoMode(photo);
+        }
+        refreshLastClip();
+    }
+
+    private void toggleToolsPanel() {
+        if (toolsPanel != null) {
+            toolsPanel.toggle();
+        }
+    }
+
+    /** 快门旁边那张缩略图：按现在的模式找最近一张照片 / 一段录像。 */
+    private void refreshLastClip() {
+        if (btnLastClip != null) {
+            com.kooo.evcam.ui.LastClipThumb.load(btnLastClip, photoMode);
         }
     }
 
@@ -929,10 +1000,13 @@ public class MainActivity extends AppCompatActivity {
 
     /** 录制键换了实例（布局重建、自定义车型换按钮布局）就重新接一次。 */
     private void bindRecordButtonUi() {
-        recordButtonUi = btnStartRecord != null ? new com.kooo.evcam.ui.RecordButtonUi(btnStartRecord) : null;
+        recordButtonUi = btnShutter != null ? new com.kooo.evcam.ui.RecordButtonUi(btnShutter) : null;
         if (recordButtonUi == null) {
             return;
         }
+        // 「熄屏后…」那行小字在状态条上，不在快门里
+        recordButtonUi.setHintView(recordingLayout != null ? recordingLayout.findViewById(R.id.record_hint) : null);
+        recordButtonUi.setPhotoMode(photoMode);
         recordButtonUi.setSegmentMinutes(
                 com.kooo.evcam.profile.RecordSpecs.forCameraKey(this, "front").segmentMinutes);
         if (isRecording) {
@@ -1000,8 +1074,6 @@ public class MainActivity extends AppCompatActivity {
                 showPhotoPlaybackInterface();
             } else if (itemId == R.id.nav_settings) {
                 showSettingsInterface();
-            } else if (itemId == R.id.nav_about) {
-                startActivity(new Intent(this, com.kooo.evcam.zeekr.AboutActivity.class));
             }
             selectNavItem(itemId);
             drawerLayout.closeDrawer(GravityCompat.START);
@@ -1159,7 +1231,7 @@ public class MainActivity extends AppCompatActivity {
     private void applyRailSideChoice(String side) {
         appConfig.setActionRailSide(side);
         appConfig.setRailSideChosen();
-        applyActionRailSide();
+        applyControlsSide();
         Toast.makeText(this, R.string.msg_rail_side_hint, Toast.LENGTH_LONG).show();
         checkFirstLaunch();
     }
@@ -1211,13 +1283,14 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
 
         // 可能刚在设置里换了边
-        applyActionRailSide();
+        applyControlsSide();
         // 可能刚在设置里开关了「录制状态显示」
         applyRecordingStatsSetting();
         // 可能刚在设置里换了录像盘：状态条的余量按新盘重算（探测缓存已在设置里清掉）
         updateStatusLine();
         recordingLayout.setVisibility(View.VISIBLE);
         fragmentContainer.setVisibility(View.GONE);
+        refreshLastClip();
     }
 
     /**
@@ -1245,34 +1318,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 动作栏放到设置里选的那一侧（左舵 / 右舵）。
+     * 画面右下角那一列（工具、隐藏到后台）和工具面板放到设置里选的那一侧（左舵 / 右舵）。
      *
-     * <p>只挪这一列：从行里摘下来插到另一头，外边距跟着对调。预览画面不动，
-     * 它的 Surface 也就不会被销毁重建。自定义车型的布局没有这一列，直接跳过。</p>
+     * <p>2.13 以前挪的是整条动作栏；现在没有动作栏了，只改这两块的 layout_gravity，
+     * 预览画面不动，它的 Surface 也就不会被销毁重建。菜单键永远在左上角（规范第一条原则）。</p>
      */
-    private void applyActionRailSide() {
-        View rail = findViewById(R.id.action_rail);
-        if (rail == null || !(rail.getParent() instanceof android.widget.LinearLayout)
-                || !(rail.getLayoutParams() instanceof android.widget.LinearLayout.LayoutParams)) {
-            return;
-        }
-        android.widget.LinearLayout row = (android.widget.LinearLayout) rail.getParent();
+    private void applyControlsSide() {
         boolean left = "left".equals(appConfig.getActionRailSide());
-        int target = left ? 0 : row.getChildCount() - 1;
-        if (row.indexOfChild(rail) != target) {
-            if (row.isLaidOut() && com.kooo.evcam.ui.MotionPolicy.decorative(this)) {
-                android.transition.TransitionManager.beginDelayedTransition(row,
-                        new android.transition.ChangeBounds().setDuration(250));
-            }
-            row.removeView(rail);
-            row.addView(rail, left ? 0 : row.getChildCount());
+        View side = findViewById(R.id.controls_side);
+        if (side != null && side.getLayoutParams() instanceof android.widget.FrameLayout.LayoutParams) {
+            android.widget.FrameLayout.LayoutParams params =
+                    (android.widget.FrameLayout.LayoutParams) side.getLayoutParams();
+            params.gravity = android.view.Gravity.BOTTOM | (left ? android.view.Gravity.START : android.view.Gravity.END);
+            side.setLayoutParams(params);
         }
-        android.widget.LinearLayout.LayoutParams params =
-                (android.widget.LinearLayout.LayoutParams) rail.getLayoutParams();
-        int gutter = getResources().getDimensionPixelSize(R.dimen.gutter);
-        params.setMarginStart(left ? 0 : gutter);
-        params.setMarginEnd(left ? gutter : 0);
-        rail.setLayoutParams(params);
+        if (toolsPanel != null) {
+            toolsPanel.setSide(left);
+        }
     }
 
     /**
@@ -1297,14 +1359,19 @@ public class MainActivity extends AppCompatActivity {
      * 正是绿屏、马赛克和卡顿的来源，所以整个界面换成了时间轴播放器。</p>
      */
     private void showPlaybackInterface() {
-        startActivity(new Intent(this, com.kooo.evcam.zeekr.TimelinePlayerActivity.class));
+        // 2.13 起先进回看网格（录像那一栏），点一条才进播放器
+        startActivity(new Intent(this, com.kooo.evcam.playback.GalleryActivity.class)
+                .putExtra(com.kooo.evcam.playback.GalleryActivity.EXTRA_TAB,
+                        com.kooo.evcam.playback.GalleryActivity.TAB_VIDEOS));
     }
 
     /**
-     * 显示图片回看界面（新版四宫格界面）
+     * 显示照片回看：回看网格的照片那一栏
      */
     private void showPhotoPlaybackInterface() {
-        startActivity(new Intent(this, com.kooo.evcam.playback.PhotoPlaybackActivity.class));
+        startActivity(new Intent(this, com.kooo.evcam.playback.GalleryActivity.class)
+                .putExtra(com.kooo.evcam.playback.GalleryActivity.EXTRA_TAB,
+                        com.kooo.evcam.playback.GalleryActivity.TAB_PHOTOS));
     }
 
 
@@ -1407,6 +1474,9 @@ public class MainActivity extends AppCompatActivity {
             // 初始化亮度/降噪调节管理器
             imageAdjustManager = new ImageAdjustManager(this);
             registerCamerasToImageAdjustManager();
+            if (toolsPanel != null) {
+                toolsPanel.refresh();
+            }
             AppLog.d(TAG, "Camera initialized with " + configuredCameraCount + " cameras (reused from background)");
             // 管线还在录的话，界面先画成它现在的样子；然后才问要不要自动开一次
             syncRecordingStateFromManager();
@@ -1449,8 +1519,11 @@ public class MainActivity extends AppCompatActivity {
                 // 打开所有摄像头
                 cameraManager.openAllCameras();
                 
-                // 注册摄像头到亮度/降噪调节管理器
+                // 注册摄像头到画面调节管理器；工具面板里那几行按相机支持什么重填
                 registerCamerasToImageAdjustManager();
+                if (toolsPanel != null) {
+                    toolsPanel.refresh();
+                }
 
                 AppLog.d(TAG, "Camera initialized with " + configuredCameraCount + " cameras");
 
@@ -2669,6 +2742,10 @@ public class MainActivity extends AppCompatActivity {
             }
             if (state == com.kooo.evcam.ui.RecordButtonUi.State.IDLE) {
                 refreshRecordAvailability();
+                // 刚停下来的那一段就是「最近一段」
+                if (!photoMode) {
+                    refreshLastClip();
+                }
             } else {
                 recordButtonUi.setState(state);
             }
@@ -2751,8 +2828,19 @@ public class MainActivity extends AppCompatActivity {
      * 提示按真实结果说 —— 以前按下就弹「已保存」，不管拍没拍到。
      */
     private void takePicture() {
+        com.kooo.evcam.ui.PhotoFeedback feedback = new com.kooo.evcam.ui.PhotoFeedback(this);
         com.kooo.evcam.camera.CameraManagerHolder.getInstance().getOrInit(this)
-                .takePhoto(new com.kooo.evcam.ui.PhotoFeedback(this));
+                .takePhoto(new MultiCameraManager.PhotoCallback() {
+                    @Override public void onWaitingForCameras() { feedback.onWaitingForCameras(); }
+                    @Override public void onNoStorage() { feedback.onNoStorage(); }
+                    @Override public void onPhotoResult(int saved, int pressed, int expected) {
+                        feedback.onPhotoResult(saved, pressed, expected);
+                        // 拍到了就把快门旁边的缩略图换成这一张
+                        if (saved > 0) {
+                            runOnUiThread(() -> refreshLastClip());
+                        }
+                    }
+                });
     }
 
 
@@ -2887,6 +2975,7 @@ public class MainActivity extends AppCompatActivity {
         refreshRecordAvailability();
         updateStatusLine();
         com.kooo.evcam.storage.StorageState.refresh(this, "resume");
+        refreshLastClip();
         
         // 回到前台要用相机：上面 claim(PREVIEW) 那一下相机层自己会开（reconcileCameras）
 }
@@ -3055,6 +3144,10 @@ public class MainActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return;
         }
+        if (toolsPanel != null && toolsPanel.isShowing()) {
+            toolsPanel.hide();
+            return;
+        }
 
         FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -3184,60 +3277,6 @@ public class MainActivity extends AppCompatActivity {
         }
         
         AppLog.d(TAG, "Image adjust enabled: " + enabled);
-    }
-    
-    /**
-     * 显示亮度/降噪调节悬浮窗
-     * 悬浮窗由 MainActivity 管理，这样即使退出设置页面也能保持显示
-     */
-    public void showImageAdjustFloatingWindow() {
-        // 检查悬浮窗权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, R.string.msg_need_overlay_adjust, Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    android.net.Uri.parse("package:" + getPackageName()));
-            startActivityForResult(intent, REQUEST_OVERLAY_PERMISSION);
-            return;
-        }
-        
-        if (imageAdjustManager == null) {
-            Toast.makeText(this, R.string.msg_camera_not_ready_adjust, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        // 关闭之前的悬浮窗（如果有）
-        if (imageAdjustFloatingWindow != null && imageAdjustFloatingWindow.isShowing()) {
-            imageAdjustFloatingWindow.dismiss();
-        }
-        
-        // 创建并显示悬浮窗
-        imageAdjustFloatingWindow = new ImageAdjustFloatingWindow(this, imageAdjustManager);
-        imageAdjustFloatingWindow.setOnDismissListener(() -> {
-            AppLog.d(TAG, "Image adjust floating window dismissed");
-        });
-        imageAdjustFloatingWindow.show();
-        // 窗口真打开了才说「已打开」：没权限、摄像头没就绪各有自己的提示（上面两处）；
-        // show() 加不上窗口时只记日志不抛，所以问一下它
-        if (imageAdjustFloatingWindow.isShowing()) {
-            Toast.makeText(this, R.string.msg_adjust_opened, Toast.LENGTH_SHORT).show();
-        }
-
-        AppLog.d(TAG, "Image adjust floating window shown");
-    }
-    
-    private static final int REQUEST_OVERLAY_PERMISSION = 1001;
-    
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_OVERLAY_PERMISSION) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && android.provider.Settings.canDrawOverlays(this)) {
-                // 权限已授予，打开悬浮窗
-                showImageAdjustFloatingWindow();
-            } else {
-                Toast.makeText(this, R.string.msg_overlay_denied, Toast.LENGTH_SHORT).show();
-            }
-        }
     }
     
     // ==================== 静态实例访问 ====================

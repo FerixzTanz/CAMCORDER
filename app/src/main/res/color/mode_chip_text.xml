@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主界面模式条的字：压在画面上，日夜同色；没选中的淡一级 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="@color/status_overlay_text" />
+    <item android:color="@color/status_overlay_text_dim" />
+</selector>

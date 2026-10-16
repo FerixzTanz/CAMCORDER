@@ -173,14 +173,14 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
     @Override
     public void onResume() {
         super.onResume();
-        // 停在开发者选项这一页时把它关了（「关于与致谢」里关的）：这一页不能再留着，换回默认分区
+        // 停在开发者选项这一页时把它关了（分区里最后一行关的）：这一页不能再留着，换回默认分区
         if (!DeveloperMode.isUnlocked() && getArguments() != null
                 && SettingsShellFragment.DEVELOPER_SECTION.equals(getArguments().getString(ARG_SECTION))
                 && getParentFragment() instanceof SettingsShellFragment) {
             ((SettingsShellFragment) getParentFragment()).showSection(SettingsShellFragment.DEFAULT_SECTION);
             return;
         }
-        // 开发者选项在「关于与致谢」（另一个 Activity）里开关：回来时变了就按新的状态整页重绑 ——
+        // 开发者选项开关之后（设置标题连点七下 / 分区里最后一行）：回来时变了就按新的状态整页重绑 ——
         // 中转写入能不能开、内置存储那一项怎么写、开发者分区接不接线都跟着它
         if (appConfig != null && boundUnlocked != DeveloperMode.isUnlocked()) {
             onCreatePreferences(null, null);
@@ -1198,6 +1198,12 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         // 系统信息（试验性）：车机能读到的车辆信号。只在这一页开着时收，离开就把资源放掉
         onClick("pref_vehicle_info", pref ->
                 openFragment(new VehicleInfoFragment(), R.string.set_vehicle_info_title));
+        // 开源许可：GPL-3.0 要求界面里看得到法律声明（原来在关于页）
+        onClick("pref_licence", pref -> {
+            if (getContext() != null) {
+                SettingsDialogs.showLicence(requireContext());
+            }
+        });
 
         bindSwitch("pref_auto_start", appConfig.isAutoStartOnBoot(),
                 value -> appConfig.setAutoStartOnBoot(value));
@@ -1234,25 +1240,16 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         bindSwitch("pref_force_h264", appConfig.isForceH264Encoding(),
                 value -> appConfig.setForceH264Encoding(value));
 
-        // 画面调节：打开调节窗口（MainActivity 管着它，退出设置也还在），同时开启画面调节、套上存着的参数。
-        // 窗口开没开成由 MainActivity 说：没有悬浮窗权限、相机还没好时它自己提示
-        onClick("pref_image_adjust", pref -> {
-            if (getActivity() instanceof MainActivity) {
-                MainActivity main = (MainActivity) getActivity();
-                appConfig.setImageAdjustEnabled(true);
-                main.setImageAdjustEnabled(true);
-                main.showImageAdjustFloatingWindow();
-            }
-        });
+        // 画面调节 2.13 起在主界面的工具面板里（CameraToolsPanel），这里没有它的行了
 
-        onClick("pref_image_adjust_reset", pref -> {
-            if (getActivity() instanceof MainActivity) {
-                com.kooo.evcam.camera.ImageAdjustManager manager =
-                        ((MainActivity) getActivity()).getImageAdjustManager();
-                if (manager != null) {
-                    manager.resetToDefault();
-                    toast(getString(R.string.msg_adjust_reset));
-                }
+        // 关掉开发者选项（原来在关于页里点「安全须知」）
+        onClick("pref_developer_lock", pref -> {
+            if (getContext() != null) {
+                DeveloperUnlock.promptToLock(requireContext(), () -> {
+                    if (getParentFragment() instanceof SettingsShellFragment) {
+                        ((SettingsShellFragment) getParentFragment()).refreshHeaders();
+                    }
+                });
             }
         });
 

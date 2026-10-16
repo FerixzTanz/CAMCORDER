@@ -1,10 +1,6 @@
 <resources>
-    <!--
-      应用名：装在车机上的这一份，本身就是车机版，桌面图标、抽屉标题、通知里不用再重复一遍。
-      app_name_full 才带「（车机版）」—— 关于页、诊断报告这种要跟以后的 iOS 版区分开的地方用它。
-    -->
+    <!-- 应用名：装在车机上的这一份，本身就是车机版，桌面图标、抽屉标题、通知里不用再重复一遍。 -->
     <string name="app_name">极氪即刻</string>
-    <string name="app_name_full">极氪即刻（车机版）</string>
     <string name="accessibility_service_description">用于「保持后台运行」，帮助应用在后台持续运行。\n\n本服务不读取、不操作任何界面内容，也不收集任何信息。</string>
 
     <!-- 极氪合成流模式 -->
@@ -16,7 +12,6 @@
     <string name="msg_no_camera_available">未找到可用的摄像头</string>
 
     <!-- 关于页面 -->
-    <string name="about_title">关于与致谢</string>
 
     <!-- 设置界面 -->
     <string name="set_back_to_recording">返回主界面</string>
@@ -37,7 +32,6 @@
     <string name="set_section_rearview">超级后视镜</string>
     <string name="set_section_floating">悬浮按钮</string>
     <string name="set_section_system">系统</string>
-    <string name="set_section_about">关于与致谢</string>
     <string name="set_car_model_title">视频流配置</string>
     <string name="set_profile_editor_title">编辑视频流配置</string>
     <string name="set_profile_editor_summary">录制画质、各路摄像头参数和主界面画面布局</string>
@@ -133,9 +127,6 @@
     <string name="set_recording_mode_summary">%1$s；录制固定使用 MediaCodec，此项不生效</string>
     <string name="set_force_h264_title">强制 H.264</string>
     <string name="set_force_h264_summary">所有摄像头统一使用 H.264 编码，覆盖「编辑视频流配置」中各路的编码设置</string>
-    <string name="set_image_adjust_title">画面调节</string>
-    <string name="set_image_adjust_summary">打开画面调节窗口，实时调整曝光、白平衡、降噪等参数</string>
-    <string name="set_image_adjust_reset_title">恢复画面调节默认值</string>
     <string name="set_camera_mapping_title">摄像头映射</string>
     <string name="set_camera_mapping_summary">手动指定环视、前座舱、后座舱各自使用的摄像头（用于排查）</string>
     <string name="set_diagnostics_title">诊断信息</string>
@@ -297,7 +288,7 @@
     <string name="opt_internal_storage">内置存储</string>
     <string name="opt_internal_storage_locked">内置存储（需开启开发者选项）</string>
     <string name="dlg_internal_locked_title">内置存储需开启开发者选项</string>
-    <string name="dlg_internal_locked_msg">录制时会持续写入数据。内置存储的写入寿命有限，且通常无法更换，因此未开启开发者选项时仅录制到 U 盘。\n\n如确需使用，请在「设置 → 关于与致谢」中点击「安全须知」，开启开发者选项。</string>
+    <string name="dlg_internal_locked_msg">录制时会持续写入数据。内置存储的写入寿命有限，且通常无法更换，因此未开启开发者选项时仅录制到 U 盘。\n\n如确需使用，请在「设置」界面连点七下标题并输入密码，开启开发者选项。</string>
     <string name="msg_storage_changed">存储位置已切换为「%1$s」，下次开始录制时生效</string>
     <string name="msg_enter_number">请输入数字</string>
     <string name="msg_enter_positive_number">请输入大于 0 的数字</string>
@@ -358,7 +349,6 @@
     <string name="set_hud_side_night_title">HUD 画面夜间亮度（%）</string>
     <string name="set_hud_side_night_summary">车辆处于夜间模式时，在上面的不透明度基础上再调到此比例。100 为不调暗。</string>
     <string name="msg_floating_reset">悬浮按钮已重置</string>
-    <string name="msg_adjust_opened">已打开画面调节窗口，返回主界面查看效果</string>
     <string name="msg_adjust_reset">画面参数已恢复默认</string>
     <string name="info_mapping_manual">已手动指定摄像头映射</string>
     <string name="info_mapping_auto">自动分配。某一路无画面时，可在此手动指定。</string>
@@ -475,9 +465,6 @@
     <string name="msg_screen_off_background">熄屏 15 秒，已转入后台</string>
     <string name="msg_stats_on">录制状态显示已开启</string>
     <string name="msg_stats_off">录制状态显示已关闭</string>
-    <string name="msg_need_overlay_adjust">需要悬浮窗权限才能打开调节窗口</string>
-    <string name="msg_camera_not_ready_adjust">摄像头未就绪，无法打开画面调节窗口</string>
-    <string name="msg_overlay_denied">悬浮窗权限未授予</string>
     <string name="dlg_no_external_title">未检测到 U 盘</string>
     <string name="dlg_no_external_msg">录像仅保存到 U 盘，以免持续写入损耗内置存储。\n\n请插入 U 盘后重试。如已插入仍未识别，可更换 USB 接口，或在「设置 → 存储 → 存储位置」中重新选择 U 盘。</string>
     <string name="dlg_will_use_internal_title">将录制到内置存储</string>
@@ -574,8 +561,7 @@
     <string name="msg_keep_one_camera_refuse">未开启任何摄像头，请在「编辑视频流配置」中开启</string>
     <string name="msg_refuse_no_external">未检测到 U 盘，插入后自动开始录制</string>
 
-    <!-- 关于页 -->
-    <plurals name="date_group_count">
+        <plurals name="date_group_count">
         <item quantity="other">%1$d 组</item>
     </plurals>
 
@@ -686,7 +672,7 @@
     <string name="set_reduce_motion_title">录制时减少动效</string>
     <string name="set_reduce_motion_summary">录制时关闭界面过渡、画面缩放等装饰动效，减少 GPU 占用；录制键和进度环不受影响</string>
     <string name="set_vehicle_status_title">车辆状态（试验性）</string>
-    <string name="set_vehicle_status_summary">在主界面「鱼眼校正」下方，以行驶信息条的图标显示喇叭、闪远光和双闪；喇叭信号暂无法读取</string>
+    <string name="set_vehicle_status_summary">在主界面的工具面板里，以行驶信息条的图标显示喇叭、闪远光和双闪；喇叭信号暂无法读取</string>
     <string name="set_fisheye_projection_title">鱼眼校正方式</string>
     <string name="set_fisheye_projection_summary">%1$s · 用于主界面预览、照片回放和录像回放</string>
     <string name="opt_projection_rectilinear">直线</string>
@@ -831,11 +817,11 @@
     <!-- 开发者选项解锁 -->
     <string name="dev_unlock_hint">密码</string>
     <string name="dev_unlock_title">开发者选项</string>
-    <string name="dev_unlock_msg">包含未完成的功能和排查工具。开启后将一直保持，再次点击「安全须知」可关闭。</string>
+    <string name="dev_unlock_msg">包含未完成的功能和排查工具。开启后将一直保持，可在开发者选项分区的最后一行关闭。</string>
     <string name="dev_unlocked">开发者选项已开启</string>
     <string name="dev_wrong_password">密码错误</string>
     <string name="dev_lock_title">关闭开发者选项</string>
-    <string name="dev_lock_msg">关闭后，开发者选项将隐藏，其中的功能停止生效。如需重新开启，再次点击「安全须知」并输入密码。</string>
+    <string name="dev_lock_msg">关闭后，开发者选项将隐藏，其中的功能停止生效。如需重新开启，在设置界面连点七下标题并输入密码。</string>
     <string name="dev_lock_confirm">关闭</string>
     <string name="dev_locked">开发者选项已关闭</string>
 
@@ -909,7 +895,6 @@
     <string name="adj_effect">特效</string>
     <string name="adj_default">默认</string>
     <string name="adj_reset">恢复默认</string>
-    <string name="adj_save_close">保存并关闭</string>
     <string name="awb_auto">自动</string>
     <string name="awb_incandescent">白炽灯</string>
     <string name="awb_fluorescent">荧光灯</string>
@@ -1020,5 +1005,27 @@
     <string name="dev_tool_recording_title">正在录制</string>
     <string name="dev_tool_progress">（%1$d/%2$d）%3$s</string>
     <string name="dev_tool_file_result">%1$s：%2$s</string>
-    <string name="dev_note">在「设置 → 关于与致谢」中点击「安全须知」可关闭开发者选项，关闭后此分区隐藏</string>
+    <string name="dev_note">在本分区最后一行可关闭开发者选项，关闭后此分区隐藏</string>
+    <!-- 2.13 主界面：模式条、快门、工具面板（照车机自带相机应用的排法） -->
+    <string name="mode_video">录像</string>
+    <string name="mode_photo">拍照</string>
+    <string name="record_take_photo">拍一张</string>
+    <string name="tools_title">工具</string>
+    <string name="cd_tools">打开工具面板</string>
+    <string name="cd_last_clip">最近一张，点开回看</string>
+    <!-- 2.13 回看：网格、选择、查看器 -->
+    <string name="action_select">选择</string>
+    <string name="action_done">完成</string>
+    <string name="action_deselect_all">全不选</string>
+    <string name="action_all_photos">全部照片</string>
+    <string name="action_all_videos">全部录像</string>
+    <string name="action_back">返回</string>
+    <string name="action_info">详情</string>
+    <string name="msg_select_first">请先选择</string>
+    <string name="info_photo_detail">拍摄时间：%1$s\n大小：%2$s\n画面：%3$s</string>
+    <string name="info_video_detail">开始：%1$s\n结束：%2$s\n时长：%3$s\n大小：%4$s\n片段：%5$d</string>
+    <!-- 2.13 开源许可（原来在关于页） -->
+    <string name="licence_row_title">开源许可</string>
+    <string name="licence_row_summary">GPL-3.0 · 项目主页与上游</string>
+    <string name="licence_dialog_body">极氪即刻 v%1$s\n\n本应用是自由软件，按 GNU GPL-3.0 许可发布，不附带任何担保；你可以按同一许可证再分发和修改它。\n\n项目主页：%2$s\n上游 EVCam：%3$s\n许可证全文：%4$s\n\n本应用与极氪（ZEEKR）无任何隶属关系。</string>
 </resources>

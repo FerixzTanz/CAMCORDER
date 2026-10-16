@@ -83,7 +83,7 @@ public class SegmentedPreference extends Preference implements PreferenceRows.Ow
         // 设置页整体比别处低一档，段上的字跟着行标题往下走一级
         view.setTextAppearance(R.style.TextAppearance_Cam_Caption);
         view.setTextColor(ContextCompat.getColor(context,
-                chosen ? R.color.on_energy : R.color.text_secondary));
+                chosen ? R.color.text_primary : R.color.text_secondary));
         view.setBackgroundResource(R.drawable.bg_segment);
         view.setActivated(chosen);
         int padding = Math.round(SEGMENT_PADDING_DP * density);
@@ -91,8 +91,9 @@ public class SegmentedPreference extends Preference implements PreferenceRows.Ow
         view.setMinWidth(Math.round(SEGMENT_MIN_WIDTH_DP * density));
         view.setOnClickListener(v -> pick(target));
 
+        // 整行宽，每一段平分：照车机设置，选项摆满一条
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, Math.round(SEGMENT_HEIGHT_DP * density));
+                0, Math.round(SEGMENT_HEIGHT_DP * density), 1f);
         view.setLayoutParams(params);
         return view;
     }

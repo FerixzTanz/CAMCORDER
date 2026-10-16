@@ -50,9 +50,6 @@ public class DeveloperSettingsTest {
         ROWS.put("pref_force_h264", Arrays.asList("force_h264_encoding"));
         ROWS.put("pref_screen_off_recording", Arrays.asList("screen_off_recording"));
         ROWS.put("pref_screen_off_wake_hours", Arrays.asList("screen_off_wake_min"));
-        // 画面调节的参数只在开着时用到，不按没存过算（理由见 DEVELOPER_KEYS）
-        ROWS.put("pref_image_adjust", Arrays.asList("image_adjust_enabled"));
-        ROWS.put("pref_image_adjust_reset", NONE);
         ROWS.put("pref_camera_mapping", Arrays.asList("zeekr_camera_override_front",
                 "zeekr_camera_override_back", "zeekr_camera_override_left"));
         ROWS.put("pref_permissions", NONE);
@@ -63,6 +60,7 @@ public class DeveloperSettingsTest {
         ROWS.put("pref_repair_mp4", NONE);
         ROWS.put("pref_archive", NONE);
         ROWS.put("pref_developer_note", NONE);
+        ROWS.put("pref_developer_lock", NONE);
 
         OUTSIDE.put("pref_storage_location", Arrays.asList("storage_location"));
         OUTSIDE.put("pref_relay_write", Arrays.asList("relay_write_enabled"));
@@ -72,7 +70,8 @@ public class DeveloperSettingsTest {
     private static final List<String> ORDINARY = Arrays.asList(
             "screen_off_keep_recording", "auto_start_recording", "footage_lock",
             "video_storage_limit_gb", "photo_storage_limit_gb", "custom_sd_card_path",
-            "exposure_compensation", "awb_mode", "photo_via_jpeg", "car_model");
+            "exposure_compensation", "awb_mode", "photo_via_jpeg", "car_model",
+            "image_adjust_enabled");  // 2.13 起画面调节在主界面工具面板里，谁都能动
 
     private static final Pattern KEY = Pattern.compile("android:key=\"([^\"]+)\"");
 

@@ -27,6 +27,7 @@
 
     <!-- 昼夜各自取值的 -->
     <color name="preview_frame_background">#FFE2E2E4</color>
+    <color name="overlay_button">#D9E6E6E8</color>  <!-- 压在画面上的圆钮：sunken 带一点透明 -->
     <color name="nav_ripple_color">#1F2A2B2E</color>
     <color name="dialog_guide_button_ripple">#30000000</color>
 

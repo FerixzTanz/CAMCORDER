@@ -127,4 +127,28 @@ public final class SettingsDialogs {
                 })
                 .setNegativeButton(R.string.action_cancel, null));
     }
+
+    /** 项目主页、GPL-3.0 全文、上游项目：只显示，不联网（车机上常常没有浏览器）。 */
+    static final String PROJECT_URL = "https://github.com/FerixzTanz/CAMCORDER";
+    static final String EVCAM_URL = "https://github.com/suyunkai/EVCam";
+    static final String GPL_URL = "https://www.gnu.org/licenses/gpl-3.0.html";
+
+    /**
+     * 开源许可：本应用是 GPL-3.0，必须在界面里让人看得到法律声明（§5(d)）。
+     * 原来是整页「关于与致谢」，2.13 起只留这一个对话框。
+     */
+    public static void showLicence(Context context) {
+        String version = "";
+        try {
+            version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        } catch (Exception ignored) {
+            // 读不到版本号就不写
+        }
+        com.kooo.evcam.ui.CamDialogs.show(new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                context, R.style.Theme_Cam_MaterialAlertDialog)
+                .setTitle(R.string.licence_row_title)
+                .setMessage(context.getString(R.string.licence_dialog_body, version,
+                        PROJECT_URL, EVCAM_URL, GPL_URL))
+                .setPositiveButton(R.string.action_close, null));
+    }
 }

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  回看（2.13 起，照车机自带相册的排法）。统一骨架：① 标题区 · ② 列表栏 · ③ 内容区。
+
+  ② 左栏只有两项：照片、录像（选中的一项垫一块灰，和设置左栏同一个样子）。
+  ③ 是按日期分组的缩略图网格；点一格进查看器（照片：PhotoPlaybackActivity，
+  录像：TimelinePlayerActivity）。标题区右侧平时是「刷新 · 选择」，选择时换成
+  「分享（照片）· 删除 · 全选 / 全不选 · 完成」—— 菜单键和界面名不动。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical">
+
+    <!-- ① 标题区 -->
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/title_bar_height"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_menu"
+            style="@style/Widget.Cam.IconButton"
+            android:layout_width="@dimen/icon_button_size"
+            android:layout_height="@dimen/icon_button_size"
+            android:contentDescription="@string/cd_menu"
+            app:icon="@drawable/ic_menu" />
+
+        <TextView
+            android:id="@+id/gallery_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/nav_photo_playback"
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.Cam.Title"
+            android:textStyle="bold" />
+
+        <!-- 平时 -->
+        <LinearLayout
+            android:id="@+id/gallery_actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_refresh"
+                style="@style/Widget.Cam.IconButton"
+                android:layout_width="@dimen/icon_button_size"
+                android:layout_height="@dimen/icon_button_size"
+                android:contentDescription="@string/action_refresh"
+                app:icon="@drawable/ic_refresh" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_select"
+                style="@style/Widget.Cam.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/icon_button_size"
+                android:layout_marginStart="8dp"
+                android:text="@string/action_select" />
+        </LinearLayout>
+
+        <!-- 选择中：占同一个位置 -->
+        <LinearLayout
+            android:id="@+id/gallery_selection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/selected_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:textAppearance="@style/TextAppearance.Cam.Body"
+                android:textColor="@color/text_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_share"
+                style="@style/Widget.Cam.IconButton"
+                android:layout_width="@dimen/icon_button_size"
+                android:layout_height="@dimen/icon_button_size"
+                android:contentDescription="@string/action_share"
+                app:icon="@drawable/ic_share" />
+
+            <!-- 删除不可逆：图标用录制红，和别处「不可逆」一个规矩 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete"
+                style="@style/Widget.Cam.IconButton"
+                android:layout_width="@dimen/icon_button_size"
+                android:layout_height="@dimen/icon_button_size"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/action_delete"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@color/recording" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_select_all"
+                style="@style/Widget.Cam.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/icon_button_size"
+                android:layout_marginStart="8dp"
+                android:text="@string/action_select_all" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_done"
+                style="@style/Widget.Cam.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/icon_button_size"
+                android:layout_marginStart="8dp"
+                android:text="@string/action_done" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- ② 列表栏：照片 / 录像 -->
+        <LinearLayout
+            android:layout_width="@dimen/list_width"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingTop="12dp">
+
+            <include
+                android:id="@+id/tab_photos"
+                layout="@layout/pref_header_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <include
+                android:id="@+id/tab_videos"
+                layout="@layout/pref_header_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- ③ 内容区：网格 -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/gallery_grid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="12dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="16dp" />
+
+            <TextView
+                android:id="@+id/empty_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="@string/photo_empty"
+                android:textColor="@color/text_secondary"
+                android:textAppearance="@style/TextAppearance.Cam.Row"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>

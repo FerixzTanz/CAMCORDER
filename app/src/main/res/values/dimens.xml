@@ -14,9 +14,27 @@
     <dimen name="corner_radius">10dp</dimen>
     <dimen name="gutter">12dp</dimen>
 
-    <dimen name="record_button_height">132dp</dimen>
-    <dimen name="record_ring_size">68dp</dimen>
+    <!-- 2.13 起照车机自带应用：设置卡片和左栏选中块的圆角都比按钮大一档 -->
+    <dimen name="corner_radius_card">16dp</dimen>
+    <dimen name="corner_radius_pill">14dp</dimen>
+
     <dimen name="rail_tile_height">104dp</dimen>
     <dimen name="rail_small_height">72dp</dimen>
     <dimen name="icon_button_size">48dp</dimen>
+
+    <!-- 主界面压在画面上的操作层（layout_camera_controls） -->
+    <dimen name="shutter_size">84dp</dimen>
+    <dimen name="shutter_radius">42dp</dimen>
+    <dimen name="shutter_ring_size">76dp</dimen>
+    <dimen name="shutter_disc_size">56dp</dimen>
+    <dimen name="round_button_size">56dp</dimen>
+    <dimen name="round_button_radius">28dp</dimen>
+    <dimen name="thumb_size">56dp</dimen>
+    <dimen name="mode_chip_height">40dp</dimen>
+    <dimen name="tools_panel_width">400dp</dimen>
+
+    <!-- 回看：网格里一张缩略图的宽（16:9），下面那条胶片的高 -->
+    <dimen name="gallery_tile_width">220dp</dimen>
+    <dimen name="filmstrip_height">72dp</dimen>
+    <dimen name="filmstrip_tile_width">128dp</dimen>
 </resources>

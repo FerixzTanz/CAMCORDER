@@ -46,6 +46,10 @@ public class SettingsShellFragment extends Fragment {
     private com.google.android.material.button.MaterialButton navButton;
     private android.widget.TextView titleText;
     private String currentSection = DEFAULT_SECTION;
+    private static final int TITLE_TAPS_NEEDED = 7;
+    private static final long TITLE_TAP_WINDOW_MS = 3000L;
+    private int titleTaps;
+    private long lastTitleTap;
     /** 当前分区在左栏的行号，决定下一次切换往上还是往下走。 */
     private int currentOrder = -1;
 
@@ -64,6 +68,9 @@ public class SettingsShellFragment extends Fragment {
         titleText = view.findViewById(R.id.settings_title);
         if (navButton != null) {
             navButton.setOnClickListener(v -> onNavClick());
+        }
+        if (titleText != null) {
+            titleText.setOnClickListener(v -> onTitleTapped());
         }
         // 进出二级界面时标题区要跟着变
         getChildFragmentManager().addOnBackStackChangedListener(this::refreshTitle);
@@ -160,6 +167,34 @@ public class SettingsShellFragment extends Fragment {
         }
         if (getActivity() instanceof com.kooo.evcam.MainActivity) {
             ((com.kooo.evcam.MainActivity) getActivity()).openDrawer();
+        }
+    }
+
+    /**
+     * 标题连点七下（3 秒内）：没打开开发者选项就弹密码框。开着时点标题什么也不做 ——
+     * 关在开发者分区的最后一行（原来在关于页，2.13 起关于页没了）。
+     */
+    private void onTitleTapped() {
+        long now = android.os.SystemClock.uptimeMillis();
+        titleTaps = now - lastTitleTap > TITLE_TAP_WINDOW_MS ? 1 : titleTaps + 1;
+        lastTitleTap = now;
+        if (titleTaps < TITLE_TAPS_NEEDED) {
+            return;
+        }
+        titleTaps = 0;
+        if (!DeveloperMode.isUnlocked()) {
+            DeveloperUnlock.promptForPassword(requireContext(), this::refreshHeaders);
+        }
+    }
+
+    /** 开发者选项开了 / 关了：左栏重建；关掉的那一刻正停在那一段的话，换回默认分区。 */
+    void refreshHeaders() {
+        Fragment headers = getChildFragmentManager().findFragmentById(R.id.settings_headers);
+        if (headers instanceof SettingsHeadersFragment) {
+            ((SettingsHeadersFragment) headers).refreshIfDeveloperChanged();
+        }
+        if (DEVELOPER_SECTION.equals(currentSection) && !DeveloperMode.isUnlocked()) {
+            showSection(DEFAULT_SECTION);
         }
     }
 

@@ -49,16 +49,18 @@ public class SettingsHeadersFragment extends PreferenceFragmentCompat {
         PreferenceRows.styleList(this, 0, 12);
     }
 
-    /**
-     * 解锁开发者模式是在「关于本应用」里做的 —— <b>那是另一个 Activity</b>。
-     *
-     * <p>从那儿回来时，这份列表还是解锁之前建的，「开发者选项」不会出现；
-     * 原先要退出设置再进来一次才看得见。这里发现状态变了就重建一次。</p>
-     */
     @Override
     public void onResume() {
         super.onResume();
-        if (builtUnlocked != DeveloperMode.isUnlocked()) {
+        refreshIfDeveloperChanged();
+    }
+
+    /**
+     * 开发者选项刚解锁 / 关掉（设置标题连点七下、开发者分区里的「关闭」）：
+     * 这份列表还是之前建的，要重建一次，那一行才会出现 / 消失。
+     */
+    void refreshIfDeveloperChanged() {
+        if (builtUnlocked != DeveloperMode.isUnlocked() && isAdded()) {
             build();
         }
     }
@@ -146,10 +148,6 @@ public class SettingsHeadersFragment extends PreferenceFragmentCompat {
                     if (getActivity() instanceof MainActivity) {
                         ((MainActivity) getActivity()).goToRecordingInterface();
                     }
-                } else if ("pref_about".equals(key)) {
-                    // 关于不是分区：点了直接打开关于页，不在右栏里再垫一层
-                    startActivity(new android.content.Intent(requireContext(),
-                            com.kooo.evcam.zeekr.AboutActivity.class));
                 } else if ("pref_exit".equals(key)) {
                     if (getActivity() instanceof MainActivity) {
                         ((MainActivity) getActivity()).exitApp();
@@ -182,8 +180,6 @@ public class SettingsHeadersFragment extends PreferenceFragmentCompat {
                 return R.drawable.ic_developer;
             case "screen_update":
                 return R.drawable.ic_update;
-            case "pref_about":
-                return R.drawable.ic_info;
             case "pref_exit":
                 return R.drawable.ic_power;
             default:

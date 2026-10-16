@@ -2,7 +2,6 @@
     <!-- 马来语界面。键名与顺序跟 values-en 一致，字号不单独定义，和英文共用 values/dimens.xml -->
     <string name="app_name">Zeekr Shortcut</string>
     <!-- 完整名只有中文才带「（车机版）」，这边两条一样 -->
-    <string name="app_name_full">Zeekr Shortcut</string>
 
     <!-- Tetapan -->
     <string name="set_back_to_recording">Kembali ke skrin utama</string>
@@ -23,7 +22,6 @@
     <string name="set_section_rearview">Cermin super</string>
     <string name="set_section_floating">Butang terapung</string>
     <string name="set_section_system">Sistem</string>
-    <string name="set_section_about">Perihal &amp; penghargaan</string>
     <string name="set_car_model_title">Profil strim</string>
     <string name="set_profile_editor_title">Edit profil strim</string>
     <string name="set_profile_editor_summary">Kualiti rakaman, tetapan setiap kamera dan susun atur skrin utama</string>
@@ -115,9 +113,6 @@
     <string name="set_recording_mode_summary">%1$s; rakaman sentiasa menggunakan MediaCodec, tetapan ini tiada kesan</string>
     <string name="set_force_h264_title">Paksa H.264</string>
     <string name="set_force_h264_summary">Menggunakan H.264 untuk semua kamera, mengatasi kodek setiap kamera dalam Edit profil strim</string>
-    <string name="set_image_adjust_title">Pelarasan imej</string>
-    <string name="set_image_adjust_summary">Membuka tetingkap untuk melaras dedahan, imbangan putih, pengurangan hingar dan lain-lain secara langsung</string>
-    <string name="set_image_adjust_reset_title">Set semula pelarasan imej</string>
     <string name="set_camera_mapping_title">Pemetaan kamera</string>
     <string name="set_camera_mapping_summary">Pilih kamera bagi paparan sekeliling, kabin depan dan kabin belakang secara manual (penyelesaian masalah)</string>
     <string name="set_diagnostics_title">Maklumat diagnostik</string>
@@ -278,7 +273,7 @@
     <string name="opt_internal_storage">Storan dalaman</string>
     <string name="opt_internal_storage_locked">Storan dalaman (memerlukan pilihan pembangun)</string>
     <string name="dlg_internal_locked_title">Storan dalaman memerlukan pilihan pembangun</string>
-    <string name="dlg_internal_locked_msg">Rakaman menulis data secara berterusan. Storan dalaman mempunyai hayat tulis yang terhad dan biasanya tidak boleh diganti, jadi tanpa pilihan pembangun, rakaman disimpan ke pemacu USB sahaja.\n\nUntuk menggunakannya juga, pergi ke Tetapan → Perihal &amp; penghargaan dan ketik Safety notice untuk menghidupkan pilihan pembangun.</string>
+    <string name="dlg_internal_locked_msg">Rakaman menulis data secara berterusan. Storan dalaman mempunyai hayat tulis yang terhad dan biasanya tidak boleh diganti, jadi tanpa pilihan pembangun, rakaman disimpan ke pemacu USB sahaja.\n\nUntuk menggunakannya juga, buka Tetapan, ketik tajuk tujuh kali dan masukkan kata laluan untuk menghidupkan pilihan pembangun.</string>
     <string name="msg_storage_changed">Lokasi storan ditetapkan kepada “%1$s”. Berkuat kuasa pada rakaman seterusnya.</string>
     <string name="msg_enter_number">Masukkan nombor</string>
     <string name="msg_enter_positive_number">Masukkan nombor lebih daripada 0</string>
@@ -339,7 +334,6 @@
     <string name="set_hud_side_night_title">Kecerahan gambar HUD pada waktu malam (%)</string>
     <string name="set_hud_side_night_summary">Dikenakan di atas kelegapan di atas apabila kereta dalam mod malam. 100 untuk mematikan</string>
     <string name="msg_floating_reset">Butang terapung ditetapkan semula</string>
-    <string name="msg_adjust_opened">Tetingkap pelarasan imej dibuka. Kembali ke skrin utama untuk melihat kesannya.</string>
     <string name="msg_adjust_reset">Tetapan imej dipulihkan kepada lalai</string>
     <string name="info_mapping_manual">Pemetaan kamera ditetapkan secara manual</string>
     <string name="info_mapping_auto">Automatik. Jika mana-mana kamera tidak menunjukkan apa-apa, tetapkan di sini.</string>
@@ -360,7 +354,6 @@
     <string name="msg_language_hint">Anda boleh menukarnya kemudian di Tetapan → Antara muka → Bahasa</string>
 
     <!-- Antara muka utama -->
-    <string name="about_title">Perihal &amp; penghargaan</string>
     <string name="accessibility_service_description">Digunakan oleh Kekal berjalan di latar belakang untuk membantu apl terus berjalan.\n\nIa tidak membaca atau mengawal apa-apa pada skrin dan tidak mengumpul data.</string>
     <string name="zeekr_composite_not_found">Tiada strim komposit sekeliling ditemui. Unit kepala ini mungkin tidak disokong.</string>
     <string name="msg_no_camera_available">Tiada kamera tersedia</string>
@@ -466,9 +459,6 @@
     <string name="msg_screen_off_background">Skrin padam selama 15 saat. Dialihkan ke latar belakang.</string>
     <string name="msg_stats_on">Paparan status rakaman dihidupkan</string>
     <string name="msg_stats_off">Paparan status rakaman dimatikan</string>
-    <string name="msg_need_overlay_adjust">Kebenaran paparan di atas apl lain diperlukan untuk membuka tetingkap pelarasan</string>
-    <string name="msg_camera_not_ready_adjust">Kamera belum sedia. Tetingkap pelarasan imej tidak dapat dibuka.</string>
-    <string name="msg_overlay_denied">Kebenaran paparan di atas apl lain tidak diberikan</string>
     <string name="dlg_no_external_title">Tiada pemacu USB ditemui</string>
     <string name="dlg_no_external_msg">Rakaman disimpan ke pemacu USB sahaja, untuk mengelakkan storan dalaman haus.\n\nMasukkan pemacu USB dan cuba lagi. Jika ia tidak dikesan, cuba port lain atau pilih semula pemacu di Tetapan → Storan → Lokasi storan.</string>
     <string name="dlg_will_use_internal_title">Merakam ke storan dalaman</string>
@@ -677,7 +667,7 @@
     <string name="set_reduce_motion_title">Kurangkan animasi semasa merakam</string>
     <string name="set_reduce_motion_summary">Mematikan peralihan dan animasi hiasan lain semasa merakam supaya GPU digunakan oleh pengekod. Butang rakam dan gelang kemajuan masih beranimasi.</string>
     <string name="set_vehicle_status_title">Status kenderaan (percubaan)</string>
-    <string name="set_vehicle_status_summary">Memaparkan hon, kelip lampu tinggi dan lampu kecemasan di bawah Luruskan pada skrin utama, menggunakan ikon Bar maklumat pemanduan; isyarat hon belum dapat dibaca</string>
+    <string name="set_vehicle_status_summary">Memaparkan hon, kelip lampu tinggi dan lampu kecemasan dalam panel alat skrin utama, menggunakan ikon Bar maklumat pemanduan; isyarat hon belum dapat dibaca</string>
     <string name="set_fisheye_projection_title">Unjuran mata ikan</string>
     <string name="set_fisheye_projection_summary">%1$s · untuk pratonton langsung, foto dan video</string>
     <string name="opt_projection_rectilinear">Garisan lurus</string>
@@ -821,11 +811,11 @@
     <!-- Buka pilihan pembangun -->
     <string name="dev_unlock_hint">Kata laluan</string>
     <string name="dev_unlock_title">Pilihan pembangun</string>
-    <string name="dev_unlock_msg">Ciri yang belum siap dan alat penyelesaian masalah. Ia kekal hidup sehingga anda ketik Safety notice sekali lagi.</string>
+    <string name="dev_unlock_msg">Ciri yang belum siap dan alat penyelesaian masalah. Ia kekal hidup sehingga anda matikannya pada baris terakhir bahagian Pembangun.</string>
     <string name="dev_unlocked">Pilihan pembangun dihidupkan</string>
     <string name="dev_wrong_password">Kata laluan salah</string>
     <string name="dev_lock_title">Matikan pilihan pembangun</string>
-    <string name="dev_lock_msg">Jika dimatikan, pilihan pembangun disembunyikan dan ciri di dalamnya berhenti berfungsi. Untuk menghidupkannya semula, ketik Safety notice sekali lagi dan masukkan kata laluan.</string>
+    <string name="dev_lock_msg">Jika dimatikan, pilihan pembangun disembunyikan dan ciri di dalamnya berhenti berfungsi. Untuk menghidupkannya semula, ketik tajuk Tetapan tujuh kali dan masukkan kata laluan.</string>
     <string name="dev_lock_confirm">Matikan</string>
     <string name="dev_locked">Pilihan pembangun dimatikan</string>
 
@@ -899,7 +889,6 @@
     <string name="adj_effect">Kesan</string>
     <string name="adj_default">Lalai</string>
     <string name="adj_reset">Set semula</string>
-    <string name="adj_save_close">Simpan dan tutup</string>
     <string name="awb_auto">Auto</string>
     <string name="awb_incandescent">Pijar</string>
     <string name="awb_fluorescent">Kalimantang</string>
@@ -1010,5 +999,27 @@
     <string name="dev_tool_recording_title">Rakaman sedang berjalan</string>
     <string name="dev_tool_progress">(%1$d/%2$d) %3$s</string>
     <string name="dev_tool_file_result">%1$s: %2$s</string>
-    <string name="dev_note">Ketik Safety notice dalam Tetapan → Perihal &amp; penghargaan untuk mematikan pilihan pembangun dan menyembunyikan bahagian ini</string>
+    <string name="dev_note">Gunakan baris terakhir bahagian ini untuk mematikan pilihan pembangun dan menyembunyikannya</string>
+    <!-- 2.13 skrin utama: jalur mod, pengatup, panel alat (susunan seperti aplikasi kamera kereta) -->
+    <string name="mode_video">Video</string>
+    <string name="mode_photo">Foto</string>
+    <string name="record_take_photo">Ambil foto</string>
+    <string name="tools_title">Alat</string>
+    <string name="cd_tools">Buka alat</string>
+    <string name="cd_last_clip">Rakaman terkini, buka main semula</string>
+    <!-- 2.13 main semula: grid, pilihan, pemapar -->
+    <string name="action_select">Pilih</string>
+    <string name="action_done">Selesai</string>
+    <string name="action_deselect_all">Nyahpilih semua</string>
+    <string name="action_all_photos">Semua foto</string>
+    <string name="action_all_videos">Semua video</string>
+    <string name="action_back">Kembali</string>
+    <string name="action_info">Butiran</string>
+    <string name="msg_select_first">Pilih sesuatu dahulu</string>
+    <string name="info_photo_detail">Diambil: %1$s\nSaiz: %2$s\nPaparan: %3$s</string>
+    <string name="info_video_detail">Mula: %1$s\nTamat: %2$s\nTempoh: %3$s\nSaiz: %4$s\nKlip: %5$d</string>
+    <!-- 2.13 lesen sumber terbuka (dahulu di halaman Perihal) -->
+    <string name="licence_row_title">Lesen sumber terbuka</string>
+    <string name="licence_row_summary">GPL-3.0 · halaman projek dan huluan</string>
+    <string name="licence_dialog_body">Zeekr Shortcut v%1$s\n\nIni perisian bebas yang dikeluarkan di bawah GNU GPL-3.0, tanpa sebarang jaminan; anda boleh mengedar semula dan mengubah suainya di bawah lesen yang sama.\n\nProjek: %2$s\nHuluan EVCam: %3$s\nTeks lesen: %4$s\n\nTiada kaitan dengan ZEEKR.</string>
 </resources>

@@ -7,6 +7,33 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.13.0] - 2026-10-16
+
+### New and improved
+
+- **The camera screen now looks like the car's own Camera app.** The picture fills the whole screen. A
+  **Video / Photo** strip (the active mode has an orange outline) sits above a big round shutter; the
+  newest photo or clip is a small thumbnail beside it and opens playback. Two round buttons at the
+  bottom corner: **Tools** and **Hide to background** (long-press still quits). The old button column
+  is gone. Left-hand-drive still moves the corner buttons to the driver's side.
+- **Everything else is behind the Tools button**: videos, photos, settings, Straighten, the recording
+  readout and vehicle status switches, and the **picture adjustments** (exposure, white balance,
+  tone map, edge, noise reduction, effect). The adjustments are now a panel on the camera screen
+  instead of a floating window with a permission prompt, and no longer need developer options.
+- **Playback is a gallery.** Photos and Videos are in a left list; pictures are shown as thumbnails
+  grouped by day. **Select** lets you pick several (orange ticks), then share (photos), delete, or
+  select all. Tapping one opens a viewer with **‹ Back**, a row of icon buttons (details, lock, share,
+  send to phone, delete) and a filmstrip to move between neighbours.
+- **Settings look like the car's settings**: rounder cards, a grey pill on the selected section, and
+  choices shown as a full-width strip where the picked one is outlined in orange instead of filled.
+
+### Changed
+
+- **The About page is gone.** The open-source licence is one row under Settings → System. Developer
+  options are now turned on by tapping the Settings title seven times (then the password) and off from
+  the last row of the Developer section.
+- The photo viewer no longer has its own multi-select; use the gallery.
+
 ## [2.12.3] - 2026-10-15
 
 ### Fixed

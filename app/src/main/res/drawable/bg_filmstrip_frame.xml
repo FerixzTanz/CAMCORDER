@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 胶片上正在看的那张：描一圈能量橙（setActivated）；其余透明 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_activated="true">
+        <shape android:shape="rectangle">
+            <stroke android:width="2dp" android:color="@color/energy" />
+            <corners android:radius="8dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke android:width="2dp" android:color="@android:color/transparent" />
+            <corners android:radius="8dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</selector>

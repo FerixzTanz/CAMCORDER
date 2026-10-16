@@ -4,7 +4,7 @@
     android:color="@color/nav_ripple_color">
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="@dimen/corner_radius" />
+            <corners android:radius="@dimen/corner_radius_card" />
             <solid android:color="@color/card" />
         </shape>
     </item>

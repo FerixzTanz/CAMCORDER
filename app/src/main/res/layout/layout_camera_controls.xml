@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  主界面压在画面上的操作层（2.13 起，照车机自带相机应用的排法）：
+
+    · 底部正中：模式条「录像 / 拍照」（选中那个描一圈橙线）+ 快门（一个大圆）
+      快门左边是最近一张 / 一段的缩略图，点开回看；右边留一块同宽的空位，快门才居中。
+    · 右下角一列：工具（打开工具面板）· 隐藏到后台。左舵时这一列挪到左下
+      （MainActivity.applyControlsSide），其余不动。
+
+  原来的 ④ 动作栏（layout_action_rail）撤了：画面是这块屏幕上唯一的内容，
+  按钮浮在画面上，不再和画面抢宽度。回看、设置、鱼眼校正、车辆状态、画面调节
+  全收进工具面板（layout_camera_tools）。
+
+  快门里的 record_ring / record_dot 两个 id 照旧，RecordButtonUi 认的还是它们。
+  根 FrameLayout 不接触摸：手指落在空处会穿到底下的画面，点一格放大照常。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/camera_controls"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false">
+
+    <LinearLayout
+        android:id="@+id/controls_centre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="@dimen/status_bar_height"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <!-- 模式条：两个文字片，选中的描橙线。这是整屏唯一一处能量色 -->
+        <LinearLayout
+            android:id="@+id/mode_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mode_video"
+                style="@style/Widget.Cam.ModeChip"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/mode_chip_height"
+                android:layout_marginEnd="6dp"
+                android:text="@string/mode_video" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mode_photo"
+                style="@style/Widget.Cam.ModeChip"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/mode_chip_height"
+                android:layout_marginStart="6dp"
+                android:text="@string/mode_photo" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- 最近一张 / 一段：点开回看 -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/btn_last_clip"
+                android:layout_width="@dimen/thumb_size"
+                android:layout_height="@dimen/thumb_size"
+                android:layout_marginEnd="28dp"
+                android:background="@color/overlay_button"
+                android:clickable="true"
+                android:contentDescription="@string/cd_last_clip"
+                android:focusable="true"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Cam.Thumb"
+                app:strokeColor="@color/white"
+                app:strokeWidth="1.5dp" />
+
+            <!--
+              快门：外圈一道白线，中间一个圆盘。录像模式圆盘是红的，录制中收成方块、
+              外圈按本段进度走（RecordButtonUi）；拍照模式圆盘是白的。
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btn_shutter"
+                android:layout_width="@dimen/shutter_size"
+                android:layout_height="@dimen/shutter_size"
+                android:clickable="true"
+                android:contentDescription="@string/record_start"
+                android:focusable="true"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="@dimen/shutter_radius"
+                app:cardElevation="0dp"
+                app:rippleColor="@color/nav_ripple_color"
+                app:strokeColor="@color/white"
+                app:strokeWidth="3dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/record_ring"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:max="1000"
+                        android:progress="0"
+                        app:indicatorColor="@color/recording"
+                        app:indicatorSize="@dimen/shutter_ring_size"
+                        app:trackColor="@android:color/transparent"
+                        app:trackCornerRadius="2dp"
+                        app:trackThickness="4dp" />
+
+                    <!-- 形状在代码里画：圆角半径和缩放一起动，就是圆 ⇄ 方 -->
+                    <View
+                        android:id="@+id/record_dot"
+                        android:layout_width="@dimen/shutter_disc_size"
+                        android:layout_height="@dimen/shutter_disc_size"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 和缩略图同宽的空位：快门才在正中 -->
+            <Space
+                android:layout_width="@dimen/thumb_size"
+                android:layout_height="@dimen/thumb_size"
+                android:layout_marginStart="28dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 右下角一列：工具 · 隐藏到后台。左舵时整列挪到左下 -->
+    <LinearLayout
+        android:id="@+id/controls_side"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="@dimen/status_bar_height"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tools"
+            style="@style/Widget.Cam.RoundIcon"
+            android:layout_width="@dimen/round_button_size"
+            android:layout_height="@dimen/round_button_size"
+            android:contentDescription="@string/cd_tools"
+            app:icon="@drawable/ic_tune" />
+
+        <!--
+          隐藏到后台：录制、悬浮按钮照旧，只把界面收起来。长按是退出 ——
+          长按不会是手滑碰出来的；真正的退出也在抽屉和设置左栏最底下。
+        -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_minimize"
+            style="@style/Widget.Cam.RoundIcon"
+            android:layout_width="@dimen/round_button_size"
+            android:layout_height="@dimen/round_button_size"
+            android:layout_marginTop="14dp"
+            android:contentDescription="@string/cd_minimize"
+            app:icon="@drawable/ic_minimize" />
+    </LinearLayout>
+</FrameLayout>

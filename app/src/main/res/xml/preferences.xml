@@ -563,10 +563,16 @@
             android:title="@string/set_vehicle_info_title"
             android:summary="@string/set_vehicle_info_summary" />
 
+        <!-- GPL-3.0 §5(d) 要求界面里看得到法律声明：原来在关于页，现在是这一行 -->
+        <Preference
+            android:key="pref_licence"
+            android:title="@string/licence_row_title"
+            android:summary="@string/licence_row_summary" />
+
     </PreferenceScreen>
 
     <!--
-      开发者选项。默认整块隐藏，在「关于与致谢」里点击「安全须知」再输密码才出现，
+      开发者选项。默认整块隐藏，在设置里连点七下标题再输密码才出现，
       重启、更新都不会关（见 DeveloperMode）—— 里面要么是没做完的，要么是排查用的。
       关闭后整块隐藏，里面的设置按没存过算（AppConfig.DEVELOPER_KEYS）。
     -->
@@ -574,8 +580,8 @@
         android:key="screen_developer"
         android:title="@string/set_nav_developer">
 
-        <!-- 原来「高级」里的那几项：录制管线、编码、画面调节、相机映射、调试日志 ——
-             都是排查问题时才动的东西，和开发者工具放在一起 -->
+        <!-- 原来「高级」里的那几项：录制管线、编码、相机映射、调试日志 ——
+             都是排查问题时才动的东西，和开发者工具放在一起（画面调节 2.13 起在主界面的工具面板里） -->
         <ListPreference
             android:key="pref_recording_mode"
             android:title="@string/set_recording_mode_title"
@@ -596,15 +602,6 @@
             android:key="pref_screen_off_wake_hours"
             android:dependency="pref_screen_off_recording"
             android:title="@string/set_screen_off_wake_title" />
-
-        <Preference
-            android:key="pref_image_adjust"
-            android:title="@string/set_image_adjust_title"
-            android:summary="@string/set_image_adjust_summary" />
-
-        <Preference
-            android:key="pref_image_adjust_reset"
-            android:title="@string/set_image_adjust_reset_title" />
 
         <Preference
             android:key="pref_camera_mapping"
@@ -650,10 +647,15 @@
             android:key="pref_developer_note"
             android:selectable="false"
             android:summary="@string/dev_note" />
+
+        <!-- 关掉开发者选项（原来在关于页里点「安全须知」）：关了这一整块隐藏 -->
+        <Preference
+            android:key="pref_developer_lock"
+            android:title="@string/dev_lock_title" />
     </PreferenceScreen>
 
     <!--
-      检查更新放在顶层：藏在「关于与致谢」里面没人找得到，而这是安装新版本的唯一途径。
+      检查更新放在顶层：藏得深了没人找得到，而这是安装新版本的唯一途径。
       原来是左栏里一个点了就查的动作行；加了「接收 Beta 版」之后改成一个分区 ——
       左边选、右边改，和其他分区一个样子。
     -->
@@ -670,14 +672,6 @@
             android:title="@string/set_update_beta_title"
             android:summary="@string/set_update_beta_summary" />
     </PreferenceScreen>
-
-    <!--
-      关于：顶层一行，点了直接打开关于页。以前是一个分区，里面只有「关于本应用」和「诊断信息」两行，
-      多点一层才到。诊断信息搬去了「系统」—— 它是给所有人导出报告用的，不该跟着「关于与致谢」藏一层。
-    -->
-    <Preference
-        android:key="pref_about"
-        android:title="@string/set_section_about" />
 
     <!-- 退出放在最底下：和主界面那个「隐藏到后台」分开，往下找得到，手滑点不到 -->
     <Preference

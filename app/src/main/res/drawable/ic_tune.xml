@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ic_tune：统一图标集的一员（24dp 网格、线宽 1.7、圆头）。三条滑杆 —— 主界面的「工具」。着色由使用方的 iconTint 决定。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/text_primary"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:pathData="M4,7H20M4,12H20M4,17H20" />
+    <path
+        android:fillColor="@color/text_primary"
+        android:pathData="M9,7m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0z M15,12m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0z M8,17m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0z" />
+</vector>

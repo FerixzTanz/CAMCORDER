@@ -128,7 +128,15 @@
         <!-- 视频回看。用 Theme.Cam 而不是全屏主题：全屏会把窗口铺到
              状态栏底下，顶部的标题和列表被车机状态栏压住。
              跟「软件设置」保持一致，由系统把状态栏那一条留出来。 -->
-        <!-- 图片回看：和连续回放一样是独立 Activity，打开它主界面就退到后台 -->
+        <!-- 回看（2.13）：左栏照片 / 录像，右边缩略图网格；点一格进下面两个查看器 -->
+        <activity
+            android:name=".playback.GalleryActivity"
+            android:label="@string/nav_photo_playback"
+            android:theme="@style/Theme.Cam"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+
+        <!-- 照片查看器：和连续回放一样是独立 Activity，打开它主界面就退到后台 -->
         <activity
             android:name=".playback.PhotoPlaybackActivity"
             android:label="@string/nav_photo_playback"
@@ -150,12 +158,6 @@
             android:theme="@style/Theme.Cam"
             android:exported="false" />
 
-        <!-- 关于与致谢：说明本应用两个功能来源及其许可证 -->
-        <activity
-            android:name=".zeekr.AboutActivity"
-            android:label="@string/about_title"
-            android:theme="@style/Theme.Cam"
-            android:exported="false" />
 
         <!-- 无障碍服务：保活手段之一。系统肯不肯让它跑还没在车上试过，它自己会把结果记进黑匣子 -->
         <service

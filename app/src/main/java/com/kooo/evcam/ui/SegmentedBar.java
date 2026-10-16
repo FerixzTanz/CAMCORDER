@@ -82,7 +82,7 @@ public class SegmentedBar extends LinearLayout {
         view.setBackgroundResource(R.drawable.bg_segment);
         view.setActivated(active);
         view.setTextColor(ContextCompat.getColor(getContext(),
-                active ? R.color.on_energy : R.color.text_primary));
+                R.color.text_primary));
         view.setOnClickListener(v -> {
             if (onPick != null) {
                 onPick.pick(value);

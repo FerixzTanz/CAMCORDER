@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  主界面的工具面板：从画面右边（左舵时左边）滑出来的一块卡片，平时收着，
+  画面上只留一个「工具」圆钮（layout_camera_controls）。
+
+  里面是原来 ④ 动作栏上除录制、拍照之外的一切：回看、设置、鱼眼校正、
+  录制状态角标和车辆状态两个开关、画面调节（原来藏在开发者选项里的悬浮窗，
+  现在就是面板里的几行；CameraToolsPanel 把行填进 tools_switches / tools_adjust_rows）。
+
+  宽度固定（tools_panel_width）：内容再多也只往下滚，不抢画面的宽。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tools_panel"
+    android:layout_width="@dimen/tools_panel_width"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_tools_panel"
+    android:clickable="true"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:text="@string/tools_title"
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.Cam.Row"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tools_close"
+            style="@style/Widget.Cam.IconButton"
+            android:layout_width="@dimen/icon_button_size"
+            android:layout_height="@dimen/icon_button_size"
+            android:contentDescription="@string/action_close"
+            app:icon="@drawable/ic_close" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tools_videos"
+                    style="@style/Widget.Cam.RailSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/rail_small_height"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:text="@string/nav_video_playback"
+                    app:icon="@drawable/ic_video" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tools_photos"
+                    style="@style/Widget.Cam.RailSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/rail_small_height"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:text="@string/nav_photo_playback"
+                    app:icon="@drawable/ic_photo" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <!--
+                  环视画面的鱼眼校正，和回看上那个是同一个开关。按钮自己管点击和颜色
+                  （FisheyeToggleButton）；画面那边由 FourLaneContainer 自己听开关。
+                -->
+                <com.kooo.evcam.ui.FisheyeToggleButton
+                    android:id="@+id/tools_fisheye"
+                    style="@style/Widget.Cam.RailSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/rail_small_height"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:text="@string/photo_fisheye"
+                    app:icon="@drawable/ic_check" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tools_settings"
+                    style="@style/Widget.Cam.RailSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/rail_small_height"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:text="@string/rail_settings"
+                    app:icon="@drawable/ic_settings" />
+            </LinearLayout>
+
+            <!-- 两个开关行（录制状态角标、车辆状态）：CameraToolsPanel 用 pref_row 填 -->
+            <LinearLayout
+                android:id="@+id/tools_switches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical" />
+
+            <!--
+              车辆状态（试验性，设置 → 界面）：用信息条的图标显示喇叭、闪远光和双闪。
+              控件自己管开关和收信号（VehicleStatusPanel），关着就不占地方。
+            -->
+            <com.kooo.evcam.ui.VehicleStatusPanel
+                android:id="@+id/vehicle_status_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/adj_title"
+                android:textColor="@color/text_secondary"
+                android:textAppearance="@style/TextAppearance.Cam.Caption" />
+
+            <!-- 画面调节各行：曝光一条拖动条，其余是「名字 … 当前值 ›」（CameraToolsPanel 填） -->
+            <LinearLayout
+                android:id="@+id/tools_adjust_rows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tools_adjust_reset"
+                style="@style/Widget.Cam.RailSmall"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/rail_small_height"
+                android:text="@string/adj_reset" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

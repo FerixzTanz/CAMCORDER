@@ -3,56 +3,47 @@ package com.kooo.evcam.playback;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.content.res.Configuration;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.FileProvider;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import com.kooo.evcam.AppConfig;
-import com.kooo.evcam.AppLog;
-import com.kooo.evcam.MainActivity;
 import com.kooo.evcam.R;
 import com.kooo.evcam.StorageHelper;
 import com.kooo.evcam.profile.RecordSpecs;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * 图片回看：左边一列照片，右边按主界面预览的排版摆开。
+ * 照片查看器（2.13 起照车机自带相册的查看页排）：看一组照片，底下一条胶片在相邻几组之间走。
+ *
+ * <p>挑哪一组、多选、批量删除都在回看网格（{@link GalleryActivity}）里；这里只管看
+ * 这一组、锁定 / 分享 / 发到手机 / 删除这一组。进来时带着哪一组的时间戳
+ * （{@link #EXTRA_GROUP_PREFIX}）就先放哪一组，没带就放最新的。</p>
  *
  * <h3>只有一套视图</h3>
  *
@@ -69,23 +60,20 @@ import java.util.Set;
  * <p>以前它是嵌在主界面里的一个 Fragment，主界面只是把录制那一层
  * {@code setVisibility(GONE)} —— 于是<b>主界面从头到尾没有 pause 过</b>，
  * 相机全程在采集、在出帧，只是被这一层盖住了，白白发热耗电。</p>
- *
- * <p>改成独立 Activity 之后，打开它就等于主界面退到后台：没在录制、没有悬浮窗
- * 用相机的话，相机按既有逻辑关掉。连续回放（{@code TimelinePlayerActivity}）
- * 一直就是这么做的，两个回看界面现在是同一套结构。</p>
  */
 public class PhotoPlaybackActivity extends AppCompatActivity {
+
+    /** 进来先放哪一组：{@link PhotoGroup#getTimestampPrefix()}。 */
+    public static final String EXTRA_GROUP_PREFIX = "group_prefix";
+
+    private static final String TAG = "PhotoPlaybackActivity";
 
     // UI 组件
     private RecyclerView photoList;
     private TextView emptyText;
     private TextView currentDatetime;
-    private View noSelectionHint;
-    private Button btnMenu, btnRefresh, btnMultiSelect, btnHome;
-    private Button btnSelectAll, btnDeleteSelected, btnCancelSelect, btnShareSelected;
-    private TextView selectedCount;
-    private static final String TAG = "PhotoPlaybackActivity";
-    private View toolbar, actionGroup, selectionGroup;
+    private MaterialButton btnLock;
+    private View btnViewMode;
 
     // 预览区组件
     private View multiViewLayout;
@@ -96,23 +84,18 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
     private TextView labelFront, labelBack, labelLeft, labelRight;
     /** 只有环视那一格有：别的几格没有文件时整个收起来，没有地方需要说「无照片」。 */
     private TextView placeholderFront;
-    private Button btnViewMode;
-    private Button btnSendToPhone;
-    /** 锁定 / 解锁这一组（锁定影像开着时才有）。 */
-    private Button btnLock;
     /** 「锁定影像」开着没有：扫描时读一次，回到前台时再看一眼。 */
     private boolean lockEnabled;
     /** 照片目录里锁定的文件名（开关关着时是空的）。 */
     private Set<String> lockedPhotos = new HashSet<>();
     private View controlsLayout;
 
-    // 数据
-    private List<DateSection<PhotoGroup>> dateSections = new ArrayList<>();
-    private ExpandablePhotoGroupAdapter adapter;
+    // 数据：所有组，最新的在前（胶片就是这个顺序）
+    private final List<PhotoGroup> groups = new ArrayList<>();
+    private FilmstripAdapter<PhotoGroup> strip;
     private PhotoGroup currentGroup;
 
     // 状态
-    private boolean isMultiSelectMode = false;
     /**
      * 现在是哪一路占满整块；{@code null} 表示摆成网格。
      *
@@ -133,15 +116,18 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
             PhotoGroup.POSITION_FRONT, PhotoGroup.POSITION_BACK,
             PhotoGroup.POSITION_LEFT, PhotoGroup.POSITION_RIGHT,
     };
-    /** 鱼眼校正：只改屏幕上的样子，原图不动。开关记在设置里，下次进来还是这个状态。 */
+    /** 鱼眼校正：只改屏幕上的样子，原图不动。开关记在设置里（工具面板、录像回看上拨）。 */
     private boolean fisheyeOn;
     /** 开关和参数的监听。拿住它：SharedPreferences 只弱引用监听器。 */
     private SharedPreferences.OnSharedPreferenceChangeListener fisheyeListener;
+    /** 进来时要先放的那一组；放过一次就清掉。 */
+    private String wantedPrefix;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_playback);
+        wantedPrefix = getIntent().getStringExtra(EXTRA_GROUP_PREFIX);
 
         initViews();
         setupListeners();
@@ -167,28 +153,12 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        // 工具栏
-        toolbar = findViewById(R.id.toolbar);
-        actionGroup = findViewById(R.id.pb_actions);
-        selectionGroup = findViewById(R.id.pb_selection);
-        btnMenu = findViewById(R.id.btn_menu);
-        btnRefresh = findViewById(R.id.pb_refresh);
-        btnMultiSelect = findViewById(R.id.pb_multi_select);
-        btnHome = findViewById(R.id.pb_home);
         fisheyeOn = new AppConfig(PhotoPlaybackActivity.this).isFisheyeCorrection();
         currentDatetime = findViewById(R.id.current_datetime);
+        btnLock = findViewById(R.id.pb_lock);
 
-        // 多选工具栏
-        btnSelectAll = findViewById(R.id.pb_select_all);
-        btnDeleteSelected = findViewById(R.id.pb_delete);
-        btnCancelSelect = findViewById(R.id.pb_cancel);
-        btnShareSelected = findViewById(R.id.pb_share);
-        selectedCount = findViewById(R.id.pb_selected_count);
-
-        // 列表
         photoList = findViewById(R.id.photo_list);
         emptyText = findViewById(R.id.empty_text);
-        noSelectionHint = findViewById(R.id.no_selection_hint);
 
         // 四宫格预览
         multiViewLayout = findViewById(R.id.multi_view_layout);
@@ -226,38 +196,23 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
         placeholderFront = findViewById(R.id.placeholder_front);
 
-        // 摄像头切换按钮和控制栏
         btnViewMode = findViewById(R.id.btn_view_mode);
-        btnSendToPhone = findViewById(R.id.btn_send_to_phone);
-        btnLock = findViewById(R.id.btn_lock);
         controlsLayout = findViewById(R.id.controls_layout);
 
-        // 设置列表（竖屏2列，横屏1列，日期头部跨越所有列）
-        adapter = new ExpandablePhotoGroupAdapter(PhotoPlaybackActivity.this, dateSections);
-        int orientation = getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            GridLayoutManager gridLayoutManager = new GridLayoutManager(PhotoPlaybackActivity.this, 2);
-            gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                @Override
-                public int getSpanSize(int position) {
-                    // 日期头部占满2列，图片项占1列
-                    return adapter.getItemViewType(position) == 0 ? 2 : 1;
-                }
-            });
-            photoList.setLayoutManager(gridLayoutManager);
-        } else {
-            photoList.setLayoutManager(new LinearLayoutManager(PhotoPlaybackActivity.this));
-        }
-        photoList.setAdapter(adapter);
-
-        // 初始状态：隐藏四宫格，显示提示
-        multiViewLayout.setVisibility(View.GONE);
-        noSelectionHint.setVisibility(View.VISIBLE);
+        // 胶片：横着一排，最新的在前
+        strip = new FilmstripAdapter<>(new FilmstripAdapter.Binder<PhotoGroup>() {
+            @Override public File thumbnail(PhotoGroup g) { return g.getThumbnailFile(); }
+            @Override public boolean isVideo(PhotoGroup g) { return false; }
+            @Override public String label(PhotoGroup g) { return g.getFormattedTime(); }
+        });
+        strip.setOnPick((group, index) -> loadPhotoGroup(group));
+        photoList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        photoList.setAdapter(strip);
     }
 
     private void setupListeners() {
-        // 鱼眼校正。开关由按钮自己拨（FisheyeToggleButton，主界面和视频回看上是同一个开关），
-        // 这里只管开关或参数变了之后的事：改的是「怎么画」，把当前这一组重新贴一遍
+        // 鱼眼校正。开关在工具面板和录像回看上拨，这里只管开关或参数变了之后的事：
+        // 改的是「怎么画」，把当前这一组重新贴一遍
         fisheyeListener = new AppConfig(PhotoPlaybackActivity.this).onFisheyeChanged(() -> {
             fisheyeOn = new AppConfig(PhotoPlaybackActivity.this).isFisheyeCorrection();
             if (currentGroup != null) {
@@ -265,51 +220,15 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
             }
         });
 
-        // 菜单：抽屉在主界面上，回去顺便把它打开 —— 和连续回放同一个做法
-        btnMenu.setOnClickListener(v -> openDrawerOnMain());
-
-        // 返回主界面：独立 Activity，关掉自己就回去了
-        btnHome.setOnClickListener(v -> finish());
-
-        // 刷新
-        btnRefresh.setOnClickListener(v -> updatePhotoList());
-
-        // 多选模式
-        btnMultiSelect.setOnClickListener(v -> toggleMultiSelectMode());
-        btnSelectAll.setOnClickListener(v -> selectAll());
-        btnCancelSelect.setOnClickListener(v -> exitMultiSelectMode());
-        btnDeleteSelected.setOnClickListener(v -> deleteSelected());
-        btnShareSelected.setOnClickListener(v -> shareSelected());
-
-        // 列表项点击
-        adapter.setOnItemClickListener((group, position) -> {
-            loadPhotoGroup(group);
-        });
-
-        adapter.setOnItemSelectedListener(group -> {
-            updateSelectedCount();
-        });
-
-        // 列表项长按 - 分享图片
-        adapter.setOnItemLongClickListener((group, position) -> {
-            if (adapter.isMultiSelectMode()) {
-                // 多选模式下，分享所有已选中的图片
-                shareSelected();
-            } else {
-                // 单选模式下，分享当前长按的图片组
-                showPhotoShareDialog(group);
-            }
-        });
-
-        // 摄像头切换按钮（循环切换）
+        // 返回 / 全部照片：都是回到网格，关掉自己就回去了
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+        findViewById(R.id.btn_all).setOnClickListener(v -> finish());
+        findViewById(R.id.pb_info).setOnClickListener(v -> showInfo());
+        findViewById(R.id.pb_share).setOnClickListener(v -> shareCurrent());
+        findViewById(R.id.pb_send).setOnClickListener(v -> sendCurrentPhotoToPhone());
+        findViewById(R.id.pb_delete).setOnClickListener(v -> confirmDeleteCurrent());
+        btnLock.setOnClickListener(v -> toggleLockGroup());
         btnViewMode.setOnClickListener(v -> cycleViewMode());
-
-        if (btnSendToPhone != null) {
-            btnSendToPhone.setOnClickListener(v -> sendCurrentPhotoToPhone());
-        }
-        if (btnLock != null) {
-            btnLock.setOnClickListener(v -> toggleLockGroup());
-        }
     }
 
     /**
@@ -448,7 +367,7 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
             cabinColumn.setVisibility(back || left || right ? View.VISIBLE : View.GONE);
         }
         applyCellZoom();
-        btnViewMode.setText(grid
+        ((MaterialButton) btnViewMode).setText(grid
                 ? getString(R.string.photo_mode_multi)
                 : getString(R.string.photo_mode_single, getPositionLabel(expandedPosition)));
     }
@@ -513,9 +432,10 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
      */
     private void loadPhotoGroup(PhotoGroup group) {
         this.currentGroup = group;
-        noSelectionHint.setVisibility(View.GONE);
+        emptyText.setVisibility(View.GONE);
         multiViewLayout.setVisibility(View.VISIBLE);
         controlsLayout.setVisibility(View.VISIBLE);
+        markOnStrip(group);
 
         // 正占着整块的那一路，这一组里没有的话就收回网格
         if (expandedPosition != null && !group.hasPhoto(expandedPosition)) {
@@ -531,7 +451,7 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------------ 锁定影像
 
-    /** 按钮说的是这一组：整组都锁着写「解锁」，否则写「锁定」。 */
+    /** 按钮说的是这一组：整组都锁着画「锁上了」（点了解锁），否则画「开着」（点了锁定）。 */
     private void updateLockButton() {
         if (btnLock == null) {
             return;
@@ -539,7 +459,8 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         btnLock.setVisibility(lockEnabled && currentGroup != null ? View.VISIBLE : View.GONE);
         if (lockEnabled && currentGroup != null) {
             boolean locked = lockedPhotos.containsAll(currentGroup.fileNames());
-            btnLock.setText(locked ? R.string.action_unlock_footage : R.string.action_lock_footage);
+            btnLock.setIconResource(locked ? R.drawable.ic_lock : R.drawable.ic_lock_open);
+            btnLock.setContentDescription(getString(locked ? R.string.action_unlock_footage : R.string.action_lock_footage));
         }
     }
 
@@ -568,7 +489,6 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
             Toast.makeText(this, getResources().getQuantityString(
                     unlock ? R.plurals.msg_footage_unlocked : R.plurals.msg_footage_locked,
                     names.size(), names.size()), Toast.LENGTH_SHORT).show();
-            adapter.setLockedNames(lockedPhotos);
             updateLockButton();
         });
     }
@@ -718,260 +638,131 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
         }
     }
 
+
     /**
-     * 更新图片列表（按日期分组，然后按时间戳分组）
+     * 扫一遍照片目录，胶片按最新的在前排好；然后放回原来看的那一组
+     * （进来时带的那一组，或者刷新前看的那一组），没有就放最新的。
      */
     private void updatePhotoList() {
-        // 屏幕上现在放的是哪一组。扫描之后 PhotoGroup 全是新对象，
-        // 得靠时间戳把它认回来。
-        String shown = currentGroup != null ? currentGroup.getTimestampPrefix() : null;
-        dateSections.clear();
+        // 屏幕上现在放的是哪一组。扫描之后 PhotoGroup 全是新对象，得靠时间戳把它认回来
+        String shown = currentGroup != null ? currentGroup.getTimestampPrefix() : wantedPrefix;
+        wantedPrefix = null;
 
         File saveDir = StorageHelper.getPhotoDir(PhotoPlaybackActivity.this);
         lockEnabled = com.kooo.evcam.storage.FootageLocks.enabled(PhotoPlaybackActivity.this);
         lockedPhotos = com.kooo.evcam.storage.FootageLocks.shown(PhotoPlaybackActivity.this, saveDir);
-        adapter.setLockedNames(lockedPhotos);
-        updateLockButton();
-        // null：没有地方存照片（没有 U 盘、开发者选项没开），也就没有照片可列
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory()) {
-            showEmptyState();
-            showNoSelection();
+
+        groups.clear();
+        for (DateSection<PhotoGroup> section : PhotoScan.scan(saveDir)) {
+            groups.addAll(section.getItems());
+        }
+        strip.setItems(groups);
+
+        if (groups.isEmpty()) {
+            showEmpty();
             return;
         }
-
-        File[] files = saveDir.listFiles((dir, name) -> {
-            String lower = name.toLowerCase();
-            return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png");
-        });
-
-        if (files == null || files.length == 0) {
-            showEmptyState();
-            showNoSelection();
-            return;
-        }
-
-        // 第一步：按时间戳分组（同一秒拍摄的多路图片）
-        Map<String, PhotoGroup> groupMap = new HashMap<>();
-        for (File file : files) {
-            String timestamp = PhotoGroup.extractTimestampPrefix(file.getName());
-            PhotoGroup group = groupMap.get(timestamp);
-            if (group == null) {
-                group = new PhotoGroup(timestamp);
-                groupMap.put(timestamp, group);
-            }
-            group.addFile(file);
-        }
-
-        // 转为列表并排序（最新的在前）
-        List<PhotoGroup> allGroups = new ArrayList<>(groupMap.values());
-        Collections.sort(allGroups, (g1, g2) -> g2.getCaptureTime().compareTo(g1.getCaptureTime()));
-
-        // 第二步：按日期分组
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        Map<String, DateSection<PhotoGroup>> dateSectionMap = new LinkedHashMap<>();
-        
-        for (PhotoGroup group : allGroups) {
-            String dateString = dateFormat.format(group.getCaptureTime());
-            DateSection<PhotoGroup> section = dateSectionMap.get(dateString);
-            if (section == null) {
-                section = new DateSection<>(dateString, group.getCaptureTime());
-                dateSectionMap.put(dateString, section);
-            }
-            section.addItem(group);
-        }
-
-        // 日期分组已按日期排序（LinkedHashMap 保持插入顺序，而 allGroups 已排序）
-        dateSections.addAll(dateSectionMap.values());
-
-        // 更新UI
-        if (dateSections.isEmpty()) {
-            showEmptyState();
-        } else {
-            photoList.setVisibility(View.VISIBLE);
-            emptyText.setVisibility(View.GONE);
-        }
-
-        adapter.buildFlattenedList();
-        adapter.notifyDataSetChanged();
-        reloadShownGroup(shown);
-    }
-
-    /**
-     * 扫描之后，把预览区换成新扫出来的那一组。
-     *
-     * <h3>为什么必须换</h3>
-     *
-     * <p>扫描把每一组都重建了，{@code currentGroup} 指着的还是上一次扫出来的旧对象。
-     * 不换的话「刷新」只刷新了列表，预览区还停在旧的那一份 —— 拍完三路马上进来，
-     * 最后一张还没落盘，刷新看着毫无反应，切到别的照片再切回来才出得来。</p>
-     *
-     * <p>那一组已经不在了（被删了）就退回没选中的状态，不留一张指向空文件的旧图。</p>
-     */
-    private void reloadShownGroup(String timestampPrefix) {
-        if (timestampPrefix == null) {
-            return;
-        }
-        for (DateSection<PhotoGroup> section : dateSections) {
-            for (PhotoGroup group : section.getItems()) {
-                if (timestampPrefix.equals(group.getTimestampPrefix())) {
-                    adapter.setSelectedGroup(group);
-                    adapter.notifyDataSetChanged();
-                    loadPhotoGroup(group);
-                    return;
+        multiViewLayout.setVisibility(View.VISIBLE);
+        controlsLayout.setVisibility(View.VISIBLE);
+        emptyText.setVisibility(View.GONE);
+        PhotoGroup target = groups.get(0);
+        if (shown != null) {
+            for (PhotoGroup group : groups) {
+                if (shown.equals(group.getTimestampPrefix())) {
+                    target = group;
+                    break;
                 }
             }
         }
-        showNoSelection();
+        loadPhotoGroup(target);
     }
 
-    /** 回到「还没选照片」的样子。 */
-    private void showNoSelection() {
+    /** 一张都没有（全删光了）：画面收起，只留一句话。 */
+    private void showEmpty() {
         currentGroup = null;
-        adapter.setSelectedGroup(null);
-        adapter.notifyDataSetChanged();
         expandedPosition = null;
         zoomedCell = PlaybackViewport.NO_CELL;
         multiViewLayout.setVisibility(View.GONE);
         controlsLayout.setVisibility(View.GONE);
-        noSelectionHint.setVisibility(View.VISIBLE);
-        currentDatetime.setText("");
-    }
-
-    private void showEmptyState() {
-        photoList.setVisibility(View.GONE);
         emptyText.setVisibility(View.VISIBLE);
+        currentDatetime.setText("");
+        updateLockButton();
     }
 
-    private void toggleMultiSelectMode() {
-        isMultiSelectMode = !isMultiSelectMode;
-        adapter.clearSelection();
-        adapter.setMultiSelectMode(isMultiSelectMode);
-        adapter.notifyDataSetChanged();
-
-        // 标题区不动（菜单和界面名一直在），换的是动作栏里的两组
-        if (isMultiSelectMode) {
-            actionGroup.setVisibility(View.GONE);
-            selectionGroup.setVisibility(View.VISIBLE);
-            updateSelectedCount();
-        } else {
-            actionGroup.setVisibility(View.VISIBLE);
-            selectionGroup.setVisibility(View.GONE);
+    /** 胶片上标出正在看的这一组，并滚到它。 */
+    private void markOnStrip(PhotoGroup group) {
+        int index = groups.indexOf(group);
+        strip.setCurrent(index);
+        if (index >= 0) {
+            photoList.scrollToPosition(index);
         }
     }
 
-    private void exitMultiSelectMode() {
-        isMultiSelectMode = false;
-        adapter.clearSelection();
-        adapter.setMultiSelectMode(false);
-        adapter.notifyDataSetChanged();
-        actionGroup.setVisibility(View.VISIBLE);
-        selectionGroup.setVisibility(View.GONE);
-    }
+    // ------------------------------------------------------------------ 详情 / 分享 / 删除
 
-    private void selectAll() {
-        adapter.selectAll();
-        adapter.notifyDataSetChanged();
-        updateSelectedCount();
-    }
-
-    private void updateSelectedCount() {
-        selectedCount.setText(getString(R.string.msg_selected_n, adapter.getSelectedCount()));
-    }
-
-    private void deleteSelected() {
-        Set<PhotoGroup> selectedGroups = adapter.getSelectedGroups();
-        if (selectedGroups.isEmpty()) {
+    private void showInfo() {
+        if (currentGroup == null) {
             return;
         }
+        AppConfig config = new AppConfig(this);
+        List<String> names = new ArrayList<>();
+        for (String position : POSITIONS) {
+            if (currentGroup.hasPhoto(position)) {
+                names.add(config.getCameraName(this, com.kooo.evcam.camera.CameraSlots.keyForSuffix(position)));
+            }
+        }
+        com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
+                .setTitle(R.string.action_info)
+                .setMessage(getString(R.string.info_photo_detail, currentGroup.getFormattedDateTime(),
+                        currentGroup.getFormattedSize(), android.text.TextUtils.join(" · ", names)))
+                .setPositiveButton(R.string.action_close, null));
+    }
 
+    private void shareCurrent() {
+        if (currentGroup == null) {
+            return;
+        }
+        PhotoShare.confirmAndShare(this, 1, PhotoShare.filesOf(Collections.singletonList(currentGroup)));
+    }
+
+    private void confirmDeleteCurrent() {
+        if (currentGroup == null) {
+            return;
+        }
+        final PhotoGroup group = currentGroup;
         com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
                 .setTitle(R.string.dlg_delete_photos_title)
-                .setMessage(getResources().getQuantityString(R.plurals.dlg_delete_photos_msg,
-                        selectedGroups.size(), selectedGroups.size()))
+                .setMessage(getResources().getQuantityString(R.plurals.dlg_delete_photos_msg, 1, 1))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> {
-                    // selectedGroups 就是 adapter 手里那个集合，下面会被清空，
-                    // 先留一份 —— 删完还要拿它对一下预览区放的是不是其中之一
-                    Set<PhotoGroup> deleted = new HashSet<>(selectedGroups);
-                    int deletedCount = 0;
-                    int keptCount = 0;
-                    
-                    // 删除选中的图片组：锁定的留下（锁定影像关着时不算），留下的那几组还在列表里
+                    // 锁定的留下（锁定影像关着时不算）
                     Set<String> keep = lockEnabled ? lockedPhotos : new HashSet<String>();
-                    for (PhotoGroup group : new HashSet<>(deleted)) {
-                        deletedCount += group.deleteAllExcept(keep);
-                        if (group.getPhotoCount() > 0) {
-                            keptCount += group.getPhotoCount();
-                            deleted.remove(group);
-                        }
+                    int deleted = group.deleteAllExcept(keep);
+                    int kept = group.getPhotoCount();
+                    Toast.makeText(this, getResources().getQuantityString(R.plurals.msg_photos_deleted, deleted, deleted)
+                            + (kept > 0 ? getResources().getQuantityString(R.plurals.msg_kept_locked, kept, kept) : ""),
+                            Toast.LENGTH_SHORT).show();
+                    // 这一组整个没了就看下一组（胶片上它后面那张），否则留在原地
+                    if (kept == 0) {
+                        int at = groups.indexOf(group);
+                        currentGroup = at >= 0 && at + 1 < groups.size() ? groups.get(at + 1)
+                                : at > 0 ? groups.get(at - 1) : null;
                     }
-                    
-                    // 从日期分组中移除已删除的组
-                    for (DateSection<PhotoGroup> section : dateSections) {
-                        section.getItems().removeAll(deleted);
-                    }
-                    
-                    // 移除空的日期分组
-                    dateSections.removeIf(section -> section.getItemCount() == 0);
-
-                    adapter.clearSelection();
-                    adapter.buildFlattenedList();
-                    // 预览区放的那一组也在这一批里的话，别再挂着已经删掉的照片
-                    if (currentGroup != null && deleted.contains(currentGroup)) {
-                        showNoSelection();
-                    } else {
-                        adapter.setSelectedGroup(currentGroup);
-                    }
-                    adapter.notifyDataSetChanged();
-                    updateSelectedCount();
-
-                    android.widget.Toast.makeText(PhotoPlaybackActivity.this,
-                            getResources().getQuantityString(R.plurals.msg_photos_deleted,
-                                    deletedCount, deletedCount)
-                                    + (keptCount > 0 ? getResources().getQuantityString(
-                                            R.plurals.msg_kept_locked, keptCount, keptCount) : ""),
-                            android.widget.Toast.LENGTH_SHORT).show();
-
-                    if (dateSections.isEmpty()) {
-                        exitMultiSelectMode();
-                        showEmptyState();
-                    }
+                    updatePhotoList();
                 })
                 .setNegativeButton(R.string.action_cancel, null));
     }
 
     /**
      * 返回键：先退出当前这一层，最后才是离开这个界面。
-     *
-     * <p>做 Fragment 的时候没有这一层 —— 主界面的返回键一路回到录制界面，
-     * 多选里按返回会直接走掉，看着像「选择被提交了」。连续回放早就是这么处理的，
-     * 这里补齐，顺便把单路视图也算一层。</p>
      */
     @Override
     public void onBackPressed() {
-        if (isMultiSelectMode) {
-            exitMultiSelectMode();
-            return;
-        }
         if (zoomedCell != PlaybackViewport.NO_CELL || expandedPosition != null) {
             // 和点画面一样，一下退回网格：中间那一层不值得让返回键多按一次
             collapse();
             return;
         }
         super.onBackPressed();
-    }
-
-    /**
-     * 回主界面，并让它把抽屉打开。
-     *
-     * <p>抽屉挂在主界面上，这里是另一个 Activity，够不着它 ——
-     * 所以带一个标志回去，由主界面自己打开。连续回放也是这么做的。</p>
-     */
-    private void openDrawerOnMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra(MainActivity.EXTRA_OPEN_DRAWER, true);
-        startActivity(intent);
-        finish();
     }
 
     private void applyStatusBarInsets() {
@@ -984,170 +775,6 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                 return insets;
             });
             androidx.core.view.ViewCompat.requestApplyInsets(toolbarView);
-        }
-    }
-
-    /**
-     * 分享选中的图片
-     */
-    private void shareSelected() {
-        Set<PhotoGroup> selectedGroups = adapter.getSelectedGroups();
-        if (selectedGroups.isEmpty()) {
-            Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_select_photos_first), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 收集所有选中的图片文件
-        List<File> allPhotoFiles = new ArrayList<>();
-        for (PhotoGroup group : selectedGroups) {
-            for (String position : POSITIONS) {
-                File photoFile = group.getPhotoFile(position);
-                if (photoFile != null && photoFile.exists() && photoFile.length() > 0) {
-                    allPhotoFiles.add(photoFile);
-                }
-            }
-        }
-
-        if (allPhotoFiles.isEmpty()) {
-            Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_no_photos_to_share), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 显示分享选项对话框
-        showPhotoShareOptionsDialog(getString(R.string.action_share_photos),
-            getResources().getQuantityString(R.plurals.photo_share_count,
-                    selectedGroups.size(), selectedGroups.size(), allPhotoFiles.size()),
-            allPhotoFiles);
-    }
-
-    /**
-     * 显示单组图片分享对话框
-     */
-    private void showPhotoShareDialog(PhotoGroup group) {
-        // 获取所有可用的图片文件
-        List<File> photoFiles = new ArrayList<>();
-        for (String position : POSITIONS) {
-            File photoFile = group.getPhotoFile(position);
-            if (photoFile != null && photoFile.exists() && photoFile.length() > 0) {
-                photoFiles.add(photoFile);
-            }
-        }
-
-        if (photoFiles.isEmpty()) {
-            Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_no_photos_to_share), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        showPhotoShareOptionsDialog(getString(R.string.action_share_photos),
-            getResources().getQuantityString(R.plurals.photo_share_total,
-                    photoFiles.size(), photoFiles.size()),
-            photoFiles);
-    }
-
-    /**
-     * 图片分享：说明有几张，主操作「分享」，次操作「关闭」。
-     *
-     * <p>以前这里是一块自绘的白底布局，写死了三个选项。其中「二维码」依赖的传输模块
-     * 早已移除、一直是隐藏的，剩下的两个就是一个标准的确认框 —— 于是换成统一的对话框，
-     * 按钮样式、日夜配色和其他对话框一致，也不再有一块夜里刺眼的白板。</p>
-     */
-    private void showPhotoShareOptionsDialog(String title, String message, List<File> photoFiles) {
-        com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(
-                this, R.style.Theme_Cam_MaterialAlertDialog)
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton(R.string.action_share, (dialog, which) -> {
-                    Log.d(TAG, "用户选择系统分享图片");
-                    sharePhotos(photoFiles);
-                })
-                .setNegativeButton(R.string.action_close, null)
-                .setCancelable(true));
-        Log.d(TAG, "图片分享选项对话框已显示");
-    }
-
-
-    /**
-     * 分享图片文件
-     */
-    private void sharePhotos(List<File> photoFiles) {
-        if (photoFiles.isEmpty()) {
-            return;
-        }
-
-        try {
-            String authority = getPackageName() + ".fileprovider";
-
-            if (photoFiles.size() == 1) {
-                // 分享单个图片
-                File photoFile = photoFiles.get(0);
-
-                // 检查文件是否存在且可读
-                if (!photoFile.exists() || !photoFile.canRead()) {
-                    Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_file_unreadable), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Uri photoUri = FileProvider.getUriForFile(PhotoPlaybackActivity.this, authority, photoFile);
-
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("image/jpeg");
-                shareIntent.putExtra(Intent.EXTRA_STREAM, photoUri);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT,
-                    getString(R.string.action_share_photos));
-                shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.msg_share_photo_subject));
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                // 创建选择器
-                Intent chooser = Intent.createChooser(shareIntent, getString(R.string.action_share_photos));
-                if (chooser.resolveActivity(PhotoPlaybackActivity.this.getPackageManager()) != null) {
-                    startActivity(chooser);
-                } else {
-                    Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_no_share_target), Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                // 分享多个图片
-                ArrayList<Uri> photoUris = new ArrayList<>();
-                for (File photoFile : photoFiles) {
-                    // 检查文件是否存在且可读
-                    if (!photoFile.exists() || !photoFile.canRead()) {
-                        continue;
-                    }
-                    Uri photoUri = FileProvider.getUriForFile(PhotoPlaybackActivity.this, authority, photoFile);
-                    photoUris.add(photoUri);
-                }
-
-                if (photoUris.isEmpty()) {
-                    Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_nothing_to_share), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-                shareIntent.setType("image/jpeg");
-                shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, photoUris);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT,
-                    getString(R.string.action_share_photos));
-                shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.msg_share_photo_subject));
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                // 创建选择器
-                Intent chooser = Intent.createChooser(shareIntent, getString(R.string.action_share_photos));
-                if (chooser.resolveActivity(PhotoPlaybackActivity.this.getPackageManager()) != null) {
-                    startActivity(chooser);
-                } else {
-                    Toast.makeText(PhotoPlaybackActivity.this, getString(R.string.msg_no_share_target), Toast.LENGTH_SHORT).show();
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            AppLog.e(TAG, "分享图片失败: FileProvider 无法处理该文件路径", e);
-            Toast.makeText(PhotoPlaybackActivity.this, R.string.msg_share_path_unsupported,
-                    Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            // 异常原文（英文、有时是 null）只进日志，界面上只说分享不了
-            AppLog.e(TAG, "分享图片失败", e);
-            Toast.makeText(PhotoPlaybackActivity.this, R.string.msg_share_failed,
-                    Toast.LENGTH_SHORT).show();
         }
     }
 }

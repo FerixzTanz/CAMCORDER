@@ -5,7 +5,7 @@ import java.util.Locale;
 /**
  * 连续回放界面用到的两个格式化函数。
  *
- * <p>单独放一个类是为了能测：它们原本写在 {@code TimelineSessionAdapter} 里，
+ * <p>单独放一个类是为了能测：它们原本写在回放列表的适配器里，
  * 而那个类继承 {@code RecyclerView.Adapter}，纯 JVM 单元测试要碰它就得把一整套
  * UI 类拖进来。这里不依赖任何 Android API。</p>
  */

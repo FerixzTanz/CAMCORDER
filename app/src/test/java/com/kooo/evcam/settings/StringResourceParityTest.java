@@ -52,7 +52,7 @@ public class StringResourceParityTest {
     private static final String[] TRANSLATIONS = {"values-en", "values-ms"};
 
     /** 只有中文（values-zh）和英文（values，默认）两份的文件。 */
-    private static final String[] ZH_EN_ONLY = {"strings_about.xml"};
+    private static final String[] ZH_EN_ONLY = {};
 
     @Test
     public void everyChineseStringHasATranslationWithMatchingPlaceholders() throws IOException {

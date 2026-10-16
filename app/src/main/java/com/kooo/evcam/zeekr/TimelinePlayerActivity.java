@@ -2,7 +2,6 @@ package com.kooo.evcam.zeekr;
 
 import android.graphics.Matrix;
 import android.graphics.RectF;
-import android.net.Uri;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,7 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
 import com.kooo.evcam.playback.FisheyeVideoFrame;
 import com.kooo.evcam.playback.PlaybackViewport;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -74,6 +72,9 @@ import java.util.Map;
  */
 public class TimelinePlayerActivity extends AppCompatActivity {
 
+    /** 进来先放哪一条：那一条的开始时刻（{@code RecordingTimeline.Session.startEpochMs}）。 */
+    public static final String EXTRA_SESSION_START_MS = "session_start_ms";
+
     private static final String TAG = "TimelinePlayer";
     /** 进度刷新、几路对齐的间隔。 */
     private static final long TICK_MS = 500L;
@@ -105,13 +106,13 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private TextView positionText;
     private TextView infoText;
-    private Button playPauseButton;
+    private com.google.android.material.button.MaterialButton playPauseButton;
     private Button speedButton;
     private Button viewModeButton;
-    private Button prevSessionButton;
-    private Button nextSessionButton;
+    private View prevSessionButton;
+    private View nextSessionButton;
     /** 锁定此刻 / 解锁（锁定影像开着时才有）。 */
-    private Button lockButton;
+    private com.google.android.material.button.MaterialButton lockButton;
     private Button saveClipButton;
     /** 进度条下面那条：锁定的那几段。 */
     private com.kooo.evcam.ui.LockedRangeStrip lockedStrip;
@@ -119,14 +120,13 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     private boolean lockEnabled;
     /** 录像目录里锁定的文件名（开关关着时是空的）。 */
     private final java.util.Set<String> lockedVideos = new java.util.HashSet<>();
+    /** 底下那条胶片：一条条录制，正在放的那条描一圈橙。 */
     private RecyclerView sessionListView;
-    private TextView listSummaryText;
-    private TimelineSessionAdapter sessionAdapter;
-    private View actionGroup;
-    private View selectionGroup;
-    private TextView selectedCountText;
+    private com.kooo.evcam.playback.FilmstripAdapter<RecordingTimeline.Session> sessionAdapter;
     /** 界面重建（切黑白模式这类）之前看的是哪一条；-1 表示没有，开最新的那条。 */
     private int pendingSessionIndex = -1;
+    /** 从回看网格进来要先放的那一条（开始时刻）；-1 表示没有。放过一次就清掉。 */
+    private long wantedStartMs = -1L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private List<RecordingTimeline.Session> sessions = new ArrayList<>();
@@ -235,6 +235,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_timeline_player);
         if (savedInstanceState != null) {
             pendingSessionIndex = savedInstanceState.getInt(STATE_SESSION_INDEX, -1);
+        } else {
+            wantedStartMs = getIntent().getLongExtra(EXTRA_SESSION_START_MS, -1L);
         }
 
         seekBar = findViewById(R.id.timeline_seek);
@@ -249,8 +251,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             lockedStrip.alignTo(seekBar);
         }
         sessionListView = findViewById(R.id.timeline_session_list);
-        listSummaryText = findViewById(R.id.timeline_list_summary);
-        actionGroup = findViewById(R.id.pb_actions);
         cabinColumn = findViewById(R.id.cabin_column);
 
         lanes = new Lane[]{
@@ -274,49 +274,43 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             wire(lane);
         }
 
-        sessionAdapter = new TimelineSessionAdapter(this::switchSession);
-        sessionAdapter.setOnSessionLongClickListener(this::showSessionActions);
+        // 胶片：一条条录制按时间从左到右，缩略图取环视第一段的一帧，底下写几点开始
+        sessionAdapter = new com.kooo.evcam.playback.FilmstripAdapter<>(
+                new com.kooo.evcam.playback.FilmstripAdapter.Binder<RecordingTimeline.Session>() {
+                    @Override public File thumbnail(RecordingTimeline.Session session) {
+                        return session.segments.isEmpty() ? null : new File(session.segments.get(0).path);
+                    }
+                    @Override public boolean isVideo(RecordingTimeline.Session session) { return true; }
+                    @Override public String label(RecordingTimeline.Session session) {
+                        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(session.startEpochMs));
+                    }
+                });
+        sessionAdapter.setOnPick((session, index) -> switchSession(index));
         if (sessionListView != null) {
-            sessionListView.setLayoutManager(new LinearLayoutManager(this));
+            sessionListView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
             sessionListView.setAdapter(sessionAdapter);
         }
 
-        selectionGroup = findViewById(R.id.pb_selection);
-        // 视频是按分段发送的，没有整批分享
-        View share = findViewById(R.id.pb_share);
-        if (share != null) {
-            share.setVisibility(View.GONE);
+        // 返回 / 全部录像：都是回到网格，关掉自己就回去了
+        View back = findViewById(R.id.btn_back);
+        if (back != null) {
+            back.setOnClickListener(v -> finish());
         }
-        selectedCountText = findViewById(R.id.pb_selected_count);
-        sessionAdapter.setOnSelectionChangedListener(this::updateSelectedCount);
-
-        View menu = findViewById(R.id.timeline_menu);
-        if (menu != null) {
-            menu.setOnClickListener(v -> openDrawerOnMain());
+        View all = findViewById(R.id.btn_all);
+        if (all != null) {
+            all.setOnClickListener(v -> finish());
         }
-        View home = findViewById(R.id.pb_home);
-        if (home != null) {
-            home.setOnClickListener(v -> finish());
+        View info = findViewById(R.id.pb_info);
+        if (info != null) {
+            info.setOnClickListener(v -> showInfo());
         }
-        View refresh = findViewById(R.id.pb_refresh);
-        if (refresh != null) {
-            refresh.setOnClickListener(v -> loadTimelines());
-        }
-        View multiSelect = findViewById(R.id.pb_multi_select);
-        if (multiSelect != null) {
-            multiSelect.setOnClickListener(v -> setSelecting(true));
-        }
-        View selectAll = findViewById(R.id.pb_select_all);
-        if (selectAll != null) {
-            selectAll.setOnClickListener(v -> sessionAdapter.chooseAll());
-        }
-        View deleteSelected = findViewById(R.id.pb_delete);
-        if (deleteSelected != null) {
-            deleteSelected.setOnClickListener(v -> confirmDeleteChosen());
-        }
-        View cancelSelect = findViewById(R.id.pb_cancel);
-        if (cancelSelect != null) {
-            cancelSelect.setOnClickListener(v -> setSelecting(false));
+        View deleteThis = findViewById(R.id.pb_delete);
+        if (deleteThis != null) {
+            deleteThis.setOnClickListener(v -> {
+                if (!sessions.isEmpty()) {
+                    confirmDeleteSession(sessionIndex, sessions.get(sessionIndex));
+                }
+            });
         }
         if (playPauseButton != null) {
             playPauseButton.setOnClickListener(v -> togglePlayPause());
@@ -438,9 +432,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     /** 扫描录像目录，按时间轴分组。可能有 I/O，放后台线程。 */
     private void loadTimelines() {
         infoText.setText(R.string.msg_scanning);
-        if (listSummaryText != null) {
-            listSummaryText.setText(R.string.msg_scanning_short);
-        }
         new Thread(() -> {
             List<RecordingTimeline.Source> sources = new ArrayList<>();
             Map<String, List<RecordingTimeline.Source>> others = new HashMap<>();
@@ -520,7 +511,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 sessions = built;
                 sessionMarkers = markers;
-                sessionAdapter.setDistances(km);
                 laneSources.clear();
                 laneSources.putAll(others);
                 lockEnabled = locksOn;
@@ -530,9 +520,7 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                 for (int i = 0; i < sessions.size(); i++) {
                     sessionBytes[i] = bytesOf(filesOf(sessions.get(i)));
                 }
-                sessionAdapter.setLocked(lockedFlags());
-                sessionAdapter.setSessions(sessions, sessionBytes);
-                updateListSummary();
+                sessionAdapter.setItems(sessions);
                 refreshLockViews();
                 if (sessions.isEmpty()) {
                     // 全删光了：画面区也清掉，别留着已经不存在的文件
@@ -549,9 +537,18 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-                // 默认打开最近的一条；界面刚重建过就回到原来那一条
+                // 默认打开最近的一条；界面刚重建过就回到原来那一条；从网格点进来的就放那一条
                 int target = pendingSessionIndex >= 0 && pendingSessionIndex < sessions.size()
                         ? pendingSessionIndex : sessions.size() - 1;
+                if (wantedStartMs >= 0) {
+                    for (int i = 0; i < sessions.size(); i++) {
+                        if (sessions.get(i).startEpochMs == wantedStartMs) {
+                            target = i;
+                            break;
+                        }
+                    }
+                    wantedStartMs = -1L;
+                }
                 pendingSessionIndex = -1;
                 switchSession(target);
                 handler.removeCallbacks(ticker);
@@ -596,16 +593,12 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         prevSessionButton.setEnabled(sessionIndex > 0);
         nextSessionButton.setEnabled(sessionIndex < sessions.size() - 1);
 
-        // 上一段/下一段按钮也会改变选中项，列表要跟着走
+        // 上一条 / 下一条按钮也会换当前这一条，胶片要跟着走
         if (sessionAdapter != null) {
-            sessionAdapter.setSelectedIndex(sessionIndex);
+            sessionAdapter.setCurrent(sessionIndex);
         }
         if (sessionListView != null) {
-            // 列表里还夹着日期标题行，所以要按行号滚动，不能直接用会话下标
-            int row = sessionAdapter.rowOf(sessionIndex);
-            if (row >= 0) {
-                sessionListView.scrollToPosition(row);
-            }
+            sessionListView.scrollToPosition(sessionIndex);
         }
     }
 
@@ -620,27 +613,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         lane.settleUntilMs = 0L;
         lane.justCorrected = false;
         lane.seekLeadMs = 0L;
-    }
-
-    /** 左栏顶部的一行汇总：共几条、合计多长多大。 */
-    private void updateListSummary() {
-        if (listSummaryText == null) {
-            return;
-        }
-        if (sessions.isEmpty()) {
-            listSummaryText.setText(R.string.msg_no_clips);
-            return;
-        }
-        long totalMs = 0L;
-        long totalBytes = 0L;
-        for (int i = 0; i < sessions.size(); i++) {
-            totalMs += sessions.get(i).totalDurationMs;
-            totalBytes += sessionBytes[i];
-        }
-        listSummaryText.setText(getResources().getQuantityString(R.plurals.info_clip_count,
-                sessions.size(), sessions.size(),
-                TimelineFormat.duration(totalMs) + "　·　"
-                        + TimelineFormat.size(totalBytes)));
     }
 
     // ================================================================ 看哪几路
@@ -1300,41 +1272,30 @@ public class TimelinePlayerActivity extends AppCompatActivity {
 
     private void updatePlayPauseLabel() {
         if (playPauseButton != null) {
-            playPauseButton.setText(leader().player.isPlaying()
-                    ? R.string.action_pause : R.string.action_play);
+            boolean playing = leader().player.isPlaying();
+            playPauseButton.setIconResource(playing ? R.drawable.ic_pause : R.drawable.ic_play);
+            playPauseButton.setContentDescription(getString(playing ? R.string.action_pause : R.string.action_play));
         }
     }
 
     // ================================================================ 列表操作
 
-    /**
-     * 长按一条时间轴：删除或分享。
-     *
-     * <p>一条时间轴是一次连续录制，可能有很多个分段文件，
-     * 所以删除和分享都是对整组文件操作 —— 只删其中一段会在时间轴上留个洞。</p>
-     */
-    private void showSessionActions(int index) {
-        if (index < 0 || index >= sessions.size()) {
+    /** 详情：这一条几点开始、几点结束、多长、多大、几段。 */
+    private void showInfo() {
+        if (sessions.isEmpty()) {
             return;
         }
-        RecordingTimeline.Session session = sessions.get(index);
-        String title = getResources().getQuantityString(R.plurals.player_session_title,
-                session.segmentCount(),
-                new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-                        .format(new Date(session.startEpochMs)),
-                session.segmentCount(),
-                TimelineFormat.size(bytesOf(filesOf(session))));
+        RecordingTimeline.Session session = sessions.get(sessionIndex);
+        SimpleDateFormat clock = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         com.kooo.evcam.ui.CamDialogs.show(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
-                .setTitle(title)
-                .setItems(new CharSequence[]{getString(R.string.action_share_clip),
-                        getString(R.string.action_delete_clip)}, (dialog, which) -> {
-                    if (which == 0) {
-                        shareSession(session);
-                    } else {
-                        confirmDeleteSession(index, session);
-                    }
-                })
-                .setNegativeButton(R.string.action_cancel, null));
+                .setTitle(R.string.action_info)
+                .setMessage(getString(R.string.info_video_detail,
+                        clock.format(new Date(session.startEpochMs)),
+                        clock.format(new Date(session.endEpochMs())),
+                        TimelineFormat.duration(session.totalDurationMs),
+                        TimelineFormat.size(bytesOf(filesOf(session))),
+                        session.segmentCount()))
+                .setPositiveButton(R.string.action_close, null));
     }
 
     /**
@@ -1360,107 +1321,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             bytes += clip.sizeBytes;
         }
         return bytes;
-    }
-
-    private void shareSession(RecordingTimeline.Session session) {
-        ArrayList<Uri> uris = new ArrayList<>();
-        for (LaneTrack.Clip clip : filesOf(session)) {
-            File file = new File(clip.path);
-            if (!file.exists()) {
-                continue;
-            }
-            try {
-                uris.add(FileProvider.getUriForFile(this,
-                        getPackageName() + ".fileprovider", file));
-            } catch (Exception e) {
-                AppLog.w(TAG, "无法分享 " + clip.path + ": " + e);
-            }
-        }
-        if (uris.isEmpty()) {
-            Toast.makeText(this, R.string.msg_nothing_to_share, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Intent intent = new Intent(uris.size() > 1
-                ? Intent.ACTION_SEND_MULTIPLE : Intent.ACTION_SEND);
-        intent.setType("video/*");
-        if (uris.size() > 1) {
-            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-        } else {
-            intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
-        }
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(Intent.createChooser(intent, getString(R.string.player_share_chooser)));
-    }
-
-    /**
-     * 菜单键回主界面并把抽屉拉开。
-     *
-     * <p>抽屉长在主界面上，这里是另一个界面 —— 所以不是「打开抽屉」，
-     * 而是「回到有抽屉的那一屏，并让它开着」。看起来和主界面点菜单是一回事。</p>
-     */
-    private void openDrawerOnMain() {
-        Intent intent = new Intent(this, com.kooo.evcam.MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra(com.kooo.evcam.MainActivity.EXTRA_OPEN_DRAWER, true);
-        startActivity(intent);
-        finish();
-    }
-
-    /** 进出多选：两条工具条互换，列表自己换成勾选的点法。 */
-    private void setSelecting(boolean on) {
-        sessionAdapter.setSelectionMode(on);
-        // 标题区不动，换的是动作栏里的两组
-        if (actionGroup != null) {
-            actionGroup.setVisibility(on ? View.GONE : View.VISIBLE);
-        }
-        if (selectionGroup != null) {
-            selectionGroup.setVisibility(on ? View.VISIBLE : View.GONE);
-        }
-        updateSelectedCount();
-    }
-
-    private void updateSelectedCount() {
-        if (selectedCountText != null) {
-            selectedCountText.setText(getString(R.string.msg_selected_n, sessionAdapter.chosenCount()));
-        }
-    }
-
-    private void confirmDeleteChosen() {
-        List<Integer> indexes = sessionAdapter.chosenIndexes();
-        if (indexes.isEmpty()) {
-            Toast.makeText(this, R.string.msg_selected_none, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        int files = 0;
-        long bytes = 0;
-        for (int index : indexes) {
-            if (index >= 0 && index < sessions.size()) {
-                List<LaneTrack.Clip> clips = filesOf(sessions.get(index));
-                files += clips.size();
-                bytes += bytesOf(clips);
-            }
-        }
-        com.kooo.evcam.ui.CamDialogs.showDestructive(new MaterialAlertDialogBuilder(this, R.style.Theme_Cam_MaterialAlertDialog)
-                .setTitle(R.string.player_delete_title)
-                .setMessage(getResources().getQuantityString(R.plurals.player_delete_msg,
-                        files, files, TimelineFormat.size(bytes)))
-                .setPositiveButton(R.string.action_delete, (dialog, which) -> deleteChosen(indexes))
-                .setNegativeButton(R.string.action_cancel, null));
-    }
-
-    private void deleteChosen(List<Integer> indexes) {
-        // 正在播的那一段可能也在里面，先停下，否则删的是一个还开着的文件
-        for (Lane lane : lanes) {
-            resetLane(lane);
-        }
-        List<LaneTrack.Clip> files = new ArrayList<>();
-        for (int index : indexes) {
-            if (index >= 0 && index < sessions.size()) {
-                files.addAll(filesOf(sessions.get(index)));
-            }
-        }
-        setSelecting(false);
-        deleteInBackground(files, "multi-select delete");
     }
 
     private void confirmDeleteSession(int index, RecordingTimeline.Session session) {
@@ -1601,7 +1461,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             Toast.makeText(this, getResources().getQuantityString(
                     unlock ? R.plurals.msg_footage_unlocked : R.plurals.msg_footage_locked,
                     names.size(), names.size()), Toast.LENGTH_SHORT).show();
-            sessionAdapter.setLocked(lockedFlags());
             refreshLockViews();
         });
     }
@@ -1662,24 +1521,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
         }
         List<File> files = filesHere();
         boolean locked = !files.isEmpty() && lockedVideos.containsAll(namesOf(files));
-        lockButton.setText(locked ? R.string.action_unlock_footage : R.string.action_lock_footage);
-    }
-
-    /** 每一条录制有没有锁定的文件，和 sessions 一一对应。 */
-    private boolean[] lockedFlags() {
-        boolean[] flags = new boolean[sessions.size()];
-        if (!lockEnabled || lockedVideos.isEmpty()) {
-            return flags;
-        }
-        for (int i = 0; i < flags.length; i++) {
-            for (LaneTrack.Clip clip : filesOf(sessions.get(i))) {
-                if (lockedVideos.contains(new File(clip.path).getName())) {
-                    flags[i] = true;
-                    break;
-                }
-            }
-        }
-        return flags;
+        lockButton.setIconResource(locked ? R.drawable.ic_lock : R.drawable.ic_lock_open);
+        lockButton.setContentDescription(getString(locked ? R.string.action_unlock_footage : R.string.action_lock_footage));
     }
 
     private static final String STATE_SESSION_INDEX = "sessionIndex";
@@ -1695,11 +1538,6 @@ public class TimelinePlayerActivity extends AppCompatActivity {
      */
     @Override
     public void onBackPressed() {
-        // 多选里按返回：先退出多选。直接离开会让人以为选择被「提交」了
-        if (sessionAdapter != null && sessionAdapter.isSelectionMode()) {
-            setSelecting(false);
-            return;
-        }
         if (expanded != null || zoomedCell != PlaybackViewport.NO_CELL) {
             // 和点画面一样，一下退回网格
             collapse();

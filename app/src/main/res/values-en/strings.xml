@@ -2,7 +2,6 @@
     <!-- 英文环境下的应用名；默认（中文）名见 values/strings.xml -->
     <string name="app_name">Zeekr Shortcut</string>
     <!-- 完整名只有中文才带「（车机版）」，英文这边两条一样 -->
-    <string name="app_name_full">Zeekr Shortcut</string>
 
     <!-- Settings screen -->
     <string name="set_back_to_recording">Back to main screen</string>
@@ -23,7 +22,6 @@
     <string name="set_section_rearview">Super mirror</string>
     <string name="set_section_floating">Floating button</string>
     <string name="set_section_system">System</string>
-    <string name="set_section_about">About &amp; credits</string>
     <string name="set_car_model_title">Stream profile</string>
     <string name="set_profile_editor_title">Edit stream profile</string>
     <string name="set_profile_editor_summary">Recording quality, per-camera settings and main-screen layout</string>
@@ -115,9 +113,6 @@
     <string name="set_recording_mode_summary">%1$s; recording always uses MediaCodec, so this setting has no effect</string>
     <string name="set_force_h264_title">Force H.264</string>
     <string name="set_force_h264_summary">Uses H.264 for every camera, overriding the codec set for each camera in Edit stream profile</string>
-    <string name="set_image_adjust_title">Image adjustment</string>
-    <string name="set_image_adjust_summary">Opens a window to adjust exposure, white balance, noise reduction and more, live</string>
-    <string name="set_image_adjust_reset_title">Reset image adjustment</string>
     <string name="set_camera_mapping_title">Camera mapping</string>
     <string name="set_camera_mapping_summary">Choose which camera feeds the surround, front cabin and rear cabin views (troubleshooting)</string>
     <string name="set_diagnostics_title">Diagnostics</string>
@@ -278,7 +273,7 @@
     <string name="opt_internal_storage">Internal storage</string>
     <string name="opt_internal_storage_locked">Internal storage (requires developer options)</string>
     <string name="dlg_internal_locked_title">Internal storage requires developer options</string>
-    <string name="dlg_internal_locked_msg">Recording writes data continuously. Internal storage has limited write endurance and usually can\'t be replaced, so without developer options, recordings go to a USB drive only.\n\nTo use it anyway, go to Settings → About &amp; credits and tap Safety notice to turn on developer options.</string>
+    <string name="dlg_internal_locked_msg">Recording writes data continuously. Internal storage has limited write endurance and usually can\'t be replaced, so without developer options, recordings go to a USB drive only.\n\nTo use it anyway, open Settings, tap the title seven times and enter the password to turn on developer options.</string>
     <string name="msg_storage_changed">Storage location set to “%1$s”. Takes effect from the next recording.</string>
     <string name="msg_enter_number">Enter a number</string>
     <string name="msg_enter_positive_number">Enter a number greater than 0</string>
@@ -339,7 +334,6 @@
     <string name="set_hud_side_night_title">HUD picture brightness at night (%)</string>
     <string name="set_hud_side_night_summary">Applied on top of the opacity above while the car is in night mode. 100 turns it off</string>
     <string name="msg_floating_reset">Floating button reset</string>
-    <string name="msg_adjust_opened">Image adjustment window opened. Go back to the main screen to see the effect.</string>
     <string name="msg_adjust_reset">Image settings reset to defaults</string>
     <string name="info_mapping_manual">Camera mapping set manually</string>
     <string name="info_mapping_auto">Automatic. If a camera shows nothing, assign it here.</string>
@@ -360,7 +354,6 @@
     <string name="msg_language_hint">You can change this later in Settings → Interface → Language</string>
 
     <!-- Main interface -->
-    <string name="about_title">About &amp; credits</string>
     <string name="accessibility_service_description">Used by Keep running in background to help keep the app running.\n\nIt does not read or control anything on screen and collects no data.</string>
     <string name="zeekr_composite_not_found">No surround composite stream found. This head unit may not be supported.</string>
     <string name="msg_no_camera_available">No camera available</string>
@@ -471,9 +464,6 @@
     <string name="msg_screen_off_background">Screen off for 15 seconds. Moved to the background.</string>
     <string name="msg_stats_on">Recording status readout on</string>
     <string name="msg_stats_off">Recording status readout off</string>
-    <string name="msg_need_overlay_adjust">The overlay permission is required to open the adjustment window</string>
-    <string name="msg_camera_not_ready_adjust">Camera not ready. Can\'t open the image adjustment window.</string>
-    <string name="msg_overlay_denied">Overlay permission not granted</string>
     <string name="dlg_no_external_title">No USB drive found</string>
     <string name="dlg_no_external_msg">Recordings go to a USB drive only, to avoid wearing out the internal storage.\n\nInsert a USB drive and try again. If it isn\'t detected, try another port or select the drive again in Settings → Storage → Storage location.</string>
     <string name="dlg_will_use_internal_title">Recording to internal storage</string>
@@ -688,7 +678,7 @@
     <string name="set_reduce_motion_title">Less motion while recording</string>
     <string name="set_reduce_motion_summary">Turns off transitions and other decorative animation while recording, leaving the GPU to the encoder. The record button and progress ring still animate.</string>
     <string name="set_vehicle_status_title">Vehicle status (experimental)</string>
-    <string name="set_vehicle_status_summary">Shows horn, flash-to-pass and hazard lights below Straighten on the main screen, using the Driving info bar icons; the horn signal can\'t be read yet</string>
+    <string name="set_vehicle_status_summary">Shows horn, flash-to-pass and hazard lights in the main screen\'s tools panel, using the Driving info bar icons; the horn signal can\'t be read yet</string>
     <string name="set_fisheye_projection_title">Fisheye projection</string>
     <string name="set_fisheye_projection_summary">%1$s · applies to the live preview, photos and videos</string>
     <string name="opt_projection_rectilinear">Straight lines</string>
@@ -839,11 +829,11 @@
     <!-- Developer options unlock -->
     <string name="dev_unlock_hint">Password</string>
     <string name="dev_unlock_title">Developer options</string>
-    <string name="dev_unlock_msg">Unfinished features and troubleshooting tools. They stay on until you tap Safety notice again.</string>
+    <string name="dev_unlock_msg">Unfinished features and troubleshooting tools. They stay on until you turn them off from the last row of the Developer section.</string>
     <string name="dev_unlocked">Developer options on</string>
     <string name="dev_wrong_password">Wrong password</string>
     <string name="dev_lock_title">Turn off developer options</string>
-    <string name="dev_lock_msg">When off, developer options are hidden and the features in them stop working. To turn them back on, tap Safety notice again and enter the password.</string>
+    <string name="dev_lock_msg">When off, developer options are hidden and the features in them stop working. To turn them back on, tap the Settings title seven times and enter the password.</string>
     <string name="dev_lock_confirm">Turn off</string>
     <string name="dev_locked">Developer options off</string>
 
@@ -918,7 +908,6 @@
     <string name="adj_effect">Effect</string>
     <string name="adj_default">Default</string>
     <string name="adj_reset">Reset</string>
-    <string name="adj_save_close">Save and close</string>
     <string name="awb_auto">Auto</string>
     <string name="awb_incandescent">Incandescent</string>
     <string name="awb_fluorescent">Fluorescent</string>
@@ -1033,5 +1022,27 @@
     <string name="dev_tool_recording_title">Recording in progress</string>
     <string name="dev_tool_progress">(%1$d/%2$d) %3$s</string>
     <string name="dev_tool_file_result">%1$s: %2$s</string>
-    <string name="dev_note">Tap Safety notice in Settings → About &amp; credits to turn off developer options and hide this section</string>
+    <string name="dev_note">Use the last row of this section to turn developer options off and hide it</string>
+    <!-- 2.13 main screen: mode strip, shutter, tools panel (laid out like the car's own camera app) -->
+    <string name="mode_video">Video</string>
+    <string name="mode_photo">Photo</string>
+    <string name="record_take_photo">Take a photo</string>
+    <string name="tools_title">Tools</string>
+    <string name="cd_tools">Open tools</string>
+    <string name="cd_last_clip">Latest shot, opens playback</string>
+    <!-- 2.13 playback: grid, selection, viewers -->
+    <string name="action_select">Select</string>
+    <string name="action_done">Done</string>
+    <string name="action_deselect_all">Deselect all</string>
+    <string name="action_all_photos">All photos</string>
+    <string name="action_all_videos">All videos</string>
+    <string name="action_back">Back</string>
+    <string name="action_info">Details</string>
+    <string name="msg_select_first">Select something first</string>
+    <string name="info_photo_detail">Taken: %1$s\nSize: %2$s\nViews: %3$s</string>
+    <string name="info_video_detail">Start: %1$s\nEnd: %2$s\nLength: %3$s\nSize: %4$s\nClips: %5$d</string>
+    <!-- 2.13 open-source licence (used to live on the About page) -->
+    <string name="licence_row_title">Open-source licence</string>
+    <string name="licence_row_summary">GPL-3.0 · project page and upstream</string>
+    <string name="licence_dialog_body">Zeekr Shortcut v%1$s\n\nThis is free software released under the GNU GPL-3.0, with no warranty; you may redistribute and modify it under the same licence.\n\nProject: %2$s\nUpstream EVCam: %3$s\nLicence text: %4$s\n\nNot affiliated with ZEEKR.</string>
 </resources>

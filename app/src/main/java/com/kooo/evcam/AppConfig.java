@@ -721,7 +721,6 @@ public class AppConfig {
                 KEY_FORCE_H264_ENCODING,              // 强制 H.264 → 关，各路按自己配置里的编码
                 KEY_SCREEN_OFF_RECORDING,             // 熄屏录制 → 关
                 KEY_SCREEN_OFF_WAKE_MINUTES,          // 熄屏录制的最长时长 → 默认（熄屏录制关着，用不到）
-                KEY_IMAGE_ADJUST_ENABLED,             // 画面调节 → 关
                 KEY_RAW_FRAME_DUMP,                   // 拍照另存原始整帧 → 关
                 KEY_SIGNAL_SCAN,                      // 信号普查 → 关
                 KEY_GPU_FISHEYE_PREVIEW,              // 预览鱼眼校正走 GPU → 关
@@ -1886,11 +1885,29 @@ public class AppConfig {
     }
     
     /**
-     * 画面调节开没开。归开发者选项管，关着开发者选项时按关算；下面那几个参数只在开着时才用到。
+     * 画面调节开没开。2.13 起它在主界面的工具面板里，谁都能动，不再归开发者选项管：
+     * 第一次动任何一项就算开（CameraToolsPanel）；下面那几个参数只在开着时才用到。
      * @return true 表示启用
      */
     public boolean isImageAdjustEnabled() {
-        return readBoolean(KEY_IMAGE_ADJUST_ENABLED, false);
+        return prefs.getBoolean(KEY_IMAGE_ADJUST_ENABLED, false);
+    }
+
+    // ==================== 主界面的拍摄模式 ====================
+
+    public static final String CAPTURE_MODE_VIDEO = "video";
+    public static final String CAPTURE_MODE_PHOTO = "photo";
+    private static final String KEY_CAPTURE_MODE = "capture_mode";
+
+    /** 主界面模式条上选的是「录像」还是「拍照」；快门按它决定做什么。默认录像。 */
+    public String getCaptureMode() {
+        return CAPTURE_MODE_PHOTO.equals(prefs.getString(KEY_CAPTURE_MODE, CAPTURE_MODE_VIDEO))
+                ? CAPTURE_MODE_PHOTO : CAPTURE_MODE_VIDEO;
+    }
+
+    public void setCaptureMode(String mode) {
+        prefs.edit().putString(KEY_CAPTURE_MODE,
+                CAPTURE_MODE_PHOTO.equals(mode) ? CAPTURE_MODE_PHOTO : CAPTURE_MODE_VIDEO).apply();
     }
     
     /**

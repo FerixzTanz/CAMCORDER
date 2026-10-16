@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  回看网格的一格：16:9 的圆角缩略图。左下角一行字（照片是时刻，录像是 ▶ 时长），
+  右上角锁定的标记；选择模式里选中的那一格左上角一枚橙色的勾。
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:padding="8dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/tile_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/sunken"
+        android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="16:9"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Cam.Thumb" />
+
+    <!-- 角上的字压在画面上：日夜同色 -->
+    <ImageView
+        android:id="@+id/tile_play"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="10dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_play_small"
+        app:layout_constraintBottom_toBottomOf="@id/tile_image"
+        app:layout_constraintStart_toStartOf="@id/tile_image"
+        app:tint="@color/status_overlay_text" />
+
+    <TextView
+        android:id="@+id/tile_caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:fontFeatureSettings="tnum"
+        android:shadowColor="@color/black"
+        android:shadowRadius="4"
+        android:textColor="@color/status_overlay_text"
+        android:textAppearance="@style/TextAppearance.Cam.Caption"
+        app:layout_constraintBottom_toBottomOf="@id/tile_play"
+        app:layout_constraintStart_toEndOf="@id/tile_play"
+        app:layout_constraintTop_toTopOf="@id/tile_play" />
+
+    <ImageView
+        android:id="@+id/tile_lock"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_lock"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tile_image"
+        app:layout_constraintTop_toTopOf="@id/tile_image"
+        app:tint="@color/status_overlay_text" />
+
+    <!-- 选中的勾：橙底白勾，和车机相册一样 -->
+    <ImageView
+        android:id="@+id/tile_check"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_check_badge"
+        android:contentDescription="@string/cd_selected"
+        android:padding="4dp"
+        android:src="@drawable/ic_check"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/tile_image"
+        app:layout_constraintTop_toTopOf="@id/tile_image"
+        app:tint="@color/on_energy" />
+</androidx.constraintlayout.widget.ConstraintLayout>
