@@ -47,7 +47,6 @@ commit message, not here.
   the last row of the Developer section.
 - The photo viewer no longer has its own multi-select; use the gallery.
 
-||||||| 8e1231d
 ## [2.13.0] - 2026-10-15
 
 Final release. The app does everything its author set out to do; bug reports are welcome, but no
