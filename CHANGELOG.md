@@ -7,6 +7,10 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.14.2-alpha] - 2026-10-19
+
+- A camera that stayed without a picture after the app had stopped retrying it is tried again when the screen turns on or the head unit reports the camera free (at most twice per outage for the latter).
+
 ## [2.14.1] - 2026-10-16
 
 ### Changed
