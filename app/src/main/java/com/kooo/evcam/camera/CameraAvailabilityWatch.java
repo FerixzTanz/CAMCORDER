@@ -113,6 +113,11 @@ public final class CameraAvailabilityWatch {
         if (available) {
             CameraContention.othersReleased(cameraId);
             CameraTaken.othersReleased(cameraId);
+            // 不管之前是谁占着：这一路空了，看门狗停了手的话再救一轮
+            MultiCameraManager manager = CameraManagerHolder.getInstance().getCameraManager();
+            if (manager != null) {
+                manager.liftStoppedRescue(cameraId, "相机服务: " + cameraId + " 空闲");
+            }
         } else if (!ours) {
             CameraContention.othersTook(cameraId);
             CameraTaken.othersTook(cameraId, appContext);

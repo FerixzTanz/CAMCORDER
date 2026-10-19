@@ -59,8 +59,8 @@ public final class CameraLiveness {
      * 我们每分钟去捶一次，一夜下来几百次，既救不回来，又让已经卡住的
      * 相机服务更难缓过来，日志也被刷满。</p>
      *
-     * <p>彻底停手之后只有两件事能让它重新开始：真的出了一帧，
-     * 或者这一路不再需要画面（收起后视镜、停止录制）之后重新需要。</p>
+     * <p>彻底停手之后能让它重新开始的：真的出了一帧；这一路不再需要画面（收起后视镜、停止录制）之后重新需要；
+     * 还有 {@link State#liftStop()} 那两件事（相机服务报它空闲、亮屏）。</p>
      */
     public static final int MAX_CYCLES = 3;
 
@@ -111,6 +111,28 @@ public final class CameraLiveness {
             gaveUpAtMs = 0;
             cycles = 0;
             stopped = false;
+        }
+
+        /**
+         * 解除停手、从头救：彻底停手（{@link #stopped()}）的这一路，攒的次数、轮数都作废，
+         * 下一次 {@link CameraLiveness#step} 当场就救。
+         *
+         * <p>两件事调它，是同一个判断 —— 情况变了，值得再试一轮：相机服务报这一路「空闲」、亮屏
+         * （取自 dts88 2.11 的同名做法；他那边第三件「登记表变了」靠通道调度，我们没有）。
+         * 不加这一条的话，录像开着时这一路一直有人要，停手之后就再也不会自己回来，只能等它碰巧出一帧。
+         * 代价是 HAL 真坏了时会多试几轮。</p>
+         *
+         * <p>只管彻底停手的：歇着的（{@link #gaveUp()}）、梯子上的照原来的节奏走，
+         * 不该让救援比 {@link CameraLiveness#RETRY_GAP_MS} 一次更密。</p>
+         *
+         * @return true：原来停着手、这一下解除了；false：本来就没停手，什么都没动
+         */
+        public boolean liftStop() {
+            if (!stopped) {
+                return false;
+            }
+            clear();
+            return true;
         }
     }
 

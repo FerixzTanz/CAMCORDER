@@ -194,6 +194,7 @@ public class MultiCameraManager {
         this.context = context;
         livenessRunning = true;
         mainHandler.postDelayed(livenessTick, LIVENESS_TICK_MS);
+        com.kooo.evcam.screen.ScreenState.addListener(livenessScreenListener);
         // 登记表一变就来看：有人要就开，没人要就关（相机开关的唯一裁判）
         CameraNeeds.current().setListener(this::reconcileCameras);
     }
@@ -314,6 +315,44 @@ public class MultiCameraManager {
             }
         }
     }
+
+    /**
+     * 情况变了（相机服务报空闲、亮屏）：彻底停手的那几路解除停手，看门狗下一拍就从头救。
+     * 没停手的不动，见 {@link CameraLiveness.State#liftStop()}。主线程调。
+     *
+     * @param cameraId 相机服务报空闲的那一路；亮屏那种是 null，所有路都看
+     * @param why      写进日志和黑匣子
+     */
+    public void liftStoppedRescue(String cameraId, String why) {
+        StringBuilder which = new StringBuilder();
+        for (Map.Entry<String, CameraLiveness.State> entry : livenessStates.entrySet()) {
+            SingleCamera camera = cameras.get(entry.getKey());
+            if (camera == null || (cameraId != null && !cameraId.equals(camera.getCameraId()))) {
+                continue;
+            }
+            if (entry.getValue().liftStop()) {
+                which.append(which.length() > 0 ? ", " : "")
+                        .append(entry.getKey()).append("(").append(camera.getCameraId()).append(")");
+            }
+        }
+        if (which.length() > 0) {
+            AppLog.w(TAG, why + "：停手的相机重新救: " + which);
+            com.kooo.evcam.blackbox.BlackBox.noteImportant(why + "，停手的相机重新救: " + which);
+        }
+    }
+
+    /** 亮屏 = 车机醒了：停手的那几路值得再试一轮。 */
+    private final com.kooo.evcam.screen.ScreenState.Listener livenessScreenListener =
+            new com.kooo.evcam.screen.ScreenState.Listener() {
+                @Override
+                public void onScreenOff() {
+                }
+
+                @Override
+                public void onScreenOn() {
+                    liftStoppedRescue(null, "亮屏");
+                }
+            };
 
     /**
      * 统一的分段时间戳提供者
@@ -2633,7 +2672,8 @@ public class MultiCameraManager {
         }
         AppLog.d(TAG, "Releasing MultiCameraManager resources");
         livenessRunning = false;
-        
+        com.kooo.evcam.screen.ScreenState.removeListener(livenessScreenListener);
+
         try {
             // 1. 首先清理所有待执行的 Handler 任务（防止内存泄漏）
             if (mainHandler != null) {

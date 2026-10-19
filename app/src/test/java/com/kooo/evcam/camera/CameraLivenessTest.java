@@ -182,6 +182,64 @@ public class CameraLivenessTest {
         assertEquals(0, state.attempts());
     }
 
+    /**
+     * 录像开着时这一路一直有人要：彻底停手之后不会自己回来。相机服务报空闲、亮屏时
+     * {@link CameraLiveness.State#liftStop()} 把它解开，下一拍就从头救。
+     */
+    @Test
+    public void liftStopStartsAFreshRescueAfterStopping() {
+        long now = driveToStop();
+        assertEquals(CameraLiveness.Action.NONE,
+                CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now + CameraLiveness.COOL_OFF_MS));
+
+        assertTrue("停着手的该解开", state.liftStop());
+        assertFalse(state.stopped());
+        assertEquals(0, state.cycles());
+        assertEquals(0, state.attempts());
+        assertEquals("解开之后当场就救", CameraLiveness.Action.RESET,
+                CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now + CameraLiveness.COOL_OFF_MS));
+
+        // 解开之后照样会再走到停手，不会无限捶
+        driveToStop(now + 2 * CameraLiveness.COOL_OFF_MS);
+        assertTrue(state.stopped());
+    }
+
+    /** 没停手的不动：梯子上的、歇着的照原来的节奏走，亮屏不能让救援变密。 */
+    @Test
+    public void liftStopLeavesARescueInProgressAlone() {
+        CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, 10_000);
+        assertEquals(1, state.attempts());
+        assertFalse(state.liftStop());
+        assertEquals(1, state.attempts());
+        assertEquals("间隔照旧", CameraLiveness.Action.NONE,
+                CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, 10_001));
+
+        long now = 10_000;
+        while (!state.gaveUp()) {
+            now += CameraLiveness.RETRY_GAP_MS;
+            CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now);
+        }
+        assertFalse(state.liftStop());
+        assertTrue("歇着的还歇着", state.gaveUp());
+        assertEquals(CameraLiveness.Action.NONE,
+                CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now + 1));
+    }
+
+    private long driveToStop() {
+        return driveToStop(10_000);
+    }
+
+    /** 一直没帧，走到彻底停手；返回走到时的时间。 */
+    private long driveToStop(long now) {
+        int guard = 0;
+        while (!state.stopped() && guard++ < 100) {
+            CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now);
+            now += state.gaveUp() ? CameraLiveness.COOL_OFF_MS : CameraLiveness.RETRY_GAP_MS;
+        }
+        assertTrue("该走到彻底停手", state.stopped());
+        return now;
+    }
+
     /** 兜底的门槛必须明显宽于 SingleCamera 自己那套，否则两层会抢着动手。 */
     @Test
     public void thresholdStaysWellAboveTheInnerRecovery() {
