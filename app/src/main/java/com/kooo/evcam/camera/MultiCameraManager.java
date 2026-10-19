@@ -321,9 +321,9 @@ public class MultiCameraManager {
      * 没停手的不动，见 {@link CameraLiveness.State#liftStop()}。主线程调。
      *
      * @param cameraId 相机服务报空闲的那一路；亮屏那种是 null，所有路都看
-     * @param why      写进日志和黑匣子
      */
-    public void liftStoppedRescue(String cameraId, String why) {
+    public void liftStoppedRescue(String cameraId) {
+        String why = cameraId == null ? "亮屏" : "相机服务: " + cameraId + " 空闲";
         StringBuilder which = new StringBuilder();
         for (Map.Entry<String, CameraLiveness.State> entry : livenessStates.entrySet()) {
             SingleCamera camera = cameras.get(entry.getKey());
@@ -350,7 +350,7 @@ public class MultiCameraManager {
 
                 @Override
                 public void onScreenOn() {
-                    liftStoppedRescue(null, "亮屏");
+                    liftStoppedRescue(null);
                 }
             };
 
