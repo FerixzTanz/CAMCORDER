@@ -318,7 +318,8 @@ public class MultiCameraManager {
 
     /**
      * 情况变了（相机服务报空闲、亮屏）：彻底停手的那几路解除停手，看门狗下一拍就从头救。
-     * 没停手的不动，见 {@link CameraLiveness.State#liftStop()}。主线程调。
+     * 没停手的不动，见 {@link CameraLiveness.State#liftStop()} / {@link CameraLiveness.State#liftStopOnRelease()}。
+     * 主线程调（livenessStates 只在主线程上读写）。
      *
      * @param cameraId 相机服务报空闲的那一路；亮屏那种是 null，所有路都看
      */
@@ -330,7 +331,9 @@ public class MultiCameraManager {
             if (camera == null || (cameraId != null && !cameraId.equals(camera.getCameraId()))) {
                 continue;
             }
-            if (entry.getValue().liftStop()) {
+            CameraLiveness.State state = entry.getValue();
+            // 相机服务报空闲有次数上限（我们自己的重连也会让它报），亮屏没有
+            if (cameraId == null ? state.liftStop() : state.liftStopOnRelease()) {
                 which.append(which.length() > 0 ? ", " : "")
                         .append(entry.getKey()).append("(").append(camera.getCameraId()).append(")");
             }

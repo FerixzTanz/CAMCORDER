@@ -225,6 +225,35 @@ public class CameraLivenessTest {
                 CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now + 1));
     }
 
+    /**
+     * 我们的 SingleCamera 每重连一次，相机服务就报一次「空闲」：一次卡住里只许它解开
+     * {@link CameraLiveness#MAX_RELEASE_LIFTS} 次，之后就真的停手。亮屏照样能解开，
+     * 画面真回来了上限也清零。
+     */
+    @Test
+    public void releaseLiftsAreCappedPerEpisode() {
+        long now = driveToStop();
+        for (int i = 0; i < CameraLiveness.MAX_RELEASE_LIFTS; i++) {
+            assertTrue("第 " + (i + 1) + " 次该解开", state.liftStopOnRelease());
+            now = driveToStop(now);
+        }
+        assertFalse("到上限了，不再解开", state.liftStopOnRelease());
+        assertTrue(state.stopped());
+        assertEquals(CameraLiveness.Action.NONE,
+                CameraLiveness.step(state, true, CameraLiveness.STUCK_MS, now + CameraLiveness.COOL_OFF_MS));
+
+        // 亮屏不受上限管，而且把上限清零
+        assertTrue(state.liftStop());
+        assertEquals(0, state.releaseLifts());
+        now = driveToStop(now + CameraLiveness.COOL_OFF_MS);
+        assertTrue(state.liftStopOnRelease());
+
+        // 画面真回来了：这一次卡住过去了，上限清零
+        CameraLiveness.step(state, true, true, 0, now);
+        assertEquals(0, state.releaseLifts());
+        assertFalse(state.stopped());
+    }
+
     private long driveToStop() {
         return driveToStop(10_000);
     }

@@ -60,9 +60,18 @@ public final class CameraLiveness {
      * 相机服务更难缓过来，日志也被刷满。</p>
      *
      * <p>彻底停手之后能让它重新开始的：真的出了一帧；这一路不再需要画面（收起后视镜、停止录制）之后重新需要；
-     * 还有 {@link State#liftStop()} 那两件事（相机服务报它空闲、亮屏）。</p>
+     * 还有亮屏（{@link State#liftStop()}）和相机服务报它空闲（{@link State#liftStopOnRelease()}，有次数上限）。</p>
      */
     public static final int MAX_CYCLES = 3;
+
+    /**
+     * 一次卡住里，「相机服务报空闲」最多解开停手这么多次。
+     *
+     * <p>我们的 SingleCamera 还留着自己按错误码退避重连的那一套（dts88 2.10.10 删了，我们没删）：
+     * 它每重连一次就关一次设备，相机服务就报一次「空闲」。不设上限的话，HAL 真坏了时
+     * 彻底停手形同虚设，看门狗会跟着它一直捶。亮屏不算在里面 —— 那是人回到车上，一趟只有一次。</p>
+     */
+    public static final int MAX_RELEASE_LIFTS = 2;
 
     private CameraLiveness() {
     }
@@ -86,6 +95,8 @@ public final class CameraLiveness {
         private long gaveUpAtMs;
         private int cycles;
         private boolean stopped;
+        /** 这一次卡住里「相机服务报空闲」解开过几次；clear() 不清它，画面真回来、亮屏才清。 */
+        private int releaseLifts;
 
         public int attempts() {
             return attempts;
@@ -117,10 +128,10 @@ public final class CameraLiveness {
          * 解除停手、从头救：彻底停手（{@link #stopped()}）的这一路，攒的次数、轮数都作废，
          * 下一次 {@link CameraLiveness#step} 当场就救。
          *
-         * <p>两件事调它，是同一个判断 —— 情况变了，值得再试一轮：相机服务报这一路「空闲」、亮屏
-         * （取自 dts88 2.11 的同名做法；他那边第三件「登记表变了」靠通道调度，我们没有）。
+         * <p>亮屏调它：车机醒了、人回来了，情况变了，值得再试一轮
+         * （取自 dts88 2.11 的同名做法；他那边还有「登记表变了」，靠通道调度，我们没有）。
          * 不加这一条的话，录像开着时这一路一直有人要，停手之后就再也不会自己回来，只能等它碰巧出一帧。
-         * 代价是 HAL 真坏了时会多试几轮。</p>
+         * 代价是 HAL 真坏了时会多试几轮。「相机服务报空闲」走 {@link #liftStopOnRelease()}。</p>
          *
          * <p>只管彻底停手的：歇着的（{@link #gaveUp()}）、梯子上的照原来的节奏走，
          * 不该让救援比 {@link CameraLiveness#RETRY_GAP_MS} 一次更密。</p>
@@ -132,7 +143,26 @@ public final class CameraLiveness {
                 return false;
             }
             clear();
+            releaseLifts = 0;
             return true;
+        }
+
+        /**
+         * 相机服务报这一路「空闲」：同 {@link #liftStop()}，但一次卡住里最多 {@link CameraLiveness#MAX_RELEASE_LIFTS} 次，
+         * 为什么见那个常量。
+         */
+        public boolean liftStopOnRelease() {
+            if (!stopped || releaseLifts >= MAX_RELEASE_LIFTS) {
+                return false;
+            }
+            int lifts = releaseLifts + 1;
+            clear();
+            releaseLifts = lifts;
+            return true;
+        }
+
+        public int releaseLifts() {
+            return releaseLifts;
         }
     }
 
@@ -161,8 +191,9 @@ public final class CameraLiveness {
      */
     public static Action step(State state, boolean wantsFrames, boolean feedSteady, long progressAgeMs, long now) {
         if (!wantsFrames || feedSteady) {
-            // 没人用，或者画面真回来了 —— 前面攒的次数一笔勾销
+            // 没人用，或者画面真回来了 —— 前面攒的次数一笔勾销，这一次卡住也算过去了
             state.clear();
+            state.releaseLifts = 0;
             return Action.NONE;
         }
         if (progressAgeMs < STUCK_MS) {
