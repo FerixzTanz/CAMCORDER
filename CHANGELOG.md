@@ -7,6 +7,21 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.14.3] - 2026-10-22
+
+### Fixed
+
+- **Blind spot view no longer shows "No live picture" for a whole drive.** When the app opened the
+  surround camera while the car's own software was still using the cabin camera, the head unit
+  sometimes reported the surround camera "free" even though it kept delivering pictures. The app
+  took that as a dead camera: recording waited for the picture all drive, and the Blind spot view
+  and the HUD picture, which stand aside while a recording is starting, never attached. Now such a
+  report blocks recording for two seconds only; a camera still delivering steady pictures after that
+  is trusted. Blind spot view and the HUD picture also stand aside for ten seconds at most, then show
+  the camera regardless of what recording is doing.
+- **A camera that stayed without a picture is retried again** when the screen turns on or the head
+  unit reports the camera free, instead of staying stopped until the app restarts (from 2.14.2-alpha).
+
 ## [2.14.2-alpha] - 2026-10-19
 
 - A camera that stayed without a picture after the app had stopped retrying it is tried again when the screen turns on or the head unit reports the camera free (at most twice per outage for the latter).
