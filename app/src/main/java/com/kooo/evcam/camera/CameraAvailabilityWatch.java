@@ -123,7 +123,10 @@ public final class CameraAvailabilityWatch {
             CameraTaken.othersTook(cameraId, appContext);
         }
         if (available) {
-            BlackBox.noteImportant("相机服务: " + cameraId + " 空闲" + (before == null ? "（初始状态）" : ""));
+            // 我们开着它却说空闲：要么设备真被放掉了（10-07），要么是车机交接相机时的乱报（10-22 朋友的车、
+            // dts88 10-10）。开录只信这一声两秒（StaleFreeReport），之后看画面
+            BlackBox.noteImportant("相机服务: " + cameraId + " 空闲" + (before == null ? "（初始状态）" : "")
+                    + (ours ? "（我们开着：真放掉了还是乱报，看之后两秒有没有画面）" : ""));
         } else {
             BlackBox.noteImportant("相机服务: " + cameraId + " 被占用"
                     + (ours ? "（我们开着）" : "（不是我们：别的程序，或相机服务里没清掉的占用）")
@@ -158,6 +161,15 @@ public final class CameraAvailabilityWatch {
      */
     public static boolean reportedFree(String cameraId) {
         return cameraId != null && Boolean.TRUE.equals(AVAILABLE.get(cameraId));
+    }
+
+    /** 那一声「空闲」是多久以前报的（毫秒）；没报过空闲、或不知道什么时候报的，返回 -1。 */
+    public static long reportedFreeForMs(String cameraId) {
+        if (!reportedFree(cameraId)) {
+            return -1;
+        }
+        Long since = SINCE.get(cameraId);
+        return since == null ? -1 : SystemClock.elapsedRealtime() - since;
     }
 
     /** 有没有收到过回调。没有的话，多半是容器没把这条接口转过来。 */

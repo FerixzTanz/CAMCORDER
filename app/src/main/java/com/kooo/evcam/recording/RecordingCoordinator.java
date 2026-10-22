@@ -284,6 +284,15 @@ public final class RecordingCoordinator {
         return pending != null && !pendingRefused;
     }
 
+    /**
+     * 侧视弹窗、HUD 侧视此刻该不该给开录让路：在等开录、而且等了还不到 {@link SideViewYield#GRACE_MS}。
+     * 等得更久的开录多半卡在什么上了（2026-10-22：相机服务一句乱报的「空闲」），侧视不跟着空白一整趟。
+     */
+    public boolean sideViewShouldWait() {
+        return SideViewYield.shouldWait(isAboutToStart(),
+                android.os.SystemClock.elapsedRealtime() - pendingSinceMs);
+    }
+
     /** 录制管线还有人要：在录、在等开录、或者上一次还在收拾。主界面销毁时据此决定留不留管线。 */
     public boolean needsPipeline() {
         return !lifecycle.isIdle() || pending != null;

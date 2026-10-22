@@ -537,7 +537,8 @@ public class SideViewPopupService extends Service {
         CameraForegroundService.ensureRunning(this, "side-popup");
         // 环视正在从连着出错里恢复、或者录像正在开：别在这时候再开相机、再重建会话（CAMCORDER 2026-10-07：
         // 实车卡死那两次，侧视弹窗在恢复中途又去开相机，每次都多一轮出错）。过一会儿再接
-        if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(this).isAboutToStart()) {
+        // （开录最多让十秒，见 SideViewYield：录像卡在等的时候弹窗不能跟着空白一整趟）
+        if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(this).sideViewShouldWait()) {
             cancelRetry();
             retryRunnable = () -> bindCamera(surfaceTexture);
             handler.postDelayed(retryRunnable, WAIT_FOR_CAMERA_MS);

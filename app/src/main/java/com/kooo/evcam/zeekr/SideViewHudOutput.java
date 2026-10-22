@@ -461,7 +461,8 @@ final class SideViewHudOutput {
         // 后台的相机只有前台服务在才给；不录像时没人替 HUD 拉它，要在「等一会儿再接」之前拉（同主屏弹窗）
         CameraForegroundService.ensureRunning(context, "side-hud");
         // 环视正在从连着出错里恢复、或者录像正在开：别在这时候再开相机、再重建会话。过一会儿再接
-        if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(context).isAboutToStart()) {
+        // （开录最多让十秒，见 SideViewYield：录像卡在等的时候 HUD 不能跟着空白一整趟）
+        if (camera.isRecovering() || com.kooo.evcam.recording.RecordingCoordinator.get(context).sideViewShouldWait()) {
             cancelRetry();
             retryRunnable = () -> bindCamera(surfaceTexture);
             handler.postDelayed(retryRunnable, WAIT_FOR_CAMERA_MS);

@@ -2957,9 +2957,13 @@ public class MultiCameraManager {
         if (surround == null || !surround.isCameraOpened() || !surround.hasSteadyFrames()) {
             return false;
         }
-        // 相机服务已经说这一路空了，我们手里的就是死的：别在它上面开录（CAMCORDER 2026-10-07：
-        // 实车一次是相机服务报空闲 1.3 秒后，最近一帧还算新鲜，就在死设备上重建会话、卡死）
-        if (CameraAvailabilityWatch.reportedFree(surround.getCameraId())) {
+        // 相机服务刚说这一路空了，我们手里的多半是死的：别在它上面开录（CAMCORDER 2026-10-07：
+        // 实车一次是相机服务报空闲 1.3 秒后，最近一帧还算新鲜，就在死设备上重建会话、卡死）。
+        // 只信它两秒：车机交接相机时会把我们正出画面的那一路也报成「空闲」（2026-10-22 朋友的车，
+        // 之后画面一直 30 fps、开录等了一整趟）。两秒后还稳稳出画面的就是活的（StaleFreeReport）
+        String surroundId = surround.getCameraId();
+        if (StaleFreeReport.blocks(CameraAvailabilityWatch.reportedFree(surroundId),
+                CameraAvailabilityWatch.reportedFreeForMs(surroundId))) {
             return false;
         }
         return true;
