@@ -7,6 +7,15 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.14.4] - 2026-10-27
+
+### Changed
+
+- **Updates are verified before they install.** An update downloaded from **Settings → Updates →
+  Check for updates** must match the SHA-256 checksum and exact size GitHub lists for it, or it is
+  discarded and never reaches the installer; a cut-off or swapped download now says "installer file
+  failed verification". Downloads and their redirects use HTTPS only. Thanks to wysie, via dts88's app.
+
 ## [2.14.3] - 2026-10-22
 
 ### Fixed
