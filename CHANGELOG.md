@@ -7,6 +7,10 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.14.4-alpha] - 2026-10-27
+
+- Updates: the downloaded APK must match the SHA-256 and size GitHub lists for it, or it is not installed; downloads and redirects use HTTPS only (@wysie, from dts88's app).
+
 ## [2.14.3] - 2026-10-22
 
 ### Fixed

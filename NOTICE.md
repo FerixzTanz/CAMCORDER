@@ -32,6 +32,7 @@
   视频流配置与配置编辑器（`app/src/main/java/com/kooo/evcam/profile/`），电子后视镜，发送到手机。
 - **删除**：钉钉 / 飞书 / Telegram 远程查看、心跳推图、MJPEG / RTP 推流，连同对应的 SDK 依赖。
 - **重做**：录制参数的来源（改由视频流配置按路决定）、设置界面、主界面与悬浮按钮、视频回看。
+- **取自 dts88/zeekr-shortcut-car**：下载更新时核对安装包的 sha256 和大小、只走 https（`DownloadIntegrity`，作者 wysie，经 dts88 的 PR #38 合并）。
 - **包名与构建**：applicationId 改为 `io.github.dts88.zeekrshortcut`，签名可由环境变量覆盖，
   CI 构建与发布见 `.github/`。
 
