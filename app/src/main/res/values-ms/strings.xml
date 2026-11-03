@@ -969,6 +969,13 @@
     <string name="dev_repair_ok_tail">%1$s (bingkai terakhir yang tidak lengkap dibuang)</string>
     <string name="dev_archive_title">Arkib ke pemacu lain</string>
     <string name="dev_archive_summary">Memindahkan video, foto dan laporan diagnostik dari pemacu USB lokasi storan ke pemacu USB lain dan menyalin log apl; tidak tersedia semasa merakam</string>
+    <string name="dev_cluster_test_title">Uji paparan pemandu</string>
+    <string name="dev_cluster_test_summary">Dalam gear P, menunjukkan kad ujian di tengah paparan pemandu selama 5 saat untuk menyemak sama ada apl boleh menunjukkan apa-apa di situ. Hanya menggunakan antara muka skrin kedua standard Android.</string>
+    <string name="dev_cluster_test_card">Ujian CAMCORDER</string>
+    <string name="dev_cluster_test_need_park">Tukar ke gear P dahulu</string>
+    <string name="dev_cluster_test_none">Paparan pemandu tidak ditemui</string>
+    <string name="dev_cluster_test_refused">Android tidak membenarkan apa-apa dipaparkan pada paparan pemandu</string>
+    <string name="dev_cluster_test_shown">Kad ujian dihantar ke paparan pemandu. Semak sama ada ia muncul.</string>
     <string name="dev_archive_refuse_recording">Tidak dapat mengarkib semasa merakam. Hentikan rakaman dahulu.</string>
     <string name="dev_archive_no_drive_msg">Pengarkiban memindahkan fail dalam lokasi storan semasa ke pemacu USB lain, tetapi tiada pemacu USB ditemui.</string>
     <string name="dev_archive_one_drive_title">Hanya satu pemacu USB ditemui</string>

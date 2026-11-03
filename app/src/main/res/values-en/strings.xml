@@ -991,6 +991,13 @@
     <string name="dev_repair_ok_tail">%1$s (incomplete last frame dropped)</string>
     <string name="dev_archive_title">Archive to another drive</string>
     <string name="dev_archive_summary">Moves videos, photos and diagnostics reports from the storage location\'s USB drive to another USB drive and copies the app log; not available while recording</string>
+    <string name="dev_cluster_test_title">Test the driver display</string>
+    <string name="dev_cluster_test_summary">In P, shows a test card in the middle of the driver display for 5 seconds to check whether the app can show anything there. Uses only Android\'s standard second-screen interface.</string>
+    <string name="dev_cluster_test_card">CAMCORDER test</string>
+    <string name="dev_cluster_test_need_park">Shift to P first</string>
+    <string name="dev_cluster_test_none">Driver display not found</string>
+    <string name="dev_cluster_test_refused">Android doesn\'t allow showing anything on the driver display</string>
+    <string name="dev_cluster_test_shown">Test card sent to the driver display. Check whether it appears.</string>
     <string name="dev_archive_refuse_recording">Can\'t archive while recording. Stop recording first.</string>
     <string name="dev_archive_no_drive_msg">Archiving moves the files in the current storage location to another USB drive, but no USB drive was found.</string>
     <string name="dev_archive_one_drive_title">Only one USB drive found</string>

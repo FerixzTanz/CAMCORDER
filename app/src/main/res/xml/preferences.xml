@@ -658,6 +658,12 @@
             android:title="@string/dev_archive_title"
             android:summary="@string/dev_archive_summary" />
 
+        <!-- 测试仪表盘（2.15.0）：P 档时在仪表盘上放一张测试卡片 5 秒，看普通应用能不能往那里画（ClusterDisplayTest） -->
+        <Preference
+            android:key="pref_cluster_test"
+            android:title="@string/dev_cluster_test_title"
+            android:summary="@string/dev_cluster_test_summary" />
+
         <Preference
             android:key="pref_developer_note"
             android:selectable="false"

@@ -1331,6 +1331,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         });
 
         // 归档：把录像、照片、日志从录像盘搬到另一个盘（项目所有者用 Type-C 固态盘统一管理）
+        onClick("pref_cluster_test", pref ->
+                com.kooo.evcam.zeekr.ClusterDisplayTest.run(requireContext()));
         onClick("pref_archive", pref -> {
             if (getActivity() == null) {
                 return;

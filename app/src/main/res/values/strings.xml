@@ -973,6 +973,13 @@
     <string name="dev_repair_ok_tail">%1$s（已丢弃末尾不完整的一帧）</string>
     <string name="dev_archive_title">归档到其他 U 盘</string>
     <string name="dev_archive_summary">将录像、照片和诊断报告从存储位置所选的 U 盘移到另一个 U 盘，并复制应用日志；录制时不可用</string>
+    <string name="dev_cluster_test_title">测试仪表盘</string>
+    <string name="dev_cluster_test_summary">挂 P 档时在仪表盘中央显示测试卡片 5 秒，检查应用能否在仪表盘上显示内容。只使用安卓的标准副屏接口。</string>
+    <string name="dev_cluster_test_card">CAMCORDER 测试</string>
+    <string name="dev_cluster_test_need_park">请先挂 P 档</string>
+    <string name="dev_cluster_test_none">未找到仪表盘</string>
+    <string name="dev_cluster_test_refused">系统不允许在仪表盘上显示</string>
+    <string name="dev_cluster_test_shown">已在仪表盘上显示测试卡片，请查看仪表盘</string>
     <string name="dev_archive_refuse_recording">录制时无法归档，请先停止录制。</string>
     <string name="dev_archive_no_drive_msg">归档会将当前存储位置中的文件移至另一个 U 盘，当前未检测到 U 盘。</string>
     <string name="dev_archive_one_drive_title">仅检测到一个 U 盘</string>
