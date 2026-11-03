@@ -2,12 +2,12 @@ package com.kooo.evcam.telemetry;
 
 /**
  * 后视镜上的盲区指示灯此刻亮没亮（旁边车道有车），左右各一份。不可变，{@link MirrorLampSource} 每变一次给一份新的。
- * 用在侧视画面上：显示的那一边灯亮着，画面染红（{@code zeekr.SideViewPopupView}）。
+ * 用在侧视画面上：显示的那一边灯亮着，画面四周显示红框（{@code zeekr.SideViewPopupView}）。
  *
  * <p>读法来自 dts88 的 2.97.0-alpha（他们车上验证过）。他们还读停车后的开门预警（同一盏灯），我们不用，不读。</p>
  *
  * <p>读不到的是 null：没连上、这台车没有这个号、这一侧还没读到过。值：0 灭，不是 0 的都算亮 ——
- * 多染一次红，好过该提醒时不提醒。</p>
+ * 多显示一次红框，好过该提醒时不提醒。</p>
  *
  * <p>纯 Java，见 {@code MirrorLampsTest}。</p>
  */

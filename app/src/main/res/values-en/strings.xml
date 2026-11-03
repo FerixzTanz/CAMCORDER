@@ -304,7 +304,7 @@
     <string name="set_side_popup_instant_title">Instant pop-up</string>
     <string name="set_side_popup_instant_summary">In D, keeps the side view ready in the background so the picture is there as soon as you signal. The camera stays on while driving, which uses a little more power</string>
     <string name="set_side_blind_spot_tint_title">Blind spot warning</string>
-    <string name="set_side_blind_spot_tint_summary">While the side view is showing, the picture turns red when the blind spot light on that mirror comes on. Applies to the screen and the HUD</string>
+    <string name="set_side_blind_spot_tint_summary">While the side view is showing, a red frame appears around the picture when the blind spot light on that mirror comes on. Applies to the screen and the HUD</string>
     <string name="set_side_popup_size_title">Pop-up height (% of screen height)</string>
     <string name="set_side_popup_size_summary">The width follows from the shape below</string>
     <string name="set_side_popup_shape_summary">100 is square; higher is wider. Up to half the screen width: the left and right pop-ups meet at the middle</string>

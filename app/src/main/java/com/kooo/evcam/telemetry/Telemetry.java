@@ -289,8 +289,8 @@ public final class Telemetry {
         if (!key.equals(before)) {
             com.kooo.evcam.blackbox.BlackBox.noteImportant("盲区指示灯连接："
                     + (link == MirrorLampSource.Link.CONNECTED ? "接上了（" + detail + "）"
-                    : link == MirrorLampSource.Link.UNAVAILABLE ? "这台车机没有这条路（" + detail + "），侧视画面不染红"
-                    : "没接上（" + detail + "），侧视画面先不染红"));
+                    : link == MirrorLampSource.Link.UNAVAILABLE ? "这台车机没有这条路（" + detail + "），侧视画面不显示红框"
+                    : "没接上（" + detail + "），侧视画面先不显示红框"));
         }
     }
 
