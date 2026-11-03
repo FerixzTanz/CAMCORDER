@@ -303,6 +303,8 @@
     <string name="set_side_popup_close_delay_ms_summary">1000 ms = 1 second. 0 closes it as soon as the signal goes off. A stock view still closes it straight away</string>
     <string name="set_side_popup_instant_title">Instant pop-up</string>
     <string name="set_side_popup_instant_summary">In D, keeps the side view ready in the background so the picture is there as soon as you signal. The camera stays on while driving, which uses a little more power</string>
+    <string name="set_side_blind_spot_tint_title">Blind spot warning</string>
+    <string name="set_side_blind_spot_tint_summary">While the side view is showing, the picture turns red when the blind spot light on that mirror comes on. Applies to the screen and the HUD</string>
     <string name="set_side_popup_size_title">Pop-up height (% of screen height)</string>
     <string name="set_side_popup_size_summary">The width follows from the shape below</string>
     <string name="set_side_popup_shape_summary">100 is square; higher is wider. Up to half the screen width: the left and right pop-ups meet at the middle</string>
@@ -416,8 +418,11 @@
     <string name="set_group_by_drive_summary">One entry from getting in to leaving the car, even if recording was interrupted or the screen went off, with the distance driven and events like hard braking</string>
     <string name="set_footage_lock_brake_title">Lock footage on hard braking</string>
     <string name="set_footage_lock_brake_summary" formatted="false">While recording, a hard stop (including the car\'s automatic emergency braking) locks the clips covering 10 seconds before and after. Automatic locks use at most 10% of the recording space; the oldest is released first.</string>
+    <string name="set_footage_lock_hazard_title">Lock footage on hazard lights</string>
+    <string name="set_footage_lock_hazard_summary" formatted="false">While recording, turning on the hazard lights locks the clips from 1 minute before until they go off (at most 5 minutes), on every camera. Shares the 10% automatic lock limit with hard braking.</string>
     <string name="msg_flash_locked">Flash-to-pass: locked the clips covering 10 seconds before and after</string>
     <string name="msg_brake_locked">Hard braking: locked the clips covering 10 seconds before and after</string>
+    <string name="msg_hazard_locked">Hazard lights: locked the clips from 1 minute before</string>
     <string name="msg_storage_locked_stopped">Locked footage has filled the space, so recording stopped. Unlock some in playback</string>
     <string name="msg_storage_locked_refuse">Locked footage has filled the space, so recording can\'t start. Unlock some in playback</string>
     <string name="action_lock_footage">Lock</string>

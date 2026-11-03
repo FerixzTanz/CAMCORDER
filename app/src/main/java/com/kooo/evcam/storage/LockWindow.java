@@ -48,6 +48,13 @@ public final class LockWindow {
     public static final long BEFORE_MS = 10_000L;
     /** 往后锁多久。 */
     public static final long AFTER_MS = 10_000L;
+    /** 双闪：从亮起前多久锁起（取自 dts88 2.25.0）。设置项和提示里写的「前 1 分钟」说的就是它。 */
+    public static final long HAZARD_BEFORE_MS = 60_000L;
+    /**
+     * 双闪：最多锁到亮起后多久（我们自己加的，dts88 没有上限）。路边打着双闪停很久时不把每一路都一直锁下去；
+     * 设置项说明里写的「最长 5 分钟」说的就是它。
+     */
+    public static final long HAZARD_MAX_MS = 5 * 60_000L;
     /**
      * 文件名里的时刻最多比这一路真正切换早多久：几路分段切换时共用一个时间戳的有效期，
      * 再加秒被截掉的那 1 秒。每个文件的结束多算这么多（见类说明）；第二遍锁定也要多等这么久
@@ -80,6 +87,14 @@ public final class LockWindow {
     /** 这一刻前 {@link #BEFORE_MS} 到后 {@link #AFTER_MS}。 */
     public static LockWindow around(long momentMs) {
         return new LockWindow(momentMs - BEFORE_MS, momentMs + AFTER_MS);
+    }
+
+    /**
+     * 双闪：亮起前 {@link #HAZARD_BEFORE_MS} 到关闭（还亮着时到此刻），关闭最晚算到亮起后 {@link #HAZARD_MAX_MS}。
+     */
+    public static LockWindow hazard(long onMs, long offMs) {
+        long end = Math.min(Math.max(onMs, offMs), onMs + HAZARD_MAX_MS);
+        return new LockWindow(onMs - HAZARD_BEFORE_MS, end);
     }
 
     /**

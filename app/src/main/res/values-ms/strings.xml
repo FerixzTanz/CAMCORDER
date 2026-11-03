@@ -303,6 +303,8 @@
     <string name="set_side_popup_close_delay_ms_summary">1000 ms = 1 saat. 0 menutupnya sebaik sahaja isyarat dimatikan. Paparan asal kereta tetap menutupnya serta-merta</string>
     <string name="set_side_popup_instant_title">Tetingkap timbul segera</string>
     <string name="set_side_popup_instant_summary">Dalam gear D, pandangan sisi disediakan di latar belakang supaya gambar muncul sebaik sahaja anda memberi isyarat. Kamera kekal hidup semasa memandu dan menggunakan sedikit lagi kuasa</string>
+    <string name="set_side_blind_spot_tint_title">Amaran titik buta</string>
+    <string name="set_side_blind_spot_tint_summary">Semasa pandangan sisi dipaparkan, gambar bertukar merah apabila lampu titik buta pada cermin sisi itu menyala. Berfungsi pada skrin dan HUD</string>
     <string name="set_side_popup_size_title">Ketinggian tetingkap timbul (% ketinggian skrin)</string>
     <string name="set_side_popup_size_summary">Lebarnya mengikut bentuk di bawah</string>
     <string name="set_side_popup_shape_summary">100 ialah segi empat sama; lebih tinggi lebih lebar. Sehingga separuh lebar skrin: tetingkap kiri dan kanan bertemu di tengah</string>
@@ -414,8 +416,11 @@
     <string name="set_group_by_drive_summary">Satu entri dari masuk hingga keluar kereta, walaupun rakaman terganggu atau skrin padam, dengan jarak dipandu dan peristiwa seperti brek mengejut</string>
     <string name="set_footage_lock_brake_title">Kunci rakaman semasa brek mengejut</string>
     <string name="set_footage_lock_brake_summary" formatted="false">Semasa merakam, brek mengejut (termasuk brek kecemasan automatik kereta) mengunci klip yang meliputi 10 saat sebelum hingga 10 saat selepas. Kuncian automatik menggunakan paling banyak 10% ruang rakaman; yang paling lama dilepaskan dahulu.</string>
+    <string name="set_footage_lock_hazard_title">Kunci rakaman semasa lampu kecemasan</string>
+    <string name="set_footage_lock_hazard_summary" formatted="false">Semasa merakam, menghidupkan lampu kecemasan mengunci klip dari 1 minit sebelum hingga lampu dimatikan (paling lama 5 minit), pada setiap kamera. Berkongsi had 10% kuncian automatik dengan brek mengejut.</string>
     <string name="msg_flash_locked">Kelip lampu tinggi: klip yang meliputi 10 saat sebelum dan selepas telah dikunci</string>
     <string name="msg_brake_locked">Brek mengejut: klip yang meliputi 10 saat sebelum dan selepas telah dikunci</string>
+    <string name="msg_hazard_locked">Lampu kecemasan: klip dari 1 minit sebelum telah dikunci</string>
     <string name="msg_storage_locked_stopped">Rakaman yang dikunci telah memenuhi ruang, rakaman dihentikan. Buka kunci sebahagian dalam main semula</string>
     <string name="msg_storage_locked_refuse">Rakaman yang dikunci telah memenuhi ruang, rakaman tidak dapat dimulakan. Buka kunci sebahagian dalam main semula</string>
     <string name="action_lock_footage">Kunci</string>

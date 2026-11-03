@@ -187,6 +187,13 @@
                 android:title="@string/set_footage_lock_brake_title"
                 android:summary="@string/set_footage_lock_brake_summary" />
 
+            <!-- 双闪自动锁定（AutoLock，2.15.0，取自 dts88 2.25.0），默认关：双闪可能一开很久。记成自动锁的，和急刹车共用上限 -->
+            <SwitchPreferenceCompat
+                android:key="pref_footage_lock_hazard"
+                android:dependency="pref_footage_lock"
+                android:title="@string/set_footage_lock_hazard_title"
+                android:summary="@string/set_footage_lock_hazard_summary" />
+
             <Preference
                 android:key="pref_footage_locked"
                 android:title="@string/set_footage_locked_title"
@@ -290,6 +297,13 @@
                 android:dependency="pref_side_popup"
                 android:title="@string/set_side_popup_instant_title"
                 android:summary="@string/set_side_popup_instant_summary" />
+
+            <!-- 盲区提醒（2.15.0）：后视镜上的盲区指示灯亮着，那一边的侧视画面染红；默认开 -->
+            <SwitchPreferenceCompat
+                android:key="pref_side_blind_spot_tint"
+                android:dependency="pref_side_popup"
+                android:title="@string/set_side_blind_spot_tint_title"
+                android:summary="@string/set_side_blind_spot_tint_summary" />
 
         <!-- 子页面（2.11.0）：主页只留开关，细调在这一层 -->
         <PreferenceScreen

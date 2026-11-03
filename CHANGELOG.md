@@ -7,6 +7,11 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.0-alpha] - 2026-11-03
+
+- Turn-signal side view: the picture turns red while the blind spot light on that mirror is on, on the screen and the HUD. On by default; switch it off in Settings → Super mirror → Turn-signal side view → Blind spot warning. Reading the light comes from dts88's 2.97.0-alpha.
+- Lock footage: new Lock footage on hazard lights (off by default). While recording, turning on the hazard lights locks the clips from 1 minute before until they go off, at most 5 minutes, on every camera. It shares the 10% automatic lock limit with hard braking. From dts88's 2.25.0-alpha.
+
 ## [2.14.4] - 2026-10-27
 
 ### Changed

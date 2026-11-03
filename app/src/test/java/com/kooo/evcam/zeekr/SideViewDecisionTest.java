@@ -1,6 +1,8 @@
 package com.kooo.evcam.zeekr;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -117,5 +119,27 @@ public class SideViewDecisionTest {
         SideViewDecision.Input b = driving(1);
         b.speedKmh = null;
         assertEquals(LaneCycle.LEFT, SideViewDecision.decide(b));
+    }
+
+    // ================================================================= 盲区指示灯：画面染红
+
+    @Test
+    public void theLeftWindowTurnsRedOnlyForTheLeftBlindSpotLamp() {
+        assertTrue(SideViewDecision.blindSpotWarning(true, false, LaneCycle.LEFT));
+        assertFalse(SideViewDecision.blindSpotWarning(false, true, LaneCycle.LEFT));
+    }
+
+    @Test
+    public void theRightWindowTurnsRedOnlyForTheRightBlindSpotLamp() {
+        assertTrue(SideViewDecision.blindSpotWarning(false, true, LaneCycle.RIGHT));
+        assertFalse(SideViewDecision.blindSpotWarning(true, false, LaneCycle.RIGHT));
+    }
+
+    @Test
+    public void anUnreadLampOrAnotherLaneIsNeverRed() {
+        assertFalse(SideViewDecision.blindSpotWarning(null, null, LaneCycle.LEFT));
+        assertFalse(SideViewDecision.blindSpotWarning(null, null, LaneCycle.RIGHT));
+        assertFalse(SideViewDecision.blindSpotWarning(true, true, LaneCycle.REAR));
+        assertFalse(SideViewDecision.blindSpotWarning(true, true, SideViewDecision.NONE));
     }
 }

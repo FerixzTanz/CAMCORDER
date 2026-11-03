@@ -99,6 +99,20 @@ public class SideViewPopupView extends ViewGroup {
      * 灰得够亮，深色底上看得出箭头还在那儿。
      */
     private static final int ARROW_OFF_GREY = 0xFF8A8D92;
+    /**
+     * 后视镜上左、右盲区指示灯亮没亮（旁边车道有车）；显示的那一边亮着，画面染红（{@link #drawBlindSpotWarning}）。
+     * 两边都记着、画的时候按此刻的 {@link #lane} 挑，换边时不用等下一次灯的变化。读不到、设置关了都是 null。
+     */
+    private Boolean blindSpotLeft;
+    private Boolean blindSpotRight;
+    private final Paint warningPaint = new Paint();
+    /** 整块画面上压的一层淡红：画面照样看得清。 */
+    private static final int WARNING_WASH = 0x38FF2A2A;
+    /** 四边往里一圈浓一些的红，从边上往里淡掉。 */
+    private static final int WARNING_EDGE = 0xCCFF2A2A;
+    private static final int WARNING_EDGE_CLEAR = 0x00FF2A2A;
+    /** 那一圈红有多宽：短边的这么多。 */
+    private static final float WARNING_EDGE_SHARE = 0.12f;
 
     private WindowManager.LayoutParams params;
     /** 子类（HUD 上的那一块，{@link SideViewHudPanel}）换了一套窗口，状态由它自己设。 */
@@ -213,6 +227,15 @@ public class SideViewPopupView extends ViewGroup {
     public void setIndicatorLit(Boolean lit) {
         if (lit == null ? indicatorLit != null : !lit.equals(indicatorLit)) {
             indicatorLit = lit;
+            invalidate();
+        }
+    }
+
+    /** 左、右盲区指示灯亮没亮（null = 读不到）；服务在主线程上跟着灯改。显示的那一边亮着，画面染红。 */
+    public void setBlindSpotLamps(Boolean left, Boolean right) {
+        if (!java.util.Objects.equals(left, blindSpotLeft) || !java.util.Objects.equals(right, blindSpotRight)) {
+            blindSpotLeft = left;
+            blindSpotRight = right;
             invalidate();
         }
     }
@@ -528,6 +551,8 @@ public class SideViewPopupView extends ViewGroup {
             drawChild(canvas, textureView, getDrawingTime());
         }
         canvas.restoreToCount(inner);
+        // 染红压在画面上、四边渐隐之前：HUD 上它跟着画面一起从边上淡掉；盖板在它上面，没画面时不露红
+        drawBlindSpotWarning(canvas, width, height);
         if (fade > 0f) {
             drawEdgeFade(canvas, width, height, fade);
         }
@@ -576,6 +601,34 @@ public class SideViewPopupView extends ViewGroup {
         canvas.scale(0.78f, 0.78f);
         canvas.drawPath(arrowPath, arrowPaint);
         canvas.restoreToCount(save);
+    }
+
+    /**
+     * 盲区指示灯亮着：整块画面压一层淡红，四边再往里一圈浓一些的红（四条渐变带，角上叠得更红）。
+     * 画面还看得清（旁边那辆车就在画面里），红色只是告诉你别并过去。镜像之外画，不跟着翻。
+     */
+    private void drawBlindSpotWarning(Canvas canvas, int width, int height) {
+        if (!SideViewDecision.blindSpotWarning(blindSpotLeft, blindSpotRight, lane)) {
+            return;
+        }
+        canvas.drawColor(WARNING_WASH);
+        float band = Math.min(width, height) * WARNING_EDGE_SHARE;
+        if (band < 1f) {
+            return;
+        }
+        warningPaint.setShader(new LinearGradient(0f, 0f, band, 0f,
+                WARNING_EDGE, WARNING_EDGE_CLEAR, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, 0f, band, height, warningPaint);
+        warningPaint.setShader(new LinearGradient(width, 0f, width - band, 0f,
+                WARNING_EDGE, WARNING_EDGE_CLEAR, Shader.TileMode.CLAMP));
+        canvas.drawRect(width - band, 0f, width, height, warningPaint);
+        warningPaint.setShader(new LinearGradient(0f, 0f, 0f, band,
+                WARNING_EDGE, WARNING_EDGE_CLEAR, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, 0f, width, band, warningPaint);
+        warningPaint.setShader(new LinearGradient(0f, height, 0f, height - band,
+                WARNING_EDGE, WARNING_EDGE_CLEAR, Shader.TileMode.CLAMP));
+        canvas.drawRect(0f, height - band, width, height, warningPaint);
+        warningPaint.setShader(null);
     }
 
     /**

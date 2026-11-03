@@ -34,6 +34,7 @@ public class AppConfig {
     private static final String KEY_FOOTAGE_LOCK = "footage_lock";  // 锁定影像
     private static final String KEY_FOOTAGE_LOCK_FLASH = "footage_lock_flash";  // 闪远光时自动锁定当前录像
     private static final String KEY_FOOTAGE_LOCK_BRAKE = "footage_lock_brake";  // 急刹车时自动锁定（2.10.8）
+    private static final String KEY_FOOTAGE_LOCK_HAZARD = "footage_lock_hazard";  // 开双闪时自动锁定（2.15.0）
     private static final String KEY_UI_LEFT_FOR_SCREEN_OFF = "ui_left_for_screen_off";  // 主界面是因为熄屏才退下去的
     private static final String KEY_KEEP_ALIVE_ENABLED = "keep_alive_enabled";  // 保活服务
     
@@ -101,6 +102,7 @@ public class AppConfig {
     public static final int SIDE_POPUP_MAX_MIN_SPEED = 80;
     private static final String KEY_SIDE_POPUP_STRAIGHTEN = "side_popup_straighten";  // 侧视拉直鱼眼
     private static final String KEY_SIDE_POPUP_INSTANT = "side_popup_instant";  // D 档时备着相机，打灯即出画面
+    private static final String KEY_SIDE_BLIND_SPOT_TINT = "side_blind_spot_tint";  // 盲区指示灯亮时侧视画面染红
     private static final String KEY_SIDE_POPUP_CLOSE_DELAY_MS = "side_popup_close_delay_ms";  // 灯灭后再留多少毫秒
     private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 高度，屏幕高度的百分比（键名是正方形时代的「边长」）
     private static final String KEY_SIDE_POPUP_SHAPE = "side_popup_shape";  // 宽 ÷ 高 ×100
@@ -472,6 +474,19 @@ public class AppConfig {
 
     public void setBrakeLockEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_FOOTAGE_LOCK_BRAKE, enabled).apply();
+    }
+
+    /**
+     * 开双闪时自动锁定（存储页，默认关：双闪可能一开很久，锁的也占空间）。双闪亮起前 1 分钟起锁到关闭，最多锁到亮起后
+     * {@code LockWindow.HAZARD_MAX_MS}；记成自动锁的，和急刹车共用那 10% 的上限。只在「锁定影像」也开着时起作用，
+     * 见 {@code AutoLock.hazardEnabled}。取自 dts88 的 2.25.0-alpha。
+     */
+    public boolean isHazardLockEnabled() {
+        return prefs.getBoolean(KEY_FOOTAGE_LOCK_HAZARD, false);
+    }
+
+    public void setHazardLockEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_FOOTAGE_LOCK_HAZARD, enabled).apply();
     }
 
     /**
@@ -1647,6 +1662,18 @@ public class AppConfig {
 
     public void setSidePopupInstant(boolean on) {
         prefs.edit().putBoolean(KEY_SIDE_POPUP_INSTANT, on).apply();
+    }
+
+    /**
+     * 盲区提醒：侧视画面显示着、那一边后视镜上的盲区指示灯亮着（旁边车道有车）时，画面染红；主屏弹窗和 HUD 都染。
+     * 默认开。灯从车机设置服务读（{@code telemetry.MirrorLampSource}），只在亮屏、这一项开着时读。
+     */
+    public boolean isSideBlindSpotTintEnabled() {
+        return prefs.getBoolean(KEY_SIDE_BLIND_SPOT_TINT, true);
+    }
+
+    public void setSideBlindSpotTintEnabled(boolean on) {
+        prefs.edit().putBoolean(KEY_SIDE_BLIND_SPOT_TINT, on).apply();
     }
 
     /** 灯灭后再留多少毫秒，0..3000，按 100 取整，默认 1000（用户 2026-10-01 定：灯灭就收太急）。 */
