@@ -1619,7 +1619,10 @@ public class CodecVideoRecorder {
             return false;
         }
 
-        final int TIMEOUT_USEC = 10000;
+        // 录着像时不等：有什么取什么，没有就回去接下一帧。原来每次都等满 10 ms 才知道没有了，
+        // 相机每一帧都要在编码线程上等这 10 ms，30 fps 下占掉三分之一的帧时间（审查 2026-11-06）。
+        // 收尾（endOfStream）要等编码器把最后几帧吐完，照旧等。
+        final int TIMEOUT_USEC = endOfStream ? 10000 : 0;
         boolean gotOutput = false;
 
         try {

@@ -14,8 +14,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -24,7 +26,15 @@ import java.util.Map;
 public final class AppLog {
     private static final int MAX_BUFFER_LINES = 5000;
     private static final Object LOCK = new Object();
-    private static final List<String> BUFFER = new ArrayList<>();
+    /** 环形：满了丢最旧的一行。ArrayDeque 的头尾增删都是 O(1)（原来 ArrayList 满了以后每写一行都要把五千行往前挪）。 */
+    private static final ArrayDeque<String> BUFFER = new ArrayDeque<>(MAX_BUFFER_LINES + 16);
+    /** 时间戳格式一个线程一份反复用：SimpleDateFormat 建一个不便宜，原来每写一行建一个。 */
+    private static final ThreadLocal<SimpleDateFormat> STAMP = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
+        }
+    };
     
     // 会话日志文件名
     private static final String CURRENT_SESSION_LOG = "current_session.log";
@@ -194,8 +204,16 @@ public final class AppLog {
     /** 缓冲区里最后 n 行。卡顿报告拿它当卡住前后的上下文。 */
     public static List<String> tail(int n) {
         synchronized (LOCK) {
-            int from = Math.max(0, BUFFER.size() - Math.max(0, n));
-            return new ArrayList<>(BUFFER.subList(from, BUFFER.size()));
+            int skip = Math.max(0, BUFFER.size() - Math.max(0, n));
+            List<String> out = new ArrayList<>(Math.max(0, BUFFER.size() - skip));
+            Iterator<String> it = BUFFER.iterator();
+            for (int i = 0; i < skip && it.hasNext(); i++) {
+                it.next();
+            }
+            while (it.hasNext()) {
+                out.add(it.next());
+            }
+            return out;
         }
     }
 
@@ -242,14 +260,13 @@ public final class AppLog {
     }
 
     private static void addToBuffer(int level, String tag, String message) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(new Date());
+        String timestamp = STAMP.get().format(new Date());
         String levelLabel = levelToLabel(level);
         String line = timestamp + " " + levelLabel + "/" + tag + ": " + message;
         synchronized (LOCK) {
-            BUFFER.add(line);
-            if (BUFFER.size() > MAX_BUFFER_LINES) {
-                int removeCount = BUFFER.size() - MAX_BUFFER_LINES;
-                BUFFER.subList(0, removeCount).clear();
+            BUFFER.addLast(line);
+            while (BUFFER.size() > MAX_BUFFER_LINES) {
+                BUFFER.pollFirst();
             }
         }
         if (level >= Log.WARN) {

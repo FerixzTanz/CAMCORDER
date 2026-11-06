@@ -836,12 +836,25 @@ public class RecordingFloatingService extends Service {
      * —— 但分段是等长的，所以「已录时长对分段时长取余」就是本段的进度。
      * 差别只会出现在中途改过分段长度的那一次。</p>
      */
+    private static final long SEGMENT_CACHE_MS = 60_000L;
+    private long cachedSegmentMs;
+    private long cachedSegmentAtMs;
+    private long lastElapsedMs;
+
     private void updateRingProgress(long elapsedMs) {
         if (recordingButton == null) {
             return;
         }
-        long segment = com.kooo.evcam.profile.RecordSpecs.segmentMs(
-                com.kooo.evcam.profile.RecordSpecs.forCameraKey(this, "front").segmentMinutes);
+        // 分段时长一分钟取一次：取它要把整份视频流配置从 SharedPreferences 读出来解析，原来每秒一次（审查 2026-11-06）；
+        // 刚开录（已录时长回到开头）也取一次，接住开录前改过的分段
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (cachedSegmentMs <= 0 || now - cachedSegmentAtMs > SEGMENT_CACHE_MS || elapsedMs < lastElapsedMs) {
+            cachedSegmentMs = com.kooo.evcam.profile.RecordSpecs.segmentMs(
+                    com.kooo.evcam.profile.RecordSpecs.forCameraKey(this, "front").segmentMinutes);
+            cachedSegmentAtMs = now;
+        }
+        lastElapsedMs = elapsedMs;
+        long segment = cachedSegmentMs;
         if (segment <= 0) {
             return;
         }

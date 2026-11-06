@@ -172,6 +172,8 @@ public final class InfoBarRenderer {
     private final RectF rect = new RectF();
     /** 远光光晕的模糊（{@link #HIGH_BEAM_BLOOM_PASSES}）：建一次，每帧不再分配。 */
     private final BlurMaskFilter highBeamBloom = new BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL);
+    /** 发光用的软模糊；一个对象反复用（原来每画一次新建一个，一次重画三个，软件模糊是 Canvas 里最贵的一步）。 */
+    private final BlurMaskFilter glowBlur = new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL);
     private long lastVersion = -1;
     private boolean drawnOnce;
 
@@ -538,7 +540,7 @@ public final class InfoBarRenderer {
         glow.setStrokeWidth(width);
         glow.setColor(color);
         glow.setAlpha(200);
-        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        glow.setMaskFilter(glowBlur);
         canvas.drawPath(p, glow);
         glow.setMaskFilter(null);
     }
@@ -1108,7 +1110,7 @@ public final class InfoBarRenderer {
         glow.setStyle(Paint.Style.FILL);
         glow.setColor(color);
         glow.setAlpha(170);
-        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        glow.setMaskFilter(glowBlur);
         rect.set(l, t, r, b);
         canvas.drawRoundRect(rect, radius, radius, glow);
         glow.setMaskFilter(null);
@@ -1120,7 +1122,7 @@ public final class InfoBarRenderer {
         glow.setStrokeWidth(11f);
         glow.setColor(ON);
         glow.setAlpha(200);
-        glow.setMaskFilter(new BlurMaskFilter(4f, BlurMaskFilter.Blur.NORMAL));
+        glow.setMaskFilter(glowBlur);
         canvas.drawLine(x0, y0, x1, y1, glow);
         glow.setMaskFilter(null);
     }
