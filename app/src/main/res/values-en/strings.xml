@@ -955,7 +955,7 @@
     <string name="dev_archive_title">Archive to another drive</string>
     <string name="dev_archive_summary">Moves videos, photos and diagnostics reports from the storage location\'s USB drive to another USB drive and copies the app log; not available while recording</string>
     <string name="dev_cluster_test_title">Test the driver display</string>
-    <string name="dev_cluster_test_summary">In P, shows a test card in the middle of the driver display for 5 seconds to check whether the app can show anything there. Uses only Android\'s standard second-screen interface.</string>
+    <string name="dev_cluster_test_summary">In P, covers the driver display with a test pattern for 8 seconds and asks the head unit to project to the cluster through Zeekr\'s cluster interface, to check whether the app can show anything there. Projection is stopped when the test ends.</string>
     <string name="dev_cluster_test_card">CAMCORDER test</string>
     <string name="dev_cluster_test_need_park">Shift to P first</string>
     <string name="dev_cluster_test_none">Driver display not found</string>

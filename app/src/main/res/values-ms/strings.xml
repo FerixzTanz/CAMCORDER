@@ -938,7 +938,7 @@
     <string name="dev_archive_title">Arkib ke pemacu lain</string>
     <string name="dev_archive_summary">Memindahkan video, foto dan laporan diagnostik dari pemacu USB lokasi storan ke pemacu USB lain dan menyalin log apl; tidak tersedia semasa merakam</string>
     <string name="dev_cluster_test_title">Uji paparan pemandu</string>
-    <string name="dev_cluster_test_summary">Dalam gear P, menunjukkan kad ujian di tengah paparan pemandu selama 5 saat untuk menyemak sama ada apl boleh menunjukkan apa-apa di situ. Hanya menggunakan antara muka skrin kedua standard Android.</string>
+    <string name="dev_cluster_test_summary">Dalam gear P, menutup paparan pemandu dengan corak ujian selama 8 saat dan meminta unit kepala memaparkan ke kluster melalui antara muka kluster Zeekr, untuk menyemak sama ada apl boleh menunjukkan apa-apa di situ. Paparan dihentikan apabila ujian tamat.</string>
     <string name="dev_cluster_test_card">Ujian CAMCORDER</string>
     <string name="dev_cluster_test_need_park">Tukar ke gear P dahulu</string>
     <string name="dev_cluster_test_none">Paparan pemandu tidak ditemui</string>

@@ -7,6 +7,16 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.3] - 2026-11-06
+
+### Changed
+
+- **Test the driver display, second round.** The test now covers the whole driver display with a
+  pattern labelled LEFT / CENTRE / RIGHT, so whichever part of the screen the cluster exposes can be
+  recognised, and after opening the window it asks the head unit to project to the cluster through
+  Zeekr's own cluster interface (request, start; stop when the test ends after 8 seconds). Every step
+  is recorded in the diagnostics report. Still only in P.
+
 ## [2.15.2] - 2026-11-06
 
 ### Fixed
