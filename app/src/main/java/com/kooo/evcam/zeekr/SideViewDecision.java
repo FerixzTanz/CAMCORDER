@@ -130,15 +130,12 @@ public final class SideViewDecision {
     }
 
     /**
-     * 盲区提醒那道红画在窗口哪一边：旁边车道在画面里出现的那一边。
+     * 盲区提醒那道红画在窗口哪一边：跟着车在哪一边，左边有车画左边、右边有车画右边（用户 2026-11-06）。
+     * 不管画面翻没翻：红告诉你「这一边有车」，不是指着画面里那辆车。
      *
-     * <p>翻的时候（像门镜，设置说明：后面来的车从外侧边进来），旁边车道在外侧：左窗左边、右窗右边。
-     * 不翻（照相机看到的样子，和 Tesla 一样）正相反：左窗右边、右窗左边。</p>
-     *
-     * @param mirrored 这个窗口此刻翻没翻（主屏、HUD 各有各的开关）
      * @return true 画在右边，false 画在左边
      */
-    public static boolean warningOnRightEdge(int lane, boolean mirrored) {
-        return (lane == LaneCycle.RIGHT) == mirrored;
+    public static boolean warningOnRightEdge(int lane) {
+        return lane == LaneCycle.RIGHT;
     }
 }

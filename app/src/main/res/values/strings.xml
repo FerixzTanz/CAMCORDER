@@ -317,7 +317,7 @@
     <string name="set_side_popup_instant_title">即时弹出</string>
     <string name="set_side_popup_instant_summary">挂 D 档时让侧视窗在后台备着，打灯马上有画面。代价是开车时相机一直开着，多用一点电</string>
     <string name="set_side_blind_spot_tint_title">盲区提醒</string>
-    <string name="set_side_blind_spot_tint_summary">侧视画面显示时，该侧后视镜上的盲区指示灯亮起，画面靠旁边车道的一侧显示渐变红色；主屏和 HUD 都适用</string>
+    <string name="set_side_blind_spot_tint_summary">侧视画面显示时，该侧后视镜上的盲区指示灯亮起，画面靠该侧的边缘显示渐变红色（左侧有车在左边缘，右侧在右边缘）；主屏和 HUD 都适用</string>
     <string name="set_side_popup_size_title">弹窗高度（屏幕高度的 %）</string>
     <string name="set_side_popup_size_summary">宽度按下面的形状跟着变</string>
     <string name="set_side_popup_shape_summary">100 是正方形，越大越宽。最宽到半个屏幕：左右两个弹窗在屏幕中线相接</string>

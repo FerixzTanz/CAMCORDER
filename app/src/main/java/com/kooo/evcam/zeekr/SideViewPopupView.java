@@ -107,8 +107,8 @@ public class SideViewPopupView extends ViewGroup {
     private Boolean blindSpotRight;
     private final Paint warningPaint = new Paint();
     /**
-     * 只在一条边上：旁边车道那一侧（{@link SideViewDecision#warningOnRightEdge}），边上最浓，往里淡到没有
-     * （用户 2026-11-06：像 Tesla 的盲区提醒那样，红在车出现的那一边）。
+     * 只在一条边上：车在哪一边就是哪一边（{@link SideViewDecision#warningOnRightEdge}），边上最浓，往里淡到没有
+     * （用户 2026-11-06：像 Tesla 的盲区提醒那样一道渐变红；左边有车红在左边，和画面翻不翻无关）。
      */
     private static final int[] WARNING_COLORS = {0xE6FF2A2A, 0x80FF2A2A, 0x00FF2A2A};
     /** 前 35% 从浓红淡到一半，剩下的慢慢淡完。 */
@@ -606,9 +606,9 @@ public class SideViewPopupView extends ViewGroup {
     }
 
     /**
-     * 盲区指示灯亮着：旁边车道那一侧的边上一道渐变红，边上最浓、往里淡到没有，画面别处不染 ——
-     * 旁边那辆车就在那一侧，要看得清；红只是告诉你别并过去。哪一侧看 {@link SideViewDecision#warningOnRightEdge}：
-     * 跟着此刻的路和这个窗口翻不翻（主屏、HUD 各有各的开关）。在镜像之外画（已经按翻没翻算好了边）。
+     * 盲区指示灯亮着：车在哪一边就在窗口哪一边的边上画一道渐变红（左窗左边、右窗右边，
+     * {@link SideViewDecision#warningOnRightEdge}），边上最浓、往里淡到没有，画面别处不染。
+     * 不管画面翻没翻：在镜像之外画，红告诉你「这一边有车」。
      */
     private void drawBlindSpotWarning(Canvas canvas, int width, int height) {
         if (!SideViewDecision.blindSpotWarning(blindSpotLeft, blindSpotRight, lane)) {
@@ -618,7 +618,7 @@ public class SideViewPopupView extends ViewGroup {
         if (band < 1f) {
             return;
         }
-        if (SideViewDecision.warningOnRightEdge(lane, mirrored)) {
+        if (SideViewDecision.warningOnRightEdge(lane)) {
             warningPaint.setShader(new LinearGradient(width, 0f, width - band, 0f,
                     WARNING_COLORS, WARNING_STOPS, Shader.TileMode.CLAMP));
             canvas.drawRect(width - band, 0f, width, height, warningPaint);
