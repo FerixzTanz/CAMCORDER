@@ -102,7 +102,7 @@ public class AppConfig {
     public static final int SIDE_POPUP_MAX_MIN_SPEED = 80;
     private static final String KEY_SIDE_POPUP_STRAIGHTEN = "side_popup_straighten";  // 侧视拉直鱼眼
     private static final String KEY_SIDE_POPUP_INSTANT = "side_popup_instant";  // D 档时备着相机，打灯即出画面
-    private static final String KEY_SIDE_BLIND_SPOT_TINT = "side_blind_spot_tint";  // 盲区指示灯亮时侧视画面四周显示红框
+    private static final String KEY_SIDE_BLIND_SPOT_TINT = "side_blind_spot_tint";  // 盲区指示灯亮时侧视画面靠旁边车道的一侧显示渐变红
     private static final String KEY_SIDE_POPUP_CLOSE_DELAY_MS = "side_popup_close_delay_ms";  // 灯灭后再留多少毫秒
     private static final String KEY_SIDE_POPUP_SIZE = "side_popup_size";  // 高度，屏幕高度的百分比（键名是正方形时代的「边长」）
     private static final String KEY_SIDE_POPUP_SHAPE = "side_popup_shape";  // 宽 ÷ 高 ×100
@@ -1665,7 +1665,7 @@ public class AppConfig {
     }
 
     /**
-     * 盲区提醒：侧视画面显示着、那一边后视镜上的盲区指示灯亮着（旁边车道有车）时，画面四周显示红框；主屏弹窗和 HUD 都染。
+     * 盲区提醒：侧视画面显示着、那一边后视镜上的盲区指示灯亮着（旁边车道有车）时，画面靠旁边车道的一侧显示渐变红；主屏弹窗和 HUD 都染。
      * 默认开。灯从车机设置服务读（{@code telemetry.MirrorLampSource}），只在亮屏、这一项开着时读。
      */
     public boolean isSideBlindSpotTintEnabled() {

@@ -117,7 +117,7 @@ final class SideViewHudOutput {
         }
     }
 
-    /** 后视镜上的盲区指示灯（显示的那一边亮着，画面四周显示红框）。记下来：窗口还没建好时，建好后照这个来。 */
+    /** 后视镜上的盲区指示灯（显示的那一边亮着，画面靠旁边车道的一侧显示渐变红）。记下来：窗口还没建好时，建好后照这个来。 */
     void followBlindSpot(Boolean left, Boolean right) {
         blindSpotLeft = left;
         blindSpotRight = right;

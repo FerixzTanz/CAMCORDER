@@ -7,6 +7,16 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.1] - 2026-11-06
+
+### Changed
+
+- **Blind spot warning looks like Tesla's.** The red is now on one edge only, the side of the picture
+  where the car in the next lane appears: solid at the edge, fading out over about a quarter of the
+  picture. With the picture mirrored like the door mirror (the default) that is the outside edge;
+  shown as the camera sees it, the inside edge. The screen and the HUD each follow their own mirror
+  setting.
+
 ## [2.15.0] - 2026-11-03
 
 ### New

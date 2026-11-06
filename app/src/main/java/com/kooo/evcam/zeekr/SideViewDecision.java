@@ -116,7 +116,7 @@ public final class SideViewDecision {
     }
 
     /**
-     * 画面四周要不要显示红框：显示的这一边，后视镜上的盲区指示灯亮着（旁边车道有车）。左窗看左灯、右窗看右灯；
+     * 画面要不要显示盲区提醒的红：显示的这一边，后视镜上的盲区指示灯亮着（旁边车道有车）。左窗看左灯、右窗看右灯；
      * 读不到、别的路都不显示。
      */
     public static boolean blindSpotWarning(Boolean blindSpotLeft, Boolean blindSpotRight, int lane) {
@@ -127,5 +127,18 @@ public final class SideViewDecision {
             return Boolean.TRUE.equals(blindSpotRight);
         }
         return false;
+    }
+
+    /**
+     * 盲区提醒那道红画在窗口哪一边：旁边车道在画面里出现的那一边。
+     *
+     * <p>翻的时候（像门镜，设置说明：后面来的车从外侧边进来），旁边车道在外侧：左窗左边、右窗右边。
+     * 不翻（照相机看到的样子，和 Tesla 一样）正相反：左窗右边、右窗左边。</p>
+     *
+     * @param mirrored 这个窗口此刻翻没翻（主屏、HUD 各有各的开关）
+     * @return true 画在右边，false 画在左边
+     */
+    public static boolean warningOnRightEdge(int lane, boolean mirrored) {
+        return (lane == LaneCycle.RIGHT) == mirrored;
     }
 }

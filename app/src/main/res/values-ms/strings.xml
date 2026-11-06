@@ -304,7 +304,7 @@
     <string name="set_side_popup_instant_title">Tetingkap timbul segera</string>
     <string name="set_side_popup_instant_summary">Dalam gear D, pandangan sisi disediakan di latar belakang supaya gambar muncul sebaik sahaja anda memberi isyarat. Kamera kekal hidup semasa memandu dan menggunakan sedikit lagi kuasa</string>
     <string name="set_side_blind_spot_tint_title">Amaran titik buta</string>
-    <string name="set_side_blind_spot_tint_summary">Semasa pandangan sisi dipaparkan, bingkai merah muncul di sekeliling gambar apabila lampu titik buta pada cermin sisi itu menyala. Berfungsi pada skrin dan HUD</string>
+    <string name="set_side_blind_spot_tint_summary">Semasa pandangan sisi dipaparkan, tepi gambar di sebelah lorong bersebelahan bertukar merah apabila lampu titik buta pada cermin sisi itu menyala. Berfungsi pada skrin dan HUD</string>
     <string name="set_side_popup_size_title">Ketinggian tetingkap timbul (% ketinggian skrin)</string>
     <string name="set_side_popup_size_summary">Lebarnya mengikut bentuk di bawah</string>
     <string name="set_side_popup_shape_summary">100 ialah segi empat sama; lebih tinggi lebih lebar. Sehingga separuh lebar skrin: tetingkap kiri dan kanan bertemu di tengah</string>
