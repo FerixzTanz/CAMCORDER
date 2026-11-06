@@ -338,7 +338,6 @@
     <string name="set_hud_side_night_title">Kecerahan gambar HUD pada waktu malam (%)</string>
     <string name="set_hud_side_night_summary">Dikenakan di atas kelegapan di atas apabila kereta dalam mod malam. 100 untuk mematikan</string>
     <string name="msg_floating_reset">Butang terapung ditetapkan semula</string>
-    <string name="msg_adjust_reset">Tetapan imej dipulihkan kepada lalai</string>
     <string name="info_mapping_manual">Pemetaan kamera ditetapkan secara manual</string>
     <string name="info_mapping_auto">Automatik. Jika mana-mana kamera tidak menunjukkan apa-apa, tetapkan di sini.</string>
     <string name="msg_need_overlay">Berikan kebenaran paparan di atas apl lain dahulu</string>
@@ -433,8 +432,6 @@
     </plurals>
     <string name="msg_footage_lock_failed">Tidak dapat menyimpan status kunci. Cuba lagi</string>
     <string name="msg_footage_nothing_here">Tiada rakaman di sini untuk dikunci</string>
-    <string name="player_session_locked">ada fail dikunci</string>
-    <string name="photo_group_locked">dikunci</string>
     <plurals name="msg_kept_locked">
         <item quantity="other">, %d fail berkunci tidak dipadam</item>
     </plurals>
@@ -480,18 +477,12 @@
     <string name="player_lane_unplayable">Klip ini tidak boleh dimainkan</string>
     <string name="msg_scanning">Mengimbas rakaman…</string>
     <string name="msg_deleting">Memadam…</string>
-    <string name="msg_scanning_short">Mengimbas…</string>
     <string name="msg_no_surround_clips">Tiada rakaman sekeliling</string>
     <string name="msg_no_surround_clips_long">Tiada rakaman sekeliling (garis masa main semula dibina daripada rakaman sekeliling)</string>
-    <string name="msg_no_clips">Tiada rakaman sekeliling</string>
     <string name="msg_nothing_to_share">Tiada apa-apa untuk dikongsi</string>
-    <string name="action_share_clip">Kongsi rakaman ini</string>
     <string name="action_delete_clip">Padam rakaman ini</string>
     <string name="action_pause">Jeda</string>
     <string name="action_play">Main</string>
-    <plurals name="info_clip_count">
-        <item quantity="other">%1$d rakaman · %2$s</item>
-    </plurals>
     <string name="date_today">Hari ini</string>
     <string name="date_yesterday">Semalam</string>
     <string name="date_before_yesterday">2 hari lalu</string>
@@ -516,7 +507,6 @@
     <string name="nav_photo_playback">Foto</string>
     <string name="nav_settings">Tetapan</string>
     <string name="lane_surround">Sekeliling</string>
-    <string name="player_title">Video</string>
     <string name="player_prev">Sebelumnya</string>
     <string name="player_next">Seterusnya</string>
     <string name="action_close">Tutup</string>
@@ -557,9 +547,6 @@
     <string name="msg_refuse_no_external">Tiada pemacu USB ditemui. Rakaman bermula apabila pemacu dimasukkan.</string>
 
     <!-- Skrin perihal -->
-    <plurals name="date_group_count">
-        <item quantity="other">%1$d kumpulan</item>
-    </plurals>
 
     <!-- Main balik foto -->
     <string name="photo_mode_multi">Semua kamera</string>
@@ -575,14 +562,10 @@
 
     <!-- Skrin main balik foto -->
     <string name="action_refresh">Muat semula</string>
-    <string name="action_multi_select">Pilih</string>
     <string name="action_select_all">Pilih semua</string>
-    <string name="msg_selected_none">Pilih rakaman untuk dipadam dahulu</string>
     <string name="action_share">Kongsi</string>
     <string name="photo_empty">Belum ada foto</string>
     <string name="photo_no_image">Tiada foto</string>
-    <string name="photo_pick_hint">Pilih foto daripada senarai</string>
-    <string name="photo_tap_hint">Ketik satu paparan untuk membesarkannya</string>
     <string name="photo_fisheye">Luruskan</string>
 
     <!-- Hantar ke telefon -->
@@ -642,7 +625,6 @@
     <string name="msg_restart_required">Berkuat kuasa selepas apl dimulakan semula</string>
 
     <!-- Skrin utama (rangka kongsi) -->
-    <string name="main_title">Zeekr Shortcut</string>
     <string name="record_start">Mula rakam</string>
     <string name="record_stop">Henti rakam</string>
     <string name="record_preparing">Bermula…</string>
@@ -653,7 +635,6 @@
     <string name="record_screen_off_stop">Berhenti apabila skrin padam</string>
     <string name="record_screen_off_needs_sentry">Perlu Mod Sentry untuk merakam ketika skrin padam</string>
     <string name="recording_chip">Merakam %1$s · klip %2$d</string>
-    <string name="rail_photo">Ambil foto</string>
     <string name="rail_settings">Tetapan</string>
     <string name="cd_minimize">Sembunyi ke latar belakang</string>
     <string name="nav_exit">Keluar apl</string>
@@ -787,10 +768,6 @@
     <string name="editor_splits">dibahagi empat</string>
 
     <!-- Main balik berterusan -->
-    <plurals name="player_session_title">
-        <item quantity="other">%1$s · %2$d klip · %3$s</item>
-    </plurals>
-    <string name="player_share_chooser">Kongsi rakaman</string>
     <string name="player_delete_title">Padam rakaman yang dipilih?</string>
     <plurals name="player_delete_msg">
         <item quantity="other">Rakaman yang dipilih mengandungi %1$d fail (%2$s). Fail yang dikunci dikekalkan. Tindakan ini tidak boleh dibatalkan.</item>
@@ -800,9 +777,6 @@
     </plurals>
     <plurals name="player_info">
         <item quantity="other">Rakaman %1$d/%2$d · bermula %3$s · %4$d klip · %5$s</item>
-    </plurals>
-    <plurals name="player_clip_count">
-        <item quantity="other">%1$d klip</item>
     </plurals>
 
     <!-- Buka pilihan pembangun -->
@@ -830,10 +804,6 @@
     <string name="storage_external_missing">Pemacu USB (tidak ditemui)</string>
 
     <!-- Main balik foto -->
-    <plurals name="photo_count_badge">
-        <item quantity="other">%1$d foto</item>
-    </plurals>
-    <string name="cd_expand">Kembang atau kuncup</string>
     <string name="cd_selected">Pilih</string>
 
     <!-- Pembangun: pembetulan pratonton · profil semasa -->
@@ -878,7 +848,6 @@
     <string name="adj_title">Pelarasan imej</string>
     <string name="adj_unsupported">Kamera ini tidak menyokong pelarasan imej</string>
     <string name="adj_exposure">Pampasan dedahan</string>
-    <string name="adj_exposure_value">Sekarang: %1$s (gelap ← → cerah)</string>
     <string name="adj_awb">Imbangan putih</string>
     <string name="adj_tonemap">Pemetaan ton</string>
     <string name="adj_edge">Penajaman tepi</string>
@@ -905,7 +874,6 @@
     <string name="effect_aqua">Akua</string>
 
     <!-- Bahagian pilihan pembangun -->
-    <string name="set_section_developer">Pilihan pembangun</string>
     <string name="dev_permissions_title">Kebenaran</string>
     <string name="dev_permissions_summary">Urus kebenaran yang diperlukan apl</string>
     <string name="dev_perm_group_basic">Kebenaran asas</string>

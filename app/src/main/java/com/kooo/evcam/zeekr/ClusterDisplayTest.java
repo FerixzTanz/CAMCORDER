@@ -61,6 +61,8 @@ public final class ClusterDisplayTest {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static volatile String lastResult = "not run";
     private static Presentation current;
+    /** 从点下到收起都算一次在跑：等档位那两秒里再点不会起第二份（第二份会把第一份的收起计时顶掉，卡片就留在仪表盘上了）。 */
+    private static boolean running;
 
     private ClusterDisplayTest() {
     }
@@ -72,9 +74,10 @@ public final class ClusterDisplayTest {
 
     /** 设置页点了「测试仪表盘」。主线程。 */
     public static void run(Context context) {
-        if (current != null) {
+        if (running) {
             return;
         }
+        running = true;
         Context app = context.getApplicationContext();
         Telemetry.get().acquire(app, TELEMETRY_USER);
         waitForGear(app, System.currentTimeMillis());
@@ -88,6 +91,7 @@ public final class ClusterDisplayTest {
         }
         if (!"P".equals(gear)) {
             Telemetry.get().release(TELEMETRY_USER);
+            running = false;
             finish(app, "refused: gear " + gear, R.string.dev_cluster_test_need_park);
             return;
         }
@@ -98,6 +102,7 @@ public final class ClusterDisplayTest {
         Display display = find(app);
         if (display == null) {
             Telemetry.get().release(TELEMETRY_USER);
+            running = false;
             finish(app, "no " + ClusterDisplayLocator.CLUSTER_WIDTH + "x" + ClusterDisplayLocator.CLUSTER_HEIGHT
                     + " display that is on", R.string.dev_cluster_test_none);
             return;
@@ -124,6 +129,7 @@ public final class ClusterDisplayTest {
         } catch (Throwable t) {
             AppLog.e(TAG, "仪表盘测试窗口打不开", t);
             Telemetry.get().release(TELEMETRY_USER);
+            running = false;
             finish(app, "refused on " + where + ": " + t.getClass().getSimpleName() + ": " + t.getMessage(),
                     R.string.dev_cluster_test_refused);
             return;
@@ -137,6 +143,7 @@ public final class ClusterDisplayTest {
             if (!shown.isShowing()) {
                 current = null;
                 Telemetry.get().release(TELEMETRY_USER);
+                running = false;
                 finish(app, "opened on " + where + " but closed by the system within 1 s",
                         R.string.dev_cluster_test_refused);
                 return;
@@ -156,6 +163,7 @@ public final class ClusterDisplayTest {
                 // 屏已经没了：系统已经收掉
             }
             Telemetry.get().release(TELEMETRY_USER);
+            running = false;
             BlackBox.note("仪表盘测试：卡片收起");
         }, SHOW_MS);
     }

@@ -105,8 +105,10 @@ public final class AutoLock implements Telemetry.Listener {
     private boolean watching;
     private Boolean lastFlash;
     private Boolean lastHazard;
-    /** 这一次双闪亮起的时刻（系统时间）；没在锁双闪时为 0。 */
+    /** 这一次双闪亮起的时刻（系统时间，和文件名一个钟）；没在锁双闪时为 0。 */
     private long hazardSinceMs;
+    /** 同一刻的单调时钟：上限按它算，车机开机后校时（GPS / 网络）跳表不影响（审查 2026-11-06）。 */
+    private long hazardSinceUptimeMs;
     private final Runnable hazardTick = this::hazardTick;
     private final HardBrakeDetector hardBrake = new HardBrakeDetector();
     private long lastToastAt;
@@ -260,7 +262,8 @@ public final class AutoLock implements Telemetry.Listener {
             return;
         }
         Boolean hazard = hazardOn(readings);
-        if (Boolean.TRUE.equals(hazard) && !Boolean.TRUE.equals(lastHazard) && hazardSinceMs == 0
+        // 只认「灭 → 亮」：开始看信号时读数还是空的（登记时才拉起车辆信号），第一个读数就是 3 的，是早就亮着，不算亮起
+        if (Boolean.TRUE.equals(hazard) && Boolean.FALSE.equals(lastHazard) && hazardSinceMs == 0
                 && hazardEnabled(app)) {
             hazardOnAt(System.currentTimeMillis());
         } else if (Boolean.FALSE.equals(hazard) && hazardSinceMs > 0) {
@@ -316,6 +319,7 @@ public final class AutoLock implements Telemetry.Listener {
      */
     private void hazardOnAt(long nowMs) {
         hazardSinceMs = nowMs;
+        hazardSinceUptimeMs = SystemClock.elapsedRealtime();
         final Context context = app;
         final LockWindow window = LockWindow.hazard(nowMs, nowMs);
         final File target = relayTarget;
@@ -332,7 +336,7 @@ public final class AutoLock implements Telemetry.Listener {
             return;
         }
         long now = System.currentTimeMillis();
-        if (now - hazardSinceMs >= LockWindow.HAZARD_MAX_MS) {
+        if (SystemClock.elapsedRealtime() - hazardSinceUptimeMs >= LockWindow.HAZARD_MAX_MS) {
             hazardOff(now, HAZARD_END_LIMIT);
             return;
         }

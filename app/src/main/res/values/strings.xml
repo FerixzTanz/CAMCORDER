@@ -351,7 +351,6 @@
     <string name="set_hud_side_night_title">HUD 画面夜间亮度（%）</string>
     <string name="set_hud_side_night_summary">车辆处于夜间模式时，在上面的不透明度基础上再调到此比例。100 为不调暗。</string>
     <string name="msg_floating_reset">悬浮按钮已重置</string>
-    <string name="msg_adjust_reset">画面参数已恢复默认</string>
     <string name="info_mapping_manual">已手动指定摄像头映射</string>
     <string name="info_mapping_auto">自动分配。某一路无画面时，可在此手动指定。</string>
     <string name="msg_need_overlay">请先授予悬浮窗权限</string>
@@ -437,8 +436,6 @@
     </plurals>
     <string name="msg_footage_lock_failed">无法保存锁定状态，请重试</string>
     <string name="msg_footage_nothing_here">当前时刻无可锁定的录像</string>
-    <string name="player_session_locked">含已锁定文件</string>
-    <string name="photo_group_locked">已锁定</string>
     <plurals name="msg_kept_locked">
         <item quantity="other">，%d 个已锁定文件未删除</item>
     </plurals>
@@ -484,18 +481,12 @@
     <string name="player_lane_unplayable">此片段无法播放</string>
     <string name="msg_scanning">正在扫描录像…</string>
     <string name="msg_deleting">正在删除…</string>
-    <string name="msg_scanning_short">正在扫描…</string>
     <string name="msg_no_surround_clips">暂无环视录像</string>
     <string name="msg_no_surround_clips_long">暂无环视录像（录像回放按环视录像排列时间轴）</string>
-    <string name="msg_no_clips">暂无环视录像</string>
     <string name="msg_nothing_to_share">没有可分享的文件</string>
-    <string name="action_share_clip">分享此录像</string>
     <string name="action_delete_clip">删除此录像</string>
     <string name="action_pause">暂停</string>
     <string name="action_play">播放</string>
-    <plurals name="info_clip_count">
-        <item quantity="other">%1$d 条录像 · %2$s</item>
-    </plurals>
     <string name="date_today">今天</string>
     <string name="date_yesterday">昨天</string>
     <string name="date_before_yesterday">前天</string>
@@ -520,7 +511,6 @@
     <string name="nav_photo_playback">照片回放</string>
     <string name="nav_settings">设置</string>
     <string name="lane_surround">环视</string>
-    <string name="player_title">录像回放</string>
     <string name="player_prev">上一条</string>
     <string name="player_next">下一条</string>
     <string name="action_close">关闭</string>
@@ -560,9 +550,6 @@
     <string name="msg_keep_one_camera_refuse">未开启任何摄像头，请在「编辑视频流配置」中开启</string>
     <string name="msg_refuse_no_external">未检测到 U 盘，插入后自动开始录制</string>
 
-        <plurals name="date_group_count">
-        <item quantity="other">%1$d 组</item>
-    </plurals>
 
     <!-- 图片回看 -->
     <string name="photo_mode_multi">多路</string>
@@ -578,14 +565,10 @@
 
     <!-- 图片回看界面 -->
     <string name="action_refresh">刷新</string>
-    <string name="action_multi_select">多选</string>
     <string name="action_select_all">全选</string>
-    <string name="msg_selected_none">请先选择要删除的录像</string>
     <string name="action_share">分享</string>
     <string name="photo_empty">暂无照片</string>
     <string name="photo_no_image">无照片</string>
-    <string name="photo_pick_hint">请从左侧列表选择照片</string>
-    <string name="photo_tap_hint">点击某路画面可将其放大</string>
     <string name="photo_fisheye">鱼眼校正</string>
 
     <!-- 发送到手机 -->
@@ -645,7 +628,6 @@
     <string name="msg_restart_required">重启应用后生效</string>
 
     <!-- 主界面（统一骨架） -->
-    <string name="main_title">极氪即刻</string>
     <string name="record_start">开始录制</string>
     <string name="record_stop">停止录制</string>
     <string name="record_preparing">正在准备…</string>
@@ -656,7 +638,6 @@
     <string name="record_screen_off_stop">熄屏后停止录制</string>
     <string name="record_screen_off_needs_sentry">熄屏续录需开启哨兵模式</string>
     <string name="recording_chip">录制中 %1$s · 第 %2$d 段</string>
-    <string name="rail_photo">拍照</string>
     <string name="rail_settings">设置</string>
     <string name="cd_minimize">隐藏到后台</string>
     <string name="nav_exit">退出应用</string>
@@ -789,10 +770,6 @@
     <string name="editor_splits">分为四格</string>
 
     <!-- 连续回放 -->
-    <plurals name="player_session_title">
-        <item quantity="other">%1$s · %2$d 段 · %3$s</item>
-    </plurals>
-    <string name="player_share_chooser">分享录像</string>
     <string name="player_delete_title">删除所选录像？</string>
     <plurals name="player_delete_msg">
         <item quantity="other">所选录像共 %1$d 个文件（%2$s），已锁定的文件将保留。删除后无法恢复。</item>
@@ -802,9 +779,6 @@
     </plurals>
     <plurals name="player_info">
         <item quantity="other">录像 %1$d/%2$d · 开始于 %3$s · %4$d 段 · 时长 %5$s</item>
-    </plurals>
-    <plurals name="player_clip_count">
-        <item quantity="other">%1$d 段</item>
     </plurals>
 
     <!-- 保存配置前看一眼 -->
@@ -834,10 +808,6 @@
     <string name="storage_external_missing">U 盘（未检测到）</string>
 
     <!-- 图片回看 -->
-    <plurals name="photo_count_badge">
-        <item quantity="other">%1$d 张</item>
-    </plurals>
-    <string name="cd_expand">展开或收起</string>
     <string name="cd_selected">选择</string>
 
     <!-- 开发者：预览矫正 · 当前配置 -->
@@ -882,7 +852,6 @@
     <string name="adj_title">画面调节</string>
     <string name="adj_unsupported">当前摄像头不支持画面调节</string>
     <string name="adj_exposure">曝光补偿</string>
-    <string name="adj_exposure_value">当前：%1$s（调暗 ← → 调亮）</string>
     <string name="adj_awb">白平衡</string>
     <string name="adj_tonemap">色调映射</string>
     <string name="adj_edge">边缘增强/锐化</string>
@@ -909,7 +878,6 @@
     <string name="effect_aqua">水蓝</string>
 
     <!-- 开发者选项分区 -->
-    <string name="set_section_developer">开发者选项</string>
     <string name="dev_permissions_title">权限设置</string>
     <string name="dev_permissions_summary">管理应用所需的各项权限</string>
     <string name="dev_perm_group_basic">基础权限</string>

@@ -126,7 +126,6 @@
 | `TextAppearance.Cam.Body` | 18sp | 正文、按钮文字 |
 | `TextAppearance.Cam.Row` | 21sp | 列表行标题、分区标题、对话框正文 |
 | `TextAppearance.Cam.Title` | 26sp | 页面标题、对话框标题 |
-| `TextAppearance.Cam.Display` | 28sp | 计时、张数这类要隔着一米看清的数字 |
 
 **设置界面整体低一档**（行标题用 Body、说明用 Micro）：它是停着读的密集列表，
 一屏十几行，按开车时瞟一眼的尺寸排会挤满整屏。
