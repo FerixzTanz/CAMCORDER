@@ -7,6 +7,28 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.2] - 2026-11-06
+
+### Fixed
+
+- **Blind spot warning is more dependable.** If the head unit's settings service isn't ready when the
+  app starts (common right after a cold boot), the app now keeps trying for 3 minutes instead of
+  giving up for the whole drive. A momentary failure to re-read a lit mirror light no longer switches
+  the red off while the car is still beside you.
+- **Lock footage on hazard lights** no longer treats hazards that were already on when recording
+  started as a new event, and its 5-minute cap can't be stretched or cut by the car correcting its
+  clock after a cold boot.
+- **Test the driver display** can no longer leave the test card on the cluster if the button is
+  tapped twice quickly.
+
+### Changed
+
+- **Smoother recording.** The encoder no longer waits 10 ms for more output on every frame; at 30 fps
+  that was up to a third of each frame's time on each camera. Rebuilding the driving info bar is
+  cheaper, and the hidden, ready-to-show side view no longer straightens its picture and composites
+  the HUD effects for a window nobody can see while you drive in D.
+- Smaller app: unused icons, colours and text left over from earlier designs are gone.
+
 ## [2.15.1] - 2026-11-06
 
 ### Changed

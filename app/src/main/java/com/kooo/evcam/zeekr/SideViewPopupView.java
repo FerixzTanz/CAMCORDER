@@ -516,6 +516,13 @@ public class SideViewPopupView extends ViewGroup {
             return;
         }
         aspect = (float) width / height;
+        if (!visible && !fadingOut) {
+            // 备着（窗口 alpha 0，谁也看不见）：只把这一路裁出来给 TextureView 取帧用，不拉直、不开图层、不渐隐、不画角标。
+            // 拉直是几百块小格各画一遍 TextureView，HUD 还要一整层离屏缓冲 —— D 档全程每帧都在做，却没人看
+            //（审查 2026-11-06）。拨亮那一下 invalidate，下一帧就走完整的画法。
+            drawLaneCropped(canvas, width, height);
+            return;
+        }
         int save = canvas.save();
         Paint tone = pictureTone();
         float fade = HudEdgeFade.widthPx(edgeFadePercent(), width, height);
@@ -538,19 +545,7 @@ public class SideViewPopupView extends ViewGroup {
                     r.laneScaleX * width, r.laneScaleY * height, turnedMap);
             mesh.draw(canvas, 0f, 0f, width, height, paintTexture);
         } else {
-            // 不拉直：只能在原图里裁一块挪一挪（见 SideViewAim），角度折算成那边的百分比
-            int zoomPercent = Math.round(180f / Math.min(viewFov, 180) * 100f);
-            int backPercent = Math.round(yaw / SideViewProjection.MAX_YAW_DEGREES * 100f);
-            int upPercent = Math.round(pitch / SideViewProjection.MAX_PITCH_DEGREES * 100f);
-            RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, backPercent, upPercent, aspect);
-            float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
-            sourceRect.set(rect[0] * width, rect[1] * height,
-                    (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
-            destRect.set(0, 0, width, height);
-            drawMatrix.setRectToRect(sourceRect, destRect, Matrix.ScaleToFit.FILL);
-            canvas.clipRect(destRect);
-            canvas.concat(drawMatrix);
-            drawChild(canvas, textureView, getDrawingTime());
+            drawLaneCropped(canvas, width, height);
         }
         canvas.restoreToCount(inner);
         // 红框压在画面上、四边渐隐之前：HUD 上它跟着画面一起从边上淡掉；盖板在它上面，没画面时不露红
@@ -562,6 +557,24 @@ public class SideViewPopupView extends ViewGroup {
         drawCover(canvas, width, height);
         drawFrame(canvas, width, height);
         drawIndicator(canvas, width, height);
+    }
+
+    /** 不拉直：只能在原图里裁一块挪一挪（见 SideViewAim），角度折算成那边的百分比。备着时也走这条，便宜。 */
+    private void drawLaneCropped(Canvas canvas, int width, int height) {
+        int zoomPercent = Math.round(180f / Math.min(viewFov, 180) * 100f);
+        int backPercent = Math.round(yaw / SideViewProjection.MAX_YAW_DEGREES * 100f);
+        int upPercent = Math.round(pitch / SideViewProjection.MAX_PITCH_DEGREES * 100f);
+        RearViewGeometry.Viewport viewport = SideViewAim.viewport(lane, zoomPercent, backPercent, upPercent, aspect);
+        float[] rect = RearViewGeometry.combinedSourceRect(plan, lane, viewport);
+        sourceRect.set(rect[0] * width, rect[1] * height,
+                (rect[0] + rect[2]) * width, (rect[1] + rect[3]) * height);
+        destRect.set(0, 0, width, height);
+        drawMatrix.setRectToRect(sourceRect, destRect, Matrix.ScaleToFit.FILL);
+        int save = canvas.save();
+        canvas.clipRect(destRect);
+        canvas.concat(drawMatrix);
+        drawChild(canvas, textureView, getDrawingTime());
+        canvas.restoreToCount(save);
     }
 
     /**

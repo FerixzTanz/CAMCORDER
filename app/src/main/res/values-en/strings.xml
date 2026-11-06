@@ -338,7 +338,6 @@
     <string name="set_hud_side_night_title">HUD picture brightness at night (%)</string>
     <string name="set_hud_side_night_summary">Applied on top of the opacity above while the car is in night mode. 100 turns it off</string>
     <string name="msg_floating_reset">Floating button reset</string>
-    <string name="msg_adjust_reset">Image settings reset to defaults</string>
     <string name="info_mapping_manual">Camera mapping set manually</string>
     <string name="info_mapping_auto">Automatic. If a camera shows nothing, assign it here.</string>
     <string name="msg_need_overlay">Grant the overlay permission first</string>
@@ -437,8 +436,6 @@
     </plurals>
     <string name="msg_footage_lock_failed">Couldn\'t save the lock state. Try again</string>
     <string name="msg_footage_nothing_here">No recording here to lock</string>
-    <string name="player_session_locked">has locked files</string>
-    <string name="photo_group_locked">locked</string>
     <plurals name="msg_kept_locked">
         <item quantity="one">, %d locked file kept</item>
         <item quantity="other">, %d locked files kept</item>
@@ -485,19 +482,12 @@
     <string name="player_lane_unplayable">Can\'t play this clip</string>
     <string name="msg_scanning">Scanning recordings…</string>
     <string name="msg_deleting">Deleting…</string>
-    <string name="msg_scanning_short">Scanning…</string>
     <string name="msg_no_surround_clips">No surround recordings</string>
     <string name="msg_no_surround_clips_long">No surround recordings (the playback timeline is built from surround recordings)</string>
-    <string name="msg_no_clips">No surround recordings</string>
     <string name="msg_nothing_to_share">Nothing to share</string>
-    <string name="action_share_clip">Share this recording</string>
     <string name="action_delete_clip">Delete this recording</string>
     <string name="action_pause">Pause</string>
     <string name="action_play">Play</string>
-    <plurals name="info_clip_count">
-        <item quantity="one">%1$d recording · %2$s</item>
-        <item quantity="other">%1$d recordings · %2$s</item>
-    </plurals>
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
     <string name="date_before_yesterday">2 days ago</string>
@@ -524,7 +514,6 @@
     <string name="nav_photo_playback">Photos</string>
     <string name="nav_settings">Settings</string>
     <string name="lane_surround">Surround</string>
-    <string name="player_title">Videos</string>
     <string name="player_prev">Previous</string>
     <string name="player_next">Next</string>
     <string name="action_close">Close</string>
@@ -565,10 +554,6 @@
     <string name="msg_refuse_no_external">No USB drive found. Recording starts when one is inserted.</string>
 
     <!-- About screen -->
-    <plurals name="date_group_count">
-        <item quantity="one">%1$d group</item>
-        <item quantity="other">%1$d groups</item>
-    </plurals>
 
     <!-- Photo playback -->
     <string name="photo_mode_multi">All cameras</string>
@@ -586,14 +571,10 @@
 
     <!-- Photo playback screen -->
     <string name="action_refresh">Refresh</string>
-    <string name="action_multi_select">Select</string>
     <string name="action_select_all">Select all</string>
-    <string name="msg_selected_none">Select recordings to delete first</string>
     <string name="action_share">Share</string>
     <string name="photo_empty">No photos yet</string>
     <string name="photo_no_image">No photo</string>
-    <string name="photo_pick_hint">Pick a photo from the list</string>
-    <string name="photo_tap_hint">Tap a view to enlarge it</string>
     <string name="photo_fisheye">Straighten</string>
 
     <!-- Send to phone -->
@@ -653,7 +634,6 @@
     <string name="msg_restart_required">Takes effect after restarting the app</string>
 
     <!-- Main screen (shared skeleton) -->
-    <string name="main_title">Zeekr Shortcut</string>
     <string name="record_start">Start recording</string>
     <string name="record_stop">Stop recording</string>
     <string name="record_preparing">Starting…</string>
@@ -664,7 +644,6 @@
     <string name="record_screen_off_stop">Stops when screen turns off</string>
     <string name="record_screen_off_needs_sentry">Needs Sentry Mode to continue with screen off</string>
     <string name="recording_chip">Recording %1$s · clip %2$d</string>
-    <string name="rail_photo">Take photo</string>
     <string name="rail_settings">Settings</string>
     <string name="cd_minimize">Hide to background</string>
     <string name="nav_exit">Quit app</string>
@@ -798,11 +777,6 @@
     <string name="editor_splits">split into four</string>
 
     <!-- Continuous playback -->
-    <plurals name="player_session_title">
-        <item quantity="one">%1$s · %2$d clip · %3$s</item>
-        <item quantity="other">%1$s · %2$d clips · %3$s</item>
-    </plurals>
-    <string name="player_share_chooser">Share recording</string>
     <string name="player_delete_title">Delete selected recordings?</string>
     <plurals name="player_delete_msg">
         <item quantity="one">Selected recordings: %1$d file (%2$s). Locked files are kept. This can\'t be undone.</item>
@@ -815,10 +789,6 @@
     <plurals name="player_info">
         <item quantity="one">Recording %1$d/%2$d · started %3$s · %4$d clip · %5$s</item>
         <item quantity="other">Recording %1$d/%2$d · started %3$s · %4$d clips · %5$s</item>
-    </plurals>
-    <plurals name="player_clip_count">
-        <item quantity="one">%1$d clip</item>
-        <item quantity="other">%1$d clips</item>
     </plurals>
 
     <!-- Look before saving a profile -->
@@ -848,11 +818,6 @@
     <string name="storage_external_missing">USB drive (not found)</string>
 
     <!-- Photo playback -->
-    <plurals name="photo_count_badge">
-        <item quantity="one">%1$d photo</item>
-        <item quantity="other">%1$d photos</item>
-    </plurals>
-    <string name="cd_expand">Expand or collapse</string>
     <string name="cd_selected">Select</string>
 
     <!-- Developer: preview correction · current profile -->
@@ -897,7 +862,6 @@
     <string name="adj_title">Image adjustment</string>
     <string name="adj_unsupported">This camera doesn\'t support image adjustment</string>
     <string name="adj_exposure">Exposure compensation</string>
-    <string name="adj_exposure_value">Now: %1$s (darker ← → brighter)</string>
     <string name="adj_awb">White balance</string>
     <string name="adj_tonemap">Tone mapping</string>
     <string name="adj_edge">Edge enhancement / sharpening</string>
@@ -924,7 +888,6 @@
     <string name="effect_aqua">Aqua</string>
 
     <!-- Developer options section -->
-    <string name="set_section_developer">Developer options</string>
     <string name="dev_permissions_title">Permissions</string>
     <string name="dev_permissions_summary">Manage the permissions the app needs</string>
     <string name="dev_perm_group_basic">Basic permissions</string>

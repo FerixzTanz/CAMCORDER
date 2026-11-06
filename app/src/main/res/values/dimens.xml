@@ -10,7 +10,6 @@
     <dimen name="title_bar_height">64dp</dimen>
     <dimen name="status_bar_height">48dp</dimen>
     <dimen name="list_width">280dp</dimen>
-    <dimen name="rail_width">380dp</dimen>
     <dimen name="corner_radius">10dp</dimen>
     <dimen name="gutter">12dp</dimen>
 
@@ -18,7 +17,6 @@
     <dimen name="corner_radius_card">16dp</dimen>
     <dimen name="corner_radius_pill">14dp</dimen>
 
-    <dimen name="rail_tile_height">104dp</dimen>
     <dimen name="rail_small_height">72dp</dimen>
     <dimen name="icon_button_size">48dp</dimen>
 

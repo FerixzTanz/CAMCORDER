@@ -190,6 +190,10 @@ public class EglSurfaceEncoder {
     private int barHeight;
     private int contentHeight;
     private int infoBarTextureId;
+    /** 信息条贴图分配过了：之后只换内容（texSubImage2D），不重新分配。 */
+    private boolean infoBarTextureAllocated;
+    /** {@link #checkGlError} 每几帧查一次：glGetError 要和驱动线程同步，每帧查两次不值。 */
+    private int glErrorCheckTick;
 
     // 输入 SurfaceTexture（来自 Camera）
     private SurfaceTexture inputSurfaceTexture;
@@ -1158,6 +1162,7 @@ public class EglSurfaceEncoder {
                 int[] barTextures = new int[1];
                 GLES20.glGenTextures(1, barTextures, 0);
                 infoBarTextureId = barTextures[0];
+                infoBarTextureAllocated = false;
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, infoBarTextureId);
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
@@ -1181,7 +1186,13 @@ public class EglSurfaceEncoder {
         }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, infoBarTextureId);
         if (bar.renderIfDue(com.kooo.evcam.telemetry.Telemetry.get().latest())) {
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bar.bitmap(), 0);
+            // 位图尺寸不变：第一次分配，之后只换内容
+            if (infoBarTextureAllocated) {
+                GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, bar.bitmap());
+            } else {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bar.bitmap(), 0);
+                infoBarTextureAllocated = true;
+            }
         }
         GLES20.glViewport(0, 0, width, barHeight);
         GLES20.glUseProgram(watermarkOverlayProgram);
@@ -1518,6 +1529,10 @@ public class EglSurfaceEncoder {
      * 检查 OpenGL 错误
      */
     private void checkGlError(String op) {
+        // 每 64 次查一次（一帧两次，约两秒一次）：错了也不是这一帧才错，晚一点看到没关系
+        if ((++glErrorCheckTick & 63) != 0) {
+            return;
+        }
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             AppLog.e(TAG, "Camera " + cameraId + " " + op + ": glError " + error);

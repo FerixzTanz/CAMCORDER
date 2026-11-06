@@ -56,6 +56,13 @@ final class MirrorLampSource {
     static final int AREA_RIGHT = 0x4;
     /** 有灯亮着时多久再读一遍亮着的那几盏（漏推了「灭」，画面最多多红这么久）。 */
     static final long RECONCILE_MS = 2000L;
+    /**
+     * 接不上（车辆库出错、设置服务的管理器还没注册好）隔多久再接一次、最多几次：冷启动时车辆服务先好、
+     * 车厂的 setting_zeekr 管理器晚一会儿才有，原来一次接不上就整趟不再试（审查 2026-11-06）。
+     * 清单里没有这个号才是真的没有，不重试。
+     */
+    static final long ATTACH_RETRY_MS = 10_000L;
+    static final int ATTACH_RETRY_LIMIT = 18;
 
     /** 这一路的结果（黑匣子那一行照它写）。 */
     enum Link {
@@ -92,6 +99,8 @@ final class MirrorLampSource {
     private volatile Method valueGetter;
 
     private final Runnable reconcile = this::reconcile;
+    private final Runnable retryAttach = this::attach;
+    private int attachAttempts;
 
     MirrorLampSource(Telemetry telemetry, Context context) {
         this.telemetry = telemetry;
@@ -99,9 +108,15 @@ final class MirrorLampSource {
     }
 
     void start() {
-        thread = new HandlerThread("Telemetry-MirrorLamps");
-        thread.start();
-        looper = thread.getLooper();
+        HandlerThread t = new HandlerThread("Telemetry-MirrorLamps");
+        t.start();
+        if (stopped) {
+            // start 之前就 stop 了（登记、注销在不同线程上）：线程别留着
+            t.quitSafely();
+            return;
+        }
+        thread = t;
+        looper = t.getLooper();
         Handler h = new Handler(looper);
         handler = h;
         h.post(this::connect);
@@ -144,6 +159,7 @@ final class MirrorLampSource {
             return;
         } catch (Throwable t) {
             report(Link.FAILED, "car library failed: " + describe(t));
+            retryLater();
             return;
         }
         InvocationHandler lifecycleCalls = (proxy, method, args) -> {
@@ -172,10 +188,23 @@ final class MirrorLampSource {
             car = create.invoke(null, app, handler, 0L, listener);
             if (car == null) {
                 report(Link.FAILED, "createCar returned null");
+                retryLater();
             }
         } catch (Throwable t) {
             report(Link.FAILED, "createCar failed: " + describe(t));
+            retryLater();
         }
+    }
+
+    /** 接不上：隔 {@link #ATTACH_RETRY_MS} 再试，最多 {@link #ATTACH_RETRY_LIMIT} 次；车还没连上就从连开始。 */
+    private void retryLater() {
+        Handler h = handler;
+        if (h == null || stopped || attachAttempts >= ATTACH_RETRY_LIMIT) {
+            return;
+        }
+        attachAttempts++;
+        h.removeCallbacks(retryAttach);
+        h.postDelayed(car == null ? this::connect : retryAttach, ATTACH_RETRY_MS);
     }
 
     /** 车辆服务好了 / 断了（库叫的，转到这里）。 */
@@ -190,15 +219,20 @@ final class MirrorLampSource {
             report(Link.FAILED, "car service disconnected; the car library reconnects by itself");
             return;
         }
+        attachAttempts = 0;
         attach();
     }
 
-    /** 拿设置服务的属性管理器、按名字取号、订回调、读一遍。 */
+    /** 拿设置服务的属性管理器、按名字取号、订回调、读一遍。管理器还没有、里面是空的：过一阵再来（{@link #retryLater}）。 */
     private void attach() {
+        if (stopped || car == null) {
+            return;
+        }
         try {
             Object manager = car.getClass().getMethod("getCarManager", String.class).invoke(car, SERVICE);
             if (manager == null) {
-                report(Link.UNAVAILABLE, "no " + SERVICE + " manager");
+                report(Link.FAILED, "no " + SERVICE + " manager yet");
+                retryLater();
                 return;
             }
             Field field = field(manager.getClass(), "mMgr");
@@ -210,6 +244,7 @@ final class MirrorLampSource {
             Object b = field.get(manager);
             if (b == null) {
                 report(Link.FAILED, "mMgr is null");
+                retryLater();
                 return;
             }
             Map<Integer, Object> configs = configs(b);
@@ -241,6 +276,7 @@ final class MirrorLampSource {
         } catch (Throwable t) {
             dropBase();
             report(Link.FAILED, "attach failed: " + describe(t));
+            retryLater();
         }
     }
 
@@ -249,6 +285,7 @@ final class MirrorLampSource {
         Handler h = handler;
         if (h != null) {
             h.removeCallbacks(reconcile);
+            h.removeCallbacks(retryAttach);
         }
         Object b = base;
         Method u = unregister;
@@ -323,7 +360,11 @@ final class MirrorLampSource {
         if (lamp == null) {
             return;
         }
-        update(lamps.with(lamp, MirrorLamps.on(call(value, getter(value, 2)))));
+        Boolean on = MirrorLamps.on(call(value, getter(value, 2)));
+        // 推来的值读不出来：留着上一次的，别把亮着的灯当成灭了
+        if (on != null) {
+            update(lamps.with(lamp, on));
+        }
     }
 
     /** 哪个区域是哪一盏；别的区域不用。 */
@@ -352,7 +393,11 @@ final class MirrorLampSource {
         MirrorLamps read = lamps;
         for (MirrorLamps.Lamp lamp : MirrorLamps.Lamp.values()) {
             if (Boolean.TRUE.equals(read.get(lamp))) {
-                read = read.with(lamp, read(lamp));
+                // 这一次读不到（服务忙了一下）：当还亮着，下一次再读；读成「读不到」会把红收掉，而且不再对账（审查 2026-11-06）
+                Boolean now = read(lamp);
+                if (now != null) {
+                    read = read.with(lamp, now);
+                }
             }
         }
         update(read);
