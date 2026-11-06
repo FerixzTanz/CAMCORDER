@@ -341,6 +341,11 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
             appConfig.setBrakeLockEnabled(value);
             com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
         });
+        // 双闪（2.15.0，默认关）：同样跟着「锁定影像」置灰
+        bindSwitch("pref_footage_lock_hazard", appConfig.isHazardLockEnabled(), value -> {
+            appConfig.setHazardLockEnabled(value);
+            com.kooo.evcam.storage.AutoLock.get().settingsChanged(getContext());
+        });
     }
 
     /**
@@ -766,6 +771,10 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
                 });
         bindSwitch("pref_side_popup_instant", appConfig.isSidePopupInstant(), value -> {
             appConfig.setSidePopupInstant(value);
+            com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
+        });
+        bindSwitch("pref_side_blind_spot_tint", appConfig.isSideBlindSpotTintEnabled(), value -> {
+            appConfig.setSideBlindSpotTintEnabled(value);
             com.kooo.evcam.zeekr.SideViewPopupService.applyConfig();
         });
         bindSlider("pref_side_popup_close_delay_ms", 0, AppConfig.SIDE_POPUP_MAX_CLOSE_DELAY_MS,
@@ -1322,6 +1331,8 @@ public class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         });
 
         // 归档：把录像、照片、日志从录像盘搬到另一个盘（项目所有者用 Type-C 固态盘统一管理）
+        onClick("pref_cluster_test", pref ->
+                com.kooo.evcam.zeekr.ClusterDisplayTest.run(requireContext()));
         onClick("pref_archive", pref -> {
             if (getActivity() == null) {
                 return;

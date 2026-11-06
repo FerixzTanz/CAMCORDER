@@ -33,6 +33,7 @@
 - **删除**：钉钉 / 飞书 / Telegram 远程查看、心跳推图、MJPEG / RTP 推流，连同对应的 SDK 依赖。
 - **重做**：录制参数的来源（改由视频流配置按路决定）、设置界面、主界面与悬浮按钮、视频回看。
 - **取自 dts88/zeekr-shortcut-car**：下载更新时核对安装包的 sha256 和大小、只走 https（`DownloadIntegrity`，作者 wysie，经 dts88 的 PR #38 合并）。
+- **取自 dts88/zeekr-shortcut-car**：从车机设置服务读后视镜上的盲区指示灯（`MirrorLampSource`，dts88 2.97.0-alpha，去掉了开门预警）；开双闪时自动锁定（dts88 2.25.0-alpha，我们加了 5 分钟上限）。
 - **包名与构建**：applicationId 改为 `io.github.dts88.zeekrshortcut`，签名可由环境变量覆盖，
   CI 构建与发布见 `.github/`。
 

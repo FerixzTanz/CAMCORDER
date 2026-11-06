@@ -7,6 +7,23 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.0] - 2026-11-03
+
+### New
+
+- **Blind spot warning in the side view.** While the turn-signal side view is showing, a red glow
+  fades in around the edges of the picture when the blind spot light on that door mirror is on, on
+  the screen and the HUD. It only marks the picture; the side view still opens on the turn signal
+  alone. On by default: **Settings → Super mirror → Turn-signal side view → Blind spot warning**.
+  Reading the mirror light comes from dts88's app.
+- **Lock footage on hazard lights** (off by default): while recording, turning on the hazard lights
+  locks the clips from 1 minute before they came on until they go off, at most 5 minutes, on every
+  camera. It counts as an automatic lock, like hard braking, and shares the same 10% limit. Turn it
+  on in **Settings → Storage → Lock footage**. From dts88's app.
+- **Developer options → Test the driver display**: in P, shows a small test card in the middle of the
+  driver display for 5 seconds, to find out whether the app can show anything there. It uses only
+  Android's standard second-screen interface, the same one the HUD picture uses.
+
 ## [2.14.4] - 2026-10-27
 
 ### Changed

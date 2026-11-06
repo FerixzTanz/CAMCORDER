@@ -459,6 +459,7 @@ public final class DiagnosticsCollector {
                     .append('\n');
         }
         appendHud(sb, context, displays);
+        sb.append("仪表盘测试（开发者选项）: ").append(ClusterDisplayTest.lastResult()).append('\n');
         if (displays.length <= 1) {
             sb.append(">> 只有一块屏，副屏推送不可用").append('\n');
         } else {

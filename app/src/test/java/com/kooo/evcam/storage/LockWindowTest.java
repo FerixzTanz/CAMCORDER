@@ -301,4 +301,39 @@ public class LockWindowTest {
         assertEquals(setOf(clip(0, "front"), clip(MIN, SURROUND)),
                 lockedFor(MIN + 5 * SEC, names, allOneMinute()));
     }
+
+    // ================================================================= 双闪：亮起前 1 分钟到关闭，最多 5 分钟
+
+    @Test
+    public void theHazardWindowRunsFromAMinuteBeforeTheLightsCameOnUntilTheyWentOff() {
+        LockWindow window = LockWindow.hazard(T0 + 5 * MIN + 30 * SEC, T0 + 7 * MIN + 10 * SEC);
+        assertEquals(T0 + 4 * MIN + 30 * SEC, window.startMs);
+        assertEquals(T0 + 7 * MIN + 10 * SEC, window.endMs);
+        // 还亮着（关闭的时刻还没到）时就到亮起那一刻
+        LockWindow justOn = LockWindow.hazard(T0 + 5 * MIN, T0 + 5 * MIN);
+        assertEquals(T0 + 4 * MIN, justOn.startMs);
+        assertEquals(T0 + 5 * MIN, justOn.endMs);
+    }
+
+    @Test
+    public void theHazardWindowStopsFiveMinutesAfterTheLightsCameOn() {
+        LockWindow window = LockWindow.hazard(T0 + 5 * MIN, T0 + 40 * MIN);
+        assertEquals(T0 + 4 * MIN, window.startMs);
+        assertEquals(T0 + 10 * MIN, window.endMs);
+    }
+
+    @Test
+    public void hazardLightsLockEverySegmentFromTheMinuteBeforeUntilTheyGoOff() {
+        // 1 分钟一段，5:30 打开双闪、7:10 关掉：窗口 [4:30, 7:10] —— 4 分、5 分、6 分、7 分开始的四段，三路都锁；
+        // 3 分开始的那段到 4:00（加放宽也到不了 4:30）就完了，8 分开始的那段在关闭之后
+        Set<String> locked = LockWindow.hazard(T0 + 5 * MIN + 30 * SEC, T0 + 7 * MIN + 10 * SEC)
+                .overlapping(threeCameras(10), allOneMinute(), MIN);
+        Set<String> expected = new TreeSet<>();
+        for (String slot : Arrays.asList(SURROUND, CABIN_FRONT, CABIN_REAR)) {
+            for (long minute = 4; minute <= 7; minute++) {
+                expected.add(clip(minute * MIN, slot));
+            }
+        }
+        assertEquals(expected, locked);
+    }
 }

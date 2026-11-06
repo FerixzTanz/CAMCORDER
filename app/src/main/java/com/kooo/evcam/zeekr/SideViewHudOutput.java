@@ -53,6 +53,9 @@ final class SideViewHudOutput {
 
     private SideViewHudPanel panel;
     private boolean night;
+    /** 后视镜上的盲区指示灯（{@link #followBlindSpot}）：窗口重建时照这个来。 */
+    private Boolean blindSpotLeft;
+    private Boolean blindSpotRight;
     private SingleCamera boundCamera;
     /** 交给相机的是哪一个 SurfaceTexture：放手时确认槽位还是自己的。 */
     private SurfaceTexture boundTexture;
@@ -111,6 +114,15 @@ final class SideViewHudOutput {
     void followIndicator(Integer display) {
         if (panel != null) {
             panel.setIndicatorLit(SideViewDecision.indicatorLit(display, panel.lane()));
+        }
+    }
+
+    /** 后视镜上的盲区指示灯（显示的那一边亮着，画面四周显示红框）。记下来：窗口还没建好时，建好后照这个来。 */
+    void followBlindSpot(Boolean left, Boolean right) {
+        blindSpotLeft = left;
+        blindSpotRight = right;
+        if (panel != null) {
+            panel.setBlindSpotLamps(left, right);
         }
     }
 
@@ -284,6 +296,7 @@ final class SideViewHudOutput {
         }
         SideViewHudPanel created = new SideViewHudPanel(context, config, hud);
         created.setNight(night);
+        created.setBlindSpotLamps(blindSpotLeft, blindSpotRight);
         lastFrameMs = 0;   // 新窗口：上一个窗口的帧不算
         created.getTextureView().setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override

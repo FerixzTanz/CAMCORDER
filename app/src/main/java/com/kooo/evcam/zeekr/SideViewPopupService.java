@@ -22,6 +22,7 @@ import com.kooo.evcam.camera.CameraNeeds;
 import com.kooo.evcam.camera.MultiCameraManager;
 import com.kooo.evcam.camera.SingleCamera;
 import com.kooo.evcam.screen.ScreenState;
+import com.kooo.evcam.telemetry.MirrorLamps;
 import com.kooo.evcam.telemetry.Readings;
 import com.kooo.evcam.telemetry.Signal;
 import com.kooo.evcam.telemetry.Telemetry;
@@ -46,11 +47,19 @@ import com.kooo.evcam.telemetry.VehicleState;
  * <h3>车辆信号</h3>
  *
  * <p>亮屏时向 {@link Telemetry} 登记，熄屏就注销、窗口拿掉：熄屏后车机六秒就深睡，不该留着监听和相机过去。</p>
+ *
+ * <h3>盲区指示灯</h3>
+ *
+ * <p>「盲区提醒」开着时（默认开），亮屏期间另外登记后视镜上的盲区指示灯（{@link Telemetry#acquireLamps}，
+ * 车机设置服务那一条路）：显示的那一边灯亮着，主屏弹窗和 HUD 的画面四周都显示红框。只加红框，不因为灯亮就弹窗；
+ * 弹不弹照旧只看转向灯。熄屏、设置关了就注销。</p>
  */
 public class SideViewPopupService extends Service {
 
     private static final String TAG = "SideViewPopupSvc";
     private static final String TELEMETRY_USER = "side-popup";
+    /** 在 {@link Telemetry#acquireLamps} 登记用的名字。 */
+    private static final String LAMPS_USER = "side-popup-tint";
 
     private static final long RETRY_DELAY_MS = 500L;
     private static final int MAX_RETRY = 20;
@@ -77,6 +86,8 @@ public class SideViewPopupService extends Service {
     /** 交给相机的是哪一个 SurfaceTexture：放手时确认槽位还是自己的。 */
     private SurfaceTexture boundTexture;
     private boolean listening;
+    /** 此刻在读盲区指示灯（{@link #syncLamps}）。 */
+    private boolean readingLamps;
     private int retryCount;
     private Runnable retryRunnable;
     /** 上一次判定时该不该备着。 */
@@ -154,11 +165,14 @@ public class SideViewPopupService extends Service {
             if (svc.hud != null) {
                 svc.hud.applyConfig();
             }
+            svc.syncLamps();
             svc.evaluate();
         }
     }
 
     private final Telemetry.Listener readingsListener = readings -> evaluate();
+
+    private final Telemetry.LampListener lampListener = lamps -> applyLamps();
 
     private final ScreenState.Listener screenListener = new ScreenState.Listener() {
         @Override
@@ -211,6 +225,7 @@ public class SideViewPopupService extends Service {
         Telemetry.get().acquire(this, TELEMETRY_USER);
         Telemetry.get().addListener(readingsListener);
         AppLog.i(TAG, "侧视弹窗：开始听转向灯");
+        syncLamps();
         evaluate();
     }
 
@@ -221,10 +236,41 @@ public class SideViewPopupService extends Service {
         listening = false;
         Telemetry.get().removeListener(readingsListener);
         Telemetry.get().release(TELEMETRY_USER);
+        syncLamps();
         lastReady = false;
         detachPopup();
         dropHud();
         AppLog.i(TAG, "侧视弹窗：停止听转向灯");
+    }
+
+    /**
+     * 盲区指示灯该不该读，和现在读没读对一下：在听转向灯（亮屏）而且「盲区提醒」开着才读。主线程。
+     */
+    private void syncLamps() {
+        boolean want = listening && appConfig.isSideBlindSpotTintEnabled();
+        if (want == readingLamps) {
+            return;
+        }
+        readingLamps = want;
+        if (want) {
+            Telemetry.get().addLampListener(lampListener);
+            Telemetry.get().acquireLamps(this, LAMPS_USER);
+        } else {
+            Telemetry.get().removeLampListener(lampListener);
+            Telemetry.get().releaseLamps(LAMPS_USER);
+        }
+        applyLamps();
+    }
+
+    /** 把此刻的盲区指示灯交给两个窗口（没在读就是读不到，不显示红框）。主线程。 */
+    private void applyLamps() {
+        MirrorLamps lamps = readingLamps ? Telemetry.get().lamps() : MirrorLamps.UNKNOWN;
+        if (popup != null) {
+            popup.setBlindSpotLamps(lamps.blindSpotLeft, lamps.blindSpotRight);
+        }
+        if (hud != null) {
+            hud.followBlindSpot(lamps.blindSpotLeft, lamps.blindSpotRight);
+        }
     }
 
     /** 主线程上：按最新的读数决定弹 / 收 / 换边 / 备着。 */
@@ -322,6 +368,7 @@ public class SideViewPopupService extends Service {
     private SideViewHudOutput hudOutput() {
         if (hud == null) {
             hud = new SideViewHudOutput(this, appConfig);
+            applyLamps();
         }
         return hud;
     }
@@ -407,6 +454,7 @@ public class SideViewPopupService extends Service {
             return;
         }
         popup = new SideViewPopupView(this, appConfig);
+        applyLamps();
         lastFrameMs = 0;   // 新窗口：上一个窗口的帧不算
         popup.getTextureView().setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override

@@ -114,4 +114,18 @@ public final class SideViewDecision {
         }
         return null;
     }
+
+    /**
+     * 画面四周要不要显示红框：显示的这一边，后视镜上的盲区指示灯亮着（旁边车道有车）。左窗看左灯、右窗看右灯；
+     * 读不到、别的路都不显示。
+     */
+    public static boolean blindSpotWarning(Boolean blindSpotLeft, Boolean blindSpotRight, int lane) {
+        if (lane == LaneCycle.LEFT) {
+            return Boolean.TRUE.equals(blindSpotLeft);
+        }
+        if (lane == LaneCycle.RIGHT) {
+            return Boolean.TRUE.equals(blindSpotRight);
+        }
+        return false;
+    }
 }
