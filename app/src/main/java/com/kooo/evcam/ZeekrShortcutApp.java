@@ -36,6 +36,8 @@ public class ZeekrShortcutApp extends Application {
         com.kooo.evcam.blackbox.VolumeEvents.register(this);
         // 熄屏录制的唤醒锁活在进程上：熄屏 / 亮屏广播在这里注册，主界面在不在都一样（规格 §3.1）
         com.kooo.evcam.screen.ScreenState.install(this);
+        // 开发者选项的仪表盘测试请了投屏、没收尾就被杀了：补一个 STOP
+        com.kooo.evcam.zeekr.ClusterDisplayTest.recoverIfInterrupted(this);
         // 「这一趟」的录像选择落盘（规格 1.2）：进程被杀又拉回来时还在；车机真正开机就清
         final android.content.SharedPreferences choices = getSharedPreferences("recording_intent", MODE_PRIVATE);
         com.kooo.evcam.recording.RecordingIntent.current().attach(new com.kooo.evcam.recording.RecordingIntent.Store() {

@@ -64,6 +64,9 @@ public final class ClusterDisplayTest {
     private static final long GEAR_POLL_MS = 200L;
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
+    /** 投屏请求发出去、还没 STOP 的那段时间记一个标记：进程中途被杀，下次起来补一个 STOP（{@link #recoverIfInterrupted}）。 */
+    private static final String PREFS = "cluster_test";
+    private static final String KEY_PROJECTING = "projecting";
     private static volatile String lastResult = "not run";
     private static Presentation current;
     /** 这一次测试的投屏请求；连不上是 null。 */
@@ -72,6 +75,34 @@ public final class ClusterDisplayTest {
     private static boolean running;
 
     private ClusterDisplayTest() {
+    }
+
+    /**
+     * 进程起来时（{@code ZeekrShortcutApp.onCreate}）：上一次测试请了投屏、还没来得及 STOP 就被杀了，
+     * 现在补一个 STOP 和 RECOVERY，别让仪表盘停在上一帧。另起线程连，什么都不显示。
+     */
+    public static void recoverIfInterrupted(Context context) {
+        final Context app = context.getApplicationContext();
+        if (!app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_PROJECTING, false)) {
+            return;
+        }
+        new Thread(() -> {
+            StringBuilder reason = new StringBuilder();
+            ClusterProjection cp = ClusterProjection.connect(app, reason);
+            if (cp == null) {
+                BlackBox.noteImportant("仪表盘投屏：上一次没收尾，想补 STOP 但连不上（" + reason + "）");
+                return;
+            }
+            BlackBox.noteImportant("仪表盘投屏：上一次没收尾，补 STOP 和 RECOVERY");
+            cp.send(ClusterProjection.ACTION_STOP, 0, 0, ClusterDisplayLocator.CLUSTER_WIDTH, ClusterDisplayLocator.CLUSTER_HEIGHT);
+            cp.send(ClusterProjection.ACTION_RECOVERY, 0, 0, ClusterDisplayLocator.CLUSTER_WIDTH, ClusterDisplayLocator.CLUSTER_HEIGHT);
+            cp.close();
+            setProjecting(app, false);
+        }, "ClusterDisplayTest-recover").start();
+    }
+
+    private static void setProjecting(Context app, boolean on) {
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_PROJECTING, on).apply();
     }
 
     /** 诊断报告里的一行：最近一次测试的结果（英文）。 */
@@ -168,6 +199,7 @@ public final class ClusterDisplayTest {
                 }
                 projection = cp;
                 cp.listen(state -> { });
+                setProjecting(app, true);
                 cp.send(ClusterProjection.ACTION_REQUEST, 0, 0, size.x, size.y);
                 MAIN.postDelayed(() -> {
                     if (current == shown && projection == cp) {
@@ -202,6 +234,7 @@ public final class ClusterDisplayTest {
             if (cp != null) {
                 // 先请车机收回投屏，再收窗口
                 cp.send(ClusterProjection.ACTION_STOP, 0, 0, size.x, size.y);
+                setProjecting(app, false);
                 lastResult = lastResult + "; projection: " + cp.log();
                 cp.close();
             }
