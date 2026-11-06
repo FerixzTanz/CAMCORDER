@@ -146,14 +146,8 @@ public class SideViewDecisionTest {
     // ================================================================= 盲区提醒画在哪一边
 
     @Test
-    public void mirroredLikeTheDoorMirrorTheRedIsOnTheOutsideEdge() {
-        assertFalse(SideViewDecision.warningOnRightEdge(LaneCycle.LEFT, true));
-        assertTrue(SideViewDecision.warningOnRightEdge(LaneCycle.RIGHT, true));
-    }
-
-    @Test
-    public void asTheCameraSeesItTheRedIsOnTheInsideEdgeLikeTesla() {
-        assertTrue(SideViewDecision.warningOnRightEdge(LaneCycle.LEFT, false));
-        assertFalse(SideViewDecision.warningOnRightEdge(LaneCycle.RIGHT, false));
+    public void theRedIsOnTheSideOfTheCarInTheBlindSpot() {
+        assertFalse(SideViewDecision.warningOnRightEdge(LaneCycle.LEFT));
+        assertTrue(SideViewDecision.warningOnRightEdge(LaneCycle.RIGHT));
     }
 }

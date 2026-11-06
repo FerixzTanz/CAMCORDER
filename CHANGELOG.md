@@ -11,11 +11,9 @@ commit message, not here.
 
 ### Changed
 
-- **Blind spot warning looks like Tesla's.** The red is now on one edge only, the side of the picture
-  where the car in the next lane appears: solid at the edge, fading out over about a quarter of the
-  picture. With the picture mirrored like the door mirror (the default) that is the outside edge;
-  shown as the camera sees it, the inside edge. The screen and the HUD each follow their own mirror
-  setting.
+- **Blind spot warning looks like Tesla's.** The red is now on one edge only, solid at the edge and
+  fading out over about a quarter of the picture: the left edge for a car in the left blind spot, the
+  right edge for one on the right, on the screen and the HUD, whatever the mirror setting.
 
 ## [2.15.0] - 2026-11-03
 
