@@ -142,4 +142,18 @@ public class SideViewDecisionTest {
         assertFalse(SideViewDecision.blindSpotWarning(true, true, LaneCycle.REAR));
         assertFalse(SideViewDecision.blindSpotWarning(true, true, SideViewDecision.NONE));
     }
+
+    // ================================================================= 盲区提醒画在哪一边
+
+    @Test
+    public void mirroredLikeTheDoorMirrorTheRedIsOnTheOutsideEdge() {
+        assertFalse(SideViewDecision.warningOnRightEdge(LaneCycle.LEFT, true));
+        assertTrue(SideViewDecision.warningOnRightEdge(LaneCycle.RIGHT, true));
+    }
+
+    @Test
+    public void asTheCameraSeesItTheRedIsOnTheInsideEdgeLikeTesla() {
+        assertTrue(SideViewDecision.warningOnRightEdge(LaneCycle.LEFT, false));
+        assertFalse(SideViewDecision.warningOnRightEdge(LaneCycle.RIGHT, false));
+    }
 }

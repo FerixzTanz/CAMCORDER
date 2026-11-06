@@ -51,7 +51,7 @@ import com.kooo.evcam.telemetry.VehicleState;
  * <h3>盲区指示灯</h3>
  *
  * <p>「盲区提醒」开着时（默认开），亮屏期间另外登记后视镜上的盲区指示灯（{@link Telemetry#acquireLamps}，
- * 车机设置服务那一条路）：显示的那一边灯亮着，主屏弹窗和 HUD 的画面四周都显示红框。只加红框，不因为灯亮就弹窗；
+ * 车机设置服务那一条路）：显示的那一边灯亮着，主屏弹窗和 HUD 的画面靠旁边车道的一侧都显示渐变红。只加红框，不因为灯亮就弹窗；
  * 弹不弹照旧只看转向灯。熄屏、设置关了就注销。</p>
  */
 public class SideViewPopupService extends Service {
