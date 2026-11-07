@@ -61,7 +61,7 @@ jobs:
           SRC=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
           VERSION=$(grep -E '^[[:space:]]*versionName[[:space:]]*=' app/build.gradle.kts | head -1 | cut -d'"' -f2)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          OUT="ZeekrShortcut-${VERSION}-${SHORT_SHA}.apk"
+          OUT="CAMCORDER-${VERSION}-${SHORT_SHA}.apk"
           cp "$SRC" "$OUT"
           echo "path=$OUT" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -70,7 +70,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZeekrShortcut-apk
+          name: CAMCORDER-apk
           path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
 

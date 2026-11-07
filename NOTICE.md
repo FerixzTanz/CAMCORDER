@@ -1,6 +1,6 @@
 # 来源、致谢与许可证说明
 
-本文件说明极氪即刻（车机版）（Zeekr Shortcut (Car Version)）的每一部分从哪里来、
+本文件说明 CAMCORDER（派生自 dts88 的极氪即刻（车机版） / Zeekr Shortcut (Car Version)）的每一部分从哪里来、
 受什么许可约束。
 
 ---

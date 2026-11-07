@@ -1,6 +1,6 @@
 <resources>
     <!-- 应用名：装在车机上的这一份，本身就是车机版，桌面图标、抽屉标题、通知里不用再重复一遍。 -->
-    <string name="app_name">极氪即刻</string>
+    <string name="app_name">CAMCORDER</string>
     <string name="accessibility_service_description">用于「保持后台运行」，帮助应用在后台持续运行。\n\n本服务不读取、不操作任何界面内容，也不收集任何信息。</string>
 
     <!-- 极氪合成流模式 -->
@@ -502,7 +502,7 @@
     <string name="msg_select_photos_first">请先选择要分享的照片</string>
     <string name="msg_no_photos_to_share">没有可分享的照片</string>
     <string name="action_share_photos">分享照片</string>
-    <string name="msg_share_photo_subject">来自极氪即刻的照片</string>
+    <string name="msg_share_photo_subject">来自 CAMCORDER 的照片</string>
     <string name="msg_no_share_target">未找到可用于分享的应用</string>
     <string name="msg_file_unreadable">文件不存在或无法读取</string>
 
@@ -996,5 +996,5 @@
     <!-- 2.13 开源许可（原来在关于页） -->
     <string name="licence_row_title">开源许可</string>
     <string name="licence_row_summary">GPL-3.0 · 项目主页与上游</string>
-    <string name="licence_dialog_body">极氪即刻 v%1$s\n\n本应用是自由软件，按 GNU GPL-3.0 许可发布，不附带任何担保；你可以按同一许可证再分发和修改它。\n\n项目主页：%2$s\n上游 EVCam：%3$s\n许可证全文：%4$s\n\n本应用与极氪（ZEEKR）无任何隶属关系。</string>
+    <string name="licence_dialog_body">CAMCORDER v%1$s\n\n本应用是自由软件，按 GNU GPL-3.0 许可发布，不附带任何担保；你可以按同一许可证再分发和修改它。\n\n项目主页：%2$s\n上游 EVCam：%3$s\n许可证全文：%4$s\n\n本应用与极氪（ZEEKR）无任何隶属关系。</string>
 </resources>

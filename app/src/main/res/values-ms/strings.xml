@@ -1,6 +1,6 @@
 <resources>
     <!-- 马来语界面。键名与顺序跟 values-en 一致，字号不单独定义，和英文共用 values/dimens.xml -->
-    <string name="app_name">Zeekr Shortcut</string>
+    <string name="app_name">CAMCORDER</string>
     <!-- 完整名只有中文才带「（车机版）」，这边两条一样 -->
 
     <!-- Tetapan -->
@@ -498,7 +498,7 @@
     <string name="msg_select_photos_first">Pilih foto untuk dikongsi dahulu</string>
     <string name="msg_no_photos_to_share">Tiada foto untuk dikongsi</string>
     <string name="action_share_photos">Kongsi foto</string>
-    <string name="msg_share_photo_subject">Foto daripada Zeekr Shortcut</string>
+    <string name="msg_share_photo_subject">Foto daripada CAMCORDER</string>
     <string name="msg_no_share_target">Tiada apl untuk berkongsi</string>
     <string name="msg_file_unreadable">Fail hilang atau tidak boleh dibaca</string>
 
@@ -992,5 +992,5 @@
     <!-- 2.13 lesen sumber terbuka (dahulu di halaman Perihal) -->
     <string name="licence_row_title">Lesen sumber terbuka</string>
     <string name="licence_row_summary">GPL-3.0 · halaman projek dan huluan</string>
-    <string name="licence_dialog_body">Zeekr Shortcut v%1$s\n\nIni perisian bebas yang dikeluarkan di bawah GNU GPL-3.0, tanpa sebarang jaminan; anda boleh mengedar semula dan mengubah suainya di bawah lesen yang sama.\n\nProjek: %2$s\nHuluan EVCam: %3$s\nTeks lesen: %4$s\n\nTiada kaitan dengan ZEEKR.</string>
+    <string name="licence_dialog_body">CAMCORDER v%1$s\n\nIni perisian bebas yang dikeluarkan di bawah GNU GPL-3.0, tanpa sebarang jaminan; anda boleh mengedar semula dan mengubah suainya di bawah lesen yang sama.\n\nProjek: %2$s\nHuluan EVCam: %3$s\nTeks lesen: %4$s\n\nTiada kaitan dengan ZEEKR.</string>
 </resources>

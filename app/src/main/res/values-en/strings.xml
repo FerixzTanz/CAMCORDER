@@ -1,6 +1,6 @@
 <resources>
     <!-- 英文环境下的应用名；默认（中文）名见 values/strings.xml -->
-    <string name="app_name">Zeekr Shortcut</string>
+    <string name="app_name">CAMCORDER</string>
     <!-- 完整名只有中文才带「（车机版）」，英文这边两条一样 -->
 
     <!-- Settings screen -->
@@ -505,7 +505,7 @@
     <string name="msg_select_photos_first">Select the photos to share first</string>
     <string name="msg_no_photos_to_share">No photos to share</string>
     <string name="action_share_photos">Share photos</string>
-    <string name="msg_share_photo_subject">Photos from Zeekr Shortcut</string>
+    <string name="msg_share_photo_subject">Photos from CAMCORDER</string>
     <string name="msg_no_share_target">No app available to share with</string>
     <string name="msg_file_unreadable">File missing or unreadable</string>
 
@@ -1010,5 +1010,5 @@
     <!-- 2.13 open-source licence (used to live on the About page) -->
     <string name="licence_row_title">Open-source licence</string>
     <string name="licence_row_summary">GPL-3.0 · project page and upstream</string>
-    <string name="licence_dialog_body">Zeekr Shortcut v%1$s\n\nThis is free software released under the GNU GPL-3.0, with no warranty; you may redistribute and modify it under the same licence.\n\nProject: %2$s\nUpstream EVCam: %3$s\nLicence text: %4$s\n\nNot affiliated with ZEEKR.</string>
+    <string name="licence_dialog_body">CAMCORDER v%1$s\n\nThis is free software released under the GNU GPL-3.0, with no warranty; you may redistribute and modify it under the same licence.\n\nProject: %2$s\nUpstream EVCam: %3$s\nLicence text: %4$s\n\nNot affiliated with ZEEKR.</string>
 </resources>

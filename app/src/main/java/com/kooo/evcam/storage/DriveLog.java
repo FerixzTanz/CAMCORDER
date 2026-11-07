@@ -52,7 +52,7 @@ public final class DriveLog {
     public static final String FILE_NAME = "drives.txt";
     /** 比这大就不读（一趟几十字节，一万趟也才几百 KB）。 */
     static final long MAX_BYTES = 2L * 1024 * 1024;
-    private static final String HEADER = "# Zeekr Shortcut: drive log. S start, E end (epoch ms, odometer km); "
+    private static final String HEADER = "# CAMCORDER: drive log. S start, E end (epoch ms, odometer km); "
             + "B hard braking (g); F flash-to-pass lock.";
 
     private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
