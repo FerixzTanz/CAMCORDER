@@ -90,11 +90,6 @@ public class SideViewHudPanel extends SideViewPopupView {
     }
 
     @Override
-    protected boolean framed() {
-        return false;
-    }
-
-    @Override
     public void applyConfig() {
         readTone();
         applyWindowAlpha();
