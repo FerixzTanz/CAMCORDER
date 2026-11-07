@@ -7,6 +7,15 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.3] - 2026-11-07
+
+### Changed
+
+- **Blind spot warning is softer.** The red on the edge of the side view is half as wide as in
+  2.15.2 and lighter, so it reads as a warning strip rather than covering the picture.
+- **It fades in and out.** When the blind spot light comes on while the side view is already
+  showing, the strip fades in over a quarter of a second, and fades out when the light goes off.
+
 ## [2.15.2] - 2026-11-06
 
 ### Fixed

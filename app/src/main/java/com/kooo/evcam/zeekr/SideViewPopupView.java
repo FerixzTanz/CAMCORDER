@@ -3,6 +3,7 @@ package com.kooo.evcam.zeekr;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -107,14 +108,23 @@ public class SideViewPopupView extends ViewGroup {
     private Boolean blindSpotRight;
     private final Paint warningPaint = new Paint();
     /**
+     * 那道红此刻显出几成（0..1）：灯在画面显示着的时候亮起，{@link #WARNING_FADE_MS} 内淡入，灭了同样淡出
+     * （用户 2026-11-07）。换边时直接跳到位，不淡。一次淡入淡出十几帧重画，只在灯变的时候有。
+     */
+    private float warningAlpha;
+    private ValueAnimator warningFade;
+    private static final long WARNING_FADE_MS = 250L;
+    /** 淡入淡出时按 {@link #warningAlpha} 缩过的颜色，重复用。 */
+    private final int[] warningColorsNow = new int[WARNING_COLORS.length];
+    /**
      * 只在一条边上：车在哪一边就是哪一边（{@link SideViewDecision#warningOnRightEdge}），边上最浓，往里淡到没有
      * （用户 2026-11-06：像 Tesla 的盲区提醒那样一道渐变红；左边有车红在左边，和画面翻不翻无关）。
      */
-    private static final int[] WARNING_COLORS = {0xE6FF2A2A, 0x80FF2A2A, 0x00FF2A2A};
-    /** 前 35% 从浓红淡到一半，剩下的慢慢淡完。 */
+    private static final int[] WARNING_COLORS = {0xA6FF2A2A, 0x40FF2A2A, 0x00FF2A2A};
+    /** 前 35% 从六成五的红淡到四分之一，剩下的慢慢淡完（用户 2026-11-07：2.15.2 的太冲、盖得太多，减半）。 */
     private static final float[] WARNING_STOPS = {0f, 0.35f, 1f};
-    /** 那道红有多宽：窗口宽度的这么多。 */
-    private static final float WARNING_EDGE_SHARE = 0.28f;
+    /** 那道红有多宽：窗口宽度的这么多（2.15.2 是 0.28）。 */
+    private static final float WARNING_EDGE_SHARE = 0.14f;
 
     private WindowManager.LayoutParams params;
     /** 子类（HUD 上的那一块，{@link SideViewHudPanel}）换了一套窗口，状态由它自己设。 */
@@ -238,8 +248,37 @@ public class SideViewPopupView extends ViewGroup {
         if (!java.util.Objects.equals(left, blindSpotLeft) || !java.util.Objects.equals(right, blindSpotRight)) {
             blindSpotLeft = left;
             blindSpotRight = right;
-            invalidate();
+            fadeWarningTo(SideViewDecision.blindSpotWarning(blindSpotLeft, blindSpotRight, lane) ? 1f : 0f);
         }
+    }
+
+    /** 红往显出或收起淡（{@link #WARNING_FADE_MS}）；已经在那儿就不动。 */
+    private void fadeWarningTo(float target) {
+        float from = warningAlpha;
+        if (warningFade != null) {
+            warningFade.cancel();
+            warningFade = null;
+        }
+        if (from == target) {
+            return;
+        }
+        ValueAnimator a = ValueAnimator.ofFloat(from, target);
+        a.setDuration(Math.round(WARNING_FADE_MS * Math.abs(target - from)));
+        a.addUpdateListener(anim -> {
+            warningAlpha = (float) anim.getAnimatedValue();
+            invalidate();
+        });
+        warningFade = a;
+        a.start();
+    }
+
+    /** 换边：这一边的灯亮不亮直接定，不淡（画面本身也是换边即换）。 */
+    protected void snapWarningToLane() {
+        if (warningFade != null) {
+            warningFade.cancel();
+            warningFade = null;
+        }
+        warningAlpha = SideViewDecision.blindSpotWarning(blindSpotLeft, blindSpotRight, lane) ? 1f : 0f;
     }
 
     // ------------------------------------------------------------------ 窗口
@@ -304,6 +343,9 @@ public class SideViewPopupView extends ViewGroup {
     protected void attachAt(int side, boolean show) {
         boolean sideChanged = side != lane;
         lane = side;
+        if (sideChanged) {
+            snapWarningToLane();
+        }
         if (attached) {
             boolean wasShown = windowShown();
             visible = show;
@@ -624,20 +666,30 @@ public class SideViewPopupView extends ViewGroup {
      * 不管画面翻没翻：在镜像之外画，红告诉你「这一边有车」。
      */
     private void drawBlindSpotWarning(Canvas canvas, int width, int height) {
-        if (!SideViewDecision.blindSpotWarning(blindSpotLeft, blindSpotRight, lane)) {
+        float alpha = warningAlpha;
+        if (alpha <= 0f) {
             return;
         }
         float band = width * WARNING_EDGE_SHARE;
         if (band < 1f) {
             return;
         }
+        int[] colors = WARNING_COLORS;
+        if (alpha < 1f) {
+            for (int i = 0; i < WARNING_COLORS.length; i++) {
+                int c = WARNING_COLORS[i];
+                int a = Math.round(((c >>> 24) & 0xFF) * alpha);
+                warningColorsNow[i] = (a << 24) | (c & 0x00FFFFFF);
+            }
+            colors = warningColorsNow;
+        }
         if (SideViewDecision.warningOnRightEdge(lane)) {
             warningPaint.setShader(new LinearGradient(width, 0f, width - band, 0f,
-                    WARNING_COLORS, WARNING_STOPS, Shader.TileMode.CLAMP));
+                    colors, WARNING_STOPS, Shader.TileMode.CLAMP));
             canvas.drawRect(width - band, 0f, width, height, warningPaint);
         } else {
             warningPaint.setShader(new LinearGradient(0f, 0f, band, 0f,
-                    WARNING_COLORS, WARNING_STOPS, Shader.TileMode.CLAMP));
+                    colors, WARNING_STOPS, Shader.TileMode.CLAMP));
             canvas.drawRect(0f, 0f, band, height, warningPaint);
         }
         warningPaint.setShader(null);
