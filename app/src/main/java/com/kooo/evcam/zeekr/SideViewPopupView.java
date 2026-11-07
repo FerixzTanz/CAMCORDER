@@ -123,8 +123,8 @@ public class SideViewPopupView extends ViewGroup {
     private static final int[] WARNING_COLORS = {0xA6FF2A2A, 0x40FF2A2A, 0x00FF2A2A};
     /** 前 35% 从六成五的红淡到四分之一，剩下的慢慢淡完（用户 2026-11-07：2.15.2 的太冲、盖得太多，减半）。 */
     private static final float[] WARNING_STOPS = {0f, 0.35f, 1f};
-    /** 那道红有多宽：窗口宽度的这么多（2.15.2 是 0.28）。 */
-    private static final float WARNING_EDGE_SHARE = 0.14f;
+    /** 那道红有多宽：窗口宽度的这么多（2.15.2 是 0.28，2.15.3 是 0.14；用户 2026-11-07：再宽一点，取两者中间）。 */
+    private static final float WARNING_EDGE_SHARE = 0.21f;
 
     private WindowManager.LayoutParams params;
     /** 子类（HUD 上的那一块，{@link SideViewHudPanel}）换了一套窗口，状态由它自己设。 */
