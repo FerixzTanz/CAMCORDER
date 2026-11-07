@@ -13,6 +13,8 @@ commit message, not here.
 
 - **Blind spot warning is a little wider.** The red strip on the edge of the side view is slightly
   wider than in 2.15.3 (about halfway back to 2.15.2); colour and fade are unchanged.
+- **No outline around the side view.** The thin light line around the window is gone, so the
+  red strip runs right to the edge.
 
 ## [2.15.3] - 2026-11-07
 

@@ -76,9 +76,7 @@ public class SideViewPopupView extends ViewGroup {
     private final RectF destRect = new RectF();
     private final FisheyeMesh mesh = new FisheyeMesh();
     private final FisheyeMesh.Painter paintTexture = this::drawTextureOnce;
-    /** 外框：和车机原厂 360 画面的分格一样，圆角加一道细浅边（CAMCORDER 2026-10-08 界面审查）。 */
-    private final Paint framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF frameRect = new RectF();
+    /** 窗口圆角半径（只裁圆角，不描边）。 */
     private final float cornerRadius;
     private final Paint coverTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final PorterDuffXfermode DST_OUT = new PorterDuffXfermode(PorterDuff.Mode.DST_OUT);
@@ -163,7 +161,7 @@ public class SideViewPopupView extends ViewGroup {
         this.appConfig = appConfig;
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         setBackgroundColor(0xFF000000);
-        // 原来是直角黑框，像一块贴上去的视频；车机自己的 360 画面每一格都是圆角、带一道浅色分隔
+        // 圆角、不描边：像 Tesla 的盲区画面那样只有画面本身，盲区红一直画到窗口边上（用户 2026-11-07）
         cornerRadius = context.getResources().getDimension(R.dimen.corner_radius);
         setOutlineProvider(new ViewOutlineProvider() {
             @Override
@@ -172,9 +170,6 @@ public class SideViewPopupView extends ViewGroup {
             }
         });
         setClipToOutline(true);
-        framePaint.setStyle(Paint.Style.STROKE);
-        framePaint.setStrokeWidth(2f * context.getResources().getDisplayMetrics().density);
-        framePaint.setColor(context.getColor(R.color.surface));
         coverTextPaint.setColor(0xFFF2F2F3);
         arrowPaint.setStyle(Paint.Style.FILL);
         arrowBackdropPaint.setStyle(Paint.Style.FILL);
@@ -554,7 +549,6 @@ public class SideViewPopupView extends ViewGroup {
             super.dispatchDraw(canvas);
             canvas.drawColor(0xFF000000);
             drawCover(canvas, width, height);
-            drawFrame(canvas, width, height);
             return;
         }
         aspect = (float) width / height;
@@ -570,7 +564,7 @@ public class SideViewPopupView extends ViewGroup {
         float fade = HudEdgeFade.widthPx(edgeFadePercent(), width, height);
         if (tone != null || fade > 0f) {
             // 画面过一层颜色矩阵（HUD 上压暗中灰，见 HudPictureTone）、四边渐隐（见 HudEdgeFade）；
-            // 盖板、边框、箭头在层外，不受它们影响
+            // 盖板、箭头在层外，不受它们影响
             canvas.saveLayer(0f, 0f, width, height, tone);
         }
         int inner = canvas.save();
@@ -597,7 +591,6 @@ public class SideViewPopupView extends ViewGroup {
         }
         canvas.restoreToCount(save);
         drawCover(canvas, width, height);
-        drawFrame(canvas, width, height);
         drawIndicator(canvas, width, height);
     }
 
@@ -717,15 +710,6 @@ public class SideViewPopupView extends ViewGroup {
         canvas.drawText(text, width / 2f, height / 2f - (fm.ascent + fm.descent) / 2f, coverTextPaint);
     }
 
-    /** 细浅边，压在画面最上层；线宽一半落在窗口外会被圆角裁掉，所以往里收半个线宽。 */
-    private void drawFrame(Canvas canvas, int width, int height) {
-        if (!framed()) {
-            return;
-        }
-        float inset = framePaint.getStrokeWidth() / 2f;
-        frameRect.set(inset, inset, width - inset, height - inset);
-        canvas.drawRoundRect(frameRect, cornerRadius - inset, cornerRadius - inset, framePaint);
-    }
 
     /**
      * 四条渐变带，用 DST_OUT 把画面从边上往里擦成透明：擦的量在最外沿是 100%，到带的内沿是 0。
@@ -764,11 +748,4 @@ public class SideViewPopupView extends ViewGroup {
         return 0;
     }
 
-    /**
-     * 外框画不画。主屏画：和原厂 360 的分格一样一道浅边。HUD 不画：浅边在投影上就是一圈白光，
-     * 画面本来就嫌白（用户 2026-10-14）；HUD 上黑底就是没有，不需要边来把画面和底分开。
-     */
-    protected boolean framed() {
-        return true;
-    }
 }
