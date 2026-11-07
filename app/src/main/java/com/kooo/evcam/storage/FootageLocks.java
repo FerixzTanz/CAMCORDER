@@ -57,7 +57,7 @@ public final class FootageLocks {
     /** 清单比这大就不读：一行三四十字节，五万个文件也才 2 MB。 */
     private static final long MAX_LIST_BYTES = 2L * 1024 * 1024;
     private static final String HEADER =
-            "# Zeekr Shortcut: locked footage, one file name per line. Never deleted automatically.";
+            "# CAMCORDER: locked footage, one file name per line. Never deleted automatically.";
 
     /**
      * 车自己锁的（急刹车）那一部分，和 {@link #FILE_NAME} 同一个目录。它们也在 {@link #FILE_NAME} 里，
@@ -66,7 +66,7 @@ public final class FootageLocks {
      */
     public static final String AUTO_FILE_NAME = "locked-auto.txt";
     private static final String AUTO_HEADER =
-            "# Zeekr Shortcut: footage locked automatically (hard braking). Released oldest first when over the cap.";
+            "# CAMCORDER: footage locked automatically (hard braking). Released oldest first when over the cap.";
 
     private static final Object GUARD = new Object();
     private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {

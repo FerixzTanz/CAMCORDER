@@ -48,7 +48,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
-        android:name=".ZeekrShortcutApp"
+        android:name=".CamcorderApp"
         android:localeConfig="@xml/locales_config"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

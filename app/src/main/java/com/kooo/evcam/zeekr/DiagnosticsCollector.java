@@ -60,7 +60,7 @@ public final class DiagnosticsCollector {
         String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date());
 
         sb.append("========================================").append('\n');
-        sb.append(" 极氪即刻（车机版）诊断报告").append('\n');
+        sb.append(" CAMCORDER 诊断报告").append('\n');
         sb.append(" 生成时间: ").append(now).append('\n');
         sb.append("========================================").append('\n').append('\n');
 

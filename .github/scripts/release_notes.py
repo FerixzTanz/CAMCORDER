@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-APP_NAME = "Zeekr Shortcut (Car Version)"
+APP_NAME = "CAMCORDER"
 REPO = "https://github.com/dts88/zeekr-shortcut-car"
 
 

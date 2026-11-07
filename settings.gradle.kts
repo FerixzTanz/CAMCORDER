@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ZeekrShortcut"
+rootProject.name = "CAMCORDER"
 include(":app")

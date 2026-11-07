@@ -18,7 +18,7 @@ import com.kooo.evcam.settings.Languages;
  * <p>卡顿监测（{@link StallWatch}）也在这里启动，理由一样：它要盯的后视镜是悬浮窗，
  * 主界面没打开过也在跑。</p>
  */
-public class ZeekrShortcutApp extends Application {
+public class CamcorderApp extends Application {
 
     /** 上一次看到的配置，拿来和新的比，看变的到底是哪一项。 */
     private Configuration lastConfig;

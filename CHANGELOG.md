@@ -7,6 +7,14 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.5] - 2026-11-07
+
+### Changed
+
+- **The app is now called CAMCORDER.** The name under the icon, in the About and licence
+  text, on photo watermarks and shared photos, and on the download file is CAMCORDER in every
+  language. It installs over the previous version as an update, with your settings kept.
+
 ## [2.15.4] - 2026-11-07
 
 ### Changed

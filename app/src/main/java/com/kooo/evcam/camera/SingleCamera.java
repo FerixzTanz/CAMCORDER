@@ -2578,7 +2578,7 @@ public class SingleCamera {
      * {@link WatermarkText} 拼字符串：</p>
      *
      * <pre>
-     *   极氪即刻 v0.36.2  京A12345     &lt;- 每一张都有；车牌号可选
+     *   CAMCORDER v0.36.2  京A12345     &lt;- 每一张都有；车牌号可选
      *   2026-09-03 14:22:07            &lt;- 这一行和下一行跟着「时间水印」开关
      *   2560x2560                      &lt;- 这张图真实的尺寸
      * </pre>
