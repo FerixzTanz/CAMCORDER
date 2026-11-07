@@ -13,6 +13,8 @@ commit message, not here.
 
 - **Blind spot warning is softer.** The red on the edge of the side view is half as wide as in
   2.15.2 and lighter, so it reads as a warning strip rather than covering the picture.
+- **It fades in and out.** When the blind spot light comes on while the side view is already
+  showing, the strip fades in over a quarter of a second, and fades out when the light goes off.
 
 ## [2.15.2] - 2026-11-06
 

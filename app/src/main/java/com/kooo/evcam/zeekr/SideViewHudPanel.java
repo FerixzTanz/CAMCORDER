@@ -153,6 +153,9 @@ public class SideViewHudPanel extends SideViewPopupView {
     protected void attachAt(int side, boolean show) {
         boolean sideChanged = side != lane;
         lane = side;
+        if (sideChanged) {
+            snapWarningToLane();
+        }
         if (isAttached()) {
             boolean wasShown = windowShown();
             boolean visibilityChanged = show != visible;
