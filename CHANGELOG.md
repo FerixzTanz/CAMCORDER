@@ -7,6 +7,17 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.6] - 2026-11-08
+
+### Fixed
+
+- **Hazard-light lock no longer locks footage by mistake.** The hazard lights now have to stay
+  on for 4 seconds before anything is locked. Before, the single flash when you lock the car
+  after getting out, or a quick thank-you flash, locked the minute before it, even though
+  nothing had happened. Leaving the hazards on still locks from 1 minute before they came on.
+- **Hazard locks show up on the playback timeline.** Clips locked by the hazard lights now
+  have an event marker, like hard braking and flash-to-pass.
+
 ## [2.15.5] - 2026-11-07
 
 ### Changed

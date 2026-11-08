@@ -30,6 +30,15 @@ public class DriveRecordsTest {
         assertFalse(d.isOpen());
     }
 
+    /** 双闪锁定也是一件事：回放时间轴上要有标记（用户诊断 2026-11-08：双闪锁的录像找不到事件）。 */
+    @Test
+    public void hazardLocksAreEvents() {
+        List<DriveRecords.Drive> drives = DriveRecords.parse("S 1000 -\nH 4000\nE 9000 -\n");
+        assertEquals(1, drives.get(0).events.size());
+        assertEquals(DriveRecords.Event.HAZARD, drives.get(0).events.get(0).type);
+        assertEquals(4000, drives.get(0).events.get(0).epochMs);
+    }
+
     /** 没记到下车（进程没了）：下一趟开始时上一趟仍是「没结束」，由分组决定算到哪。 */
     @Test
     public void anUnfinishedDriveStaysOpen() {

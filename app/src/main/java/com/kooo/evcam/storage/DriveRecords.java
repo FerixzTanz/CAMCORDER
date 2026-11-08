@@ -13,6 +13,8 @@ public final class DriveRecords {
     public static final class Event {
         public static final char BRAKE = 'B';
         public static final char FLASH = 'F';
+        /** 双闪锁定：时刻是双闪亮起那一刻。 */
+        public static final char HAZARD = 'H';
 
         public final char type;
         public final long epochMs;
@@ -93,6 +95,7 @@ public final class DriveRecords {
                     break;
                 case 'B':
                 case 'F':
+                case 'H':
                     if (open != null) {
                         open.events.add(new Event(parts[0].charAt(0), when, number == null ? 0 : number));
                     }

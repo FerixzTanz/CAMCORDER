@@ -63,7 +63,9 @@ import java.util.TreeSet;
  * 鸣笛那一项拿掉了：车上读不到喇叭信号。</p>
  *
  * <p><b>双闪</b>（2.15.0，取自 dts88 的 2.25.0-alpha）是第三个来源：转向指示状态（{@link Signal#INDICATOR}，不跟着灯闪的那个）
- * 变成 3 是亮起，变成别的值是关闭；没数据不算关闭；开始看的时候已经亮着不算亮起。时间窗是 [亮起 − 1 分钟, 关闭]
+ * 变成 3 是亮起，变成别的值是关闭；没数据不算关闭；开始看的时候已经亮着不算亮起。亮起后要连着亮够
+ * {@link #HAZARD_CONFIRM_MS} 才算数（{@link #hazardConfirm}）：没亮够就灭的那一下（致谢闪一下、停车下车前车自己闪一下）
+ * 不锁（用户诊断 2026-11-08：两天里 5 次双闪锁定，每次都只亮了 0.3 – 1.0 秒）。算数了，亮起的时刻仍是最早那一刻。时间窗是 [亮起 − 1 分钟, 关闭]
  * （{@link LockWindow#hazard}），最多到亮起后 {@link LockWindow#HAZARD_MAX_MS}：路边打着双闪停半小时，不该把半小时
  * 每一路都锁上。亮起那一刻锁一遍（前一分钟和正在录的那一段），亮着时每 {@link #HAZARD_TICK_MS} 锁一遍新录的，
  * 关闭（或者到了上限、录像停了、开关关了）时照闪远光锁两遍。和急刹车一样记成「自动锁的」、受 {@link AutoLockBudget} 管：
@@ -82,6 +84,12 @@ public final class AutoLock implements Telemetry.Listener {
     private static final long TOAST_GAP_MS = 4_000L;
     /** 双闪亮着时隔多久把新录的锁上一遍：最短的分段是 1 分钟，半分钟一遍，新开始的那一段半分钟内就锁上。 */
     static final long HAZARD_TICK_MS = 30_000L;
+    /**
+     * 双闪要连着亮这么久才算打了双闪。车上读到过亮 0.3 – 1.0 秒就灭的（致谢闪一下、停车后车自己闪一下），
+     * 那不是出了事；致谢闪两三下也就两秒出头（7X 一闪约 730 ms）。真打双闪都是亮着不关的，晚 4 秒算数不少锁：
+     * 时间窗照样从亮起前 1 分钟起。
+     */
+    static final long HAZARD_CONFIRM_MS = 4_000L;
     /** {@link #pass} 的第几遍：双闪亮起那一刻、亮着时（0 当时、1 补锁、2 起等盘回来，和闪远光一样）。 */
     private static final int ROUND_HAZARD_ON = -2;
     private static final int ROUND_HAZARD_ONGOING = -1;
@@ -110,6 +118,10 @@ public final class AutoLock implements Telemetry.Listener {
     /** 同一刻的单调时钟：上限按它算，车机开机后校时（GPS / 网络）跳表不影响（审查 2026-11-06）。 */
     private long hazardSinceUptimeMs;
     private final Runnable hazardTick = this::hazardTick;
+    /** 双闪亮起了、还没亮够 {@link #HAZARD_CONFIRM_MS} 的那一刻（系统时间）；没在等为 0。 */
+    private long hazardPendingMs;
+    private long hazardPendingUptimeMs;
+    private final Runnable hazardConfirm = this::hazardConfirm;
     private final HardBrakeDetector hardBrake = new HardBrakeDetector();
     private long lastToastAt;
 
@@ -219,6 +231,10 @@ public final class AutoLock implements Telemetry.Listener {
     /** 该不该看信号，和现在看没看对一下。主线程。 */
     private void update() {
         boolean want = recording && app != null && (flashEnabled(app) || brakeEnabled(app) || hazardEnabled(app));
+        // 还没亮够就停了录、关了开关：这一下不算（停录、关开关之后本来也不锁）
+        if (hazardPendingMs > 0 && (!want || !hazardEnabled(app))) {
+            hazardPendingCancel(recording ? HAZARD_END_SWITCH : HAZARD_END_RECORDING);
+        }
         // 双闪亮着时录像停了、双闪那一项（或者锁定影像）关了：这一次双闪当在此刻关闭（开关关了的，那两遍看到开关不锁）
         if (hazardSinceMs > 0 && (!want || !hazardEnabled(app))) {
             hazardOff(System.currentTimeMillis(), recording ? HAZARD_END_SWITCH : HAZARD_END_RECORDING);
@@ -264,8 +280,14 @@ public final class AutoLock implements Telemetry.Listener {
         Boolean hazard = hazardOn(readings);
         // 只认「灭 → 亮」：开始看信号时读数还是空的（登记时才拉起车辆信号），第一个读数就是 3 的，是早就亮着，不算亮起
         if (Boolean.TRUE.equals(hazard) && Boolean.FALSE.equals(lastHazard) && hazardSinceMs == 0
-                && hazardEnabled(app)) {
-            hazardOnAt(System.currentTimeMillis());
+                && hazardPendingMs == 0 && hazardEnabled(app)) {
+            // 先等它亮够 HAZARD_CONFIRM_MS（hazardConfirm），一闪就灭的不锁
+            hazardPendingMs = System.currentTimeMillis();
+            hazardPendingUptimeMs = SystemClock.elapsedRealtime();
+            main.removeCallbacks(hazardConfirm);
+            main.postDelayed(hazardConfirm, HAZARD_CONFIRM_MS);
+        } else if (Boolean.FALSE.equals(hazard) && hazardPendingMs > 0) {
+            hazardPendingCancel(HAZARD_END_LIGHTS);
         } else if (Boolean.FALSE.equals(hazard) && hazardSinceMs > 0) {
             hazardOff(System.currentTimeMillis(), HAZARD_END_LIGHTS);
         }
@@ -313,19 +335,45 @@ public final class AutoLock implements Telemetry.Listener {
                 Math.max(0L, window.endMs - nowMs) + LockWindow.SECOND_PASS_DELAY_MS);
     }
 
+    /** 双闪连着亮够了 {@link #HAZARD_CONFIRM_MS}（中间灭过的已经在 {@link #onReadingsChanged} 里取消了）：算打了双闪。主线程。 */
+    private void hazardConfirm() {
+        long since = hazardPendingMs;
+        long sinceUptime = hazardPendingUptimeMs;
+        hazardPendingMs = 0;
+        if (since <= 0 || app == null || !watching || !hazardEnabled(app)) {
+            return;
+        }
+        hazardOnAt(since, sinceUptime);
+    }
+
+    /** 双闪没亮够就灭了（或者停了录、关了开关；why 用 HAZARD_END_*）：不算，黑匣子记一行，好分清「车上闪了一下」和「没读到」。主线程。 */
+    private void hazardPendingCancel(int why) {
+        main.removeCallbacks(hazardConfirm);
+        long lit = SystemClock.elapsedRealtime() - hazardPendingUptimeMs;
+        hazardPendingMs = 0;
+        BlackBox.noteImportant(String.format(Locale.US, "双闪只亮了 %d ms%s：不到 %d 秒，不算，不锁", lit,
+                why == HAZARD_END_SWITCH ? "（开关关了）" : why == HAZARD_END_RECORDING ? "（录像停了）" : "",
+                HAZARD_CONFIRM_MS / 1000));
+    }
+
     /**
-     * 双闪亮起：锁 [亮起 − 1 分钟, 亮起] —— 前一分钟和正在录的那一段；锁上了新的提示一句。
-     * 亮着时每 {@link #HAZARD_TICK_MS} 再锁一遍新录的（{@link #hazardTick}）。主线程。
+     * 双闪亮起（已经亮够 {@link #HAZARD_CONFIRM_MS}）：锁 [亮起 − 1 分钟, 此刻] —— 前一分钟和正在录的那一段；
+     * 锁上了新的提示一句；行车日志记一件事（时刻是亮起那一刻，回放时间轴上有标记）。
+     * 亮着时每 {@link #HAZARD_TICK_MS} 再锁一遍新录的（{@link #hazardTick}）；5 分钟上限从亮起那一刻算。主线程。
+     *
+     * @param sinceMs       亮起那一刻（系统时间）
+     * @param sinceUptimeMs 同一刻的单调时钟
      */
-    private void hazardOnAt(long nowMs) {
-        hazardSinceMs = nowMs;
-        hazardSinceUptimeMs = SystemClock.elapsedRealtime();
+    private void hazardOnAt(long sinceMs, long sinceUptimeMs) {
+        hazardSinceMs = sinceMs;
+        hazardSinceUptimeMs = sinceUptimeMs;
         final Context context = app;
-        final LockWindow window = LockWindow.hazard(nowMs, nowMs);
+        final LockWindow window = LockWindow.hazard(sinceMs, System.currentTimeMillis());
         final File target = relayTarget;
-        BlackBox.noteImportant("双闪亮起：从前 1 分钟起锁定，到关闭为止（最多 "
+        BlackBox.noteImportant("双闪亮起（连着亮了 " + (HAZARD_CONFIRM_MS / 1000) + " 秒）：从亮起前 1 分钟起锁定，到关闭为止（最多 "
                 + (LockWindow.HAZARD_MAX_MS / 60_000L) + " 分钟）");
         worker.post(() -> pass(context, window, target, ROUND_HAZARD_ON, Source.HAZARD));
+        DriveLog.event(context, DriveRecords.Event.HAZARD, 0, sinceMs);
         main.removeCallbacks(hazardTick);
         main.postDelayed(hazardTick, HAZARD_TICK_MS);
     }
