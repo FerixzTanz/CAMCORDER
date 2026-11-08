@@ -418,7 +418,7 @@
     <string name="set_footage_lock_brake_title">Lock footage on hard braking</string>
     <string name="set_footage_lock_brake_summary" formatted="false">While recording, a hard stop (including the car\'s automatic emergency braking) locks the clips covering 10 seconds before and after. Automatic locks use at most 10% of the recording space; the oldest is released first.</string>
     <string name="set_footage_lock_hazard_title">Lock footage on hazard lights</string>
-    <string name="set_footage_lock_hazard_summary" formatted="false">While recording, turning on the hazard lights locks the clips from 1 minute before until they go off (at most 5 minutes), on every camera. Shares the 10% automatic lock limit with hard braking.</string>
+    <string name="set_footage_lock_hazard_summary" formatted="false">While recording, turning on the hazard lights locks the clips from 1 minute before until they go off (at most 5 minutes), on every camera. A flash shorter than 4 seconds (such as a thank-you flash) does not lock. Shares the 10% automatic lock limit with hard braking.</string>
     <string name="msg_flash_locked">Flash-to-pass: locked the clips covering 10 seconds before and after</string>
     <string name="msg_brake_locked">Hard braking: locked the clips covering 10 seconds before and after</string>
     <string name="msg_hazard_locked">Hazard lights: locked the clips from 1 minute before</string>

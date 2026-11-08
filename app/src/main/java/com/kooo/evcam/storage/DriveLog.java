@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
  *   S 1791456067758 24814.0     一趟开始，里程表 km（读不到写 -）
  *   B 1791456123456 0.62        急刹车，减速度 g
  *   F 1791456200000             闪远光锁定
+ *   H 1791456300000             双闪锁定（双闪亮起那一刻）
  *   E 1791458000000 24855.3     一趟结束
  * </pre>
  *
@@ -53,7 +54,7 @@ public final class DriveLog {
     /** 比这大就不读（一趟几十字节，一万趟也才几百 KB）。 */
     static final long MAX_BYTES = 2L * 1024 * 1024;
     private static final String HEADER = "# CAMCORDER: drive log. S start, E end (epoch ms, odometer km); "
-            + "B hard braking (g); F flash-to-pass lock.";
+            + "B hard braking (g); F flash-to-pass lock; H hazard-light lock.";
 
     private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "DriveLog");
@@ -127,13 +128,17 @@ public final class DriveLog {
         });
     }
 
-    /** 一件事（急刹车、闪远光锁定）。没有开着的一趟时也写：读的时候会丢掉，写的时候不用先读。 */
+    /** 一件事（急刹车、闪远光锁定、双闪锁定），时刻是此刻。没有开着的一趟时也写：读的时候会丢掉，写的时候不用先读。 */
     public static void event(Context context, char type, double value) {
+        event(context, type, value, System.currentTimeMillis());
+    }
+
+    /** 一件事，时刻另给（系统时间）：双闪要过一阵才算数，记的却是亮起那一刻。 */
+    public static void event(Context context, char type, double value, long epochMs) {
         final Context app = context.getApplicationContext();
-        final long now = System.currentTimeMillis();
         final String line = type == DriveRecords.Event.BRAKE
-                ? String.format(Locale.US, "%c %d %.2f", type, now, value)
-                : type + " " + now;
+                ? String.format(Locale.US, "%c %d %.2f", type, epochMs, value)
+                : type + " " + epochMs;
         IO.execute(() -> append(StorageHelper.getVideoDir(app), line));
     }
 
