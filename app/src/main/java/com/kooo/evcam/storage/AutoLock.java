@@ -233,7 +233,7 @@ public final class AutoLock implements Telemetry.Listener {
         boolean want = recording && app != null && (flashEnabled(app) || brakeEnabled(app) || hazardEnabled(app));
         // 还没亮够就停了录、关了开关：这一下不算（停录、关开关之后本来也不锁）
         if (hazardPendingMs > 0 && (!want || !hazardEnabled(app))) {
-            hazardPendingCancel("（" + (recording ? "开关关了" : "录像停了") + "）");
+            hazardPendingCancel(recording ? HAZARD_END_SWITCH : HAZARD_END_RECORDING);
         }
         // 双闪亮着时录像停了、双闪那一项（或者锁定影像）关了：这一次双闪当在此刻关闭（开关关了的，那两遍看到开关不锁）
         if (hazardSinceMs > 0 && (!want || !hazardEnabled(app))) {
@@ -287,7 +287,7 @@ public final class AutoLock implements Telemetry.Listener {
             main.removeCallbacks(hazardConfirm);
             main.postDelayed(hazardConfirm, HAZARD_CONFIRM_MS);
         } else if (Boolean.FALSE.equals(hazard) && hazardPendingMs > 0) {
-            hazardPendingCancel("");
+            hazardPendingCancel(HAZARD_END_LIGHTS);
         } else if (Boolean.FALSE.equals(hazard) && hazardSinceMs > 0) {
             hazardOff(System.currentTimeMillis(), HAZARD_END_LIGHTS);
         }
@@ -346,13 +346,14 @@ public final class AutoLock implements Telemetry.Listener {
         hazardOnAt(since, sinceUptime);
     }
 
-    /** 双闪没亮够就灭了（或者停了录、关了开关）：不算，黑匣子记一行，好分清「车上闪了一下」和「没读到」。主线程。 */
-    private void hazardPendingCancel(String why) {
+    /** 双闪没亮够就灭了（或者停了录、关了开关；why 用 HAZARD_END_*）：不算，黑匣子记一行，好分清「车上闪了一下」和「没读到」。主线程。 */
+    private void hazardPendingCancel(int why) {
         main.removeCallbacks(hazardConfirm);
         long lit = SystemClock.elapsedRealtime() - hazardPendingUptimeMs;
         hazardPendingMs = 0;
-        BlackBox.noteImportant(String.format(Locale.US, "双闪只亮了 %d ms%s：不到 %d 秒，不算，不锁",
-                lit, why, HAZARD_CONFIRM_MS / 1000));
+        BlackBox.noteImportant(String.format(Locale.US, "双闪只亮了 %d ms%s：不到 %d 秒，不算，不锁", lit,
+                why == HAZARD_END_SWITCH ? "（开关关了）" : why == HAZARD_END_RECORDING ? "（录像停了）" : "",
+                HAZARD_CONFIRM_MS / 1000));
     }
 
     /**
