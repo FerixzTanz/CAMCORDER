@@ -34,6 +34,7 @@
 - **重做**：录制参数的来源（改由视频流配置按路决定）、设置界面、主界面与悬浮按钮、视频回看。
 - **取自 dts88/zeekr-shortcut-car**：下载更新时核对安装包的 sha256 和大小、只走 https（`DownloadIntegrity`，作者 wysie，经 dts88 的 PR #38 合并）。
 - **取自 dts88/zeekr-shortcut-car**：从车机设置服务读后视镜上的盲区指示灯（`MirrorLampSource`，dts88 2.97.0-alpha，去掉了开门预警）；开双闪时自动锁定（dts88 2.25.0-alpha，我们加了 5 分钟上限）。
+- **取自 dts88/zeekr-shortcut-car**：锁定清单换不上时保留旧清单（`FootageLocks.replace`，wysie 在 dts88 的 PR #34 里查出来的问题）、回放里删除前重读锁定清单（`FootageLocks.deleteUnlocked`），均为 dts88 3.6.0-alpha；回放扫描照文件名和文件修改时间算片段时长（`ClipSpans`，dts88 4.4.1-alpha，没搬分批显示和开发者选项）。
 - **包名与构建**：applicationId 改为 `io.github.dts88.zeekrshortcut`，签名可由环境变量覆盖，
   CI 构建与发布见 `.github/`。
 

@@ -438,6 +438,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
             try {
                 File dir = StorageHelper.getVideoDir(getApplicationContext());
                 File[] files = dir != null ? dir.listFiles() : null;
+                // 时长：大多数照文件名和文件时间算，不打开文件（ClipSpans）；算不了的才打开读
+                Map<String, Long> durations = ClipSpans.durations(files);
                 if (files != null) {
                     for (File f : files) {
                         if (!f.isFile() || !f.getName().toLowerCase(Locale.US).endsWith(".mp4")) {
@@ -448,8 +450,8 @@ public class TimelinePlayerActivity extends AppCompatActivity {
                         if (slot == null || start < 0) {
                             continue;
                         }
-                        long duration = ClipDurations.of(f);
-                        if (duration <= 0) {
+                        Long duration = durations.get(f.getAbsolutePath());
+                        if (duration == null) {
                             continue;
                         }
                         RecordingTimeline.Source source = new RecordingTimeline.Source(
@@ -1347,51 +1349,44 @@ public class TimelinePlayerActivity extends AppCompatActivity {
     /**
      * 删文件放后台线程：U 盘上一个文件删一下就要几十到几百毫秒，一次删几条时间轴
      * 主线程会卡好几秒（2026-10-09 实测卡了 3.5 秒），再多就要 ANR 了。
-     * 锁定与否在这里（主线程）先判好，后台只管删。
+     * 删交给 {@link com.kooo.evcam.storage.FootageLocks#deleteUnlocked}：跟锁 / 解锁排在同一条线程上，
+     * 删之前重读一次锁定清单 —— 这里打开以后别处才锁上的（急刹车、双闪、闪远光）也留下。
+     * 锁定的文件回放里不能直接删，先解锁；锁定影像关着时不算。
      */
-    private void deleteInBackground(List<LaneTrack.Clip> files, String what) {
+    private void deleteInBackground(List<LaneTrack.Clip> clips, String what) {
         if (deleting) {
             return;   // 上一批还在删
         }
-        final List<File> toDelete = new ArrayList<>();
-        int locked = 0;
-        for (LaneTrack.Clip clip : files) {
-            if (isLocked(clip.path)) {
-                locked++;
-            } else {
-                toDelete.add(new File(clip.path));
-            }
+        final List<File> files = new ArrayList<>();
+        for (LaneTrack.Clip clip : clips) {
+            files.add(new File(clip.path));
         }
-        final int kept = locked;
-        final int total = files.size();
         deleting = true;
         infoText.setText(R.string.msg_deleting);
-        new Thread(() -> {
-            int deleted = 0;
-            for (File file : toDelete) {
-                if (file.exists() && file.delete()) {
-                    deleted++;
-                }
-            }
-            final int done = deleted;
-            AppLog.i(TAG, what + "：" + done + "/" + total + " 个文件，锁定的留下 " + kept + " 个");
-            runOnUiThread(() -> {
-                deleting = false;
-                if (isFinishing() || isDestroyed()) {
-                    return;
-                }
-                Toast.makeText(this, deletedText(done, kept), Toast.LENGTH_SHORT).show();
-                loadTimelines();
-            });
-        }, "delete-clips").start();
+        com.kooo.evcam.storage.FootageLocks.deleteUnlocked(this, StorageHelper.getVideoDir(getApplicationContext()),
+                lockEnabled ? lockedVideos : java.util.Collections.<String>emptySet(), keep -> {
+                    int deleted = 0;
+                    int kept = 0;
+                    for (File file : files) {
+                        if (keep.contains(file.getName())) {
+                            kept++;
+                        } else if (file.exists() && file.delete()) {
+                            deleted++;
+                        }
+                    }
+                    return new int[] {deleted, kept};
+                }, counts -> {
+                    AppLog.i(TAG, what + "：" + counts[0] + "/" + files.size() + " 个文件，锁定的留下 " + counts[1] + " 个");
+                    deleting = false;
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
+                    Toast.makeText(this, deletedText(counts[0], counts[1]), Toast.LENGTH_SHORT).show();
+                    loadTimelines();
+                });
     }
 
     // ------------------------------------------------------------------ 锁定影像
-
-    /** 锁定的文件回放里不能直接删：先解锁（锁定影像关着时不算）。 */
-    private boolean isLocked(String path) {
-        return lockEnabled && lockedVideos.contains(new File(path).getName());
-    }
 
     private String deletedText(int deleted, int kept) {
         return getResources().getQuantityString(R.plurals.player_deleted, deleted, deleted)

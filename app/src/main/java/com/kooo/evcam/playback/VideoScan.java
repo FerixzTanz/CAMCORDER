@@ -9,7 +9,6 @@ import com.kooo.evcam.camera.CameraSlots;
 import com.kooo.evcam.storage.DriveLog;
 import com.kooo.evcam.storage.DriveRecords;
 import com.kooo.evcam.storage.FootageLocks;
-import com.kooo.evcam.zeekr.ClipDurations;
 import com.kooo.evcam.zeekr.DriveGrouping;
 import com.kooo.evcam.zeekr.LaneTrack;
 import com.kooo.evcam.zeekr.RecordingTimeline;
@@ -71,6 +70,8 @@ public final class VideoScan {
         Map<String, List<RecordingTimeline.Source>> others = new HashMap<>();
         try {
             File[] files = dir != null ? dir.listFiles() : null;
+            // 时长：大多数照文件名和文件时间算，不打开文件（ClipSpans）；算不了的才打开读
+            Map<String, Long> durations = com.kooo.evcam.zeekr.ClipSpans.durations(files);
             if (files != null) {
                 for (File f : files) {
                     if (!f.isFile() || !f.getName().toLowerCase(Locale.US).endsWith(".mp4")) {
@@ -81,8 +82,8 @@ public final class VideoScan {
                     if (slot == null || start < 0) {
                         continue;
                     }
-                    long duration = ClipDurations.of(f);
-                    if (duration <= 0) {
+                    Long duration = durations.get(f.getAbsolutePath());
+                    if (duration == null) {
                         continue;
                     }
                     RecordingTimeline.Source source = new RecordingTimeline.Source(
@@ -152,20 +153,31 @@ public final class VideoScan {
      */
     public static int[] delete(Context context, List<Item> items) {
         Context app = context.getApplicationContext();
-        boolean locksOn = FootageLocks.enabled(app);
-        Set<String> locked = FootageLocks.shown(app, StorageHelper.getVideoDir(app));
-        int deleted = 0;
-        int kept = 0;
+        // 清单读不出来时留这几条里扫描时就标着锁定的
+        Set<String> shown = new java.util.HashSet<>();
         for (Item item : items) {
-            for (File file : item.files) {
-                if (locksOn && locked.contains(file.getName())) {
-                    kept++;
-                } else if (file.exists() && file.delete()) {
-                    deleted++;
+            if (item.locked) {
+                for (File file : item.files) {
+                    shown.add(file.getName());
                 }
             }
         }
-        AppLog.i("VideoScan", "删除录像：" + deleted + " 个，锁定的留下 " + kept + " 个");
-        return new int[]{deleted, kept};
+        // 拿着清单的锁、删之前重读一次：这里打开以后别处才锁上的也留下
+        int[] counts = FootageLocks.deleteUnlockedNow(app, StorageHelper.getVideoDir(app), shown, keep -> {
+            int deleted = 0;
+            int kept = 0;
+            for (Item item : items) {
+                for (File file : item.files) {
+                    if (keep.contains(file.getName())) {
+                        kept++;
+                    } else if (file.exists() && file.delete()) {
+                        deleted++;
+                    }
+                }
+            }
+            return new int[]{deleted, kept};
+        });
+        AppLog.i("VideoScan", "删除录像：" + counts[0] + " 个，锁定的留下 " + counts[1] + " 个");
+        return counts;
     }
 }
