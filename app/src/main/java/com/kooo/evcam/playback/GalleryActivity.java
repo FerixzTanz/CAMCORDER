@@ -308,16 +308,20 @@ public class GalleryActivity extends AppCompatActivity {
             return;
         }
         busy = true;
-        final Set<String> keep = FootageLocks.enabled(this) ? lockedPhotos : new HashSet<>();
+        final Set<String> shown = new HashSet<>(lockedPhotos);
         SCAN.execute(() -> {
-            int deleted = 0;
-            int kept = 0;
-            for (PhotoGroup group : groups) {
-                deleted += group.deleteAllExcept(keep);
-                kept += group.getPhotoCount();
-            }
-            final int done = deleted;
-            final int left = kept;
+            // 拿着清单的锁、删之前重读一次：这里打开以后别处才锁上的也留下
+            int[] counts = FootageLocks.deleteUnlockedNow(this, StorageHelper.getPhotoDir(this), shown, keep -> {
+                int deleted = 0;
+                int kept = 0;
+                for (PhotoGroup group : groups) {
+                    deleted += group.deleteAllExcept(keep);
+                    kept += group.getPhotoCount();
+                }
+                return new int[]{deleted, kept};
+            });
+            final int done = counts[0];
+            final int left = counts[1];
             runOnUiThread(() -> {
                 busy = false;
                 if (isFinishing() || isDestroyed()) {

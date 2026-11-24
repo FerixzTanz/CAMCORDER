@@ -734,20 +734,36 @@ public class PhotoPlaybackActivity extends AppCompatActivity {
                 .setTitle(R.string.dlg_delete_photos_title)
                 .setMessage(getResources().getQuantityString(R.plurals.dlg_delete_photos_msg, 1, 1))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> {
-                    // 锁定的留下（锁定影像关着时不算）
-                    Set<String> keep = lockEnabled ? lockedPhotos : new HashSet<String>();
-                    int deleted = group.deleteAllExcept(keep);
-                    int kept = group.getPhotoCount();
-                    Toast.makeText(this, getResources().getQuantityString(R.plurals.msg_photos_deleted, deleted, deleted)
-                            + (kept > 0 ? getResources().getQuantityString(R.plurals.msg_kept_locked, kept, kept) : ""),
-                            Toast.LENGTH_SHORT).show();
-                    // 这一组整个没了就看下一组（胶片上它后面那张），否则留在原地
-                    if (kept == 0) {
-                        int at = groups.indexOf(group);
-                        currentGroup = at >= 0 && at + 1 < groups.size() ? groups.get(at + 1)
-                                : at > 0 ? groups.get(at - 1) : null;
-                    }
-                    updatePhotoList();
+                    // 锁定的留下（锁定影像关着时不算）。不在主线程上删，删之前重读一次锁定清单：
+                    // 这里打开以后别处才锁上的也留下（FootageLocks#deleteUnlocked）
+                    final List<File> files = group.files();
+                    com.kooo.evcam.storage.FootageLocks.deleteUnlocked(this, StorageHelper.getPhotoDir(this),
+                            lockEnabled ? lockedPhotos : new HashSet<String>(), keep -> {
+                                Set<String> gone = new HashSet<>();
+                                for (File file : files) {
+                                    if (!keep.contains(file.getName()) && file.delete()) {
+                                        gone.add(file.getName());
+                                    }
+                                }
+                                return gone;
+                            }, gone -> {
+                                if (isFinishing() || isDestroyed()) {
+                                    return;
+                                }
+                                group.dropDeleted(gone);
+                                int deleted = gone.size();
+                                int kept = group.getPhotoCount();
+                                Toast.makeText(this, getResources().getQuantityString(R.plurals.msg_photos_deleted, deleted, deleted)
+                                        + (kept > 0 ? getResources().getQuantityString(R.plurals.msg_kept_locked, kept, kept) : ""),
+                                        Toast.LENGTH_SHORT).show();
+                                // 这一组整个没了就看下一组（胶片上它后面那张），否则留在原地
+                                if (kept == 0 && currentGroup == group) {
+                                    int at = groups.indexOf(group);
+                                    currentGroup = at >= 0 && at + 1 < groups.size() ? groups.get(at + 1)
+                                            : at > 0 ? groups.get(at - 1) : null;
+                                }
+                                updatePhotoList();
+                            });
                 })
                 .setNegativeButton(R.string.action_cancel, null));
     }

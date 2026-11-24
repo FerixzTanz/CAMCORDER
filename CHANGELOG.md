@@ -7,6 +7,24 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
+## [2.15.7] - 2026-11-24
+
+### Fixed
+
+- **A failed save can no longer wipe the list of locked footage.** The old list stays in place
+  until the new one is written to the drive; if the swap fails or power is cut halfway, the
+  old list is still read. Found by wysie, via dts88's app.
+- **Deleting in playback keeps footage that was locked in the meantime.** The lock list is read
+  again at the moment of deleting, so a clip locked by hard braking, hazard lights or flash to
+  pass while playback was open is kept. Deleting a photo no longer freezes the screen while the
+  drive works. From dts88's app.
+
+### Changed
+
+- **Playback opens much sooner with many recordings.** Clip lengths now come from the file name
+  and the file's time instead of opening every clip; only the newest clip of each camera, and
+  clips whose file time can't be right, are still opened. From dts88's app.
+
 ## [2.15.6] - 2026-11-08
 
 ### Fixed
