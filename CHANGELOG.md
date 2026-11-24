@@ -7,7 +7,7 @@ Alpha sections: one line per change, what changed and nothing else. Beta and sta
 sections: written for users, reviewed before release. Why a change was made lives in the
 commit message, not here.
 
-## [Unreleased]
+## [2.15.7] - 2026-11-24
 
 ### Fixed
 
